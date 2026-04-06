@@ -83,6 +83,9 @@ class AnalyticEventServiceTest {
     @Mock
     AnalyticsClient analyticsClient;
 
+    @Mock
+    ProvenanceClient provenanceClient;
+
     private DeltaFiProperties mockProperties;
 
     @BeforeEach
@@ -223,6 +226,52 @@ class AnalyticEventServiceTest {
         assertThat(sentAnnotations).containsEntry("allowed1", "value1");
         assertThat(sentAnnotations).containsEntry("groupKey", "groupValue");
         assertThat(sentAnnotations).doesNotContainKey("notAllowed");
+    }
+
+    @Test
+    void recordIngress_sendsToParquetWhenOnlyParquetEnabled() {
+        // Timescale disabled, parquet enabled - no lookup table calls should be made
+        when(mockProperties.isTimescaleAnalyticsEnabled()).thenReturn(false);
+        when(mockProperties.isParquetAnalyticsEnabled()).thenReturn(true);
+
+        analyticEventService.recordIngress(
+                UUID.randomUUID(), OffsetDateTime.now(), "testDataSource",
+                FlowType.REST_DATA_SOURCE, 100L, Map.of(), AnalyticIngressTypeEnum.DATA_SOURCE);
+
+        // Parquet path should be called
+        verify(analyticsClient).writeEvent(any(AnalyticsEventRequest.class));
+        // TimescaleDB lookup tables should not be touched
+        verifyNoInteractions(flowDefinitionService, eventGroupService, analyticsRepo);
+    }
+
+    @Test
+    void recordIngress_skippedWhenBothAnalyticsDisabled() {
+        when(mockProperties.isTimescaleAnalyticsEnabled()).thenReturn(false);
+        when(mockProperties.isParquetAnalyticsEnabled()).thenReturn(false);
+
+        analyticEventService.recordIngress(
+                UUID.randomUUID(), OffsetDateTime.now(), "testDataSource",
+                FlowType.REST_DATA_SOURCE, 100L, Map.of(), AnalyticIngressTypeEnum.DATA_SOURCE);
+
+        verifyNoInteractions(analyticsClient);
+        verifyNoInteractions(flowDefinitionService);
+    }
+
+    @Test
+    void queueAnnotations_sendsToParquetWhenOnlyParquetEnabled() {
+        when(mockProperties.isTimescaleAnalyticsEnabled()).thenReturn(false);
+        when(mockProperties.isParquetAnalyticsEnabled()).thenReturn(true);
+        when(mockProperties.allowedAnalyticsAnnotations()).thenReturn(Set.of("key1"));
+
+        UUID did = UUID.randomUUID();
+        OffsetDateTime creationTime = OffsetDateTime.now();
+        analyticEventService.queueAnnotations(did, Map.of("key1", "val1"), creationTime);
+
+        // Parquet path should be called
+        verify(analyticsClient).queueAnnotations(eq(did), anyMap(), eq(creationTime));
+        // TimescaleDB queue should be empty
+        analyticEventService.processEventBatch();
+        verifyNoInteractions(analyticsRepo);
     }
 
     @Test

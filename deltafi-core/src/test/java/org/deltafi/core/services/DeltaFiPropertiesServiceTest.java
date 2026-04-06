@@ -56,6 +56,7 @@ class DeltaFiPropertiesServiceTest {
     void clearRepo() {
         Mockito.reset(deltaFiPropertiesRepo);
         MockitoAnnotations.openMocks(this);
+        Mockito.when(deltaFiPropertiesRepo.isTimescaleDbInstalled()).thenReturn(true);
         deltaFiPropertiesService = new DeltaFiPropertiesService(
                 deltaFiPropertiesRepo, eventPublisher, localStorageProperties, true);
     }
@@ -89,6 +90,7 @@ class DeltaFiPropertiesServiceTest {
     @Test
     void testModifyForExternalStorage() {
         Mockito.reset(deltaFiPropertiesRepo);
+        Mockito.when(deltaFiPropertiesRepo.isTimescaleDbInstalled()).thenReturn(true);
         DeltaFiPropertiesService propsWithExternalStorage = new DeltaFiPropertiesService(deltaFiPropertiesRepo, eventPublisher, new LocalStorageProperties(false, true), true);
         ArgumentCaptor<Boolean[]> captor = ArgumentCaptor.forClass(Boolean[].class);
         Mockito.verify(deltaFiPropertiesRepo)
@@ -194,6 +196,7 @@ class DeltaFiPropertiesServiceTest {
     @Test
     void testResetFromSnapshotUnsetsDefaultMatchingProperties() {
         Mockito.reset(deltaFiPropertiesRepo);
+        Mockito.when(deltaFiPropertiesRepo.isTimescaleDbInstalled()).thenReturn(true);
         Property property = Property.builder()
                 .key("systemName")
                 .customValue("Custom System")
@@ -302,6 +305,65 @@ class DeltaFiPropertiesServiceTest {
         Assertions.assertThatThrownBy(() -> service.updateProperties(updates, false))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("Property metricsEnabled is disabled and cannot be changed");
+    }
+
+    @Test
+    void testTimescaleDbNotInstalledDisablesAnalytics() {
+        Mockito.reset(deltaFiPropertiesRepo);
+        Mockito.when(deltaFiPropertiesRepo.isTimescaleDbInstalled()).thenReturn(false);
+        DeltaFiPropertiesService service = new DeltaFiPropertiesService(
+                deltaFiPropertiesRepo, eventPublisher, new LocalStorageProperties(true, true), true);
+
+        ArgumentCaptor<Boolean[]> editableCaptor = ArgumentCaptor.forClass(Boolean[].class);
+        ArgumentCaptor<String[]> keyCaptor = ArgumentCaptor.forClass(String[].class);
+        ArgumentCaptor<String[]> descCaptor = ArgumentCaptor.forClass(String[].class);
+        Mockito.verify(deltaFiPropertiesRepo).batchUpsertAndDeleteProperties(
+                keyCaptor.capture(), Mockito.any(), descCaptor.capture(),
+                Mockito.any(), editableCaptor.capture(), Mockito.any(), Mockito.any());
+
+        String[] keys = keyCaptor.getValue();
+        Boolean[] editables = editableCaptor.getValue();
+        String[] descriptions = descCaptor.getValue();
+
+        for (int i = 0; i < keys.length; i++) {
+            if ("timescaleAnalyticsEnabled".equals(keys[i])) {
+                Assertions.assertThat(editables[i])
+                        .as("timescaleAnalyticsEnabled should be non-editable when TimescaleDB is not installed")
+                        .isFalse();
+                Assertions.assertThat(descriptions[i]).startsWith("Disabled by configuration.");
+                // Verify the custom_value is forced to false in the database
+                Mockito.verify(deltaFiPropertiesRepo).updateProperty("timescaleAnalyticsEnabled", "false");
+                return;
+            }
+        }
+        Assertions.fail("timescaleAnalyticsEnabled property not found in upserted properties");
+    }
+
+    @Test
+    void testTimescaleDbInstalledLeavesAnalyticsEditable() {
+        Mockito.reset(deltaFiPropertiesRepo);
+        Mockito.when(deltaFiPropertiesRepo.isTimescaleDbInstalled()).thenReturn(true);
+        DeltaFiPropertiesService service = new DeltaFiPropertiesService(
+                deltaFiPropertiesRepo, eventPublisher, new LocalStorageProperties(true, true), true);
+
+        ArgumentCaptor<Boolean[]> editableCaptor = ArgumentCaptor.forClass(Boolean[].class);
+        ArgumentCaptor<String[]> keyCaptor = ArgumentCaptor.forClass(String[].class);
+        Mockito.verify(deltaFiPropertiesRepo).batchUpsertAndDeleteProperties(
+                keyCaptor.capture(), Mockito.any(), Mockito.any(),
+                Mockito.any(), editableCaptor.capture(), Mockito.any(), Mockito.any());
+
+        String[] keys = keyCaptor.getValue();
+        Boolean[] editables = editableCaptor.getValue();
+
+        for (int i = 0; i < keys.length; i++) {
+            if ("timescaleAnalyticsEnabled".equals(keys[i])) {
+                Assertions.assertThat(editables[i])
+                        .as("timescaleAnalyticsEnabled should be editable when TimescaleDB is installed")
+                        .isTrue();
+                return;
+            }
+        }
+        Assertions.fail("timescaleAnalyticsEnabled property not found in upserted properties");
     }
 
     @Test

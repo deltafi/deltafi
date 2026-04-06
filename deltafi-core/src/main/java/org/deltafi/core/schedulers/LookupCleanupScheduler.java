@@ -20,6 +20,7 @@ package org.deltafi.core.schedulers;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.deltafi.core.repo.*;
+import org.deltafi.core.services.DeltaFiPropertiesService;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -38,10 +39,15 @@ public class LookupCleanupScheduler {
     private final ErrorCauseRepo errorCauseRepo;
     private final EventGroupRepo eventGroupRepo;
     private final EventAnnotationsRepo eventAnnotationsRepo;
+    private final DeltaFiPropertiesService deltaFiPropertiesService;
 
     // run every 6 hours, which is half the frequency at which analytics chunks are dropped
     @Scheduled(fixedDelayString = "PT6H")
     public void cleanup() {
+        if (!deltaFiPropertiesService.getDeltaFiProperties().isTimescaleAnalyticsEnabled()) {
+            log.debug("Skipping analytic lookup cleanup because TimescaleDB analytics is disabled");
+            return;
+        }
         log.info("Analytic lookup tables cleanup started");
         actionNameRepo.refreshActionNameIdsInUse();
         actionNameRepo.deleteUnusedActionNames();

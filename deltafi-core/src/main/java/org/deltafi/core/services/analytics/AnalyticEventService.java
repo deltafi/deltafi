@@ -23,6 +23,7 @@ import org.deltafi.common.types.DeltaFileFlowState;
 import org.deltafi.common.types.FlowType;
 import org.deltafi.core.repo.AnalyticsRepo;
 import org.deltafi.core.repo.EventAnnotationsRepo;
+import org.deltafi.core.configuration.DeltaFiProperties;
 import org.deltafi.core.services.*;
 import org.deltafi.core.services.analytics.AnalyticsClient.AnalyticsEventRequest;
 import org.deltafi.core.types.*;
@@ -65,7 +66,12 @@ public class AnalyticEventService {
     private final ConcurrentLinkedDeque<QueuedEvent> eventQueue = new ConcurrentLinkedDeque<>();
 
     private boolean isDisabled() {
-        return !deltaFiPropertiesService.getDeltaFiProperties().isTimescaleAnalyticsEnabled();
+        DeltaFiProperties props = deltaFiPropertiesService.getDeltaFiProperties();
+        return !props.isTimescaleAnalyticsEnabled() && !props.isParquetAnalyticsEnabled();
+    }
+
+    private boolean isTimescaleEnabled() {
+        return deltaFiPropertiesService.getDeltaFiProperties().isTimescaleAnalyticsEnabled();
     }
 
     private Map<String, String> filterAllowedAnnotations(Map<String, String> annotations) {
@@ -114,29 +120,29 @@ public class AnalyticEventService {
                         "egressor", flow.getName()
                 ))) return;
 
-        FlowDefinition dataSourceFlow = flowDefinitionService.getOrCreateFlow(deltaFile.getDataSource(), deltaFile.firstFlow().getType());
-        FlowDefinition egressFlow = flowDefinitionService.getOrCreateFlow(flow.getName(), flow.getType());
         Map<String, String> annotations = Annotation.toMap(deltaFile.getAnnotations());
-        int eventGroupId = resolveEventGroupOrDefault(annotations);
-
-        AnalyticsEntity entity = new AnalyticsEntity();
-        entity.setId(new AnalyticsEntityId(deltaFile.getDid(), flow.getModified()));
-        entity.setDataSourceId(dataSourceFlow.getId());
-        entity.setFlowId(egressFlow.getId());
-        entity.setEventGroupId(eventGroupId);
-        entity.setEventType(EventTypeEnum.EGRESS);
-        entity.setBytesCount(flow.lastContentSize());
-        entity.setFileCount(1);
-        entity.setAnalyticIngressType(deltaFile.getParentDids().isEmpty() ? AnalyticIngressTypeEnum.DATA_SOURCE : AnalyticIngressTypeEnum.CHILD);
-
-        eventQueue.add(new QueuedAnalyticsEntity(entity));
-
-        // Send to analytics collector
         String ingressType = deltaFile.getParentDids().isEmpty() ? "DATA_SOURCE" : "CHILD";
         analyticsClient.writeEvent(AnalyticsEventRequest.from(
                 flow.getModified(), deltaFile.getCreated(), deltaFile.getDid(), deltaFile.getDataSource(),
                 "EGRESS", flow.lastContentSize(), 1, flow.getName(),
                 null, null, ingressType, filterAllowedAnnotations(annotations)));
+
+        if (isTimescaleEnabled()) {
+            FlowDefinition dataSourceFlow = flowDefinitionService.getOrCreateFlow(deltaFile.getDataSource(), deltaFile.firstFlow().getType());
+            FlowDefinition egressFlow = flowDefinitionService.getOrCreateFlow(flow.getName(), flow.getType());
+            int eventGroupId = resolveEventGroupOrDefault(annotations);
+
+            AnalyticsEntity entity = new AnalyticsEntity();
+            entity.setId(new AnalyticsEntityId(deltaFile.getDid(), flow.getModified()));
+            entity.setDataSourceId(dataSourceFlow.getId());
+            entity.setFlowId(egressFlow.getId());
+            entity.setEventGroupId(eventGroupId);
+            entity.setEventType(EventTypeEnum.EGRESS);
+            entity.setBytesCount(flow.lastContentSize());
+            entity.setFileCount(1);
+            entity.setAnalyticIngressType(deltaFile.getParentDids().isEmpty() ? AnalyticIngressTypeEnum.DATA_SOURCE : AnalyticIngressTypeEnum.CHILD);
+            eventQueue.add(new QueuedAnalyticsEntity(entity));
+        }
     }
 
     /**
@@ -168,28 +174,28 @@ public class AnalyticEventService {
             return;
         }
 
-        FlowDefinition dataSourceFlow = flowDefinitionService.getOrCreateFlow(dataSource, dataSourceType);
-        int eventGroupId = resolveEventGroupOrDefault(annotations);
-
-        AnalyticsEntity entity = new AnalyticsEntity();
-        entity.setId(new AnalyticsEntityId(did, created));
-        entity.setDataSourceId(dataSourceFlow.getId());
-        entity.setEventGroupId(eventGroupId);
-        entity.setEventType(EventTypeEnum.INGRESS);
-        entity.setBytesCount(ingressBytes);
-        entity.setFileCount(1);
-        entity.setAnalyticIngressType(ingressType);
-
-        eventQueue.add(new QueuedAnalyticsEntity(entity));
-
-        if (!annotations.isEmpty()) {
-            eventQueue.add(new QueuedAnnotationEvent(did, new HashMap<>(annotations)));
-        }
-
-        // Send to analytics collector (for ingress, created is both eventTime and creationTime)
         analyticsClient.writeEvent(AnalyticsEventRequest.from(
                 created, created, did, dataSource, "INGRESS", ingressBytes, 1,
                 null, null, null, ingressType.name(), filterAllowedAnnotations(annotations)));
+
+        if (isTimescaleEnabled()) {
+            FlowDefinition dataSourceFlow = flowDefinitionService.getOrCreateFlow(dataSource, dataSourceType);
+            int eventGroupId = resolveEventGroupOrDefault(annotations);
+
+            AnalyticsEntity entity = new AnalyticsEntity();
+            entity.setId(new AnalyticsEntityId(did, created));
+            entity.setDataSourceId(dataSourceFlow.getId());
+            entity.setEventGroupId(eventGroupId);
+            entity.setEventType(EventTypeEnum.INGRESS);
+            entity.setBytesCount(ingressBytes);
+            entity.setFileCount(1);
+            entity.setAnalyticIngressType(ingressType);
+            eventQueue.add(new QueuedAnalyticsEntity(entity));
+
+            if (!annotations.isEmpty()) {
+                eventQueue.add(new QueuedAnnotationEvent(did, new HashMap<>(annotations)));
+            }
+        }
     }
 
     /**
@@ -219,28 +225,28 @@ public class AnalyticEventService {
             return;
         }
 
-        FlowDefinition dataSourceFlow = flowDefinitionService.getOrCreateFlow(dataSource, FlowType.REST_DATA_SOURCE);
-        int eventGroupId = resolveEventGroupOrDefault(annotations);
-
-        AnalyticsEntity entity = new AnalyticsEntity();
-        entity.setId(new AnalyticsEntityId(id, created));
-        entity.setDataSourceId(dataSourceFlow.getId());
-        entity.setEventGroupId(eventGroupId);
-        entity.setEventType(EventTypeEnum.INGRESS);
-        entity.setBytesCount(ingressBytes);
-        entity.setFileCount(count);
-        entity.setAnalyticIngressType(AnalyticIngressTypeEnum.SURVEY);
-
-        eventQueue.add(new QueuedAnalyticsEntity(entity));
-
-        if (!annotations.isEmpty()) {
-            eventQueue.add(new QueuedAnnotationEvent(id, new HashMap<>(annotations)));
-        }
-
-        // Send to analytics collector (for survey, created is both eventTime and creationTime)
         analyticsClient.writeEvent(AnalyticsEventRequest.from(
                 created, created, id, dataSource, "INGRESS", ingressBytes, count,
                 null, null, null, "SURVEY", filterAllowedAnnotations(annotations)));
+
+        if (isTimescaleEnabled()) {
+            FlowDefinition dataSourceFlow = flowDefinitionService.getOrCreateFlow(dataSource, FlowType.REST_DATA_SOURCE);
+            int eventGroupId = resolveEventGroupOrDefault(annotations);
+
+            AnalyticsEntity entity = new AnalyticsEntity();
+            entity.setId(new AnalyticsEntityId(id, created));
+            entity.setDataSourceId(dataSourceFlow.getId());
+            entity.setEventGroupId(eventGroupId);
+            entity.setEventType(EventTypeEnum.INGRESS);
+            entity.setBytesCount(ingressBytes);
+            entity.setFileCount(count);
+            entity.setAnalyticIngressType(AnalyticIngressTypeEnum.SURVEY);
+            eventQueue.add(new QueuedAnalyticsEntity(entity));
+
+            if (!annotations.isEmpty()) {
+                eventQueue.add(new QueuedAnnotationEvent(id, new HashMap<>(annotations)));
+            }
+        }
     }
 
     /**
@@ -261,31 +267,31 @@ public class AnalyticEventService {
                         "dataSource", deltaFile.getDataSource()
                 ))) return;
 
-        FlowDefinition dataSourceFlow = flowDefinitionService.getOrCreateFlow(deltaFile.getDataSource(), deltaFile.firstFlow().getType());
-        FlowDefinition errorFlow = flowDefinitionService.getOrCreateFlow(flowName, flowType);
-        int eventGroupId = resolveEventGroupOrDefault(Annotation.toMap(deltaFile.getAnnotations()));
-        int causeId = errorCauseService.getOrCreateCause(cause);
-        int actionId = actionNameService.getOrCreateActionName(actionName);
-
-        AnalyticsEntity entity = new AnalyticsEntity();
-        entity.setId(new AnalyticsEntityId(deltaFile.getDid(), eventTime));
-        entity.setDataSourceId(dataSourceFlow.getId());
-        entity.setFlowId(errorFlow.getId());
-        entity.setEventGroupId(eventGroupId);
-        entity.setEventType(EventTypeEnum.ERROR);
-        entity.setCauseId(causeId);
-        entity.setActionId(actionId);
-        entity.setFileCount(1);
-        entity.setAnalyticIngressType(deltaFile.getParentDids().isEmpty() ? AnalyticIngressTypeEnum.DATA_SOURCE : AnalyticIngressTypeEnum.CHILD);
-
-        eventQueue.add(new QueuedAnalyticsEntity(entity));
-
-        // Send to analytics collector
         Map<String, String> annotations = Annotation.toMap(deltaFile.getAnnotations());
         String ingressType = deltaFile.getParentDids().isEmpty() ? "DATA_SOURCE" : "CHILD";
         analyticsClient.writeEvent(AnalyticsEventRequest.from(
                 eventTime, deltaFile.getCreated(), deltaFile.getDid(), deltaFile.getDataSource(),
                 "ERROR", 0, 1, flowName, actionName, cause, ingressType, filterAllowedAnnotations(annotations)));
+
+        if (isTimescaleEnabled()) {
+            FlowDefinition dataSourceFlow = flowDefinitionService.getOrCreateFlow(deltaFile.getDataSource(), deltaFile.firstFlow().getType());
+            FlowDefinition errorFlow = flowDefinitionService.getOrCreateFlow(flowName, flowType);
+            int eventGroupId = resolveEventGroupOrDefault(annotations);
+            int causeId = errorCauseService.getOrCreateCause(cause);
+            int actionId = actionNameService.getOrCreateActionName(actionName);
+
+            AnalyticsEntity entity = new AnalyticsEntity();
+            entity.setId(new AnalyticsEntityId(deltaFile.getDid(), eventTime));
+            entity.setDataSourceId(dataSourceFlow.getId());
+            entity.setFlowId(errorFlow.getId());
+            entity.setEventGroupId(eventGroupId);
+            entity.setEventType(EventTypeEnum.ERROR);
+            entity.setCauseId(causeId);
+            entity.setActionId(actionId);
+            entity.setFileCount(1);
+            entity.setAnalyticIngressType(deltaFile.getParentDids().isEmpty() ? AnalyticIngressTypeEnum.DATA_SOURCE : AnalyticIngressTypeEnum.CHILD);
+            eventQueue.add(new QueuedAnalyticsEntity(entity));
+        }
     }
 
     /**
@@ -305,31 +311,31 @@ public class AnalyticEventService {
                         "dataSource", deltaFile.getDataSource()
                 ))) return;
 
-        FlowDefinition dataSourceFlow = flowDefinitionService.getOrCreateFlow(deltaFile.getDataSource(), deltaFile.firstFlow().getType());
-        FlowDefinition errorFlow = flowDefinitionService.getOrCreateFlow(flowName, flowType);
-        int eventGroupId = resolveEventGroupOrDefault(Annotation.toMap(deltaFile.getAnnotations()));
-        int causeId = errorCauseService.getOrCreateCause(cause);
-        int actionId = actionNameService.getOrCreateActionName(actionName);
-
-        AnalyticsEntity entity = new AnalyticsEntity();
-        entity.setId(new AnalyticsEntityId(deltaFile.getDid(), eventTime));
-        entity.setDataSourceId(dataSourceFlow.getId());
-        entity.setFlowId(errorFlow.getId());
-        entity.setEventGroupId(eventGroupId);
-        entity.setEventType(EventTypeEnum.FILTER);
-        entity.setCauseId(causeId);
-        entity.setActionId(actionId);
-        entity.setFileCount(1);
-        entity.setAnalyticIngressType(deltaFile.getParentDids().isEmpty() ? AnalyticIngressTypeEnum.DATA_SOURCE : AnalyticIngressTypeEnum.CHILD);
-
-        eventQueue.add(new QueuedAnalyticsEntity(entity));
-
-        // Send to analytics collector
-        Map<String, String> filterAnnotations = Annotation.toMap(deltaFile.getAnnotations());
-        String filterIngressType = deltaFile.getParentDids().isEmpty() ? "DATA_SOURCE" : "CHILD";
+        Map<String, String> annotations = Annotation.toMap(deltaFile.getAnnotations());
+        String ingressType = deltaFile.getParentDids().isEmpty() ? "DATA_SOURCE" : "CHILD";
         analyticsClient.writeEvent(AnalyticsEventRequest.from(
                 eventTime, deltaFile.getCreated(), deltaFile.getDid(), deltaFile.getDataSource(),
-                "FILTER", 0, 1, flowName, actionName, cause, filterIngressType, filterAllowedAnnotations(filterAnnotations)));
+                "FILTER", 0, 1, flowName, actionName, cause, ingressType, filterAllowedAnnotations(annotations)));
+
+        if (isTimescaleEnabled()) {
+            FlowDefinition dataSourceFlow = flowDefinitionService.getOrCreateFlow(deltaFile.getDataSource(), deltaFile.firstFlow().getType());
+            FlowDefinition filterFlow = flowDefinitionService.getOrCreateFlow(flowName, flowType);
+            int eventGroupId = resolveEventGroupOrDefault(annotations);
+            int causeId = errorCauseService.getOrCreateCause(cause);
+            int actionId = actionNameService.getOrCreateActionName(actionName);
+
+            AnalyticsEntity entity = new AnalyticsEntity();
+            entity.setId(new AnalyticsEntityId(deltaFile.getDid(), eventTime));
+            entity.setDataSourceId(dataSourceFlow.getId());
+            entity.setFlowId(filterFlow.getId());
+            entity.setEventGroupId(eventGroupId);
+            entity.setEventType(EventTypeEnum.FILTER);
+            entity.setCauseId(causeId);
+            entity.setActionId(actionId);
+            entity.setFileCount(1);
+            entity.setAnalyticIngressType(deltaFile.getParentDids().isEmpty() ? AnalyticIngressTypeEnum.DATA_SOURCE : AnalyticIngressTypeEnum.CHILD);
+            eventQueue.add(new QueuedAnalyticsEntity(entity));
+        }
     }
 
     /**
@@ -344,25 +350,25 @@ public class AnalyticEventService {
                         "dataSource", deltaFile.getDataSource()
                 ))) return;
 
-        FlowDefinition dataSourceFlow = flowDefinitionService.getOrCreateFlow(deltaFile.getDataSource(), deltaFile.firstFlow().getType());
-        int eventGroupId = resolveEventGroupOrDefault(Annotation.toMap(deltaFile.getAnnotations()));
-
-        AnalyticsEntity entity = new AnalyticsEntity();
-        entity.setId(new AnalyticsEntityId(deltaFile.getDid(), deltaFile.getModified()));
-        entity.setDataSourceId(dataSourceFlow.getId());
-        entity.setEventGroupId(eventGroupId);
-        entity.setEventType(EventTypeEnum.CANCEL);
-        entity.setFileCount(1);
-        entity.setAnalyticIngressType(deltaFile.getParentDids().isEmpty() ? AnalyticIngressTypeEnum.DATA_SOURCE : AnalyticIngressTypeEnum.CHILD);
-
-        eventQueue.add(new QueuedAnalyticsEntity(entity));
-
-        // Send to analytics collector
-        Map<String, String> cancelAnnotations = Annotation.toMap(deltaFile.getAnnotations());
-        String cancelIngressType = deltaFile.getParentDids().isEmpty() ? "DATA_SOURCE" : "CHILD";
+        Map<String, String> annotations = Annotation.toMap(deltaFile.getAnnotations());
+        String ingressType = deltaFile.getParentDids().isEmpty() ? "DATA_SOURCE" : "CHILD";
         analyticsClient.writeEvent(AnalyticsEventRequest.from(
                 deltaFile.getModified(), deltaFile.getCreated(), deltaFile.getDid(), deltaFile.getDataSource(),
-                "CANCEL", 0, 1, null, null, null, cancelIngressType, filterAllowedAnnotations(cancelAnnotations)));
+                "CANCEL", 0, 1, null, null, null, ingressType, filterAllowedAnnotations(annotations)));
+
+        if (isTimescaleEnabled()) {
+            FlowDefinition dataSourceFlow = flowDefinitionService.getOrCreateFlow(deltaFile.getDataSource(), deltaFile.firstFlow().getType());
+            int eventGroupId = resolveEventGroupOrDefault(annotations);
+
+            AnalyticsEntity entity = new AnalyticsEntity();
+            entity.setId(new AnalyticsEntityId(deltaFile.getDid(), deltaFile.getModified()));
+            entity.setDataSourceId(dataSourceFlow.getId());
+            entity.setEventGroupId(eventGroupId);
+            entity.setEventType(EventTypeEnum.CANCEL);
+            entity.setFileCount(1);
+            entity.setAnalyticIngressType(deltaFile.getParentDids().isEmpty() ? AnalyticIngressTypeEnum.DATA_SOURCE : AnalyticIngressTypeEnum.CHILD);
+            eventQueue.add(new QueuedAnalyticsEntity(entity));
+        }
     }
 
     /**
@@ -505,7 +511,10 @@ public class AnalyticEventService {
      */
     public void queueAnnotations(UUID did, Map<String, String> annotations, OffsetDateTime creationTime) {
         if (isDisabled() || annotations.isEmpty()) return;
-        eventQueue.add(new QueuedAnnotationEvent(did, new HashMap<>(annotations)));
+
+        if (isTimescaleEnabled()) {
+            eventQueue.add(new QueuedAnnotationEvent(did, new HashMap<>(annotations)));
+        }
 
         analyticsClient.queueAnnotations(did, filterAllowedAnnotations(annotations), creationTime);
     }
@@ -514,7 +523,7 @@ public class AnalyticEventService {
      * Scheduled job to process analytics and annotation batches
      */
     public void processEventBatch() {
-        if (isDisabled() || eventQueue.isEmpty()) return;
+        if (!isTimescaleEnabled() || eventQueue.isEmpty()) return;
 
         do {
             List<QueuedAnalyticsEntity> analyticsBatch = new ArrayList<>(BATCH_SIZE);
@@ -576,7 +585,7 @@ public class AnalyticEventService {
                     }
                 }
             }
-        } while (eventQueue.size() >= BATCH_SIZE && !isDisabled());
+        } while (eventQueue.size() >= BATCH_SIZE && isTimescaleEnabled());
     }
 
     /**

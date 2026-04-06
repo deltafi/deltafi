@@ -1,8 +1,17 @@
 -- Fix compressed hypertables with FOREIGN KEY constraints that were created with TimescaleDB versions before 2.15.0
-CREATE OR REPLACE FUNCTION pg_temp.constraint_columns(regclass, int2[]) RETURNS text[] AS
-$$
-SELECT array_agg(attname) FROM unnest($2) un(attnum) LEFT JOIN pg_attribute att ON att.attrelid=$1 AND att.attnum = un.attnum;
-$$ LANGUAGE SQL SET search_path TO pg_catalog, pg_temp;
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_extension WHERE extname = 'timescaledb') THEN
+        RETURN;
+    END IF;
+
+    EXECUTE $func$
+        CREATE OR REPLACE FUNCTION pg_temp.constraint_columns(regclass, int2[]) RETURNS text[] AS
+        $inner$
+        SELECT array_agg(attname) FROM unnest($2) un(attnum) LEFT JOIN pg_attribute att ON att.attrelid=$1 AND att.attnum = un.attnum;
+        $inner$ LANGUAGE SQL SET search_path TO pg_catalog, pg_temp;
+    $func$;
+END $$;
 
 DO $$
     DECLARE
@@ -16,6 +25,9 @@ DO $$
         chunk_id int;
 
     BEGIN
+        IF NOT EXISTS (SELECT 1 FROM pg_extension WHERE extname = 'timescaledb') THEN
+            RETURN;
+        END IF;
 
         -- iterate over all hypertables that have foreign key constraints
         FOR ht_id, ht in
@@ -75,4 +87,9 @@ DO $$
     END
 $$;
 
-DROP FUNCTION pg_temp.constraint_columns(regclass, int2[]);
+DO $$
+BEGIN
+    IF EXISTS (SELECT 1 FROM pg_extension WHERE extname = 'timescaledb') THEN
+        DROP FUNCTION IF EXISTS pg_temp.constraint_columns(regclass, int2[]);
+    END IF;
+END $$;

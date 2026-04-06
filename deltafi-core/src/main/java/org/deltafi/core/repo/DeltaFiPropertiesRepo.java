@@ -95,4 +95,7 @@ public interface DeltaFiPropertiesRepo extends JpaRepository<Property, String> {
     @Transactional
     @Query("UPDATE Property p SET p.customValue = NULL WHERE p.key IN :propertyNames AND p.customValue IS NOT NULL")
     int unsetProperties(List<String> propertyNames);
+
+    @Query(nativeQuery = true, value = "SELECT EXISTS(SELECT 1 FROM pg_extension WHERE extname = 'timescaledb')")
+    boolean isTimescaleDbInstalled();
 }

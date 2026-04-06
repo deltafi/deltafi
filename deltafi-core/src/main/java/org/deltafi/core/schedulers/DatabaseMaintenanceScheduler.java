@@ -38,8 +38,13 @@ public class DatabaseMaintenanceScheduler {
         // there's a race condition starting squeeze up in the zalando operator
         // so it must be started manually at least once every time postgres restarts
         // calling it multiple times is safe, as new workers are ignored if one is already running
-        if (deltaFiPropertiesService.getDeltaFiProperties().isAutoCleanPostgres()) {
+        if (deltaFiPropertiesService.getDeltaFiProperties().isAutoCleanPostgres() && squeezeAvailable()) {
             jdbcTemplate.execute("SELECT squeeze.start_worker()");
         }
+    }
+
+    private boolean squeezeAvailable() {
+        return Boolean.TRUE.equals(jdbcTemplate.queryForObject(
+                "SELECT EXISTS(SELECT 1 FROM pg_extension WHERE extname = 'pg_squeeze')", Boolean.class));
     }
 }

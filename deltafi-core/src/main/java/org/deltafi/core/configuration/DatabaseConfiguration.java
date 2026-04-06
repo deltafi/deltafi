@@ -33,6 +33,9 @@ import org.springframework.orm.jpa.vendor.HibernateJpaVendorAdapter;
 import org.springframework.transaction.PlatformTransactionManager;
 
 import javax.sql.DataSource;
+import java.sql.Connection;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.Map;
 
 @Configuration
@@ -59,6 +62,10 @@ public class DatabaseConfiguration {
         return JdbcClient.create(new NamedParameterJdbcTemplate(dataSource));
     }
 
+    // Migrations V1-V66 were modified to make TimescaleDB optional.
+    // Upgrades from versions prior to V70 require flyway repair to update checksums.
+    private static final int TIMESCALEDB_OPTIONAL_MIGRATION_VERSION = 70;
+
     @Bean
     @Primary
     public Flyway flyway(DataSource dataSource) {
@@ -70,8 +77,34 @@ public class DatabaseConfiguration {
                 .baselineVersion("0")
                 .validateMigrationNaming(true)
                 .load();
+        if (needsRepairForTimescaleDbOptional(dataSource)) {
+            flyway.repair();
+        }
         flyway.migrate();
         return flyway;
+    }
+
+    private boolean needsRepairForTimescaleDbOptional(DataSource dataSource) {
+        try (Connection conn = dataSource.getConnection()) {
+            // Check if flyway_schema_history table exists
+            ResultSet tables = conn.getMetaData().getTables(null, null, "flyway_schema_history", null);
+            if (!tables.next()) {
+                return false; // New install, no repair needed
+            }
+
+            // Check if there are migrations before V69 but V69 hasn't been applied yet
+            try (var stmt = conn.prepareStatement(
+                    "SELECT EXISTS(SELECT 1 FROM flyway_schema_history WHERE version ~ '^[0-9]+$' AND version::int < ?) " +
+                    "AND NOT EXISTS(SELECT 1 FROM flyway_schema_history WHERE version = ?)")) {
+                stmt.setInt(1, TIMESCALEDB_OPTIONAL_MIGRATION_VERSION);
+                stmt.setString(2, String.valueOf(TIMESCALEDB_OPTIONAL_MIGRATION_VERSION));
+                ResultSet rs = stmt.executeQuery();
+                return rs.next() && rs.getBoolean(1);
+            }
+        } catch (SQLException e) {
+            // If we can't determine, don't repair - let flyway handle any issues
+            return false;
+        }
     }
 
     @Bean

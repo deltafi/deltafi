@@ -1,4 +1,9 @@
-CREATE EXTENSION IF NOT EXISTS timescaledb;
+DO $$
+BEGIN
+    IF EXISTS (SELECT 1 FROM pg_available_extensions WHERE name = 'timescaledb') THEN
+        CREATE EXTENSION IF NOT EXISTS timescaledb;
+    END IF;
+END $$;
 SET default_toast_compression=lz4;
 
 -- annotations
@@ -318,134 +323,140 @@ CREATE TABLE test_results (
 );
 ALTER TABLE ONLY test_results ADD CONSTRAINT test_results_pkey PRIMARY KEY (id);
 
--- ts_annotations
-DROP TABLE IF EXISTS ts_annotations;
-CREATE TABLE ts_annotations (
-    entity_id uuid NOT NULL,
-    entity_timestamp timestamp(6) with time zone NOT NULL,
-    data_source text NOT NULL,
-    key text NOT NULL,
-    value text NOT NULL
-);
-ALTER TABLE ONLY ts_annotations ADD CONSTRAINT ts_annotations_pkey PRIMARY KEY (entity_timestamp, entity_id, key);
-SELECT create_hypertable('ts_annotations', 'entity_timestamp', chunk_time_interval => INTERVAL '1 day');
-CREATE INDEX ON ts_annotations (entity_timestamp DESC, data_source);
-CREATE INDEX ON ts_annotations (entity_id, key, value);
-ALTER TABLE ts_annotations SET (
-    timescaledb.compress,
-    timescaledb.compress_orderby = 'entity_timestamp DESC',
-    timescaledb.compress_chunk_time_interval = '7 days'
-    );
-SELECT add_compression_policy('ts_annotations', INTERVAL '7 days');
-SELECT add_retention_policy('ts_annotations', INTERVAL '30 days', schedule_interval => INTERVAL '1 hour');
+-- TimescaleDB analytics tables (only created if TimescaleDB is installed)
+DO $$
+BEGIN
+    IF EXISTS (SELECT 1 FROM pg_extension WHERE extname = 'timescaledb') THEN
+        -- ts_annotations
+        DROP TABLE IF EXISTS ts_annotations;
+        CREATE TABLE ts_annotations (
+            entity_id uuid NOT NULL,
+            entity_timestamp timestamp(6) with time zone NOT NULL,
+            data_source text NOT NULL,
+            key text NOT NULL,
+            value text NOT NULL
+        );
+        ALTER TABLE ONLY ts_annotations ADD CONSTRAINT ts_annotations_pkey PRIMARY KEY (entity_timestamp, entity_id, key);
+        PERFORM create_hypertable('ts_annotations', 'entity_timestamp', chunk_time_interval => INTERVAL '1 day');
+        CREATE INDEX ON ts_annotations (entity_timestamp DESC, data_source);
+        CREATE INDEX ON ts_annotations (entity_id, key, value);
+        ALTER TABLE ts_annotations SET (
+            timescaledb.compress,
+            timescaledb.compress_orderby = 'entity_timestamp DESC',
+            timescaledb.compress_chunk_time_interval = '7 days'
+        );
+        PERFORM add_compression_policy('ts_annotations', INTERVAL '7 days');
+        PERFORM add_retention_policy('ts_annotations', INTERVAL '30 days', schedule_interval => INTERVAL '1 hour');
 
--- ts_cancels
-DROP TABLE IF EXISTS ts_cancels;
-CREATE TABLE ts_cancels (
-    id uuid NOT NULL,
-    "timestamp" timestamp(6) with time zone NOT NULL,
-    data_source text NOT NULL
-);
-ALTER TABLE ONLY ts_cancels ADD CONSTRAINT ts_cancels_pkey PRIMARY KEY ("timestamp", data_source, id);
-SELECT create_hypertable('ts_cancels', 'timestamp', number_partitions => 4, chunk_time_interval => INTERVAL '1 day', if_not_exists => TRUE);
-ALTER TABLE ts_cancels SET (
-    timescaledb.compress,
-    timescaledb.compress_orderby = 'timestamp DESC',
-    timescaledb.compress_chunk_time_interval = '7 days');
-SELECT add_compression_policy('ts_cancels', INTERVAL '7 days');
-SELECT add_retention_policy('ts_cancels', INTERVAL '30 days', schedule_interval => INTERVAL '1 hour');
-CREATE INDEX ON ts_cancels (timestamp DESC, data_source);
-CREATE INDEX idx_ts_cancels_time_ds ON ts_cancels (timestamp DESC) INCLUDE (data_source);
+        -- ts_cancels
+        DROP TABLE IF EXISTS ts_cancels;
+        CREATE TABLE ts_cancels (
+            id uuid NOT NULL,
+            "timestamp" timestamp(6) with time zone NOT NULL,
+            data_source text NOT NULL
+        );
+        ALTER TABLE ONLY ts_cancels ADD CONSTRAINT ts_cancels_pkey PRIMARY KEY ("timestamp", data_source, id);
+        PERFORM create_hypertable('ts_cancels', 'timestamp', number_partitions => 4, chunk_time_interval => INTERVAL '1 day', if_not_exists => TRUE);
+        ALTER TABLE ts_cancels SET (
+            timescaledb.compress,
+            timescaledb.compress_orderby = 'timestamp DESC',
+            timescaledb.compress_chunk_time_interval = '7 days');
+        PERFORM add_compression_policy('ts_cancels', INTERVAL '7 days');
+        PERFORM add_retention_policy('ts_cancels', INTERVAL '30 days', schedule_interval => INTERVAL '1 hour');
+        CREATE INDEX ON ts_cancels (timestamp DESC, data_source);
+        CREATE INDEX idx_ts_cancels_time_ds ON ts_cancels (timestamp DESC) INCLUDE (data_source);
 
--- ts_egresses
-DROP TABLE IF EXISTS ts_egresses;
-CREATE TABLE ts_egresses (
-    id uuid NOT NULL,
-    "timestamp" timestamp(6) with time zone NOT NULL,
-    egress_bytes bigint,
-    data_source text NOT NULL,
-    egressor text NOT NULL
-);
-ALTER TABLE ONLY ts_egresses ADD CONSTRAINT ts_egresses_pkey PRIMARY KEY ("timestamp", data_source, id);
-SELECT create_hypertable('ts_egresses', 'timestamp', number_partitions => 4, chunk_time_interval => INTERVAL '1 day', if_not_exists => TRUE);
-ALTER TABLE ts_egresses SET (
-    timescaledb.compress,
-    timescaledb.compress_orderby = 'timestamp DESC',
-    timescaledb.compress_chunk_time_interval = '7 days');
-SELECT add_compression_policy('ts_egresses', INTERVAL '7 days');
-SELECT add_retention_policy('ts_egresses', INTERVAL '30 days', schedule_interval => INTERVAL '1 hour');
-CREATE INDEX ON ts_egresses (timestamp DESC, data_source);
-CREATE INDEX ON ts_egresses (egressor, timestamp DESC);
-CREATE INDEX idx_ts_egresses_time_ds ON ts_egresses (timestamp DESC) INCLUDE (data_source);
+        -- ts_egresses
+        DROP TABLE IF EXISTS ts_egresses;
+        CREATE TABLE ts_egresses (
+            id uuid NOT NULL,
+            "timestamp" timestamp(6) with time zone NOT NULL,
+            egress_bytes bigint,
+            data_source text NOT NULL,
+            egressor text NOT NULL
+        );
+        ALTER TABLE ONLY ts_egresses ADD CONSTRAINT ts_egresses_pkey PRIMARY KEY ("timestamp", data_source, id);
+        PERFORM create_hypertable('ts_egresses', 'timestamp', number_partitions => 4, chunk_time_interval => INTERVAL '1 day', if_not_exists => TRUE);
+        ALTER TABLE ts_egresses SET (
+            timescaledb.compress,
+            timescaledb.compress_orderby = 'timestamp DESC',
+            timescaledb.compress_chunk_time_interval = '7 days');
+        PERFORM add_compression_policy('ts_egresses', INTERVAL '7 days');
+        PERFORM add_retention_policy('ts_egresses', INTERVAL '30 days', schedule_interval => INTERVAL '1 hour');
+        CREATE INDEX ON ts_egresses (timestamp DESC, data_source);
+        CREATE INDEX ON ts_egresses (egressor, timestamp DESC);
+        CREATE INDEX idx_ts_egresses_time_ds ON ts_egresses (timestamp DESC) INCLUDE (data_source);
 
--- ts_errors
-DROP TABLE IF EXISTS ts_errors;
-CREATE TABLE ts_errors (
-    id uuid NOT NULL,
-    "timestamp" timestamp(6) with time zone NOT NULL,
-    data_source text NOT NULL,
-    cause text,
-    flow text,
-    action text
-);
-ALTER TABLE ONLY ts_errors ADD CONSTRAINT ts_errors_pkey PRIMARY KEY ("timestamp", data_source, id);
-SELECT create_hypertable('ts_errors', 'timestamp', number_partitions => 4, chunk_time_interval => INTERVAL '1 day', if_not_exists => TRUE);
-ALTER TABLE ts_errors SET (
-    timescaledb.compress,
-    timescaledb.compress_orderby = 'timestamp DESC',
-    timescaledb.compress_chunk_time_interval = '7 days');
-SELECT add_compression_policy('ts_errors', INTERVAL '7 days');
-SELECT add_retention_policy('ts_errors', INTERVAL '30 days', schedule_interval => INTERVAL '1 hour');
-CREATE INDEX ON ts_errors (timestamp DESC, data_source);
-CREATE INDEX ON ts_errors (cause, timestamp DESC);
-CREATE INDEX ON ts_errors (flow, timestamp DESC);
-CREATE INDEX ON ts_errors (action, timestamp DESC);
-CREATE INDEX idx_ts_errors_time_ds ON ts_errors (timestamp DESC) INCLUDE (data_source);
+        -- ts_errors
+        DROP TABLE IF EXISTS ts_errors;
+        CREATE TABLE ts_errors (
+            id uuid NOT NULL,
+            "timestamp" timestamp(6) with time zone NOT NULL,
+            data_source text NOT NULL,
+            cause text,
+            flow text,
+            action text
+        );
+        ALTER TABLE ONLY ts_errors ADD CONSTRAINT ts_errors_pkey PRIMARY KEY ("timestamp", data_source, id);
+        PERFORM create_hypertable('ts_errors', 'timestamp', number_partitions => 4, chunk_time_interval => INTERVAL '1 day', if_not_exists => TRUE);
+        ALTER TABLE ts_errors SET (
+            timescaledb.compress,
+            timescaledb.compress_orderby = 'timestamp DESC',
+            timescaledb.compress_chunk_time_interval = '7 days');
+        PERFORM add_compression_policy('ts_errors', INTERVAL '7 days');
+        PERFORM add_retention_policy('ts_errors', INTERVAL '30 days', schedule_interval => INTERVAL '1 hour');
+        CREATE INDEX ON ts_errors (timestamp DESC, data_source);
+        CREATE INDEX ON ts_errors (cause, timestamp DESC);
+        CREATE INDEX ON ts_errors (flow, timestamp DESC);
+        CREATE INDEX ON ts_errors (action, timestamp DESC);
+        CREATE INDEX idx_ts_errors_time_ds ON ts_errors (timestamp DESC) INCLUDE (data_source);
 
--- ts_filters
-DROP TABLE IF EXISTS ts_filters;
-CREATE TABLE ts_filters (
-    id uuid NOT NULL,
-    "timestamp" timestamp(6) with time zone NOT NULL,
-    data_source text NOT NULL,
-    message text,
-    flow text,
-    action text
-);
-ALTER TABLE ONLY ts_filters ADD CONSTRAINT ts_filters_pkey PRIMARY KEY ("timestamp", data_source, id);
-SELECT create_hypertable('ts_filters', 'timestamp', number_partitions => 4, chunk_time_interval => INTERVAL '1 day', if_not_exists => TRUE);
-ALTER TABLE ts_filters SET (
-    timescaledb.compress,
-    timescaledb.compress_orderby = 'timestamp DESC',
-    timescaledb.compress_chunk_time_interval = '7 days');
-SELECT add_compression_policy('ts_filters', INTERVAL '7 days');
-SELECT add_retention_policy('ts_filters', INTERVAL '30 days', schedule_interval => INTERVAL '1 hour');
-CREATE INDEX ON ts_filters (timestamp DESC, data_source);
-CREATE INDEX ON ts_filters (message, timestamp DESC);
-CREATE INDEX ON ts_filters (flow, timestamp DESC);
-CREATE INDEX ON ts_filters (action, timestamp DESC);
-CREATE INDEX idx_ts_filters_time_ds ON ts_filters (timestamp DESC) INCLUDE (data_source);
+        -- ts_filters
+        DROP TABLE IF EXISTS ts_filters;
+        CREATE TABLE ts_filters (
+            id uuid NOT NULL,
+            "timestamp" timestamp(6) with time zone NOT NULL,
+            data_source text NOT NULL,
+            message text,
+            flow text,
+            action text
+        );
+        ALTER TABLE ONLY ts_filters ADD CONSTRAINT ts_filters_pkey PRIMARY KEY ("timestamp", data_source, id);
+        PERFORM create_hypertable('ts_filters', 'timestamp', number_partitions => 4, chunk_time_interval => INTERVAL '1 day', if_not_exists => TRUE);
+        ALTER TABLE ts_filters SET (
+            timescaledb.compress,
+            timescaledb.compress_orderby = 'timestamp DESC',
+            timescaledb.compress_chunk_time_interval = '7 days');
+        PERFORM add_compression_policy('ts_filters', INTERVAL '7 days');
+        PERFORM add_retention_policy('ts_filters', INTERVAL '30 days', schedule_interval => INTERVAL '1 hour');
+        CREATE INDEX ON ts_filters (timestamp DESC, data_source);
+        CREATE INDEX ON ts_filters (message, timestamp DESC);
+        CREATE INDEX ON ts_filters (flow, timestamp DESC);
+        CREATE INDEX ON ts_filters (action, timestamp DESC);
+        CREATE INDEX idx_ts_filters_time_ds ON ts_filters (timestamp DESC) INCLUDE (data_source);
 
--- ts_ingresses
-DROP TABLE IF EXISTS ts_ingresses;
-CREATE TABLE ts_ingresses (
-    id uuid NOT NULL,
-    "timestamp" timestamp(6) with time zone NOT NULL,
-    ingress_bytes bigint,
-    count integer,
-    survey boolean,
-    data_source text NOT NULL
-);
-ALTER TABLE ONLY ts_ingresses ADD CONSTRAINT ts_ingresses_pkey PRIMARY KEY ("timestamp", data_source, id);
-SELECT create_hypertable('ts_ingresses', 'timestamp', number_partitions => 4, chunk_time_interval => INTERVAL '1 day', if_not_exists => TRUE);
-ALTER TABLE ts_ingresses SET (
-    timescaledb.compress,
-    timescaledb.compress_orderby = 'timestamp DESC',
-    timescaledb.compress_chunk_time_interval = '7 days');
-SELECT add_compression_policy('ts_ingresses', INTERVAL '7 days');
-SELECT add_retention_policy('ts_ingresses', INTERVAL '30 days', schedule_interval => INTERVAL '1 hour');
-CREATE INDEX ON ts_ingresses (timestamp DESC, data_source);
-CREATE INDEX idx_ts_ingresses_time_ds ON ts_ingresses (timestamp DESC) INCLUDE (data_source);
+        -- ts_ingresses
+        DROP TABLE IF EXISTS ts_ingresses;
+        CREATE TABLE ts_ingresses (
+            id uuid NOT NULL,
+            "timestamp" timestamp(6) with time zone NOT NULL,
+            ingress_bytes bigint,
+            count integer,
+            survey boolean,
+            data_source text NOT NULL
+        );
+        ALTER TABLE ONLY ts_ingresses ADD CONSTRAINT ts_ingresses_pkey PRIMARY KEY ("timestamp", data_source, id);
+        PERFORM create_hypertable('ts_ingresses', 'timestamp', number_partitions => 4, chunk_time_interval => INTERVAL '1 day', if_not_exists => TRUE);
+        ALTER TABLE ts_ingresses SET (
+            timescaledb.compress,
+            timescaledb.compress_orderby = 'timestamp DESC',
+            timescaledb.compress_chunk_time_interval = '7 days');
+        PERFORM add_compression_policy('ts_ingresses', INTERVAL '7 days');
+        PERFORM add_retention_policy('ts_ingresses', INTERVAL '30 days', schedule_interval => INTERVAL '1 hour');
+        CREATE INDEX ON ts_ingresses (timestamp DESC, data_source);
+        CREATE INDEX idx_ts_ingresses_time_ds ON ts_ingresses (timestamp DESC) INCLUDE (data_source);
+    END IF;
+END $$;
 
 -- user_roles
 DROP TABLE IF EXISTS user_roles;

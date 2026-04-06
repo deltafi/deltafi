@@ -1,0 +1,3 @@
+-- Marker migration: migrations V1-V68 were modified to make TimescaleDB optional.
+-- Upgrades from versions prior to V70 require flyway repair to update checksums.
+-- This file intentionally empty.

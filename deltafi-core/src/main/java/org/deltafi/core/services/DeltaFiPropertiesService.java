@@ -84,7 +84,8 @@ public class DeltaFiPropertiesService implements Snapshotter {
 
     public DeltaFiPropertiesService(DeltaFiPropertiesRepo deltaFiPropertiesRepo, ApplicationEventPublisher eventPublisher,
                                     LocalStorageProperties localStorageProperties, boolean isScheduler) {
-        this(deltaFiPropertiesRepo, eventPublisher, localStorageProperties, isScheduler, buildEnvDisabledProperties());
+        this(deltaFiPropertiesRepo, eventPublisher, localStorageProperties, isScheduler,
+                buildDisabledProperties(deltaFiPropertiesRepo));
     }
 
     DeltaFiPropertiesService(DeltaFiPropertiesRepo deltaFiPropertiesRepo, ApplicationEventPublisher eventPublisher,
@@ -100,6 +101,20 @@ public class DeltaFiPropertiesService implements Snapshotter {
             upsertProperties();
         }
         refreshProperties();
+    }
+
+    /**
+     * Build a map of property names to forced values based on env var overrides
+     * and database-detected capabilities (e.g., TimescaleDB presence).
+     */
+    private static Map<String, String> buildDisabledProperties(DeltaFiPropertiesRepo repo) {
+        Map<String, String> disabled = new HashMap<>(buildEnvDisabledProperties());
+
+        if (!repo.isTimescaleDbInstalled()) {
+            disabled.put("timescaleAnalyticsEnabled", "false");
+        }
+
+        return Collections.unmodifiableMap(disabled);
     }
 
     /**
@@ -161,12 +176,18 @@ public class DeltaFiPropertiesService implements Snapshotter {
                 keys, defaultValues, descriptions, refreshables, editables, dataTypes, allowedProperties
         );
 
-        // Force custom values for env-disabled properties
+        forceDisabledPropertyValues();
+        normalizeSetProperties();
+    }
+
+    /**
+     * Force custom values for disabled properties so they cannot be overridden
+     * by snapshot restore or other means that might clear them.
+     */
+    private void forceDisabledPropertyValues() {
         for (Map.Entry<String, String> entry : envDisabledProperties.entrySet()) {
             deltaFiPropertiesRepo.updateProperty(entry.getKey(), entry.getValue());
         }
-
-        normalizeSetProperties();
     }
 
     /**
@@ -381,6 +402,7 @@ public class DeltaFiPropertiesService implements Snapshotter {
             applySnapshotProperties(snapshotProperties);
         }
 
+        forceDisabledPropertyValues();
         refreshProperties();
         return Result.successResult();
     }
