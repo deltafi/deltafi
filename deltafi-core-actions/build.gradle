@@ -55,6 +55,14 @@ dockerPrepare {
 
 configurations {
     docs
+
+    all {
+        resolutionStrategy {
+            dependencySubstitution {
+                substitute module('org.codehaus.plexus:plexus-utils') using module('org.codehaus.plexus:plexus-utils:4.0.3') because 'CVE'
+            }
+        }
+    }
 }
 
 def docsDirectory = layout.buildDirectory.dir('docs')

@@ -14,6 +14,7 @@ configurations {
         resolutionStrategy {
             dependencySubstitution {
                 substitute module('at.yawk.lz4:lz4-java') using module('org.lz4:lz4-java:1.8.1') because 'org.lz4 is the canonical group ID for lz4-java'
+                substitute module('org.codehaus.plexus:plexus-utils') using module('org.codehaus.plexus:plexus-utils:4.0.3') because 'CVE'
             }
         }
     }
