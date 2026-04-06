@@ -5,6 +5,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 All [Unreleased] changes can be viewed in GitLab.
 
+## [2.52.1] - 2026-04-06
+
+### Added
+- Added `deltafi.pluginEnv` to `site/values.yaml` to inject environment variables into all plugin containers/pods
+- Added `pluginEnvVars` to the plugins query that is available to users with the `Admin` role
+- Added a mutation `redeployAllPlugins` that creates a fresh deployment of all installed plugins
+- Artifact registry extensions for the Python action kit
+
+### Changed
+- Changed `deltafi up` so it always redeploys existing plugins with the latest settings after a successful upgrade
+- Updated the gradle-nexus publish-plugin and switched  to the new Sontaype Central bridge API
+
 ## [2.52.0] - 2026-04-02
 
 ### Highlights
@@ -6003,7 +6015,8 @@ No changes.  UI update only
 ### Security
 - Forced all projects to log4j 2.17.0 to avoid CVEs
 
-[Unreleased]: https://gitlab.com/deltafi/deltafi/-/compare/2.52.0...main
+[Unreleased]: https://gitlab.com/deltafi/deltafi/-/compare/2.52.1...main
+[2.52.1]: https://gitlab.com/deltafi/deltafi/-/compare/2.52.0...2.52.1
 [2.52.0]: https://gitlab.com/deltafi/deltafi/-/compare/2.51.2...2.52.0
 [2.51.2]: https://gitlab.com/deltafi/deltafi/-/compare/2.51.0...2.51.2
 [2.51.0]: https://gitlab.com/deltafi/deltafi/-/compare/2.50.2...2.51.0
