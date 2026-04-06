@@ -90,6 +90,8 @@ type Plugin {
     canRollback: Boolean!
     "Whether the plugin is disabled"
     disabled: Boolean!
+    "Environment variables injected into the plugin container - Admin permission is required to view this field"
+    pluginEnvVars: [KeyValue!]!
 }
 
 input PluginInput {
@@ -286,4 +288,7 @@ extend type Mutation {
     removeSystemPluginVariable(name: String!): Boolean!
 
     setPluginVariableValues(pluginCoordinates: PluginCoordinatesInput!, variables: [KeyValueInput!]) : Boolean!
+
+    "Redeploy all installed plugins with the current environment variables"
+    redeployAllPlugins: [Result!]!
 }

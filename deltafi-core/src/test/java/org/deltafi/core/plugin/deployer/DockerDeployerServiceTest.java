@@ -64,7 +64,6 @@ class DockerDeployerServiceTest {
 
     @BeforeEach
     void setUp() {
-        when(environmentVariableHelper.getEnvVars()).thenReturn(List.of());
         when(environmentVariableHelper.getDataDir()).thenReturn("/data");
 
         dockerDeployerService = new DockerDeployerService(

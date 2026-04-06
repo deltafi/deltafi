@@ -512,6 +512,12 @@ func (o *ComposeOrchestrator) ContainerEnvironments() error {
 		return fmt.Errorf("error writing nginx configuration files: %w", err)
 	}
 
+	// Create plugin.env file with KEY=VALUE lines for plugin-scoped env vars
+	pluginEnvFile := filepath.Join(o.configPath, "plugin.env")
+	if err := o.writePluginEnvFile(pluginEnvFile); err != nil {
+		return fmt.Errorf("error writing plugin.env: %w", err)
+	}
+
 	// Create dirwatcher.env
 	dirwatcherEnv := filepath.Join(o.configPath, "dirwatcher.env")
 	if err := o.writeDirwatcherEnv(dirwatcherEnv); err != nil {
@@ -734,23 +740,20 @@ func (o *ComposeOrchestrator) writeCommonEnv(path string) error {
 	analyticsEnabled := o.getValueOr(values, "deltafi.analytics.enabled", "true")
 	envVars["ANALYTICS_ENABLED"] = analyticsEnabled
 
-	var globalVars map[string]string
-	if deltafi, ok := values["deltafi"].(map[string]any); ok {
-		if globalEnv, ok := deltafi["globalEnv"].([]any); ok {
-			globalVars = make(map[string]string)
-			for _, entry := range globalEnv {
-				if envVar, ok := entry.(map[string]any); ok {
-					name, _ := envVar["name"].(string)
-					value, _ := envVar["value"].(string)
-					if name != "" {
-						globalVars[name] = value
-					}
-				}
-			}
-		}
+	globalVars := extractEnvVars(values, "globalEnv")
+
+	return writeCommonEnvFile(path, envVars, globalVars, nil)
+}
+
+func (o *ComposeOrchestrator) writePluginEnvFile(path string) error {
+	values, err := o.getMergedValues()
+	if err != nil {
+		return err
 	}
 
-	return writeCommonEnvFile(path, envVars, globalVars)
+	pluginVars := extractEnvVars(values, "pluginEnv")
+
+	return writeEnvFile(path, pluginVars)
 }
 
 func (o *ComposeOrchestrator) writeDirwatcherEnv(path string) error {
@@ -874,11 +877,58 @@ func generateListenConf(config ListenConfig, outputPath string) error {
 	return tmpl.Execute(f, config)
 }
 
-func writeEnvFile(path string, envVars map[string]string) error {
-	return writeCommonEnvFile(path, envVars, nil)
+// extractEnvVars reads a list of {name, value} entries from deltafi.<key> in the merged values.
+func extractEnvVars(values map[string]any, key string) map[string]string {
+	deltafi, ok := values["deltafi"].(map[string]any)
+	if !ok {
+		return nil
+	}
+	envList, ok := deltafi[key].([]any)
+	if !ok {
+		return nil
+	}
+	result := make(map[string]string)
+	for _, entry := range envList {
+		if envVar, ok := entry.(map[string]any); ok {
+			name, _ := envVar["name"].(string)
+			value, _ := envVar["value"].(string)
+			if name != "" {
+				result[name] = value
+			}
+		}
+	}
+	return result
 }
 
-func writeCommonEnvFile(path string, envVars map[string]string, globalVars map[string]string) error {
+func writeEnvSection(file *os.File, header string, vars map[string]string) error {
+	if len(vars) == 0 {
+		return nil
+	}
+
+	if _, err := fmt.Fprintf(file, "\n# %s\n", header); err != nil {
+		return fmt.Errorf("error writing env file header: %w", err)
+	}
+
+	keys := make([]string, 0, len(vars))
+	for key := range vars {
+		keys = append(keys, key)
+	}
+	sort.Strings(keys)
+
+	for _, key := range keys {
+		if _, err := fmt.Fprintf(file, "%s=%s\n", key, vars[key]); err != nil {
+			return fmt.Errorf("error writing env var: %w", err)
+		}
+	}
+
+	return nil
+}
+
+func writeEnvFile(path string, envVars map[string]string) error {
+	return writeCommonEnvFile(path, envVars, nil, nil)
+}
+
+func writeCommonEnvFile(path string, envVars map[string]string, globalVars map[string]string, pluginVars map[string]string) error {
 	file, err := os.Create(path)
 	if err != nil {
 		return fmt.Errorf("error creating env file: %w", err)
@@ -901,22 +951,12 @@ func writeCommonEnvFile(path string, envVars map[string]string, globalVars map[s
 		}
 	}
 
-	if len(globalVars) > 0 {
-		if _, err := fmt.Fprintln(file, "\n# Global environment variables from deltafi.globalEnv in site/values.yaml"); err != nil {
-			return fmt.Errorf("error writing env file header: %w", err)
-		}
+	if err := writeEnvSection(file, "Global environment variables from deltafi.globalEnv in site/values.yaml", globalVars); err != nil {
+		return err
+	}
 
-		globalKeys := make([]string, 0, len(globalVars))
-		for key := range globalVars {
-			globalKeys = append(globalKeys, key)
-		}
-		sort.Strings(globalKeys)
-
-		for _, key := range globalKeys {
-			if _, err := fmt.Fprintf(file, "%s=%s\n", key, globalVars[key]); err != nil {
-				return fmt.Errorf("error writing env var: %w", err)
-			}
-		}
+	if err := writeEnvSection(file, "Plugin environment variables from deltafi.pluginEnv in site/values.yaml", pluginVars); err != nil {
+		return err
 	}
 
 	return nil

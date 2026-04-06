@@ -28,8 +28,8 @@ import org.deltafi.core.services.SslConfigService;
 import org.deltafi.core.types.KeyCertPair;
 import org.deltafi.core.types.SslInfo;
 import org.deltafi.core.types.SslSettings;
+import org.deltafi.core.util.PropertiesReader;
 
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
@@ -73,7 +73,7 @@ public class ComposeSslConfigService implements SslConfigService {
 
         String tlsKey = readFile(secretDir.resolve(TLS_KEY));
         String tlsCert = readFile(secretDir.resolve(TLS_CRT));
-        Properties props = readEnv(secretDir.resolve(PASSPHRASE_FILE));
+        Properties props = PropertiesReader.readEnv(secretDir.resolve(PASSPHRASE_FILE));
         KeyCertPair keyCertPair = new KeyCertPair(tlsKey, tlsCert, props.getProperty(KEY_PASSWORD));
         return certificateInfoService.getSslInfo(secretName, keyCertPair);
     }
@@ -239,18 +239,6 @@ public class ComposeSslConfigService implements SslConfigService {
 
     String getCaChain() {
         return readFile(CA_CHAIN);
-    }
-
-    private Properties readEnv(Path path) {
-        Properties properties = new Properties();
-        if (Files.exists(path) && Files.isReadable(path)) {
-            try (FileInputStream fis = new FileInputStream(path.toFile())) {
-                properties.load(fis);
-            } catch (IOException e) {
-                throw new IllegalStateException("Could not read the file at " + path, e);
-            }
-        }
-        return properties;
     }
 
     private String readFile(Path path) {

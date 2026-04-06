@@ -19,28 +19,50 @@ package org.deltafi.core.plugin.deployer;
 
 import io.micrometer.common.util.StringUtils;
 import lombok.Getter;
+import lombok.extern.slf4j.Slf4j;
 import org.deltafi.common.action.EventQueueProperties;
 import org.deltafi.common.content.StorageProperties;
 import org.deltafi.common.storage.s3.minio.MinioProperties;
+import org.deltafi.common.types.KeyValue;
 import org.deltafi.core.services.SslConfigService;
+import org.deltafi.core.util.PropertiesReader;
 import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.*;
 
-@Getter
+@Slf4j
 @Service
 public class EnvironmentVariableHelper {
+    static final Path PLUGIN_ENV_FILE = Path.of("/config/plugin.env");
+
+    @Getter
     private final String dataDir;
-    private final List<String> envVars;
     private final String keyPassphrase;
+    private final List<String> staticEnvVars;
 
     public EnvironmentVariableHelper(MinioProperties minioProperties, StorageProperties storageProperties, SslConfigService sslConfigService,
                                      EventQueueProperties eventQueueProperties, Environment environment) {
         this.dataDir = environment.getProperty("DATA_DIR");
-        this.envVars = buildEnvVarList(minioProperties, storageProperties, eventQueueProperties, environment);
+        this.staticEnvVars = buildEnvVarList(minioProperties, storageProperties, eventQueueProperties, environment);
         this.keyPassphrase = sslConfigService.getPluginKeyPassphrase();
+    }
+
+    public List<String> getEnvVars() {
+        List<String> envVars = new ArrayList<>(staticEnvVars);
+
+        // inject plugin-scoped env vars read from /config/plugin.env
+        readPluginProperties(PLUGIN_ENV_FILE).entrySet().stream()
+                .map(entry -> entry.getKey() + "=" + entry.getValue())
+                .forEach(envVars::add);
+
+        return envVars;
+    }
+
+    public List<KeyValue> getPluginEnvVars() {
+        return readPluginEnvVars(PLUGIN_ENV_FILE);
     }
 
     private List<String> buildEnvVarList(MinioProperties minioProperties, StorageProperties storageProperties, EventQueueProperties eventQueueProperties,  Environment environment) {
@@ -66,5 +88,23 @@ public class EnvironmentVariableHelper {
         }
 
         return properties;
+    }
+
+    List<KeyValue> readPluginEnvVars(Path path) {
+        Properties properties = readPluginProperties(path);
+        return properties.stringPropertyNames().stream()
+                .map(key -> new KeyValue(key, properties.getProperty(key)))
+                .toList();
+    }
+
+    private Properties readPluginProperties(Path path) {
+        if (!Files.exists(path)) {
+            return new Properties();
+        }
+        if (!Files.isReadable(path)) {
+            throw new IllegalStateException("The plugin.env file at " + path + " is not readable, please check the file permissions");
+        }
+
+        return PropertiesReader.readEnv(path);
     }
 }

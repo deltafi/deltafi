@@ -89,6 +89,7 @@ deltafi:
   lookup:
     enabled: false
   globalEnv:
+  pluginEnv:
 
 # Kubernetes ingress config
 ingress:

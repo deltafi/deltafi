@@ -10,6 +10,7 @@ When you run `deltafi up`, the TUI creates and manages the following directory s
 <deltafi-install-dir>/
 ├── config/                    # Generated configuration files
 │   ├── common.env             # Shared environment variables
+│   ├── plugin.env             # Plugin-scoped environment variables
 │   ├── startup.env            # Startup configuration
 │   ├── nginx.env              # Nginx configuration
 │   ├── dirwatcher.env         # Dirwatcher configuration
@@ -70,10 +71,15 @@ deltafi:
   logviewer:
     enabled: true           # Dozzle web-based log viewer (Compose only)
 
-  # Inject environment variables into all DeltaFi-built services
+  # Inject environment variables into DeltaFi infrastructure services
   globalEnv:
     - name: MY_CUSTOM_VAR
       value: "my-value"
+
+  # Inject environment variables into plugin and core-actions containers
+  pluginEnv:
+    - name: PROXY_URL
+      value: "http://proxy.internal:8080"
 
 ingress:
   domain: local.deltafi.org
@@ -96,7 +102,7 @@ s3proxy:
 
 ### Global Environment Variables
 
-The `deltafi.globalEnv` setting injects environment variables into all DeltaFi-built services (core-scheduler, core-worker, core-actions, analytics, egress-sink, nodemonitor, node-fastdelete, clustermonitor). This is useful for setting JVM options, feature flags, or debug settings across the entire platform.
+The `deltafi.globalEnv` setting injects environment variables into DeltaFi infrastructure services (core-scheduler, core-worker, analytics, egress-sink, nodemonitor, node-fastdelete, clustermonitor). These variables are **not** injected into plugin containers or core-actions. This is useful for setting JVM options, feature flags, or debug settings across the platform infrastructure.
 
 ```yaml
 # site/values.yaml
@@ -117,6 +123,26 @@ deltafi:
           name: my-secret
           key: password
 ```
+
+### Plugin Environment Variables
+
+The `deltafi.pluginEnv` setting injects environment variables into all action containers — both installed plugins and core-actions. Use this for configuration that plugins need at runtime, such as external service endpoints or feature flags.
+
+```yaml
+# site/values.yaml
+deltafi:
+  pluginEnv:
+    - name: PROXY_URL
+      value: "http://proxy.internal:8080"
+    - name: LOG_LEVEL
+      value: "DEBUG"
+```
+
+After changing `pluginEnv`, run `deltafi up` to apply. In Compose mode, installed plugins are automatically redeployed with the updated environment.
+
+::: tip
+Administrators can view the currently applied plugin environment variables via the GraphQL API by querying `pluginEnvVars` on the `Plugin` type. This field requires Admin permission.
+:::
 
 ## Observability Components
 
@@ -172,9 +198,9 @@ These control the `GRAFANA_ENABLED`, `METRICS_ENABLED`, and `ANALYTICS_ENABLED` 
 
 When running DeltaFi in Compose mode, you can customize the Docker Compose configuration through the `site/compose.yaml` file.
 
-### Global Environment Variables
+### Environment Variables
 
-The `deltafi.globalEnv` setting also works in Compose mode. Entries are written to `config/common.env` during `deltafi up`. Only simple `name`/`value` pairs are supported (`valueFrom` is a Kubernetes-only feature).
+Both `deltafi.globalEnv` and `deltafi.pluginEnv` work in Compose mode. Global entries are written to `config/common.env` and plugin entries to `config/plugin.env` during `deltafi up`. Only simple `name`/`value` pairs are supported (`valueFrom` is a Kubernetes-only feature).
 
 ### site/compose.yaml
 

@@ -21,6 +21,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.deltafi.common.types.PluginRegistration;
 import org.deltafi.core.integration.IntegrationService;
+import org.deltafi.core.plugin.deployer.DeployerService;
+import org.deltafi.core.security.NeedsPermission;
 import org.deltafi.core.services.PluginService;
 import org.deltafi.core.types.Result;
 import org.springframework.http.ResponseEntity;
@@ -38,6 +40,15 @@ import javax.ws.rs.core.MediaType;
 public class PluginRestController {
     private final PluginService pluginService;
     private final IntegrationService integrationService;
+    private final DeployerService deployerService;
+
+    @NeedsPermission.Admin
+    @PostMapping("/redeploy")
+    public ResponseEntity<Void> redeployAllPlugins() {
+        log.info("Redeploying all plugins with current environment");
+        deployerService.redeployAllPlugins();
+        return ResponseEntity.ok().build();
+    }
 
     @PostMapping(consumes = MediaType.APPLICATION_JSON)
     public ResponseEntity<String> createPlugin(@RequestBody PluginRegistration pluginRegistration) {

@@ -64,8 +64,8 @@ public class DockerDeployerService extends BaseDeployerService implements Deploy
     private final Resource dockerAuthConfig = new FileSystemResource("/.docker/config.json");
     private final DockerClient dockerClient;
     private final SslSecretNames sslSecretNames;
+    private final EnvironmentVariableHelper environmentVariableHelper;
 
-    private final List<String> environmentVariables;
     private final String dataDir;
 
     public DockerDeployerService(DockerClient dockerClient, PluginService pluginService, SslSecretNames sslSecretNames,
@@ -74,7 +74,7 @@ public class DockerDeployerService extends BaseDeployerService implements Deploy
         super(pluginService, eventService, deltaFiPropertiesService);
         this.dockerClient = dockerClient;
         this.sslSecretNames = sslSecretNames;
-        this.environmentVariables = environmentVariableHelper.getEnvVars();
+        this.environmentVariableHelper = environmentVariableHelper;
         this.dataDir = environmentVariableHelper.getDataDir();
     }
 
@@ -212,7 +212,7 @@ public class DockerDeployerService extends BaseDeployerService implements Deploy
 
         Map<String, String> containerLabels = Map.of(APP_LABEL_KEY, installDetails.appName(), DELTAFI_GROUP, getGroupName(installDetails.appName()), "logging", "promtail", "logging_jobname", "containerlogs");
 
-        List<String> envVars = new ArrayList<>(environmentVariables);
+        List<String> envVars = new ArrayList<>(environmentVariableHelper.getEnvVars());
         envVars.add(IMAGE + "=" + installDetails.image());
         if (StringUtils.isNotBlank(installDetails.imagePullSecret())) {
             envVars.add(IMAGE_PULL_SECRET + "=" + installDetails.imagePullSecret());

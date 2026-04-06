@@ -117,6 +117,27 @@ public abstract class BaseDeployerService implements DeployerService {
     }
 
     @Override
+    public List<Result> redeployAllPlugins() {
+        List<InstallDetails> installDetails = pluginService.getPlugins().stream()
+                .filter(this::isRedeployable)
+                .map(this::toInstallDetails)
+                .toList();
+        if (installDetails.isEmpty()) {
+            return List.of();
+        }
+        log.info("Redeploying {} plugin(s) with updated environment", installDetails.size());
+        return installOrUpgradePlugins(installDetails);
+    }
+
+    private boolean isRedeployable(PluginEntity plugin) {
+        return isNotSystemOrCore(plugin) && StringUtils.isNotBlank(plugin.getImageName());
+    }
+
+    private InstallDetails toInstallDetails(PluginEntity plugin) {
+        return InstallDetails.from(plugin.imageAndTag(), plugin.getImagePullSecret());
+    }
+
+    @Override
     public List<Result> installOrUpgradePlugins(List<InstallDetails> installDetailsList) {
         try {
             return invokeDeployments(installDetailsList.stream().map(this::toCallableDeploy).toList());

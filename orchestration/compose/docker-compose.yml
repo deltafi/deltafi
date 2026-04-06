@@ -54,6 +54,7 @@ services:
       - ${DATA_DIR}/certs:/certs:rw
       - ${DATA_DIR}/analytics:/data/deltafi/analytics:rw
       - ${SECRETS_DIR}/docker-config.json:/.docker/config.json:ro
+      - ${CONFIG_DIR}/plugin.env:/config/plugin.env:ro
   core-worker:
     image: ${DELTAFI_CORE}
     profiles: ["worker"]
@@ -94,6 +95,7 @@ services:
       - ${DATA_DIR}/certs:/certs:rw
       - ${DATA_DIR}/analytics:/data/deltafi/analytics:rw
       - ${SECRETS_DIR}/docker-config.json:/.docker/config.json:ro
+      - ${CONFIG_DIR}/plugin.env:/config/plugin.env:ro
   deltafi-entity-resolver:
     image: ${DELTAFI_ENTITY_RESOLVER}
     container_name: deltafi-entity-resolver
@@ -141,6 +143,8 @@ services:
       - ${SECRETS_DIR}/valkey.env
       - ${SECRETS_DIR}/minio.env
       - path: ${DATA_DIR}/certs/${DELTAFI_SECRET_PLUGINS_SSL:-ssl-secret}/.passphrase.env
+        required: false
+      - path: ${CONFIG_DIR}/plugin.env
         required: false
     healthcheck:
       test: cat /tmp/running

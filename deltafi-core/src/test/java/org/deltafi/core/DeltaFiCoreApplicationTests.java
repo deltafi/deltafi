@@ -331,6 +331,9 @@ class DeltaFiCoreApplicationTests {
 	@MockitoBean
 	DeployerService deployerService;
 
+	@MockitoBean
+	SslConfigService sslConfigService;
+
 	@Autowired
 	QueueManagementService queueManagementService;
 

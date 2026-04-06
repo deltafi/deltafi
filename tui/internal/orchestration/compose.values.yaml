@@ -68,6 +68,8 @@ deltafi:
       secret: ssl-secret
   lookup:
     enabled: false
+  globalEnv:
+  pluginEnv:
   dashboards:
     enabled: true
   metrics:

@@ -115,6 +115,8 @@ func Up(force bool) error {
 		return err
 	}
 
+	redeployPlugins()
+
 	config := app.GetInstance().GetConfig()
 
 	config.SetCoreVersion(tuiVersion)
@@ -147,6 +149,17 @@ func Up(force bool) error {
 	app.SendEvent(event)
 
 	return nil
+}
+
+func redeployPlugins() {
+	client, err := app.GetInstance().GetAPIClient()
+	if err != nil {
+		fmt.Fprintln(os.Stderr, styles.WarningStyle.Render(fmt.Sprintf("Warning: cannot redeploy plugins: %v", err)))
+		return
+	}
+	if err := client.Post("/plugins/redeploy", nil, nil, nil); err != nil {
+		fmt.Fprintln(os.Stderr, styles.WarningStyle.Render(fmt.Sprintf("Warning: failed to redeploy plugins: %v", err)))
+	}
 }
 
 func writeSnapshot(version string, reason string) error {

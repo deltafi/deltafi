@@ -22,6 +22,7 @@ import lombok.RequiredArgsConstructor;
 import org.deltafi.common.types.*;
 import org.deltafi.core.audit.CoreAuditLogger;
 import org.deltafi.core.plugin.deployer.DeployerService;
+import org.deltafi.core.plugin.deployer.EnvironmentVariableHelper;
 import org.deltafi.core.security.NeedsPermission;
 import org.deltafi.core.services.*;
 import org.deltafi.core.types.*;
@@ -36,6 +37,7 @@ public class PluginDataFetcher {
     private final DeployerService deployerService;
     private final CoreAuditLogger auditLogger;
     private final FlowValidationService flowValidationService;
+    private final EnvironmentVariableHelper environmentVariableHelper;
 
     @DgsQuery
     @NeedsPermission.PluginsView
@@ -158,5 +160,22 @@ public class PluginDataFetcher {
     @NeedsPermission.PluginsView
     public PluginService.PluginStateSummary pluginInstallStatus() {
         return pluginService.getInstallSummary();
+    }
+
+    @DgsMutation
+    @NeedsPermission.Admin
+    public List<Result> redeployAllPlugins() {
+        auditLogger.audit("redeployed all plugins");
+        return deployerService.redeployAllPlugins();
+    }
+
+    @DgsData(parentType = "Plugin", field = "pluginEnvVars")
+    @NeedsPermission.Admin
+    public List<KeyValue> pluginEnvVars(DgsDataFetchingEnvironment dfe) {
+        Plugin plugin = dfe.getSource();
+        if (plugin == null || pluginService.getSystemPluginCoordinates().equalsIgnoreVersion(plugin.getPluginCoordinates())) {
+            return List.of();
+        }
+        return environmentVariableHelper.getPluginEnvVars();
     }
 }

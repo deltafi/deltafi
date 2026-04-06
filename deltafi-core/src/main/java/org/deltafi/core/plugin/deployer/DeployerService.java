@@ -78,6 +78,13 @@ public interface DeployerService extends Snapshotter {
     void restartApp(String podOrContainer);
 
     /**
+     * Redeploy all non-system plugins with the current environment variables.
+     * Used in compose mode to propagate pluginEnv changes after `deltafi up`.
+     * @return results from each redeploy
+     */
+    List<Result> redeployAllPlugins();
+
+    /**
      * Install the list of plugins using the install details
      * @param installDetails list of plugin install details to deploy
      * @return merged results from each install

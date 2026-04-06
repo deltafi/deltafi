@@ -165,6 +165,13 @@ initContainers:
 {{- end }}
 {{- end -}}
 
+{{- define "pluginEnvVars" -}}
+{{- range .Values.deltafi.pluginEnv }}
+- name: {{ .name }}
+  value: {{ .value | quote }}
+{{- end }}
+{{- end -}}
+
 {{- define "defaultEnvVars" -}}
 - name: NODE_NAME
   valueFrom:
@@ -353,7 +360,7 @@ env:
 {{- include "valkeyEnvVars" . | nindent 2 }}
 {{- include "minioEnvVars" . | nindent 2 }}
 {{- include "sslEnvVars" (merge (dict "secretName" .Values.deltafi.plugins.ssl.secret) .) | nindent 2 }}
-{{- include "globalEnvVars" . | nindent 2 }}
+{{- include "pluginEnvVars" . | nindent 2 }}
 {{ include "actionStartupProbe" . }}
 volumeMounts:
 {{- include "sslVolumeMount" . | nindent 2 }}
@@ -365,6 +372,7 @@ volumeMounts:
 - name: SERVER_PORT
   value: "9292"
 {{ include "commonEnvVars" . }}
+{{ include "globalEnvVars" . }}
 {{ include "postgresEnvVars" . }}
 {{ include "minioEnvVars" . }}
 {{ include "artifactStorageEnvVars" . }}
@@ -410,6 +418,10 @@ volumeMounts:
 - mountPath: /template
   name: action-deployment-template
   readOnly: true
+- mountPath: /config/plugin.env
+  name: plugin-env-volume
+  subPath: plugin.env
+  readOnly: true
 {{- end -}}
 
 {{- define "coreVolumes" -}}
@@ -419,6 +431,10 @@ volumeMounts:
 - name: action-deployment-template
   configMap:
     name: deltafi-action-deployment
+- name: plugin-env-volume
+  configMap:
+    name: deltafi-plugin-env
+    optional: true
 - name: entity-resolver-config
   configMap:
     name: entity-resolver-config

@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: deltafi-plugin-env
+data:
+  plugin.env: |
+{{- range .Values.deltafi.pluginEnv }}
+    {{ .name }}={{ .value }}
+{{- end }}
