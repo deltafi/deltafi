@@ -28,20 +28,20 @@ import (
 // Test action implementations
 type testTransformAction struct{}
 
-func (a *testTransformAction) Transform(ctx context.Context, input TransformInput) (Result, error) {
-	return NewTransformResult(input.ActionContext), nil
+func (a *testTransformAction) Transform(ctx context.Context, input TransformInput) Result {
+	return NewTransformResult(input.ActionContext)
 }
 
 type testEgressAction struct{}
 
-func (a *testEgressAction) Egress(ctx context.Context, input EgressInput) (Result, error) {
-	return NewEgressResult(input.ActionContext), nil
+func (a *testEgressAction) Egress(ctx context.Context, input EgressInput) Result {
+	return NewEgressResult(input.ActionContext)
 }
 
 type testTimedIngressAction struct{}
 
-func (a *testTimedIngressAction) Ingress(ctx context.Context, input IngressInput) (Result, error) {
-	return NewIngressResult(input.ActionContext), nil
+func (a *testTimedIngressAction) Ingress(ctx context.Context, input IngressInput) Result {
+	return NewIngressResult(input.ActionContext)
 }
 
 type notAnAction struct{}
@@ -152,8 +152,8 @@ type testJoinAction struct {
 	testTransformAction
 }
 
-func (a *testJoinAction) Join(ctx context.Context, inputs []TransformInput) (TransformInput, error) {
-	return DefaultJoin(inputs), nil
+func (a *testJoinAction) Join(ctx context.Context, inputs []TransformInput) TransformInput {
+	return DefaultJoin(inputs)
 }
 
 func TestJoinActionInterface(t *testing.T) {

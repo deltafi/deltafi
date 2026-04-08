@@ -669,22 +669,146 @@ func TestBaseResult_LogMethods(t *testing.T) {
 func TestBaseResult_LogOnAllResultTypes(t *testing.T) {
 	actx := testActionContext()
 
-	// Verify logging works on every result type
-	types := []struct {
-		name   string
-		result interface{ LogInfo(string) }
+	// Each result type has its own LogInfo returning *T for chaining, so we
+	// call the method directly rather than through a shared interface.
+	NewTransformResult(actx).LogInfo("test message")
+	NewTransformResults(actx).LogInfo("test message")
+	NewChildTransformResult(actx, "child.txt").LogInfo("test message")
+	NewEgressResult(actx).LogInfo("test message")
+	NewIngressResult(actx).LogInfo("test message")
+	NewErrorResult(actx, "err").LogInfo("test message")
+	NewFilterResult(actx, "msg").LogInfo("test message")
+}
+
+func TestTransformResult_AddSelfHelpers(t *testing.T) {
+	actx := &ActionContext{ActionName: "MyAction", DID: "d"}
+	r := NewTransformResult(actx)
+
+	r.AddSelfAnnotation("processed")
+	r.AddSelfMetadata("done")
+
+	if r.annotations["MyAction"] != "processed" {
+		t.Errorf("annotations[%q] = %q, want %q", "MyAction", r.annotations["MyAction"], "processed")
+	}
+	if r.metadata["MyAction"] != "done" {
+		t.Errorf("metadata[%q] = %q, want %q", "MyAction", r.metadata["MyAction"], "done")
+	}
+	if r.ActionName() != "MyAction" {
+		t.Errorf("ActionName() = %q", r.ActionName())
+	}
+}
+
+func TestChildTransformResult_AddSelfHelpers(t *testing.T) {
+	parent := &ActionContext{ActionName: "ChildAction", DID: "d"}
+	r := NewChildTransformResult(parent, "child.txt")
+
+	r.AddSelfAnnotation("ok")
+	r.AddSelfMetadata("done")
+
+	if r.annotations["ChildAction"] != "ok" {
+		t.Errorf("annotations[%q] = %q", "ChildAction", r.annotations["ChildAction"])
+	}
+	if r.metadata["ChildAction"] != "done" {
+		t.Errorf("metadata[%q] = %q", "ChildAction", r.metadata["ChildAction"])
+	}
+}
+
+func TestErrorResult_AddSelfAnnotation(t *testing.T) {
+	actx := &ActionContext{ActionName: "ErrAction", DID: "d"}
+	r := NewErrorResult(actx, "boom")
+	r.AddSelfAnnotation("flagged")
+	if r.annotations["ErrAction"] != "flagged" {
+		t.Errorf("annotations[%q] = %q", "ErrAction", r.annotations["ErrAction"])
+	}
+}
+
+func TestFilterResult_AddSelfAnnotation(t *testing.T) {
+	actx := &ActionContext{ActionName: "FltAction", DID: "d"}
+	r := NewFilterResult(actx, "skipped")
+	r.AddSelfAnnotation("noted")
+	if r.annotations["FltAction"] != "noted" {
+		t.Errorf("annotations[%q] = %q", "FltAction", r.annotations["FltAction"])
+	}
+}
+
+func TestTransformResult_FluentChaining(t *testing.T) {
+	actx := testActionContext()
+	actx.ActionName = "ChainAction"
+
+	// Single-expression result construction.
+	r := NewTransformResult(actx).
+		AddMetadata("k1", "v1").
+		AddMetadata("k2", "v2").
+		AddAnnotation("ann", "val").
+		DeleteMetadataKey("old").
+		LogInfo("fluent chaining works").
+		LogWarning("also %s formatting", "supports").
+		LogError("plain message with 100%% no interpolation")
+
+	if r.metadata["k1"] != "v1" || r.metadata["k2"] != "v2" {
+		t.Errorf("metadata chain broke: %v", r.metadata)
+	}
+	if r.annotations["ann"] != "val" {
+		t.Errorf("annotation chain broke: %v", r.annotations)
+	}
+	if len(r.deleteMetadataKeys) != 1 || r.deleteMetadataKeys[0] != "old" {
+		t.Errorf("delete metadata keys: %v", r.deleteMetadataKeys)
+	}
+	if len(r.messages) != 3 {
+		t.Fatalf("expected 3 log messages, got %d", len(r.messages))
+	}
+	if r.messages[0].Message != "fluent chaining works" {
+		t.Errorf("plain log: %q", r.messages[0].Message)
+	}
+	if r.messages[1].Message != "also supports formatting" {
+		t.Errorf("formatted log: %q", r.messages[1].Message)
+	}
+	// When called with no args the format string is used verbatim; %% stays literal.
+	if r.messages[2].Message != "plain message with 100%% no interpolation" {
+		t.Errorf("no-args log: %q", r.messages[2].Message)
+	}
+}
+
+func TestLogMethods_VariadicFormatting(t *testing.T) {
+	actx := testActionContext()
+
+	cases := []struct {
+		name    string
+		call    func() []LogMessage
+		wantMsg string
 	}{
-		{"TransformResult", NewTransformResult(actx)},
-		{"TransformResults", NewTransformResults(actx)},
-		{"ChildTransformResult", NewChildTransformResult(actx, "child.txt")},
-		{"EgressResult", NewEgressResult(actx)},
-		{"IngressResult", NewIngressResult(actx)},
-		{"ErrorResult", NewErrorResult(actx, "err")},
-		{"FilterResult", NewFilterResult(actx, "msg")},
+		{
+			name: "TransformResult formatted",
+			call: func() []LogMessage {
+				return NewTransformResult(actx).LogInfo("n=%d", 42).messages
+			},
+			wantMsg: "n=42",
+		},
+		{
+			name: "EgressResult plain",
+			call: func() []LogMessage {
+				return NewEgressResult(actx).LogInfo("no args here").messages
+			},
+			wantMsg: "no args here",
+		},
+		{
+			name: "IngressResult multiple args",
+			call: func() []LogMessage {
+				return NewIngressResult(actx).LogWarning("%s = %d", "count", 7).messages
+			},
+			wantMsg: "count = 7",
+		},
 	}
 
-	for _, tt := range types {
-		tt.result.LogInfo("test message")
-		// If it doesn't panic, the logging method works
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			msgs := tc.call()
+			if len(msgs) != 1 {
+				t.Fatalf("expected 1 message, got %d", len(msgs))
+			}
+			if msgs[0].Message != tc.wantMsg {
+				t.Errorf("message = %q, want %q", msgs[0].Message, tc.wantMsg)
+			}
+		})
 	}
 }

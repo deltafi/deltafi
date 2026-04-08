@@ -101,8 +101,15 @@ func startHeartbeat(ctx context.Context, wg *sync.WaitGroup, queue *ActionEventQ
 			case <-ctx.Done():
 				return
 			case <-ticker.C:
+				// Skip the entire iteration if shutdown is already in progress.
+				// Without this, every redis call below errors with
+				// context.Canceled and floods the log on shutdown.
+				if ctx.Err() != nil {
+					return
+				}
+
 				for _, name := range actionNames {
-					if err := queue.Heartbeat(ctx, name); err != nil {
+					if err := queue.Heartbeat(ctx, name); err != nil && ctx.Err() == nil {
 						log.Printf("heartbeat error for %s: %v", name, err)
 					}
 				}
@@ -122,7 +129,7 @@ func startHeartbeat(ctx context.Context, wg *sync.WaitGroup, queue *ActionEventQ
 						if err != nil {
 							continue
 						}
-						if err := queue.SetLongRunningTask(ctx, key, string(data)); err != nil {
+						if err := queue.SetLongRunningTask(ctx, key, string(data)); err != nil && ctx.Err() == nil {
 							log.Printf("failed to report long-running task %s: %v", key, err)
 						}
 						reportedKeys[key] = true
@@ -132,7 +139,7 @@ func startHeartbeat(ctx context.Context, wg *sync.WaitGroup, queue *ActionEventQ
 				// Remove completed tasks that were previously reported to Redis
 				for key := range reportedKeys {
 					if !currentKeys[key] {
-						if err := queue.RemoveLongRunningTask(ctx, key); err != nil {
+						if err := queue.RemoveLongRunningTask(ctx, key); err != nil && ctx.Err() == nil {
 							log.Printf("failed to remove long-running task %s: %v", key, err)
 						}
 						delete(reportedKeys, key)

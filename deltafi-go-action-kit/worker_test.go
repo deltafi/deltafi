@@ -52,7 +52,7 @@ func TestDeserializeQueueEvent_FullEvent(t *testing.T) {
 		"returnAddress": "core-1"
 	}`
 
-	event, err := deserializeQueueEvent(raw)
+	event, err := deserializeQueueEvent([]byte(raw))
 	if err != nil {
 		t.Fatalf("deserialize: %v", err)
 	}
@@ -123,7 +123,7 @@ func TestDeserializeQueueEvent_EmptyMessages(t *testing.T) {
 		"queueName": "A"
 	}`
 
-	event, err := deserializeQueueEvent(raw)
+	event, err := deserializeQueueEvent([]byte(raw))
 	if err != nil {
 		t.Fatalf("deserialize: %v", err)
 	}
@@ -133,7 +133,7 @@ func TestDeserializeQueueEvent_EmptyMessages(t *testing.T) {
 }
 
 func TestDeserializeQueueEvent_InvalidJSON(t *testing.T) {
-	_, err := deserializeQueueEvent("not valid json")
+	_, err := deserializeQueueEvent([]byte("not valid json"))
 	if err == nil {
 		t.Error("expected error for invalid JSON")
 	}
@@ -423,7 +423,7 @@ func TestDeserializeQueueEvent_WithJoinConfig(t *testing.T) {
 		"queueName": "JoinAction"
 	}`
 
-	event, err := deserializeQueueEvent(raw)
+	event, err := deserializeQueueEvent([]byte(raw))
 	if err != nil {
 		t.Fatalf("deserialize: %v", err)
 	}
@@ -459,7 +459,7 @@ func TestDeserializeQueueEvent_NoJoinConfig(t *testing.T) {
 		"queueName": "A"
 	}`
 
-	event, err := deserializeQueueEvent(raw)
+	event, err := deserializeQueueEvent([]byte(raw))
 	if err != nil {
 		t.Fatalf("deserialize: %v", err)
 	}
@@ -499,7 +499,7 @@ func TestDeserializeQueueEvent_FullRoundTrip(t *testing.T) {
 		t.Fatalf("marshal: %v", err)
 	}
 
-	parsed, err := deserializeQueueEvent(string(data))
+	parsed, err := deserializeQueueEvent(data)
 	if err != nil {
 		t.Fatalf("deserialize: %v", err)
 	}

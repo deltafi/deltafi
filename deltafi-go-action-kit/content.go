@@ -51,21 +51,49 @@ func (s Segment) objectPath() string {
 }
 
 // ActionContent represents a named piece of content composed of one or more segments.
+//
+// The unexported actx back-reference lets the load methods find the
+// ContentService without forcing every caller to pass it explicitly. It is
+// populated automatically by the worker when an action receives content, by
+// the SaveContent helpers when a new content is created, and by the
+// TestContext.Content helper. It is never marshaled to JSON.
 type ActionContent struct {
 	Name      string    `json:"name"`
 	MediaType string    `json:"mediaType"`
 	Segments  []Segment `json:"segments"`
 	Tags      []string  `json:"tags,omitempty"`
+
+	actx *ActionContext `json:"-"`
 }
 
-// LoadBytes fetches and concatenates all segments from storage.
-func (ac ActionContent) LoadBytes(ctx context.Context, cs ContentServiceBase) ([]byte, error) {
+// errUnboundContent is returned by load methods when the content has no
+// associated ActionContext (e.g. constructed via struct literal in a test
+// without going through TestContext.Content). Callers can fall back to
+// loading via cs.Load(ctx, content.Segments) directly.
+var errUnboundContent = fmt.Errorf("ActionContent has no associated ActionContext: load via the action's ContentService directly")
+
+// contentService returns the wired content service, or an error if the
+// content was constructed without an ActionContext back-reference.
+func (ac ActionContent) contentService() (ContentServiceBase, error) {
+	if ac.actx == nil || ac.actx.ContentService == nil {
+		return nil, errUnboundContent
+	}
+	return ac.actx.ContentService, nil
+}
+
+// LoadBytes fetches and concatenates all segments from storage using the
+// ContentService wired to this content's ActionContext.
+func (ac ActionContent) LoadBytes(ctx context.Context) ([]byte, error) {
+	cs, err := ac.contentService()
+	if err != nil {
+		return nil, err
+	}
 	return cs.Load(ctx, ac.Segments)
 }
 
 // LoadString fetches all segments and returns the content as a string.
-func (ac ActionContent) LoadString(ctx context.Context, cs ContentServiceBase) (string, error) {
-	data, err := cs.Load(ctx, ac.Segments)
+func (ac ActionContent) LoadString(ctx context.Context) (string, error) {
+	data, err := ac.LoadBytes(ctx)
 	if err != nil {
 		return "", err
 	}
@@ -74,7 +102,11 @@ func (ac ActionContent) LoadString(ctx context.Context, cs ContentServiceBase) (
 
 // LoadReader returns a streaming io.ReadCloser for this content.
 // The caller must close the returned reader when done.
-func (ac ActionContent) LoadReader(ctx context.Context, cs ContentServiceBase) (io.ReadCloser, error) {
+func (ac ActionContent) LoadReader(ctx context.Context) (io.ReadCloser, error) {
+	cs, err := ac.contentService()
+	if err != nil {
+		return nil, err
+	}
 	return cs.LoadReader(ctx, ac.Segments)
 }
 
@@ -378,7 +410,9 @@ func (cs *ContentService) Delete(ctx context.Context, segments []Segment) error 
 }
 
 // SaveContent stores data in MinIO and returns an ActionContent with a single segment.
-// The segment is tracked on the ActionContext for orphan cleanup.
+// The segment is tracked on the ActionContext for orphan cleanup, and the
+// returned content is wired back to the same ActionContext so it can be loaded
+// later via content.LoadBytes(ctx).
 func SaveContent(ctx context.Context, cs ContentServiceBase, actx *ActionContext, data []byte, name, mediaType string) (*ActionContent, error) {
 	seg, err := cs.Save(ctx, actx.DID, data)
 	if err != nil {
@@ -389,6 +423,7 @@ func SaveContent(ctx context.Context, cs ContentServiceBase, actx *ActionContext
 		Name:      name,
 		MediaType: mediaType,
 		Segments:  []Segment{seg},
+		actx:      actx,
 	}, nil
 }
 
@@ -410,5 +445,15 @@ func SaveContentFromReader(ctx context.Context, cs ContentServiceBase, actx *Act
 		Name:      name,
 		MediaType: mediaType,
 		Segments:  []Segment{seg},
+		actx:      actx,
 	}, nil
+}
+
+// bindContents sets the actx back-reference on every content in the slice.
+// Used to wire contents that arrived via JSON deserialization (e.g. from the
+// Redis queue) so the convenience load methods work without explicit plumbing.
+func bindContents(actx *ActionContext, contents []ActionContent) {
+	for i := range contents {
+		contents[i].actx = actx
+	}
 }

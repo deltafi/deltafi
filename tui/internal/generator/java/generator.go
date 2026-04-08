@@ -307,16 +307,6 @@ func (g *JavaGenerator) GenerateAction(pluginName string, actionName string, act
 	return nil
 }
 
-// LintPlugin is not yet implemented for Java plugins.
-func (g *JavaGenerator) LintPlugin(pluginName string, options *generator.LintOptions) ([]generator.LintIssue, error) {
-	return []generator.LintIssue{
-		{
-			Severity: generator.LintInfo,
-			Message:  "lint is not yet implemented for Java plugins",
-		},
-	}, nil
-}
-
 // resolvePluginDir returns the absolute plugin directory either from an explicit
 // override or by joining the configured repoPath with pluginName.
 func resolvePluginDir(pluginName, dirOverride string) (string, error) {

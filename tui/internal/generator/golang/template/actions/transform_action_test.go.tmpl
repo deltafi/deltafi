@@ -16,18 +16,11 @@ func Test{{.ActionClassName}}_Normal(t *testing.T) {
 	tc := actionkit.NewTestContext("test-did")
 	content := tc.Content("input.txt", "text/plain", "hello world")
 
-	input := actionkit.TransformInput{
-		ActionContext: tc.ActionContext,
-		Content:       []actionkit.ActionContent{content},
-		Metadata:      map[string]string{},
-		Params:        map[string]any{},
-	}
-
-	event := actionkit.RunTransform(t, &{{.ActionClassName}}{}, input)
+	event := actionkit.RunTransform(t, &{{.ActionClassName}}{}, actionkit.NewTransformInput(tc, content))
 	te := event.RequireTransform(t)
 
 	require.Len(t, te[0].Content, 1)
-	data, err := te[0].Content[0].LoadString(context.Background(), tc.Store)
+	data, err := te[0].Content[0].LoadString(context.Background())
 	require.NoError(t, err)
 	assert.Equal(t, "hello world", data)
 	assert.Equal(t, "processed", te[0].Annotations["{{.ActionName}}"])
@@ -37,13 +30,6 @@ func Test{{.ActionClassName}}_Normal(t *testing.T) {
 func Test{{.ActionClassName}}_NoContent(t *testing.T) {
 	tc := actionkit.NewTestContext("test-did")
 
-	input := actionkit.TransformInput{
-		ActionContext: tc.ActionContext,
-		Content:       nil,
-		Metadata:      map[string]string{},
-		Params:        map[string]any{},
-	}
-
-	event := actionkit.RunTransform(t, &{{.ActionClassName}}{}, input)
+	event := actionkit.RunTransform(t, &{{.ActionClassName}}{}, actionkit.NewTransformInput(tc))
 	event.RequireError(t, "No content provided")
 }

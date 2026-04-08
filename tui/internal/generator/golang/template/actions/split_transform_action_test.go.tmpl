@@ -18,21 +18,14 @@ func Test{{.ActionClassName}}_DefaultTwoChildren(t *testing.T) {
 	tc.DeltaFileName = "source-file"
 	content := tc.Content("input.txt", "text/plain", "original content")
 
-	input := actionkit.TransformInput{
-		ActionContext: tc.ActionContext,
-		Content:       []actionkit.ActionContent{content},
-		Metadata:      map[string]string{},
-		Params:        map[string]any{},
-	}
-
-	event := actionkit.RunTransform(t, &{{.ActionClassName}}{}, input)
+	event := actionkit.RunTransform(t, &{{.ActionClassName}}{}, actionkit.NewTransformInput(tc, content))
 	te := event.RequireTransform(t)
 
 	require.Len(t, te, 2)
 
 	for i, child := range te {
 		require.Len(t, child.Content, 1, "child %d", i)
-		data, err := child.Content[0].LoadString(context.Background(), tc.Store)
+		data, err := child.Content[0].LoadString(context.Background())
 		require.NoError(t, err, "child %d", i)
 		assert.Equal(t, "original content", data, "child %d", i)
 		assert.Equal(t, strconv.Itoa(i), child.Annotations["childIndex"], "child %d", i)
@@ -45,12 +38,8 @@ func Test{{.ActionClassName}}_ThreeChildren(t *testing.T) {
 	tc.DeltaFileName = "source-file"
 	content := tc.Content("input.txt", "text/plain", "data")
 
-	input := actionkit.TransformInput{
-		ActionContext: tc.ActionContext,
-		Content:       []actionkit.ActionContent{content},
-		Metadata:      map[string]string{},
-		Params:        map[string]any{"numberOfChildren": 3},
-	}
+	input := actionkit.NewTransformInput(tc, content)
+	input.Params = map[string]any{"numberOfChildren": 3}
 
 	event := actionkit.RunTransform(t, &{{.ActionClassName}}{}, input)
 	te := event.RequireTransform(t)
@@ -60,12 +49,6 @@ func Test{{.ActionClassName}}_ThreeChildren(t *testing.T) {
 func Test{{.ActionClassName}}_NoContent(t *testing.T) {
 	tc := actionkit.NewTestContext("split-did")
 
-	input := actionkit.TransformInput{
-		ActionContext: tc.ActionContext,
-		Content:       nil,
-		Params:        map[string]any{},
-	}
-
-	event := actionkit.RunTransform(t, &{{.ActionClassName}}{}, input)
+	event := actionkit.RunTransform(t, &{{.ActionClassName}}{}, actionkit.NewTransformInput(tc))
 	event.RequireError(t, "No content provided")
 }

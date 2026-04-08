@@ -56,12 +56,19 @@ func (g *GoGenerator) LintPlugin(pluginName string, options *generator.LintOptio
 
 	issues = append(issues, lintMainGoBlankImports(pluginDir, modulePath)...)
 
+	issues = append(issues, lintDocGoPackages(pluginDir)...)
+
 	registeredActions, actionIssues := lintActions(pluginDir)
 	issues = append(issues, actionIssues...)
 
+	issues = append(issues, lintActionsHaveTests(pluginDir)...)
+
 	issues = append(issues, lintSuppliers(pluginDir)...)
 
-	issues = append(issues, lintFlows(pluginDir, registeredActions)...)
+	declaredVars := loadFlowVariableNames(pluginDir)
+	issues = append(issues, lintFlows(pluginDir, registeredActions, declaredVars)...)
+
+	issues = append(issues, lintLicenseHeaders(pluginDir)...)
 
 	sort.SliceStable(issues, func(i, j int) bool {
 		if issues[i].Severity != issues[j].Severity {
@@ -263,6 +270,10 @@ func lintActions(pluginDir string) (map[string]bool, []generator.LintIssue) {
 	registered := map[string]bool{}
 	var issues []generator.LintIssue
 
+	// Track where each action name was first registered so we can point at
+	// both sites when a duplicate appears.
+	registeredBy := map[string]string{}
+
 	dir := filepath.Join(pluginDir, "actions")
 	entries, err := os.ReadDir(dir)
 	if err != nil {
@@ -305,7 +316,17 @@ func lintActions(pluginDir string) (map[string]bool, []generator.LintIssue) {
 			})
 		}
 		for _, m := range registers {
-			registered[m[1]] = true
+			actionName := m[1]
+			if prior, ok := registeredBy[actionName]; ok && prior != relPath {
+				issues = append(issues, generator.LintIssue{
+					Severity: generator.LintError,
+					File:     relPath,
+					Message:  fmt.Sprintf("action name %q is also registered in %s - duplicate registrations conflict at runtime", actionName, prior),
+				})
+				continue
+			}
+			registeredBy[actionName] = relPath
+			registered[actionName] = true
 		}
 	}
 	return registered, issues
@@ -357,11 +378,41 @@ func lintSuppliers(pluginDir string) []generator.LintIssue {
 	return issues
 }
 
-// lintFlows scans flows/*.json files for action references and verifies that
-// each one resolves to an action registered in this plugin. Unresolved
-// references emit a warning since they could legitimately be provided by an
-// upstream plugin we depend on.
-func lintFlows(pluginDir string, registeredActions map[string]bool) []generator.LintIssue {
+// flowVarRefRe matches ${variableName} placeholders inside flow JSON payloads.
+var flowVarRefRe = regexp.MustCompile(`\$\{([A-Za-z_][A-Za-z0-9_]*)\}`)
+
+// loadFlowVariableNames returns the set of variable names declared in
+// flows/variables.json. A nil result means the file is missing or unreadable;
+// callers should treat that as "skip the variable-reference check" rather
+// than "no variables declared", since a missing file would otherwise flag
+// every template placeholder as unresolved.
+func loadFlowVariableNames(pluginDir string) map[string]bool {
+	path := filepath.Join(pluginDir, "flows", "variables.json")
+	content, err := os.ReadFile(path)
+	if err != nil {
+		return nil
+	}
+	var vars []struct {
+		Name string `json:"name"`
+	}
+	if err := json.Unmarshal(content, &vars); err != nil {
+		return nil
+	}
+	names := make(map[string]bool, len(vars))
+	for _, v := range vars {
+		if v.Name != "" {
+			names[v.Name] = true
+		}
+	}
+	return names
+}
+
+// lintFlows scans flows/*.json files for action references, required fields,
+// and variable placeholders, verifying that each resolves to something
+// declared in this plugin. Unresolved action references emit a warning since
+// they could legitimately be provided by an upstream plugin we depend on.
+// If declaredVars is nil the variable-reference check is skipped.
+func lintFlows(pluginDir string, registeredActions map[string]bool, declaredVars map[string]bool) []generator.LintIssue {
 	var issues []generator.LintIssue
 	dir := filepath.Join(pluginDir, "flows")
 	entries, err := os.ReadDir(dir)
@@ -391,6 +442,22 @@ func lintFlows(pluginDir string, registeredActions map[string]bool) []generator.
 			})
 			continue
 		}
+
+		if name, _ := doc["name"].(string); name == "" {
+			issues = append(issues, generator.LintIssue{
+				Severity: generator.LintError,
+				File:     relPath,
+				Message:  "missing required \"name\" field",
+			})
+		}
+		if typ, _ := doc["type"].(string); typ == "" {
+			issues = append(issues, generator.LintIssue{
+				Severity: generator.LintError,
+				File:     relPath,
+				Message:  "missing required \"type\" field",
+			})
+		}
+
 		for _, field := range flowActionFields {
 			refs := extractActionTypeRefs(doc[field])
 			for _, ref := range refs {
@@ -407,8 +474,174 @@ func lintFlows(pluginDir string, registeredActions map[string]bool) []generator.
 				}
 			}
 		}
+
+		if declaredVars != nil {
+			seen := map[string]bool{}
+			for _, m := range flowVarRefRe.FindAllStringSubmatch(string(content), -1) {
+				varName := m[1]
+				if seen[varName] || declaredVars[varName] {
+					continue
+				}
+				seen[varName] = true
+				issues = append(issues, generator.LintIssue{
+					Severity: generator.LintWarning,
+					File:     relPath,
+					Message:  fmt.Sprintf("references variable %q which is not declared in flows/variables.json", varName),
+				})
+			}
+		}
 	}
 	return issues
+}
+
+// packageDeclRe matches a Go package declaration.
+var packageDeclRe = regexp.MustCompile(`(?m)^package\s+(\w+)`)
+
+// lintDocGoPackages verifies that actions/doc.go and suppliers/doc.go declare
+// the expected package names. A mismatched package name silently breaks the
+// blank-import wiring because the import path resolves but init() runs in a
+// different package than main.go expects.
+func lintDocGoPackages(pluginDir string) []generator.LintIssue {
+	var issues []generator.LintIssue
+	for _, sub := range []string{"actions", "suppliers"} {
+		docPath := filepath.Join(pluginDir, sub, "doc.go")
+		content, err := os.ReadFile(docPath)
+		if err != nil {
+			// lintRequiredFiles already reports a missing doc.go.
+			continue
+		}
+		m := packageDeclRe.FindStringSubmatch(string(content))
+		if len(m) < 2 {
+			issues = append(issues, generator.LintIssue{
+				Severity: generator.LintError,
+				File:     filepath.Join(sub, "doc.go"),
+				Message:  "missing package declaration",
+			})
+			continue
+		}
+		if m[1] != sub {
+			issues = append(issues, generator.LintIssue{
+				Severity: generator.LintError,
+				File:     filepath.Join(sub, "doc.go"),
+				Message:  fmt.Sprintf("package %q does not match directory name %q - blank import from main.go will not wire init() registrations", m[1], sub),
+			})
+		}
+	}
+	return issues
+}
+
+// lintActionsHaveTests emits an info-level reminder when the actions package
+// contains source files but no _test.go files alongside them.
+func lintActionsHaveTests(pluginDir string) []generator.LintIssue {
+	dir := filepath.Join(pluginDir, "actions")
+	entries, err := os.ReadDir(dir)
+	if err != nil {
+		return nil
+	}
+	hasSource := false
+	hasTest := false
+	for _, e := range entries {
+		if e.IsDir() {
+			continue
+		}
+		name := e.Name()
+		if !strings.HasSuffix(name, ".go") || name == "doc.go" {
+			continue
+		}
+		if strings.HasSuffix(name, "_test.go") {
+			hasTest = true
+		} else {
+			hasSource = true
+		}
+	}
+	if hasSource && !hasTest {
+		return []generator.LintIssue{{
+			Severity: generator.LintInfo,
+			File:     "actions",
+			Message:  "no _test.go files found alongside action sources - consider adding tests",
+		}}
+	}
+	return nil
+}
+
+// licenseMarker is a distinctive phrase from the Apache 2.0 license block that
+// the plugin HEADER file contains. We use it to detect whether a .go file
+// already carries the license.
+const licenseMarker = "Licensed under the Apache License"
+
+// lintLicenseHeaders walks the plugin's top-level Go sources and warns on any
+// file whose leading comment block does not include the Apache license text.
+// The check only runs when a HEADER file exists at the plugin root.
+func lintLicenseHeaders(pluginDir string) []generator.LintIssue {
+	if _, err := os.Stat(filepath.Join(pluginDir, "HEADER")); err != nil {
+		return nil
+	}
+	var issues []generator.LintIssue
+	dirs := []string{".", "actions", "suppliers"}
+	for _, sub := range dirs {
+		dir := filepath.Join(pluginDir, sub)
+		entries, err := os.ReadDir(dir)
+		if err != nil {
+			continue
+		}
+		for _, e := range entries {
+			if e.IsDir() || !strings.HasSuffix(e.Name(), ".go") {
+				continue
+			}
+			rel := e.Name()
+			if sub != "." {
+				rel = filepath.Join(sub, e.Name())
+			}
+			content, err := os.ReadFile(filepath.Join(dir, e.Name()))
+			if err != nil {
+				continue
+			}
+			// Scan only the leading comment block (everything up to the first
+			// non-comment, non-blank line). This avoids false positives when
+			// the license marker happens to appear in a string literal later.
+			head := leadingComments(string(content))
+			if !strings.Contains(head, licenseMarker) {
+				issues = append(issues, generator.LintIssue{
+					Severity: generator.LintWarning,
+					File:     rel,
+					Message:  "missing Apache license header block (HEADER file exists but the file does not carry the license)",
+				})
+			}
+		}
+	}
+	return issues
+}
+
+// leadingComments returns the contiguous run of comment lines and blank lines
+// at the start of a Go source file, stopping at the first code line.
+func leadingComments(src string) string {
+	var b strings.Builder
+	inBlock := false
+	for _, line := range strings.Split(src, "\n") {
+		trimmed := strings.TrimSpace(line)
+		switch {
+		case inBlock:
+			b.WriteString(line)
+			b.WriteByte('\n')
+			if strings.Contains(trimmed, "*/") {
+				inBlock = false
+			}
+		case trimmed == "":
+			b.WriteByte('\n')
+		case strings.HasPrefix(trimmed, "//"):
+			b.WriteString(line)
+			b.WriteByte('\n')
+		case strings.HasPrefix(trimmed, "/*"):
+			b.WriteString(line)
+			b.WriteByte('\n')
+			if !strings.Contains(trimmed, "*/") {
+				inBlock = true
+			}
+		default:
+			return b.String()
+		}
+	}
+	return b.String()
 }
 
 // extractActionTypeRefs walks an action-bearing field (an object or array of

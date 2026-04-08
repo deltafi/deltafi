@@ -77,7 +77,7 @@ type queueActionContext struct {
 
 // start launches the poller and worker goroutines for this action.
 func (w *actionWorker) start(ctx context.Context, wg *sync.WaitGroup) {
-	ch := make(chan string, w.workerCount)
+	ch := make(chan []byte, w.workerCount)
 
 	// Start poller
 	wg.Go(func() {
@@ -92,8 +92,8 @@ func (w *actionWorker) start(ctx context.Context, wg *sync.WaitGroup) {
 	}
 }
 
-// poll runs the BZPOPMIN loop, sending raw JSON events to the work channel.
-func (w *actionWorker) poll(ctx context.Context, ch chan<- string) {
+// poll runs the BZPOPMIN loop, sending raw JSON event payloads to the work channel.
+func (w *actionWorker) poll(ctx context.Context, ch chan<- []byte) {
 	defer close(ch)
 	for {
 		if ctx.Err() != nil {
@@ -108,7 +108,7 @@ func (w *actionWorker) poll(ctx context.Context, ch chan<- string) {
 			log.Printf("[%s] poll error: %v", w.name, err)
 			continue
 		}
-		if raw == "" {
+		if raw == nil {
 			continue // timeout, retry
 		}
 
@@ -121,7 +121,7 @@ func (w *actionWorker) poll(ctx context.Context, ch chan<- string) {
 }
 
 // work receives events from the channel, executes the action, and publishes results.
-func (w *actionWorker) work(ctx context.Context, ch <-chan string) {
+func (w *actionWorker) work(ctx context.Context, ch <-chan []byte) {
 	for raw := range ch {
 		event, err := deserializeQueueEvent(raw)
 		if err != nil {
@@ -139,7 +139,7 @@ func (w *actionWorker) work(ctx context.Context, ch <-chan string) {
 		}
 
 		queueName := resultQueueName(event.ReturnAddress)
-		if err := w.queue.Put(ctx, queueName, string(resultJSON)); err != nil {
+		if err := w.queue.Put(ctx, queueName, resultJSON); err != nil {
 			log.Printf("[%s] failed to publish result to %s: %v", w.name, queueName, err)
 		}
 	}
@@ -156,7 +156,8 @@ func (w *actionWorker) execute(ctx context.Context, event *queueEvent) *ActionEv
 
 	var result Result
 
-	// Panic recovery
+	// Panic recovery: any panic inside the action becomes an ErrorResult so a
+	// crashing action does not take down the worker.
 	func() {
 		defer func() {
 			if r := recover(); r != nil {
@@ -166,11 +167,7 @@ func (w *actionWorker) execute(ctx context.Context, event *queueEvent) *ActionEv
 			}
 		}()
 
-		var err error
-		result, err = w.invokeAction(ctx, actx, event)
-		if err != nil {
-			result = NewErrorResult(actx, err.Error())
-		}
+		result = w.invokeAction(ctx, actx, event)
 	}()
 
 	actionEvent := result.toActionEvent(actx, startTime)
@@ -182,15 +179,15 @@ func (w *actionWorker) execute(ctx context.Context, event *queueEvent) *ActionEv
 }
 
 // invokeAction calls the appropriate method on the action based on its type.
-func (w *actionWorker) invokeAction(ctx context.Context, actx *ActionContext, event *queueEvent) (Result, error) {
+// Any failure inside the action is reported via the returned Result; the only
+// failure mode of invokeAction itself is an unrecognized action type, which is
+// surfaced as an ErrorResult.
+func (w *actionWorker) invokeAction(ctx context.Context, actx *ActionContext, event *queueEvent) Result {
 	switch action := w.action.(type) {
 	case TransformAction:
 		if joinAction, ok := w.action.(JoinAction); ok && actx.Join != nil {
 			inputs := buildTransformInputs(actx, event)
-			merged, err := joinAction.Join(ctx, inputs)
-			if err != nil {
-				return nil, err
-			}
+			merged := joinAction.Join(ctx, inputs)
 			return action.Transform(ctx, merged)
 		}
 		input := buildTransformInput(actx, event)
@@ -202,7 +199,7 @@ func (w *actionWorker) invokeAction(ctx context.Context, actx *ActionContext, ev
 		input := buildIngressInput(actx, event)
 		return action.Ingress(ctx, input)
 	default:
-		return nil, fmt.Errorf("unknown action type for %s", w.name)
+		return NewErrorResult(actx, fmt.Sprintf("unknown action type for %s", w.name))
 	}
 }
 
@@ -239,6 +236,7 @@ func buildTransformInput(actx *ActionContext, event *queueEvent) TransformInput 
 		input.Content = msg.ContentList
 		input.Metadata = msg.Metadata
 	}
+	bindContents(actx, input.Content)
 	return input
 }
 
@@ -255,6 +253,7 @@ func buildTransformInputs(actx *ActionContext, event *queueEvent) []TransformInp
 		if inputs[i].Metadata == nil {
 			inputs[i].Metadata = make(map[string]string)
 		}
+		bindContents(actx, inputs[i].Content)
 	}
 	return inputs
 }
@@ -270,6 +269,7 @@ func buildEgressInput(actx *ActionContext, event *queueEvent) EgressInput {
 		input.Content = msg.ContentList
 		input.Metadata = msg.Metadata
 	}
+	bindContents(actx, input.Content)
 	return input
 }
 
@@ -333,9 +333,9 @@ func collectResultSegments(result Result) []Segment {
 	return segments
 }
 
-func deserializeQueueEvent(raw string) (*queueEvent, error) {
+func deserializeQueueEvent(raw []byte) (*queueEvent, error) {
 	var event queueEvent
-	if err := json.Unmarshal([]byte(raw), &event); err != nil {
+	if err := json.Unmarshal(raw, &event); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal queue event: %w", err)
 	}
 	return &event, nil

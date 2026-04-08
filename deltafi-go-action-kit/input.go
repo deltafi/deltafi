@@ -25,6 +25,7 @@ import (
 	"reflect"
 	"strconv"
 	"strings"
+	"sync"
 )
 
 // TransformInput holds the input data for a transform action.
@@ -226,10 +227,19 @@ func coerceParams(m map[string]any, structType reflect.Type) map[string]any {
 	return out
 }
 
+// jsonFieldMapCache memoizes jsonFieldMap results by struct type so the
+// reflect walk happens once per type instead of once per parameter parse.
+// Populated lazily on first lookup; entries live for the process lifetime.
+var jsonFieldMapCache sync.Map // reflect.Type -> map[string]reflect.Kind
+
 // jsonFieldMap returns a map from JSON field name to reflect.Kind for a struct type.
+// Results are cached by reflect.Type for the process lifetime.
 func jsonFieldMap(t reflect.Type) map[string]reflect.Kind {
 	if t == nil || t.Kind() != reflect.Struct {
 		return nil
+	}
+	if cached, ok := jsonFieldMapCache.Load(t); ok {
+		return cached.(map[string]reflect.Kind)
 	}
 	m := make(map[string]reflect.Kind, t.NumField())
 	for f := range t.Fields() {
@@ -246,7 +256,9 @@ func jsonFieldMap(t reflect.Type) map[string]reflect.Kind {
 		}
 		m[name] = kind
 	}
-	return m
+	// Use LoadOrStore so concurrent first-callers share the same map.
+	actual, _ := jsonFieldMapCache.LoadOrStore(t, m)
+	return actual.(map[string]reflect.Kind)
 }
 
 // structFieldType returns the struct type for a named JSON field, dereferencing pointers.

@@ -276,16 +276,6 @@ func (g *PythonGenerator) GenerateAction(pluginName string, actionName string, a
 	return nil
 }
 
-// LintPlugin is not yet implemented for Python plugins.
-func (g *PythonGenerator) LintPlugin(pluginName string, options *generator.LintOptions) ([]generator.LintIssue, error) {
-	return []generator.LintIssue{
-		{
-			Severity: generator.LintInfo,
-			Message:  "lint is not yet implemented for Python plugins",
-		},
-	}, nil
-}
-
 // resolvePluginDir returns the absolute plugin directory either from an explicit
 // override or by joining the configured repoPath with pluginName.
 func resolvePluginDir(pluginName, dirOverride string) (string, error) {

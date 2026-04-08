@@ -31,14 +31,14 @@ import (
 
 type regTestTransformAction struct{}
 
-func (a *regTestTransformAction) Transform(ctx context.Context, input TransformInput) (Result, error) {
-	return NewTransformResult(input.ActionContext), nil
+func (a *regTestTransformAction) Transform(ctx context.Context, input TransformInput) Result {
+	return NewTransformResult(input.ActionContext)
 }
 
 type regTestEgressAction struct{}
 
-func (a *regTestEgressAction) Egress(ctx context.Context, input EgressInput) (Result, error) {
-	return NewEgressResult(input.ActionContext), nil
+func (a *regTestEgressAction) Egress(ctx context.Context, input EgressInput) Result {
+	return NewEgressResult(input.ActionContext)
 }
 
 func TestBuildRegistration(t *testing.T) {
@@ -204,8 +204,8 @@ type regTestJoinTransformAction struct {
 	regTestTransformAction
 }
 
-func (a *regTestJoinTransformAction) Join(ctx context.Context, inputs []TransformInput) (TransformInput, error) {
-	return DefaultJoin(inputs), nil
+func (a *regTestJoinTransformAction) Join(ctx context.Context, inputs []TransformInput) TransformInput {
+	return DefaultJoin(inputs)
 }
 
 func TestBuildRegistration_WithActionOptions(t *testing.T) {

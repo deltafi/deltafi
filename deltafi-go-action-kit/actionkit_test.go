@@ -21,8 +21,11 @@
 package actionkit
 
 import (
+	"context"
 	"encoding/json"
+	"errors"
 	"os"
+	"strings"
 	"testing"
 )
 
@@ -376,4 +379,98 @@ func TestEnvOrDefault(t *testing.T) {
 	if got := envOrDefault("ACTIONKIT_TEST_VAR", "fallback"); got != "fallback" {
 		t.Errorf("got %q for empty env, want %q", got, "fallback")
 	}
+}
+
+func TestActionContext_SaveAndLoad(t *testing.T) {
+	tc := NewTestContext("did-1")
+	ctx := context.Background()
+
+	saved, err := tc.ActionContext.SaveString(ctx, "hello world", "out.txt", "text/plain")
+	if err != nil {
+		t.Fatalf("SaveString: %v", err)
+	}
+	if saved.Name != "out.txt" || saved.MediaType != "text/plain" {
+		t.Errorf("saved = %+v", saved)
+	}
+
+	got, err := tc.ActionContext.LoadString(ctx, saved)
+	if err != nil {
+		t.Fatalf("LoadString: %v", err)
+	}
+	if got != "hello world" {
+		t.Errorf("LoadString = %q, want %q", got, "hello world")
+	}
+
+	// Save tracks the segment for orphan cleanup.
+	if len(tc.ActionContext.savedSegments) != 1 {
+		t.Errorf("savedSegments = %d, want 1", len(tc.ActionContext.savedSegments))
+	}
+}
+
+func TestActionContext_SaveBytesAndLoadBytes(t *testing.T) {
+	tc := NewTestContext("did-2")
+	ctx := context.Background()
+	payload := []byte{0x00, 0x01, 0x02, 0x03}
+
+	saved, err := tc.ActionContext.Save(ctx, payload, "out.bin", "application/octet-stream")
+	if err != nil {
+		t.Fatalf("Save: %v", err)
+	}
+
+	got, err := tc.ActionContext.Load(ctx, saved)
+	if err != nil {
+		t.Fatalf("Load: %v", err)
+	}
+	if !bytesEqual(got, payload) {
+		t.Errorf("Load = %v, want %v", got, payload)
+	}
+}
+
+func TestActionContext_LoadNilContent(t *testing.T) {
+	tc := NewTestContext("did-3")
+	if _, err := tc.ActionContext.Load(context.Background(), nil); err == nil {
+		t.Error("expected error for nil content")
+	}
+	if _, err := tc.ActionContext.LoadString(context.Background(), nil); err == nil {
+		t.Error("expected error for nil content")
+	}
+}
+
+func TestActionContext_Errorf(t *testing.T) {
+	tc := NewTestContext("did-4")
+	wrapped := errors.New("disk full")
+
+	result := tc.ActionContext.Errorf("Failed to save: %v", wrapped)
+	if result == nil {
+		t.Fatal("Errorf returned nil")
+	}
+	if !strings.Contains(result.cause, "Failed to save") || !strings.Contains(result.cause, "disk full") {
+		t.Errorf("cause = %q", result.cause)
+	}
+	if result.actionName != tc.ActionName {
+		t.Errorf("actionName = %q, want %q", result.actionName, tc.ActionName)
+	}
+}
+
+func TestActionContext_Filterf(t *testing.T) {
+	tc := NewTestContext("did-5")
+	result := tc.ActionContext.Filterf("Skipping prefix %q", "44")
+	if result == nil {
+		t.Fatal("Filterf returned nil")
+	}
+	if result.message != `Skipping prefix "44"` {
+		t.Errorf("message = %q", result.message)
+	}
+}
+
+func bytesEqual(a, b []byte) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	for i := range a {
+		if a[i] != b[i] {
+			return false
+		}
+	}
+	return true
 }

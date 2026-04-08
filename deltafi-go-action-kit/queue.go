@@ -58,14 +58,16 @@ func NewActionEventQueue(url, password string) (*ActionEventQueue, error) {
 	return &ActionEventQueue{client: client}, nil
 }
 
-// Take blocks until an item is available on the queue, returning the raw JSON string.
-// Returns an empty string (not an error) on timeout.
-func (q *ActionEventQueue) Take(ctx context.Context, queueName string) (string, error) {
+// Take blocks until an item is available on the queue, returning the raw JSON
+// payload. Returns nil (not an error) on timeout. The returned slice is owned
+// by the caller and may be passed directly to json.Unmarshal.
+func (q *ActionEventQueue) Take(ctx context.Context, queueName string) ([]byte, error) {
 	return q.TakeFromAny(ctx, queueName)
 }
 
 // Put publishes data to the named queue with the current timestamp as score.
-func (q *ActionEventQueue) Put(ctx context.Context, queueName, data string) error {
+// The data is forwarded to redis without an intermediate string conversion.
+func (q *ActionEventQueue) Put(ctx context.Context, queueName string, data []byte) error {
 	score := float64(time.Now().UnixMilli())
 	return q.client.ZAdd(ctx, queueName, redis.Z{
 		Score:  score,
@@ -89,23 +91,23 @@ func (q *ActionEventQueue) RemoveLongRunningTask(ctx context.Context, key string
 }
 
 // TakeFromAny blocks until an item is available on any of the given queues.
-// Returns the raw JSON string, or empty string on timeout.
-func (q *ActionEventQueue) TakeFromAny(ctx context.Context, queueNames ...string) (string, error) {
+// Returns the raw JSON payload, or nil on timeout.
+func (q *ActionEventQueue) TakeFromAny(ctx context.Context, queueNames ...string) ([]byte, error) {
 	result, err := q.client.BZPopMin(ctx, 5*time.Second, queueNames...).Result()
 	if err != nil {
 		if err == redis.Nil {
-			return "", nil
+			return nil, nil
 		}
-		return "", err
+		return nil, err
 	}
 	if result == nil {
-		return "", nil
+		return nil, nil
 	}
 	member, ok := result.Member.(string)
 	if !ok {
-		return "", fmt.Errorf("unexpected member type from BZPOPMIN: %T", result.Member)
+		return nil, fmt.Errorf("unexpected member type from BZPOPMIN: %T", result.Member)
 	}
-	return member, nil
+	return []byte(member), nil
 }
 
 // Subscribe returns a pub/sub subscription for the given channel.

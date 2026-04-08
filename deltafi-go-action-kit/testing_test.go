@@ -27,6 +27,7 @@ import (
 	"io"
 	"strings"
 	"testing"
+	"time"
 )
 
 func TestInMemoryContentStore_SaveAndLoad(t *testing.T) {
@@ -159,12 +160,19 @@ func TestInMemoryContentStore_CreateContent(t *testing.T) {
 		t.Errorf("MediaType = %q, want %q", content.MediaType, "text/plain")
 	}
 
-	loaded, err := content.LoadString(context.Background(), store)
+	// Content created directly via the store has no ActionContext back-reference;
+	// load through the store directly.
+	loaded, err := store.Load(context.Background(), content.Segments)
 	if err != nil {
-		t.Fatalf("LoadString error: %v", err)
+		t.Fatalf("store.Load error: %v", err)
 	}
-	if loaded != "hello" {
-		t.Errorf("LoadString = %q, want %q", loaded, "hello")
+	if string(loaded) != "hello" {
+		t.Errorf("Load = %q, want %q", loaded, "hello")
+	}
+
+	// Unbound content's LoadString must report a clear error.
+	if _, err := content.LoadString(context.Background()); err == nil {
+		t.Error("expected error from unbound content.LoadString")
 	}
 }
 
@@ -172,12 +180,12 @@ func TestInMemoryContentStore_CreateStringContent(t *testing.T) {
 	store := NewInMemoryContentStore()
 	content := store.CreateStringContent("did-1", "test.txt", "text/plain", "world")
 
-	loaded, err := content.LoadString(context.Background(), store)
+	loaded, err := store.Load(context.Background(), content.Segments)
 	if err != nil {
-		t.Fatalf("LoadString error: %v", err)
+		t.Fatalf("store.Load error: %v", err)
 	}
-	if loaded != "world" {
-		t.Errorf("LoadString = %q, want %q", loaded, "world")
+	if string(loaded) != "world" {
+		t.Errorf("Load = %q, want %q", loaded, "world")
 	}
 }
 
@@ -194,7 +202,7 @@ func TestMockLookupClient_Lookup(t *testing.T) {
 		},
 	}
 
-	result, err := mock.Lookup(context.Background(), "colors", nil)
+	result, err := mock.Lookup(context.Background(), "colors")
 	if err != nil {
 		t.Fatalf("Lookup error: %v", err)
 	}
@@ -212,7 +220,7 @@ func TestMockLookupClient_Lookup(t *testing.T) {
 func TestMockLookupClient_LookupMissingTable(t *testing.T) {
 	mock := &MockLookupClient{}
 
-	result, err := mock.Lookup(context.Background(), "missing", nil)
+	result, err := mock.Lookup(context.Background(), "missing")
 	if err != nil {
 		t.Fatalf("Lookup error: %v", err)
 	}
@@ -224,7 +232,7 @@ func TestMockLookupClient_LookupMissingTable(t *testing.T) {
 func TestMockLookupClient_LookupError(t *testing.T) {
 	mock := &MockLookupClient{Err: fmt.Errorf("lookup failed")}
 
-	_, err := mock.Lookup(context.Background(), "any", nil)
+	_, err := mock.Lookup(context.Background(), "any")
 	if err == nil {
 		t.Error("expected error")
 	}
@@ -361,7 +369,9 @@ func TestTestContext_Content(t *testing.T) {
 	if content.Name != "file.txt" {
 		t.Errorf("Name = %q, want %q", content.Name, "file.txt")
 	}
-	loaded, err := content.LoadString(context.Background(), tc.Store)
+	// Content from tc.Content is bound to the TestContext's ActionContext,
+	// so LoadString works without explicit plumbing.
+	loaded, err := content.LoadString(context.Background())
 	if err != nil {
 		t.Fatalf("LoadString error: %v", err)
 	}
@@ -485,5 +495,227 @@ func TestResultEvent_TransformResults(t *testing.T) {
 	}
 	if event.Transform[0].Name != "child-1" {
 		t.Errorf("Name = %q, want child-1", event.Transform[0].Name)
+	}
+}
+
+func TestNewTransformInput(t *testing.T) {
+	tc := NewTestContext("did")
+	c1 := tc.Content("a.txt", "text/plain", "alpha")
+	c2 := tc.Content("b.txt", "text/plain", "beta")
+
+	input := NewTransformInput(tc, c1, c2)
+	if input.ActionContext != tc.ActionContext {
+		t.Error("ActionContext not wired")
+	}
+	if len(input.Content) != 2 {
+		t.Errorf("Content len = %d, want 2", len(input.Content))
+	}
+	if input.Metadata == nil {
+		t.Error("Metadata should be non-nil")
+	}
+	if input.Params == nil {
+		t.Error("Params should be non-nil")
+	}
+}
+
+func TestNewEgressInput(t *testing.T) {
+	tc := NewTestContext("did")
+	c := tc.Content("out.txt", "text/plain", "data")
+
+	input := NewEgressInput(tc, c)
+	if !input.HasContent() {
+		t.Error("expected content")
+	}
+	if input.ActionContext != tc.ActionContext {
+		t.Error("ActionContext not wired")
+	}
+}
+
+func TestNewIngressInput(t *testing.T) {
+	tc := NewTestContext("did")
+	input := NewIngressInput(tc)
+	if input.ActionContext != tc.ActionContext {
+		t.Error("ActionContext not wired")
+	}
+	if input.Params == nil {
+		t.Error("Params should be non-nil")
+	}
+}
+
+func TestMockLookupClient_TablesFilter(t *testing.T) {
+	now := time.Now()
+	mock := &MockLookupClient{
+		Tables: []LookupTable{
+			{
+				Name:     "colors",
+				Created:  &now,
+				Modified: &now,
+				Rows: []LookupRow{
+					{"name": "red", "hex": "#FF0000", "primary": "true"},
+					{"name": "green", "hex": "#00FF00", "primary": "true"},
+					{"name": "blue", "hex": "#0000FF", "primary": "true"},
+					{"name": "purple", "hex": "#800080", "primary": "false"},
+				},
+			},
+		},
+	}
+
+	// No filter → all rows + Created/Modified populated.
+	all, err := mock.Lookup(context.Background(), "colors")
+	if err != nil {
+		t.Fatalf("Lookup err: %v", err)
+	}
+	if all.TotalCount != 4 {
+		t.Errorf("TotalCount = %d, want 4", all.TotalCount)
+	}
+	if all.Created == nil || all.Modified == nil {
+		t.Errorf("Created/Modified should be non-nil when set on the table")
+	}
+
+	// Single-column match.
+	red, err := mock.Lookup(context.Background(), "colors", WithMatch("name", "red"))
+	if err != nil {
+		t.Fatalf("Lookup err: %v", err)
+	}
+	if red.TotalCount != 1 || red.Rows[0]["hex"] != "#FF0000" {
+		t.Errorf("red lookup: %+v", red.Rows)
+	}
+
+	// Multi-value match (any-of within a column).
+	rgb, err := mock.Lookup(context.Background(), "colors", WithMatch("name", "red", "blue"))
+	if err != nil {
+		t.Fatalf("Lookup err: %v", err)
+	}
+	if rgb.TotalCount != 2 {
+		t.Errorf("rgb count = %d, want 2", rgb.TotalCount)
+	}
+
+	// Multi-column match (AND across columns).
+	primaryRed, err := mock.Lookup(context.Background(), "colors",
+		WithMatch("name", "red"),
+		WithMatch("primary", "true"),
+	)
+	if err != nil {
+		t.Fatalf("Lookup err: %v", err)
+	}
+	if primaryRed.TotalCount != 1 {
+		t.Errorf("primaryRed count = %d, want 1", primaryRed.TotalCount)
+	}
+
+	// No match across columns → empty results.
+	primaryPurple, err := mock.Lookup(context.Background(), "colors",
+		WithMatch("name", "purple"),
+		WithMatch("primary", "true"),
+	)
+	if err != nil {
+		t.Fatalf("Lookup err: %v", err)
+	}
+	if primaryPurple.TotalCount != 0 {
+		t.Errorf("primaryPurple count = %d, want 0", primaryPurple.TotalCount)
+	}
+}
+
+func TestMockLookupClient_TablesProjection(t *testing.T) {
+	mock := &MockLookupClient{
+		Tables: []LookupTable{
+			{
+				Name: "users",
+				Rows: []LookupRow{
+					{"id": "1", "name": "Alice", "email": "alice@example.com", "secret": "abc"},
+					{"id": "2", "name": "Bob", "email": "bob@example.com", "secret": "xyz"},
+				},
+			},
+		},
+	}
+
+	r, err := mock.Lookup(context.Background(), "users",
+		WithResultColumns("id", "name"),
+	)
+	if err != nil {
+		t.Fatalf("Lookup err: %v", err)
+	}
+	if len(r.Rows) != 2 {
+		t.Fatalf("Rows len = %d, want 2", len(r.Rows))
+	}
+	for _, row := range r.Rows {
+		if _, ok := row["secret"]; ok {
+			t.Errorf("projected row should not contain secret column: %v", row)
+		}
+		if _, ok := row["email"]; ok {
+			t.Errorf("projected row should not contain email column: %v", row)
+		}
+		if row["id"] == "" || row["name"] == "" {
+			t.Errorf("projected row missing required columns: %v", row)
+		}
+	}
+}
+
+func TestMockLookupClient_TablesSortAndPaginate(t *testing.T) {
+	mock := &MockLookupClient{
+		Tables: []LookupTable{
+			{
+				Name: "items",
+				Rows: []LookupRow{
+					{"name": "banana"},
+					{"name": "apple"},
+					{"name": "cherry"},
+					{"name": "date"},
+					{"name": "elderberry"},
+				},
+			},
+		},
+	}
+
+	// Sort ascending, take 2.
+	asc, err := mock.Lookup(context.Background(), "items",
+		WithSort("name", SortASC),
+		WithLimit(2),
+	)
+	if err != nil {
+		t.Fatalf("Lookup err: %v", err)
+	}
+	if asc.TotalCount != 2 || asc.Rows[0]["name"] != "apple" || asc.Rows[1]["name"] != "banana" {
+		t.Errorf("asc rows = %v", asc.Rows)
+	}
+
+	// Sort descending, offset 1, limit 2.
+	desc, err := mock.Lookup(context.Background(), "items",
+		WithSort("name", SortDESC),
+		WithOffset(1),
+		WithLimit(2),
+	)
+	if err != nil {
+		t.Fatalf("Lookup err: %v", err)
+	}
+	if desc.TotalCount != 2 || desc.Rows[0]["name"] != "date" || desc.Rows[1]["name"] != "cherry" {
+		t.Errorf("desc rows = %v", desc.Rows)
+	}
+}
+
+func TestMockLookupClient_TablesFallback(t *testing.T) {
+	// Tables and Results coexist; Tables wins for matching names, Results
+	// fills in for unknown names.
+	mock := &MockLookupClient{
+		Tables: []LookupTable{
+			{Name: "primary", Rows: []LookupRow{{"k": "v"}}},
+		},
+		Results: map[string]*LookupResults{
+			"backup": {TotalCount: 99, Rows: []LookupRow{{"src": "results"}}},
+		},
+	}
+
+	pri, _ := mock.Lookup(context.Background(), "primary")
+	if pri.TotalCount != 1 || pri.Rows[0]["k"] != "v" {
+		t.Errorf("primary fell through Tables: %+v", pri)
+	}
+
+	bak, _ := mock.Lookup(context.Background(), "backup")
+	if bak.TotalCount != 99 {
+		t.Errorf("backup should come from Results: %+v", bak)
+	}
+
+	unknown, _ := mock.Lookup(context.Background(), "missing")
+	if unknown.TotalCount != 0 {
+		t.Errorf("unknown table should return empty results: %+v", unknown)
 	}
 }

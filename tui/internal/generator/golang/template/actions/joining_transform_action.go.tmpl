@@ -5,7 +5,6 @@ package actions
 
 import (
 	"context"
-	"fmt"
 	"maps"
 	"strings"
 
@@ -32,7 +31,9 @@ type {{.ActionClassName}}Params struct {
 type {{.ActionClassName}} struct{}
 
 // Join aggregates multiple inputs into a single input for the Transform phase.
-func (a *{{.ActionClassName}}) Join(ctx context.Context, inputs []actionkit.TransformInput) (actionkit.TransformInput, error) {
+// Failures during join should panic with a meaningful message; the worker
+// recovers panics and turns them into ErrorResults.
+func (a *{{.ActionClassName}}) Join(ctx context.Context, inputs []actionkit.TransformInput) actionkit.TransformInput {
 	var allContent []actionkit.ActionContent
 	allMetadata := make(map[string]string)
 
@@ -47,46 +48,38 @@ func (a *{{.ActionClassName}}) Join(ctx context.Context, inputs []actionkit.Tran
 		Content:       allContent,
 		Metadata:      allMetadata,
 		Params:        inputs[0].Params,
-	}, nil
+	}
 }
 
 // Transform processes the joined input and creates the final output.
-func (a *{{.ActionClassName}}) Transform(ctx context.Context, input actionkit.TransformInput) (actionkit.Result, error) {
+func (a *{{.ActionClassName}}) Transform(ctx context.Context, input actionkit.TransformInput) actionkit.Result {
+	actx := input.ActionContext
+
 	// TODO: Implement your transform logic on the joined input
 	var contentBuilder strings.Builder
 	for i := range input.Content {
 		content, err := input.ContentAt(i)
 		if err != nil {
-			return actionkit.NewErrorResult(input.ActionContext, fmt.Sprintf("Failed to get content at index %d", i)).SetContext(err.Error()), nil
+			return actx.Errorf("Failed to get content at index %d: %v", i, err)
 		}
-		data, err := content.LoadString(ctx, input.ActionContext.ContentService)
+		data, err := content.LoadString(ctx)
 		if err != nil {
-			return actionkit.NewErrorResult(input.ActionContext, fmt.Sprintf("Failed to load content at index %d", i)).SetContext(err.Error()), nil
+			return actx.Errorf("Failed to load content at index %d: %v", i, err)
 		}
 		contentBuilder.WriteString(data)
 		contentBuilder.WriteString("\n")
 	}
 
-	mergedContent, err := actionkit.SaveContentString(
-		ctx,
-		input.ActionContext.ContentService,
-		input.ActionContext,
-		contentBuilder.String(),
-		"merged",
-		"text/plain",
-	)
+	mergedContent, err := actx.SaveString(ctx, contentBuilder.String(), "merged", "text/plain")
 	if err != nil {
-		return actionkit.NewErrorResult(input.ActionContext, "Failed to save merged content").SetContext(err.Error()), nil
+		return actx.Errorf("Failed to save merged content: %v", err)
 	}
 
-	result := actionkit.NewTransformResult(input.ActionContext)
-	result.AddContent(*mergedContent)
+	result := actionkit.NewTransformResult(actx).AddContent(*mergedContent)
 
 	for k, v := range input.Metadata {
 		result.AddMetadata(k, v)
 	}
 
-	result.LogInfo(fmt.Sprintf("Joined %d content items", len(input.Content)))
-
-	return result, nil
+	return result.LogInfo("Joined %d content items", len(input.Content))
 }

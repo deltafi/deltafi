@@ -304,25 +304,25 @@ func init() {
 }
 
 func (a *UpperTransform) Transform(ctx context.Context, input ak.TransformInput) (ak.Result, error) {
+    actx := input.ActionContext
     var params UpperParams
     if err := input.ParseParameters(&params); err != nil {
-        return ak.NewErrorResult(input.ActionContext, err.Error()), nil
+        return actx.Errorf("parse parameters: %v", err), nil
     }
 
     content := input.FirstContent()
-    data, err := content.LoadString(ctx, input.ActionContext.ContentService)
+    data, err := content.LoadString(ctx)
     if err != nil {
         return nil, err
     }
 
     output := fmt.Sprintf("%s: %s", params.Prefix, strings.ToUpper(data))
-    saved, err := ak.SaveContentString(ctx, input.ActionContext.ContentService,
-        input.ActionContext, output, content.Name, "text/plain")
+    saved, err := actx.SaveString(ctx, output, content.Name, "text/plain")
     if err != nil {
         return nil, err
     }
 
-    result := ak.NewTransformResult(input.ActionContext)
+    result := ak.NewTransformResult(actx)
     result.AddContent(*saved)
     return result, nil
 }
@@ -339,17 +339,18 @@ func init() {
 }
 
 func (a *FileEgress) Egress(ctx context.Context, input ak.EgressInput) (ak.Result, error) {
+    actx := input.ActionContext
     content := input.FirstContent()
-    data, err := content.LoadBytes(ctx, input.ActionContext.ContentService)
+    data, err := content.LoadBytes(ctx)
     if err != nil {
         return nil, err
     }
 
     if err := os.WriteFile("/tmp/"+content.Name, data, 0644); err != nil {
-        return ak.NewErrorResult(input.ActionContext, err.Error()), nil
+        return actx.Errorf("write file: %v", err), nil
     }
 
-    result := ak.NewEgressResult(input.ActionContext)
+    result := ak.NewEgressResult(actx)
     result.LogInfo(fmt.Sprintf("Wrote %d bytes to %s", len(data), content.Name))
     return result, nil
 }
@@ -819,11 +820,20 @@ All save helpers track segments on the ActionContext for orphan cleanup.
 
 ### Load
 
+Content received through an action input (TransformInput, EgressInput, etc.)
+and content returned from the SaveContent helpers is wired to its
+ActionContext, so load methods only need the cancellation context:
+
 ```go
-data, err := content.LoadBytes(ctx, cs)          // []byte
-str, err := content.LoadString(ctx, cs)           // string
-reader, err := content.LoadReader(ctx, cs)        // io.ReadCloser (caller must close)
+data, err := content.LoadBytes(ctx)          // []byte
+str, err := content.LoadString(ctx)           // string
+reader, err := content.LoadReader(ctx)        // io.ReadCloser (caller must close)
 ```
+
+Content constructed directly (via struct literal or `Store.CreateContent`
+without going through TestContext.Content) has no ActionContext back-reference
+and will return an error from these methods. Load such content explicitly via
+`cs.Load(ctx, content.Segments)`.
 
 ### Manipulate (no I/O)
 

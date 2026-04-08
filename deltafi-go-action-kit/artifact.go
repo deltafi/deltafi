@@ -32,7 +32,10 @@ import (
 	"os"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
+
+	"golang.org/x/sync/singleflight"
 )
 
 const (
@@ -92,14 +95,20 @@ type ArtifactClientBase interface {
 
 // ArtifactClient publishes and retrieves artifacts via core's artifact registry API.
 // Get results are cached; Stream results bypass the cache.
+//
+// cacheTTL and failureCacheTTL are stored as int64 nanoseconds via atomic ops
+// so SetCacheTTL is safe to call from any goroutine. The cache map itself is
+// protected by mu. The singleflight group collapses concurrent first-time
+// fetches for the same cache key into a single underlying request.
 type ArtifactClient struct {
 	coreURL         string
 	owner           string
 	httpClient      *http.Client
-	cacheTTL        time.Duration
-	failureCacheTTL time.Duration
+	cacheTTL        atomic.Int64 // nanoseconds
+	failureCacheTTL atomic.Int64 // nanoseconds
 	mu              sync.RWMutex
 	cache           map[string]*artifactCacheEntry
+	flight          singleflight.Group
 	callbackMu      sync.Mutex
 	callbacks       []artifactCallback
 	startupFiredIdx int
@@ -116,22 +125,21 @@ type artifactCacheEntry struct {
 // Cache TTL defaults to 10s, overridable via ARTIFACT_CACHE_TTL env var.
 // Failure cache TTL defaults to 1s, overridable via ARTIFACT_FAILURE_CACHE_TTL env var.
 func NewArtifactClient(coreURL string, owner string) *ArtifactClient {
-	return &ArtifactClient{
-		coreURL:         coreURL,
-		owner:           owner,
-		httpClient:      &http.Client{Timeout: 5 * time.Minute},
-		cacheTTL:        parseCacheTTL(os.Getenv("ARTIFACT_CACHE_TTL"), defaultArtifactCacheTTL),
-		failureCacheTTL: parseCacheTTL(os.Getenv("ARTIFACT_FAILURE_CACHE_TTL"), defaultArtifactFailureCacheTTL),
-		cache:           make(map[string]*artifactCacheEntry),
+	c := &ArtifactClient{
+		coreURL:    coreURL,
+		owner:      owner,
+		httpClient: &http.Client{Timeout: 5 * time.Minute},
+		cache:      make(map[string]*artifactCacheEntry),
 	}
+	c.cacheTTL.Store(int64(parseCacheTTL(os.Getenv("ARTIFACT_CACHE_TTL"), defaultArtifactCacheTTL)))
+	c.failureCacheTTL.Store(int64(parseCacheTTL(os.Getenv("ARTIFACT_FAILURE_CACHE_TTL"), defaultArtifactFailureCacheTTL)))
+	return c
 }
 
 // SetCacheTTL configures how long successful artifact downloads are cached.
-// Set to 0 to disable caching.
+// Set to 0 to disable caching. Safe to call concurrently with Get* methods.
 func (ac *ArtifactClient) SetCacheTTL(ttl time.Duration) {
-	ac.mu.Lock()
-	defer ac.mu.Unlock()
-	ac.cacheTTL = ttl
+	ac.cacheTTL.Store(int64(ttl))
 }
 
 // ClearCache evicts all cached artifact results.
@@ -296,30 +304,55 @@ func (ac *ArtifactClient) get(ctx context.Context, owner, name, alias string) (*
 	}
 	cacheKey := artifactCacheKey(owner, name, alias)
 
-	ac.mu.RLock()
-	if entry, ok := ac.cache[cacheKey]; ok && time.Now().Before(entry.expiresAt) {
-		ac.mu.RUnlock()
-		return entry.artifact, entry.err
+	if fetched, err, ok := ac.cacheGet(cacheKey); ok {
+		return fetched, err
 	}
-	ac.mu.RUnlock()
 
-	fetched, err := ac.fetch(ctx, owner, name, alias)
-
-	ac.mu.Lock()
-	ttl := ac.cacheTTL
-	if err != nil {
-		ttl = ac.failureCacheTTL
-	}
-	if ttl > 0 {
-		ac.cache[cacheKey] = &artifactCacheEntry{
-			artifact:  fetched,
-			err:       err,
-			expiresAt: time.Now().Add(ttl),
+	v, err, _ := ac.flight.Do(cacheKey, func() (any, error) {
+		// Re-check the cache inside the flight to absorb the case where a
+		// concurrent caller populated it while we were waiting.
+		if fetched, err, ok := ac.cacheGet(cacheKey); ok {
+			return fetched, err
 		}
+		fetched, err := ac.fetch(ctx, owner, name, alias)
+		ac.cachePut(cacheKey, fetched, err)
+		return fetched, err
+	})
+	if v == nil {
+		return nil, err
+	}
+	return v.(*FetchedArtifact), err
+}
+
+// cacheGet returns a cached entry if it is still valid. The third return is
+// true when the cache hit is fresh.
+func (ac *ArtifactClient) cacheGet(key string) (*FetchedArtifact, error, bool) {
+	ac.mu.RLock()
+	defer ac.mu.RUnlock()
+	entry, ok := ac.cache[key]
+	if !ok || !time.Now().Before(entry.expiresAt) {
+		return nil, nil, false
+	}
+	return entry.artifact, entry.err, true
+}
+
+// cachePut stores a fetched artifact (or fetch error) with the appropriate TTL.
+// Skipped entirely when the success TTL is zero (caching disabled).
+func (ac *ArtifactClient) cachePut(key string, fetched *FetchedArtifact, fetchErr error) {
+	ttl := time.Duration(ac.cacheTTL.Load())
+	if fetchErr != nil {
+		ttl = time.Duration(ac.failureCacheTTL.Load())
+	}
+	if ttl <= 0 {
+		return
+	}
+	ac.mu.Lock()
+	ac.cache[key] = &artifactCacheEntry{
+		artifact:  fetched,
+		err:       fetchErr,
+		expiresAt: time.Now().Add(ttl),
 	}
 	ac.mu.Unlock()
-
-	return fetched, err
 }
 
 func (ac *ArtifactClient) fetch(ctx context.Context, owner, name, alias string) (*FetchedArtifact, error) {

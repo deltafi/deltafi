@@ -232,8 +232,14 @@ lint: deps
 fmt:
 	@$(GOFMT) ./...
 
-tidy: fmt
-	@$(GOTIDY)
+tidy: check-env fmt
+ifeq ($(LOCAL_GO_ACTION_KIT),true)
+  @trap '$(GOCMD) mod edit -dropreplace=$(ACTION_KIT_MODULE)' EXIT; \
+  $(GOCMD) mod edit -replace=$(ACTION_KIT_MODULE)=$(LOCAL_GO_ACTION_KIT_PATH) && \
+  $(GOTIDY)
+else
+  @$(GOTIDY)
+endif
 
 deps:
 	@mkdir -p $(GOPATH)

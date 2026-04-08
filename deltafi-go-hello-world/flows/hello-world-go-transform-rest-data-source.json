@@ -1,6 +1,0 @@
-{
-  "name": "hello-world-go-transform-rest-data-source",
-  "type": "REST_DATA_SOURCE",
-  "description": "REST data source for Hello World Go transform",
-  "topic": "hello-world-go-transform"
-}

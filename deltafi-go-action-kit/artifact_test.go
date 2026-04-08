@@ -640,8 +640,8 @@ func TestArtifactClient_CacheTTL_FromEnv(t *testing.T) {
 	defer os.Unsetenv("ARTIFACT_CACHE_TTL")
 
 	client := NewArtifactClient("http://localhost", "owner")
-	if client.cacheTTL != 45*time.Second {
-		t.Errorf("cacheTTL = %v, want 45s from env", client.cacheTTL)
+	if got := time.Duration(client.cacheTTL.Load()); got != 45*time.Second {
+		t.Errorf("cacheTTL = %v, want 45s from env", got)
 	}
 }
 
@@ -650,18 +650,18 @@ func TestArtifactClient_FailureCacheTTL_FromEnv(t *testing.T) {
 	defer os.Unsetenv("ARTIFACT_FAILURE_CACHE_TTL")
 
 	client := NewArtifactClient("http://localhost", "owner")
-	if client.failureCacheTTL != 3*time.Second {
-		t.Errorf("failureCacheTTL = %v, want 3s from env", client.failureCacheTTL)
+	if got := time.Duration(client.failureCacheTTL.Load()); got != 3*time.Second {
+		t.Errorf("failureCacheTTL = %v, want 3s from env", got)
 	}
 }
 
 func TestArtifactClient_CacheTTL_Defaults(t *testing.T) {
 	client := NewArtifactClient("http://localhost", "owner")
-	if client.cacheTTL != 10*time.Second {
-		t.Errorf("cacheTTL = %v, want 10s default", client.cacheTTL)
+	if got := time.Duration(client.cacheTTL.Load()); got != 10*time.Second {
+		t.Errorf("cacheTTL = %v, want 10s default", got)
 	}
-	if client.failureCacheTTL != 1*time.Second {
-		t.Errorf("failureCacheTTL = %v, want 1s default", client.failureCacheTTL)
+	if got := time.Duration(client.failureCacheTTL.Load()); got != 1*time.Second {
+		t.Errorf("failureCacheTTL = %v, want 1s default", got)
 	}
 }
 

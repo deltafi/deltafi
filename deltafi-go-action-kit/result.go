@@ -21,6 +21,7 @@
 package actionkit
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/google/uuid"
@@ -37,20 +38,22 @@ type baseResult struct {
 	messages   []LogMessage
 }
 
-// LogInfo adds an INFO-level message to the action result.
-func (b *baseResult) LogInfo(msg string) {
-	b.messages = append(b.messages, newLogMessage(SeverityInfo, b.actionName, msg))
+// appendLog formats the message and appends it to the base result's log.
+// An empty args slice is treated as a plain message so callers that already
+// pre-formatted their message (or just want to log literal text containing
+// % characters) do not need to escape them.
+func (b *baseResult) appendLog(severity LogSeverity, format string, args ...any) {
+	var msg string
+	if len(args) == 0 {
+		msg = format
+	} else {
+		msg = fmt.Sprintf(format, args...)
+	}
+	b.messages = append(b.messages, newLogMessage(severity, b.actionName, msg))
 }
 
-// LogWarning adds a WARNING-level message to the action result.
-func (b *baseResult) LogWarning(msg string) {
-	b.messages = append(b.messages, newLogMessage(SeverityWarning, b.actionName, msg))
-}
-
-// LogError adds an ERROR-level message to the action result.
-func (b *baseResult) LogError(msg string) {
-	b.messages = append(b.messages, newLogMessage(SeverityError, b.actionName, msg))
-}
+// ActionName returns the name of the action this result was created for.
+func (b *baseResult) ActionName() string { return b.actionName }
 
 // newBaseEvent creates an ActionEvent with common fields filled in.
 func newBaseEvent(actx *ActionContext, start time.Time, eventType string, messages []LogMessage) *ActionEvent {
@@ -89,19 +92,59 @@ func NewTransformResult(actx *ActionContext) *TransformResult {
 	}
 }
 
-// AddContent appends a content item to the transform result.
-func (r *TransformResult) AddContent(c ActionContent) { r.content = append(r.content, c) }
-
-// AddMetadata sets a metadata key-value pair on the transform result.
-func (r *TransformResult) AddMetadata(k, v string) { r.metadata[k] = v }
-
-// DeleteMetadataKey marks a metadata key for removal from the DeltaFile.
-func (r *TransformResult) DeleteMetadataKey(k string) {
-	r.deleteMetadataKeys = append(r.deleteMetadataKeys, k)
+// AddContent appends a content item and returns the result for chaining.
+func (r *TransformResult) AddContent(c ActionContent) *TransformResult {
+	r.content = append(r.content, c)
+	return r
 }
 
-// AddAnnotation sets an annotation key-value pair on the transform result.
-func (r *TransformResult) AddAnnotation(k, v string) { r.annotations[k] = v }
+// AddMetadata sets a metadata key-value pair and returns the result for chaining.
+func (r *TransformResult) AddMetadata(k, v string) *TransformResult {
+	r.metadata[k] = v
+	return r
+}
+
+// DeleteMetadataKey marks a metadata key for removal and returns the result for chaining.
+func (r *TransformResult) DeleteMetadataKey(k string) *TransformResult {
+	r.deleteMetadataKeys = append(r.deleteMetadataKeys, k)
+	return r
+}
+
+// AddAnnotation sets an annotation key-value pair and returns the result for chaining.
+func (r *TransformResult) AddAnnotation(k, v string) *TransformResult {
+	r.annotations[k] = v
+	return r
+}
+
+// AddSelfAnnotation sets an annotation keyed by the action's own name.
+func (r *TransformResult) AddSelfAnnotation(v string) *TransformResult {
+	return r.AddAnnotation(r.actionName, v)
+}
+
+// AddSelfMetadata sets a metadata entry keyed by the action's own name.
+func (r *TransformResult) AddSelfMetadata(v string) *TransformResult {
+	return r.AddMetadata(r.actionName, v)
+}
+
+// LogInfo adds an INFO-level message and returns the result for chaining.
+// The message is formatted with fmt.Sprintf when args are supplied, or used
+// as-is when called with just a format string.
+func (r *TransformResult) LogInfo(format string, args ...any) *TransformResult {
+	r.appendLog(SeverityInfo, format, args...)
+	return r
+}
+
+// LogWarning adds a WARNING-level message and returns the result for chaining.
+func (r *TransformResult) LogWarning(format string, args ...any) *TransformResult {
+	r.appendLog(SeverityWarning, format, args...)
+	return r
+}
+
+// LogError adds an ERROR-level message and returns the result for chaining.
+func (r *TransformResult) LogError(format string, args ...any) *TransformResult {
+	r.appendLog(SeverityError, format, args...)
+	return r
+}
 
 func (r *TransformResult) toActionEvent(actx *ActionContext, start time.Time) *ActionEvent {
 	event := newBaseEvent(actx, start, "TRANSFORM", r.messages)
@@ -132,9 +175,28 @@ func NewTransformResults(actx *ActionContext) *TransformResults {
 	}
 }
 
-// AddChild appends a child result to the multi-child transform output.
-func (r *TransformResults) AddChild(child ChildTransformResult) {
+// AddChild appends a child result and returns the result for chaining.
+func (r *TransformResults) AddChild(child ChildTransformResult) *TransformResults {
 	r.children = append(r.children, child)
+	return r
+}
+
+// LogInfo adds an INFO-level message and returns the result for chaining.
+func (r *TransformResults) LogInfo(format string, args ...any) *TransformResults {
+	r.appendLog(SeverityInfo, format, args...)
+	return r
+}
+
+// LogWarning adds a WARNING-level message and returns the result for chaining.
+func (r *TransformResults) LogWarning(format string, args ...any) *TransformResults {
+	r.appendLog(SeverityWarning, format, args...)
+	return r
+}
+
+// LogError adds an ERROR-level message and returns the result for chaining.
+func (r *TransformResults) LogError(format string, args ...any) *TransformResults {
+	r.appendLog(SeverityError, format, args...)
+	return r
 }
 
 func (r *TransformResults) toActionEvent(actx *ActionContext, start time.Time) *ActionEvent {
@@ -184,19 +246,57 @@ func NewChildTransformResult(parentCtx *ActionContext, deltaFileName string) *Ch
 // Context returns the child's ActionContext (with its unique DID).
 func (r *ChildTransformResult) Context() *ActionContext { return r.actx }
 
-// AddContent appends a content item to the child transform result.
-func (r *ChildTransformResult) AddContent(c ActionContent) { r.content = append(r.content, c) }
-
-// AddMetadata sets a metadata key-value pair on the child transform result.
-func (r *ChildTransformResult) AddMetadata(k, v string) { r.metadata[k] = v }
-
-// DeleteMetadataKey marks a metadata key for removal from the child DeltaFile.
-func (r *ChildTransformResult) DeleteMetadataKey(k string) {
-	r.deleteMetadataKeys = append(r.deleteMetadataKeys, k)
+// AddContent appends a content item and returns the result for chaining.
+func (r *ChildTransformResult) AddContent(c ActionContent) *ChildTransformResult {
+	r.content = append(r.content, c)
+	return r
 }
 
-// AddAnnotation sets an annotation key-value pair on the child transform result.
-func (r *ChildTransformResult) AddAnnotation(k, v string) { r.annotations[k] = v }
+// AddMetadata sets a metadata key-value pair and returns the result for chaining.
+func (r *ChildTransformResult) AddMetadata(k, v string) *ChildTransformResult {
+	r.metadata[k] = v
+	return r
+}
+
+// DeleteMetadataKey marks a metadata key for removal and returns the result for chaining.
+func (r *ChildTransformResult) DeleteMetadataKey(k string) *ChildTransformResult {
+	r.deleteMetadataKeys = append(r.deleteMetadataKeys, k)
+	return r
+}
+
+// AddAnnotation sets an annotation key-value pair and returns the result for chaining.
+func (r *ChildTransformResult) AddAnnotation(k, v string) *ChildTransformResult {
+	r.annotations[k] = v
+	return r
+}
+
+// AddSelfAnnotation sets an annotation keyed by the action's own name.
+func (r *ChildTransformResult) AddSelfAnnotation(v string) *ChildTransformResult {
+	return r.AddAnnotation(r.actionName, v)
+}
+
+// AddSelfMetadata sets a metadata entry keyed by the action's own name.
+func (r *ChildTransformResult) AddSelfMetadata(v string) *ChildTransformResult {
+	return r.AddMetadata(r.actionName, v)
+}
+
+// LogInfo adds an INFO-level message and returns the result for chaining.
+func (r *ChildTransformResult) LogInfo(format string, args ...any) *ChildTransformResult {
+	r.appendLog(SeverityInfo, format, args...)
+	return r
+}
+
+// LogWarning adds a WARNING-level message and returns the result for chaining.
+func (r *ChildTransformResult) LogWarning(format string, args ...any) *ChildTransformResult {
+	r.appendLog(SeverityWarning, format, args...)
+	return r
+}
+
+// LogError adds an ERROR-level message and returns the result for chaining.
+func (r *ChildTransformResult) LogError(format string, args ...any) *ChildTransformResult {
+	r.appendLog(SeverityError, format, args...)
+	return r
+}
 
 // --- EgressResult ---
 
@@ -212,6 +312,24 @@ func NewEgressResult(actx *ActionContext) *EgressResult {
 		baseResult: baseResult{actionName: actx.ActionName},
 		actx:       actx,
 	}
+}
+
+// LogInfo adds an INFO-level message and returns the result for chaining.
+func (r *EgressResult) LogInfo(format string, args ...any) *EgressResult {
+	r.appendLog(SeverityInfo, format, args...)
+	return r
+}
+
+// LogWarning adds a WARNING-level message and returns the result for chaining.
+func (r *EgressResult) LogWarning(format string, args ...any) *EgressResult {
+	r.appendLog(SeverityWarning, format, args...)
+	return r
+}
+
+// LogError adds an ERROR-level message and returns the result for chaining.
+func (r *EgressResult) LogError(format string, args ...any) *EgressResult {
+	r.appendLog(SeverityError, format, args...)
+	return r
 }
 
 func (r *EgressResult) toActionEvent(actx *ActionContext, start time.Time) *ActionEvent {
@@ -240,20 +358,44 @@ func NewIngressResult(actx *ActionContext) *IngressResult {
 	}
 }
 
-// AddItem appends an ingress item (a DeltaFile to be created) to the result.
-func (r *IngressResult) AddItem(item IngressResultItem) { r.items = append(r.items, item) }
+// AddItem appends an ingress item and returns the result for chaining.
+func (r *IngressResult) AddItem(item IngressResultItem) *IngressResult {
+	r.items = append(r.items, item)
+	return r
+}
 
-// SetMemo sets the memo string for stateful ingress (persisted between invocations).
-func (r *IngressResult) SetMemo(m string) { r.memo = m }
+// SetMemo sets the memo string and returns the result for chaining.
+func (r *IngressResult) SetMemo(m string) *IngressResult { r.memo = m; return r }
 
-// SetStatus sets the ingress health status (e.g. "HEALTHY", "DEGRADED", "UNHEALTHY").
-func (r *IngressResult) SetStatus(s string) { r.status = s }
+// SetStatus sets the ingress health status and returns the result for chaining.
+func (r *IngressResult) SetStatus(s string) *IngressResult { r.status = s; return r }
 
-// SetStatusMessage sets a human-readable message describing the ingress status.
-func (r *IngressResult) SetStatusMessage(m string) { r.statusMessage = m }
+// SetStatusMessage sets a human-readable message and returns the result for chaining.
+func (r *IngressResult) SetStatusMessage(m string) *IngressResult { r.statusMessage = m; return r }
 
 // SetExecuteImmediate requests that the next ingress invocation run immediately.
-func (r *IngressResult) SetExecuteImmediate(b bool) { r.executeImmediate = b }
+func (r *IngressResult) SetExecuteImmediate(b bool) *IngressResult {
+	r.executeImmediate = b
+	return r
+}
+
+// LogInfo adds an INFO-level message and returns the result for chaining.
+func (r *IngressResult) LogInfo(format string, args ...any) *IngressResult {
+	r.appendLog(SeverityInfo, format, args...)
+	return r
+}
+
+// LogWarning adds a WARNING-level message and returns the result for chaining.
+func (r *IngressResult) LogWarning(format string, args ...any) *IngressResult {
+	r.appendLog(SeverityWarning, format, args...)
+	return r
+}
+
+// LogError adds an ERROR-level message and returns the result for chaining.
+func (r *IngressResult) LogError(format string, args ...any) *IngressResult {
+	r.appendLog(SeverityError, format, args...)
+	return r
+}
 
 func (r *IngressResult) toActionEvent(actx *ActionContext, start time.Time) *ActionEvent {
 	event := newBaseEvent(actx, start, "INGRESS", r.messages)
@@ -301,14 +443,23 @@ func NewIngressResultItem(deltaFileName string) *IngressResultItem {
 	}
 }
 
-// AddContent appends a content item to the ingress result item.
-func (item *IngressResultItem) AddContent(c ActionContent) { item.content = append(item.content, c) }
+// AddContent appends a content item and returns the item for chaining.
+func (item *IngressResultItem) AddContent(c ActionContent) *IngressResultItem {
+	item.content = append(item.content, c)
+	return item
+}
 
-// AddMetadata sets a metadata key-value pair on the ingress result item.
-func (item *IngressResultItem) AddMetadata(k, v string) { item.metadata[k] = v }
+// AddMetadata sets a metadata key-value pair and returns the item for chaining.
+func (item *IngressResultItem) AddMetadata(k, v string) *IngressResultItem {
+	item.metadata[k] = v
+	return item
+}
 
-// AddAnnotation sets an annotation key-value pair on the ingress result item.
-func (item *IngressResultItem) AddAnnotation(k, v string) { item.annotations[k] = v }
+// AddAnnotation sets an annotation key-value pair and returns the item for chaining.
+func (item *IngressResultItem) AddAnnotation(k, v string) *IngressResultItem {
+	item.annotations[k] = v
+	return item
+}
 
 // --- ErrorResult ---
 
@@ -337,8 +488,34 @@ func (r *ErrorResult) SetContext(ctx string) *ErrorResult {
 	return r
 }
 
-// AddAnnotation sets an annotation key-value pair on the error result.
-func (r *ErrorResult) AddAnnotation(k, v string) { r.annotations[k] = v }
+// AddAnnotation sets an annotation key-value pair and returns the result for chaining.
+func (r *ErrorResult) AddAnnotation(k, v string) *ErrorResult {
+	r.annotations[k] = v
+	return r
+}
+
+// AddSelfAnnotation sets an annotation keyed by the action's own name.
+func (r *ErrorResult) AddSelfAnnotation(v string) *ErrorResult {
+	return r.AddAnnotation(r.actionName, v)
+}
+
+// LogInfo adds an INFO-level message and returns the result for chaining.
+func (r *ErrorResult) LogInfo(format string, args ...any) *ErrorResult {
+	r.appendLog(SeverityInfo, format, args...)
+	return r
+}
+
+// LogWarning adds a WARNING-level message and returns the result for chaining.
+func (r *ErrorResult) LogWarning(format string, args ...any) *ErrorResult {
+	r.appendLog(SeverityWarning, format, args...)
+	return r
+}
+
+// LogError adds an ERROR-level message and returns the result for chaining.
+func (r *ErrorResult) LogError(format string, args ...any) *ErrorResult {
+	r.appendLog(SeverityError, format, args...)
+	return r
+}
 
 func (r *ErrorResult) toActionEvent(actx *ActionContext, start time.Time) *ActionEvent {
 	event := newBaseEvent(actx, start, "ERROR", r.messages)
@@ -370,8 +547,34 @@ func NewFilterResult(actx *ActionContext, message string) *FilterResult {
 	}
 }
 
-// AddAnnotation sets an annotation key-value pair on the filter result.
-func (r *FilterResult) AddAnnotation(k, v string) { r.annotations[k] = v }
+// AddAnnotation sets an annotation key-value pair and returns the result for chaining.
+func (r *FilterResult) AddAnnotation(k, v string) *FilterResult {
+	r.annotations[k] = v
+	return r
+}
+
+// AddSelfAnnotation sets an annotation keyed by the action's own name.
+func (r *FilterResult) AddSelfAnnotation(v string) *FilterResult {
+	return r.AddAnnotation(r.actionName, v)
+}
+
+// LogInfo adds an INFO-level message and returns the result for chaining.
+func (r *FilterResult) LogInfo(format string, args ...any) *FilterResult {
+	r.appendLog(SeverityInfo, format, args...)
+	return r
+}
+
+// LogWarning adds a WARNING-level message and returns the result for chaining.
+func (r *FilterResult) LogWarning(format string, args ...any) *FilterResult {
+	r.appendLog(SeverityWarning, format, args...)
+	return r
+}
+
+// LogError adds an ERROR-level message and returns the result for chaining.
+func (r *FilterResult) LogError(format string, args ...any) *FilterResult {
+	r.appendLog(SeverityError, format, args...)
+	return r
+}
 
 func (r *FilterResult) toActionEvent(actx *ActionContext, start time.Time) *ActionEvent {
 	event := newBaseEvent(actx, start, "FILTER", r.messages)

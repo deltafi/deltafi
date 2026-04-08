@@ -13,12 +13,8 @@ import (
 func Test{{.ActionClassName}}_Normal(t *testing.T) {
 	tc := actionkit.NewTestContext("test-did")
 	content := tc.Content("test.txt", "text/plain", "hello world")
-
-	input := actionkit.EgressInput{
-		ActionContext: tc.ActionContext,
-		Content:       []actionkit.ActionContent{content},
-		Metadata:      map[string]string{"key1": "val1"},
-	}
+	input := actionkit.NewEgressInput(tc, content)
+	input.Metadata = map[string]string{"key1": "val1"}
 
 	event := actionkit.RunEgress(t, &{{.ActionClassName}}{}, input)
 	event.RequireEgress(t)
@@ -28,12 +24,6 @@ func Test{{.ActionClassName}}_Normal(t *testing.T) {
 func Test{{.ActionClassName}}_NoContent(t *testing.T) {
 	tc := actionkit.NewTestContext("test-did")
 
-	input := actionkit.EgressInput{
-		ActionContext: tc.ActionContext,
-		Content:       nil,
-		Metadata:      map[string]string{},
-	}
-
-	event := actionkit.RunEgress(t, &{{.ActionClassName}}{}, input)
+	event := actionkit.RunEgress(t, &{{.ActionClassName}}{}, actionkit.NewEgressInput(tc))
 	event.RequireError(t, "No content provided")
 }

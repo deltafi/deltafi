@@ -23,16 +23,20 @@ package actionkit
 import (
 	"bytes"
 	"context"
-	"crypto/sha256"
 	"encoding/json"
 	"fmt"
 	"io"
 	"log"
 	"net/http"
 	"os"
+	"sort"
 	"strconv"
+	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
+
+	"golang.org/x/sync/singleflight"
 )
 
 const (
@@ -48,14 +52,86 @@ const (
 	SortDESC SortDirection = "DESC"
 )
 
-// LookupOptions configures a lookup table query.
-type LookupOptions struct {
+// LookupQuery is the resolved set of options for a single Lookup call.
+// Callers build a LookupQuery by passing LookupOption values to Lookup
+// (WithMatch, WithResultColumns, etc.); MockLookupClient exposes the resolved
+// LookupQuery on MockLookupCall for test assertions.
+type LookupQuery struct {
 	MatchingColumnValues map[string][]string
 	ResultColumns        []string
 	SortColumn           string
 	SortDirection        SortDirection
 	Offset               *int
 	Limit                *int
+}
+
+// LookupOption configures a LookupQuery. Options are applied in order, so
+// later options override earlier ones for single-valued fields.
+type LookupOption func(*LookupQuery)
+
+// WithMatch adds a match criterion: the named column must contain any of the
+// given values. Calling WithMatch multiple times with the same column appends
+// values; calling it with different columns adds additional match criteria.
+func WithMatch(column string, values ...string) LookupOption {
+	return func(q *LookupQuery) {
+		if q.MatchingColumnValues == nil {
+			q.MatchingColumnValues = map[string][]string{}
+		}
+		q.MatchingColumnValues[column] = append(q.MatchingColumnValues[column], values...)
+	}
+}
+
+// WithMatches merges a map of column → values into the query. Use when the
+// set of columns is built dynamically; prefer WithMatch for static queries.
+func WithMatches(columnValues map[string][]string) LookupOption {
+	return func(q *LookupQuery) {
+		if q.MatchingColumnValues == nil {
+			q.MatchingColumnValues = map[string][]string{}
+		}
+		for k, v := range columnValues {
+			q.MatchingColumnValues[k] = append(q.MatchingColumnValues[k], v...)
+		}
+	}
+}
+
+// WithResultColumns restricts the query to return only the named columns.
+// Calling it multiple times appends to the list.
+func WithResultColumns(columns ...string) LookupOption {
+	return func(q *LookupQuery) {
+		q.ResultColumns = append(q.ResultColumns, columns...)
+	}
+}
+
+// WithSort orders results by the given column in the given direction.
+func WithSort(column string, direction SortDirection) LookupOption {
+	return func(q *LookupQuery) {
+		q.SortColumn = column
+		q.SortDirection = direction
+	}
+}
+
+// WithOffset skips the first N results. The zero value is a valid offset.
+func WithOffset(offset int) LookupOption {
+	return func(q *LookupQuery) { q.Offset = &offset }
+}
+
+// WithLimit caps the number of returned rows. The zero value returns no rows.
+func WithLimit(limit int) LookupOption {
+	return func(q *LookupQuery) { q.Limit = &limit }
+}
+
+// buildLookupQuery resolves a variadic slice of LookupOptions into a single
+// LookupQuery. Returns the zero-valued LookupQuery when opts is empty. Nil
+// entries in opts are skipped.
+func buildLookupQuery(opts []LookupOption) LookupQuery {
+	var q LookupQuery
+	for _, opt := range opts {
+		if opt == nil {
+			continue
+		}
+		opt(&q)
+	}
+	return q
 }
 
 // LookupResults holds the results of a lookup table query.
@@ -91,17 +167,23 @@ type LookupTableSupplier interface {
 // LookupClientBase is the interface for lookup table queries from actions.
 // LookupClient (HTTP) and MockLookupClient (testing) both implement this.
 type LookupClientBase interface {
-	Lookup(ctx context.Context, tableName string, opts *LookupOptions) (*LookupResults, error)
+	Lookup(ctx context.Context, tableName string, opts ...LookupOption) (*LookupResults, error)
 }
 
 // LookupClient queries and uploads lookup table data via core's API.
+//
+// cacheTTL and failureCacheTTL are stored as int64 nanoseconds via atomic ops
+// so SetCacheTTL is safe to call from any goroutine. The cache map itself is
+// protected by mu. The singleflight group collapses concurrent first-time
+// lookups for the same cache key into a single underlying request.
 type LookupClient struct {
 	coreURL         string
 	httpClient      *http.Client
-	cacheTTL        time.Duration
-	failureCacheTTL time.Duration
+	cacheTTL        atomic.Int64 // nanoseconds
+	failureCacheTTL atomic.Int64 // nanoseconds
 	mu              sync.RWMutex
 	cache           map[string]*lookupCacheEntry
+	flight          singleflight.Group
 }
 
 type lookupCacheEntry struct {
@@ -118,13 +200,14 @@ const defaultFailureCacheTTL = 1 * time.Second
 // Failure cache TTL defaults to 1 second, overridable via TABLE_LOOKUP_FAILURE_CACHE_TTL.
 // Both accept integer seconds or Go duration strings like "5s", "1m".
 func NewLookupClient(coreURL string) *LookupClient {
-	return &LookupClient{
-		coreURL:         coreURL,
-		httpClient:      &http.Client{Timeout: 30 * time.Second},
-		cacheTTL:        parseCacheTTL(os.Getenv("TABLE_LOOKUP_CACHE_TTL"), defaultLookupCacheTTL),
-		failureCacheTTL: parseCacheTTL(os.Getenv("TABLE_LOOKUP_FAILURE_CACHE_TTL"), defaultFailureCacheTTL),
-		cache:           make(map[string]*lookupCacheEntry),
+	c := &LookupClient{
+		coreURL:    coreURL,
+		httpClient: &http.Client{Timeout: 30 * time.Second},
+		cache:      make(map[string]*lookupCacheEntry),
 	}
+	c.cacheTTL.Store(int64(parseCacheTTL(os.Getenv("TABLE_LOOKUP_CACHE_TTL"), defaultLookupCacheTTL)))
+	c.failureCacheTTL.Store(int64(parseCacheTTL(os.Getenv("TABLE_LOOKUP_FAILURE_CACHE_TTL"), defaultFailureCacheTTL)))
+	return c
 }
 
 // parseCacheTTL parses a TTL string as either integer seconds or a Go duration.
@@ -144,11 +227,9 @@ func parseCacheTTL(s string, fallback time.Duration) time.Duration {
 }
 
 // SetCacheTTL configures how long lookup results are cached.
-// Set to 0 to disable caching.
+// Set to 0 to disable caching. Safe to call concurrently with Lookup.
 func (lc *LookupClient) SetCacheTTL(ttl time.Duration) {
-	lc.mu.Lock()
-	defer lc.mu.Unlock()
-	lc.cacheTTL = ttl
+	lc.cacheTTL.Store(int64(ttl))
 }
 
 // ClearCache evicts all cached lookup results.
@@ -158,14 +239,48 @@ func (lc *LookupClient) ClearCache() {
 	lc.cache = make(map[string]*lookupCacheEntry)
 }
 
-func lookupCacheKey(tableName string, opts *LookupOptions) string {
-	h := sha256.New()
-	h.Write([]byte(tableName))
-	if opts != nil {
-		data, _ := json.Marshal(opts)
-		h.Write(data)
+// lookupCacheKey builds a deterministic in-process cache key for a lookup
+// call. Map iteration order is non-deterministic, so MatchingColumnValues is
+// canonicalized by sorting column names (and their value slices) before they
+// are written into the key.
+func lookupCacheKey(tableName string, query LookupQuery) string {
+	var b strings.Builder
+	b.Grow(64 + len(tableName))
+	b.WriteString(tableName)
+	b.WriteByte('|')
+
+	if len(query.MatchingColumnValues) > 0 {
+		cols := make([]string, 0, len(query.MatchingColumnValues))
+		for col := range query.MatchingColumnValues {
+			cols = append(cols, col)
+		}
+		sort.Strings(cols)
+		for _, col := range cols {
+			b.WriteString(col)
+			b.WriteByte('=')
+			vals := append([]string(nil), query.MatchingColumnValues[col]...)
+			sort.Strings(vals)
+			b.WriteString(strings.Join(vals, ","))
+			b.WriteByte(';')
+		}
 	}
-	return fmt.Sprintf("%x", h.Sum(nil))
+	b.WriteByte('|')
+	if len(query.ResultColumns) > 0 {
+		b.WriteString(strings.Join(query.ResultColumns, ","))
+	}
+	b.WriteByte('|')
+	b.WriteString(query.SortColumn)
+	b.WriteByte(':')
+	b.WriteString(string(query.SortDirection))
+	b.WriteByte('|')
+	if query.Offset != nil {
+		b.WriteString(strconv.Itoa(*query.Offset))
+	}
+	b.WriteByte('|')
+	if query.Limit != nil {
+		b.WriteString(strconv.Itoa(*query.Limit))
+	}
+	return b.String()
 }
 
 // setAuthHeaders adds the standard DeltaFi auth headers to a request.
@@ -175,69 +290,96 @@ func (lc *LookupClient) setAuthHeaders(req *http.Request) {
 }
 
 // Lookup queries a lookup table by name with the given options.
-// Successful results are cached for the configured TTL.
-// Failures are cached for 1 second to prevent flooding core during outages.
-func (lc *LookupClient) Lookup(ctx context.Context, tableName string, opts *LookupOptions) (*LookupResults, error) {
-	cacheKey := lookupCacheKey(tableName, opts)
+// Successful results are cached for the configured TTL. Failures are cached
+// for the failure TTL (default 1s) to prevent flooding core during outages.
+// Concurrent first-time lookups for the same key are collapsed into a single
+// upstream request via singleflight.
+func (lc *LookupClient) Lookup(ctx context.Context, tableName string, opts ...LookupOption) (*LookupResults, error) {
+	query := buildLookupQuery(opts)
+	cacheKey := lookupCacheKey(tableName, query)
 
-	lc.mu.RLock()
-	if entry, ok := lc.cache[cacheKey]; ok && time.Now().Before(entry.expiresAt) {
-		lc.mu.RUnlock()
-		return entry.results, entry.err
+	if results, err, ok := lc.cacheGet(cacheKey); ok {
+		return results, err
 	}
-	lc.mu.RUnlock()
 
-	results, err := lc.fetchLookup(ctx, tableName, opts)
-
-	lc.mu.Lock()
-	ttl := lc.cacheTTL
-	if err != nil {
-		ttl = lc.failureCacheTTL
-	}
-	if ttl > 0 {
-		lc.cache[cacheKey] = &lookupCacheEntry{
-			results:   results,
-			err:       err,
-			expiresAt: time.Now().Add(ttl),
+	// singleflight collapses concurrent cache misses for the same key.
+	v, err, _ := lc.flight.Do(cacheKey, func() (any, error) {
+		// Re-check the cache inside the flight to absorb the case where a
+		// concurrent caller populated it while we were waiting for the lock.
+		if results, err, ok := lc.cacheGet(cacheKey); ok {
+			return results, err
 		}
+		results, err := lc.fetchLookup(ctx, tableName, query)
+		lc.cachePut(cacheKey, results, err)
+		return results, err
+	})
+	if v == nil {
+		return nil, err
+	}
+	return v.(*LookupResults), err
+}
+
+// cacheGet returns a cached entry if it is still valid. The third return is
+// true when the cache hit is fresh (and the caller should not refetch).
+func (lc *LookupClient) cacheGet(key string) (*LookupResults, error, bool) {
+	lc.mu.RLock()
+	defer lc.mu.RUnlock()
+	entry, ok := lc.cache[key]
+	if !ok || !time.Now().Before(entry.expiresAt) {
+		return nil, nil, false
+	}
+	return entry.results, entry.err, true
+}
+
+// cachePut stores a result with the appropriate TTL (success vs failure).
+// Skipped entirely when the success TTL is zero (caching disabled).
+func (lc *LookupClient) cachePut(key string, results *LookupResults, fetchErr error) {
+	ttl := time.Duration(lc.cacheTTL.Load())
+	if fetchErr != nil {
+		ttl = time.Duration(lc.failureCacheTTL.Load())
+	}
+	if ttl <= 0 {
+		return
+	}
+	lc.mu.Lock()
+	lc.cache[key] = &lookupCacheEntry{
+		results:   results,
+		err:       fetchErr,
+		expiresAt: time.Now().Add(ttl),
 	}
 	lc.mu.Unlock()
-
-	return results, err
 }
 
 // fetchLookup performs the actual GraphQL query to core.
-func (lc *LookupClient) fetchLookup(ctx context.Context, tableName string, opts *LookupOptions) (*LookupResults, error) {
+func (lc *LookupClient) fetchLookup(ctx context.Context, tableName string, query LookupQuery) (*LookupResults, error) {
 	variables := map[string]any{
 		"lookupTableName": tableName,
 	}
 
-	if opts != nil {
-		if len(opts.MatchingColumnValues) > 0 {
-			var mcv []map[string]any
-			for col, vals := range opts.MatchingColumnValues {
-				mcv = append(mcv, map[string]any{
-					"column": col,
-					"value":  vals,
-				})
-			}
-			variables["matchingColumnValues"] = mcv
+	if len(query.MatchingColumnValues) > 0 {
+		var mcv []map[string]any
+		for col, vals := range query.MatchingColumnValues {
+			mcv = append(mcv, map[string]any{
+				"column": col,
+				"value":  vals,
+			})
 		}
-		if len(opts.ResultColumns) > 0 {
-			variables["resultColumns"] = opts.ResultColumns
-		}
-		if opts.SortColumn != "" {
-			variables["sortColumn"] = opts.SortColumn
-		}
-		if opts.SortDirection != "" {
-			variables["sortDirection"] = string(opts.SortDirection)
-		}
-		if opts.Offset != nil {
-			variables["offset"] = *opts.Offset
-		}
-		if opts.Limit != nil {
-			variables["limit"] = *opts.Limit
-		}
+		variables["matchingColumnValues"] = mcv
+	}
+	if len(query.ResultColumns) > 0 {
+		variables["resultColumns"] = query.ResultColumns
+	}
+	if query.SortColumn != "" {
+		variables["sortColumn"] = query.SortColumn
+	}
+	if query.SortDirection != "" {
+		variables["sortDirection"] = string(query.SortDirection)
+	}
+	if query.Offset != nil {
+		variables["offset"] = *query.Offset
+	}
+	if query.Limit != nil {
+		variables["limit"] = *query.Limit
 	}
 
 	reqBody := graphqlRequest{
@@ -457,12 +599,12 @@ func startLookupTableSupplierRunner(ctx context.Context, wg *sync.WaitGroup, que
 				log.Printf("[lookup-supplier] poll error: %v", err)
 				continue
 			}
-			if raw == "" {
+			if raw == nil {
 				continue
 			}
 
 			var event lookupTableEvent
-			if err := json.Unmarshal([]byte(raw), &event); err != nil {
+			if err := json.Unmarshal(raw, &event); err != nil {
 				log.Printf("[lookup-supplier] failed to deserialize event: %v", err)
 				continue
 			}
@@ -491,7 +633,7 @@ func startLookupTableSupplierRunner(ctx context.Context, wg *sync.WaitGroup, que
 				continue
 			}
 
-			if err := queue.Put(ctx, event.ID, string(resultJSON)); err != nil {
+			if err := queue.Put(ctx, event.ID, resultJSON); err != nil {
 				log.Printf("[lookup-supplier] failed to publish result: %v", err)
 			}
 		}

@@ -7,6 +7,7 @@ require (
 	github.com/invopop/jsonschema v0.13.0
 	github.com/minio/minio-go/v7 v7.0.100
 	github.com/redis/go-redis/v9 v9.18.0
+	golang.org/x/sync v0.20.0
 )
 
 require (
