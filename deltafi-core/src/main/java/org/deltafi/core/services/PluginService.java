@@ -813,8 +813,19 @@ public class PluginService implements Snapshotter {
      * Used when installing a plugin without known coordinates.
      * The plugin will get proper coordinates when it registers.
      */
-    @Transactional
     public void createPendingPlugin(String image, String imagePullSecret) {
+        createPendingPlugin(image, imagePullSecret, null);
+    }
+
+    /**
+     * Create a pending plugin from an image name (fresh install).
+     * When pluginCoordinates is not null, this install is from a snapshot
+     * revert. In that case the coordinates are kept in case the plugin
+     * install fails and must be removed to clean up the configuration.
+     * The snapshot coordinates are cleared when the plugin registers.
+     */
+    @Transactional
+    public void createPendingPlugin(String image, String imagePullSecret, PluginCoordinates pluginCoordinates) {
         InstallDetails details = InstallDetails.from(image, imagePullSecret);
         String imageName = details.image();
         String appName = details.appName();
@@ -847,6 +858,12 @@ public class PluginService implements Snapshotter {
             plugin.setImageName(imageName);
             plugin.setImageTag(imageTag);
             plugin.setImagePullSecret(imagePullSecret);
+            if (pluginCoordinates == null) {
+                // clear if this is not a snapshot driven plugin install
+                plugin.setSnapshotCoordinates(null);
+            } else {
+                plugin.setSnapshotCoordinates(pluginCoordinates.toString());
+            }
             // Transition to PENDING to trigger (re)deploy - even if already INSTALLING with different image
             if (plugin.getInstallState() != PluginState.INSTALLING || imageChanged) {
                 plugin.transitionToPending();
@@ -857,6 +874,9 @@ public class PluginService implements Snapshotter {
 
         // Create new plugin with placeholder coordinates (will be updated on registration)
         PluginEntity plugin = new PluginEntity();
+        if (pluginCoordinates != null) {
+            plugin.setSnapshotCoordinates(pluginCoordinates.toString());
+        }
         plugin.setKey(new GroupIdArtifactId("pending", appName));
         plugin.setVersion("pending");
         plugin.setActionKitVersion("pending");

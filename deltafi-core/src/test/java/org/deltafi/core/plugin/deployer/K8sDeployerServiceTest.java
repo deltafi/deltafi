@@ -107,7 +107,7 @@ class K8sDeployerServiceTest {
         // Async model: marks for removal instead of immediate uninstall
         Mockito.verify(pluginService).markForRemoval(plugin.getPluginCoordinates());
         // Creates pending plugins for all snapshot plugins (excluding system/core-actions which have null imageName)
-        Mockito.verify(pluginService, Mockito.times(2)).createPendingPlugin(Mockito.anyString(), Mockito.any());
+        Mockito.verify(pluginService, Mockito.times(2)).createPendingPlugin(Mockito.anyString(), Mockito.any(), Mockito.any());
         Mockito.verifyNoMoreInteractions(pluginService);
     }
 
@@ -120,7 +120,7 @@ class K8sDeployerServiceTest {
 
         // Async model: creates pending plugins for reconciliation service to handle
         // 2 non-system plugins in the snapshot (plugin1 and plugin2)
-        Mockito.verify(pluginService, Mockito.times(2)).createPendingPlugin(Mockito.anyString(), Mockito.any());
+        Mockito.verify(pluginService, Mockito.times(2)).createPendingPlugin(Mockito.anyString(), Mockito.any(), Mockito.any());
     }
 
     Deployment expectedDeployment() {

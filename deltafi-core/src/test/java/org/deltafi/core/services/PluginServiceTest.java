@@ -797,9 +797,10 @@ class PluginServiceTest {
 
     @Test
     void createPendingPluginFromSnapshot_newInstall_createsNewPlugin() {
+        PluginCoordinates snapshotCoordinates = new PluginCoordinates("org.mock", "my-plugin", "0.9.0");
         Mockito.when(pluginRepository.findByKeyArtifactId("my-plugin")).thenReturn(Optional.empty());
 
-        pluginService.createPendingPlugin("registry.example.com/my-plugin:1.0.0", "docker-secret");
+        pluginService.createPendingPlugin("registry.example.com/my-plugin:1.0.0", "docker-secret", snapshotCoordinates);
 
         ArgumentCaptor<PluginEntity> captor = ArgumentCaptor.forClass(PluginEntity.class);
         Mockito.verify(pluginRepository).save(captor.capture());
@@ -809,12 +810,14 @@ class PluginServiceTest {
         assertThat(saved.getImageTag()).isEqualTo("1.0.0");
         assertThat(saved.getImagePullSecret()).isEqualTo("docker-secret");
         assertThat(saved.getInstallState()).isEqualTo(PluginState.PENDING);
+        assertThat(saved.getSnapshotCoordinates()).isEqualTo(snapshotCoordinates.toString());
         // Should use placeholder coordinates since we don't know real version until registration
         assertThat(saved.getKey().getGroupId()).isEqualTo("pending");
     }
 
     @Test
     void createPendingPluginFromSnapshot_upgrade_updatesExistingPlugin() {
+        PluginCoordinates snapshotCoordinates = new PluginCoordinates("org.mock", "my-plugin", "1.0.0");
         PluginEntity existing = makePlugin();
         existing.setKey(new GroupIdArtifactId("org.mock", "my-plugin"));
         existing.setImageName("registry.example.com/my-plugin");
@@ -823,7 +826,7 @@ class PluginServiceTest {
 
         Mockito.when(pluginRepository.findByKeyArtifactId("my-plugin")).thenReturn(Optional.of(existing));
 
-        pluginService.createPendingPlugin("registry.example.com/my-plugin:2.0.0", "docker-secret");
+        pluginService.createPendingPlugin("registry.example.com/my-plugin:2.0.0", "docker-secret", snapshotCoordinates);
 
         ArgumentCaptor<PluginEntity> captor = ArgumentCaptor.forClass(PluginEntity.class);
         Mockito.verify(pluginRepository).save(captor.capture());
@@ -831,6 +834,7 @@ class PluginServiceTest {
         PluginEntity saved = captor.getValue();
         assertThat(saved.getImageTag()).isEqualTo("2.0.0");
         assertThat(saved.getInstallState()).isEqualTo(PluginState.PENDING);
+        assertThat(saved.getSnapshotCoordinates()).isEqualTo(snapshotCoordinates.toString());
         // Should be the same entity - upgrade, not delete and recreate
         assertThat(saved).isSameAs(existing);
         // Should NOT have deleted the existing plugin
@@ -839,6 +843,7 @@ class PluginServiceTest {
 
     @Test
     void createPendingPluginFromSnapshot_sameImageTagAlreadyInstalled_skips() {
+        PluginCoordinates snapshotCoordinates = new PluginCoordinates("org.mock", "my-plugin", "1.0.0");
         PluginEntity existing = makePlugin();
         existing.setKey(new GroupIdArtifactId("org.mock", "my-plugin"));
         existing.setImageName("registry.example.com/my-plugin");
@@ -847,10 +852,41 @@ class PluginServiceTest {
 
         Mockito.when(pluginRepository.findByKeyArtifactId("my-plugin")).thenReturn(Optional.of(existing));
 
-        pluginService.createPendingPlugin("registry.example.com/my-plugin:1.0.0", "docker-secret");
+        pluginService.createPendingPlugin("registry.example.com/my-plugin:1.0.0", "docker-secret", snapshotCoordinates);
 
         // Should not save - plugin already installed with same image:tag
         Mockito.verify(pluginRepository, Mockito.never()).save(Mockito.any());
+    }
+
+    @Test
+    void register_snapshotInstall_clearsSnapshotCoordinates() {
+        Mockito.when(pluginValidator.validate(Mockito.any())).thenReturn(List.of());
+
+        PluginEntity existing = new PluginEntity();
+        existing.setKey(new GroupIdArtifactId("pending", "my-plugin"));
+        existing.setVersion("pending");
+        existing.setImageName("registry.example.com/my-plugin");
+        existing.setImageTag("2.0.0");
+        existing.setInstallState(PluginState.INSTALLING);
+        existing.setSnapshotCoordinates(new PluginCoordinates("org.test", "my-plugin", "1.0.0").toString());
+
+        PluginRegistration pluginRegistration = PluginRegistration.builder()
+                .pluginCoordinates(new PluginCoordinates("org.test", "my-plugin", "2.0.0"))
+                .image("registry.example.com/my-plugin:2.0.0")
+                .build();
+
+        Mockito.when(pluginRepository.findById(new GroupIdArtifactId("org.test", "my-plugin")))
+                .thenReturn(Optional.empty());
+        Mockito.when(pluginRepository.findByImageName("registry.example.com/my-plugin"))
+                .thenReturn(Optional.of(existing));
+
+        Result result = pluginService.register(pluginRegistration, integrationService);
+
+        assertTrue(result.isSuccess());
+
+        ArgumentCaptor<PluginEntity> captor = ArgumentCaptor.forClass(PluginEntity.class);
+        Mockito.verify(pluginRepository).save(captor.capture());
+        assertThat(captor.getValue().getSnapshotCoordinates()).isNull();
     }
 
     // Tests for registration rejection when wrong image tries to register

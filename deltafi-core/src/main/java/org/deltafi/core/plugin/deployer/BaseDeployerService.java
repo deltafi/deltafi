@@ -194,7 +194,8 @@ public abstract class BaseDeployerService implements DeployerService {
 
         // Create pending plugins for all desired plugins
         for (PluginSnapshot pluginSnapshot : desiredPlugins) {
-            pluginService.createPendingPlugin(pluginSnapshot.imageName(), pluginSnapshot.imagePullSecret());
+            pluginService.createPendingPlugin(pluginSnapshot.imageName(), pluginSnapshot.imagePullSecret(),
+                    pluginSnapshot.pluginCoordinates());
             pluginsQueued++;
         }
 

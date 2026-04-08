@@ -701,5 +701,8 @@ public abstract class FlowService<FlowPlanT extends FlowPlan, FlowT extends Flow
     @Override
     public void cleanupFor(PluginEntity plugin) {
         removeBySourcePlugin(plugin.getPluginCoordinates());
+        if (plugin.getSnapshotCoordinates() != null) {
+            removeBySourcePlugin(new PluginCoordinates(plugin.getSnapshotCoordinates()));
+        }
     }
 }

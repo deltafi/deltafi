@@ -322,7 +322,8 @@ type TimedDataSource implements DataSource {
   executeImmediate: Boolean
   ingressStatus: IngressStatus
   ingressStatusMessage: String
-  timedIngressAction: ActionConfiguration!
+  "May be null while plugin install is pending from a snapshot"
+  timedIngressAction: ActionConfiguration
   variables: [Variable]!
   tags: [String]
 }

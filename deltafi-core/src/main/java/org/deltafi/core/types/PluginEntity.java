@@ -51,6 +51,7 @@ public class PluginEntity {
     private String description;
     private String actionKitVersion;
     private String registrationHash;
+    private String snapshotCoordinates;
 
     @Enumerated(EnumType.STRING)
     private PluginState installState = PluginState.INSTALLED;

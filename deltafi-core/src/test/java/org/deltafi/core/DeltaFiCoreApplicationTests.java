@@ -7605,6 +7605,52 @@ class DeltaFiCoreApplicationTests {
 		assertThat(result.getMaxErrors()).isEqualTo(10);
 	}
 
+	@Test
+	void uninstallPlugin_removesSnapshotOwnedTimedFlowsAfterFailedSnapshotInstall() {
+		clearForFlowTests();
+
+		PluginEntity plugin = new PluginEntity();
+		plugin.setPluginCoordinates(UPSERT_PLUGIN_V2);
+		plugin.setInstallState(org.deltafi.common.types.PluginState.INSTALLED);
+		pluginRepository.save(plugin);
+
+		TimedDataSource snapshotOwnedFlow = new TimedDataSource();
+		snapshotOwnedFlow.setName("tds-snapshot-cleanup");
+		snapshotOwnedFlow.setSourcePlugin(UPSERT_PLUGIN);
+		snapshotOwnedFlow.setTopic("snapshot-topic");
+		snapshotOwnedFlow.setCronSchedule("*/5 * * * * *");
+		snapshotOwnedFlow.setMaxErrors(7);
+		snapshotOwnedFlow.getFlowStatus().setState(FlowState.STOPPED);
+		snapshotOwnedFlow.getFlowStatus().setPlaceholder(true);
+		snapshotOwnedFlow.getFlowStatus().setValid(false);
+		timedDataSourceRepo.save(snapshotOwnedFlow);
+
+		TimedDataSource currentPluginFlow = new TimedDataSource();
+		currentPluginFlow.setName("tds-current-cleanup");
+		currentPluginFlow.setSourcePlugin(UPSERT_PLUGIN_V2);
+		currentPluginFlow.setTopic("current-topic");
+		currentPluginFlow.setCronSchedule("*/15 * * * * *");
+		currentPluginFlow.setMaxErrors(2);
+		currentPluginFlow.getFlowStatus().setState(FlowState.STOPPED);
+		currentPluginFlow.getFlowStatus().setValid(true);
+		timedDataSourceRepo.save(currentPluginFlow);
+
+		pluginService.createPendingPlugin("registry.example.com/upsert-plugin:2.0.0", null, UPSERT_PLUGIN);
+
+		PluginEntity pendingPlugin = pluginService.getPlugin(UPSERT_PLUGIN_V2).orElseThrow();
+		assertThat(pendingPlugin.getSnapshotCoordinates()).isEqualTo(UPSERT_PLUGIN.toString());
+		assertThat(pendingPlugin.getInstallState()).isEqualTo(org.deltafi.common.types.PluginState.PENDING);
+
+		pendingPlugin.transitionToFailed("simulated install failure");
+		pluginRepository.saveAndFlush(pendingPlugin);
+
+		pluginService.uninstallPlugin(UPSERT_PLUGIN_V2);
+
+		assertThat(pluginRepository.findById(new GroupIdArtifactId(UPSERT_PLUGIN_V2.getGroupId(), UPSERT_PLUGIN_V2.getArtifactId()))).isEmpty();
+		assertThat(timedDataSourceRepo.findByNameAndType("tds-snapshot-cleanup", FlowType.TIMED_DATA_SOURCE, TimedDataSource.class)).isEmpty();
+		assertThat(timedDataSourceRepo.findByNameAndType("tds-current-cleanup", FlowType.TIMED_DATA_SOURCE, TimedDataSource.class)).isEmpty();
+	}
+
 	// -- OnErrorDataSource upserts --
 
 	@Test

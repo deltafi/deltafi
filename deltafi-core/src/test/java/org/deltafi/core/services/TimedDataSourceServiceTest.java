@@ -294,6 +294,21 @@ class TimedDataSourceServiceTest {
         assertEquals(new DataSourceErrorState("flow3", 6, 5), errorStates.get(1));
     }
 
+    @Test
+    void cleanupFor_removesFlowsForPluginAndSnapshotCoordinates() {
+        PluginCoordinates currentCoordinates = new PluginCoordinates("org.test", "timed-plugin", "2.0.0");
+        PluginCoordinates snapshotCoordinates = new PluginCoordinates("org.test", "timed-plugin", "1.0.0");
+        PluginEntity plugin = new PluginEntity();
+        plugin.setPluginCoordinates(currentCoordinates);
+        plugin.setSnapshotCoordinates(snapshotCoordinates.toString());
+
+        timedDataSourceService.cleanupFor(plugin);
+
+        Mockito.verify(timedDataSourceRepo).deleteBySourcePluginAndType(currentCoordinates, FlowType.TIMED_DATA_SOURCE);
+        Mockito.verify(timedDataSourceRepo).deleteBySourcePluginAndType(snapshotCoordinates, FlowType.TIMED_DATA_SOURCE);
+        Mockito.verify(flowCacheService, Mockito.times(2)).refreshCache();
+    }
+
     void setupErrorExceeded() {
         TimedDataSource flow1 = timedDataSource("flow1", FlowState.RUNNING, false, "0 */4 * * * *", 0);
         TimedDataSource flow2 = timedDataSource("flow2", FlowState.RUNNING, false, "0 */4 * * * *", 5);
