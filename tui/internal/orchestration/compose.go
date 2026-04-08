@@ -266,7 +266,7 @@ func (o *ComposeOrchestrator) Up(args []string) error {
 
 // stopDisabledServices stops containers for services whose profiles are no longer active.
 // Docker Compose does not automatically stop profiled-out containers on `up`.
-func (o *ComposeOrchestrator) stopDisabledServices(values map[string]interface{}) {
+func (o *ComposeOrchestrator) stopDisabledServices(values map[string]any) {
 	type profiledService struct {
 		configKey    string
 		serviceNames []string

@@ -1,0 +1,74 @@
+// ABOUTME: Split transform action that creates multiple child DeltaFiles from one input.
+// ABOUTME: Modify this file to implement your splitting logic.
+
+package actions
+
+import (
+	"context"
+	"fmt"
+	"strconv"
+
+	actionkit "gitlab.com/deltafi/deltafi/deltafi-go-action-kit/v2"
+)
+
+func init() {
+	actionkit.Register("{{.ActionClassName}}", &{{.ActionClassName}}{}).
+		Describe("TODO: Add action description").
+		WithParams({{.ActionClassName}}Params{})
+}
+
+// {{.ActionClassName}}Params defines the action's configurable parameters.
+type {{.ActionClassName}}Params struct {
+	NumberOfChildren int `json:"numberOfChildren" jsonschema:"description=Number of child DeltaFiles to create,default=2"`
+}
+
+// {{.ActionClassName}} splits input into multiple child DeltaFiles.
+type {{.ActionClassName}} struct{}
+
+func (a *{{.ActionClassName}}) Transform(ctx context.Context, input actionkit.TransformInput) (actionkit.Result, error) {
+	params, err := actionkit.ParseParams[{{.ActionClassName}}Params](input.Params)
+	if err != nil {
+		return actionkit.NewErrorResult(input.ActionContext, "Failed to parse parameters").SetContext(err.Error()), nil
+	}
+
+	if params.NumberOfChildren <= 0 {
+		params.NumberOfChildren = 2
+	}
+
+	content, err := input.ContentAt(0)
+	if err != nil {
+		return actionkit.NewErrorResult(input.ActionContext, "No content provided"), nil
+	}
+
+	data, err := content.LoadString(ctx, input.ActionContext.ContentService)
+	if err != nil {
+		return actionkit.NewErrorResult(input.ActionContext, "Failed to load content").SetContext(err.Error()), nil
+	}
+
+	// TODO: Implement your splitting logic here
+	savedContent, err := actionkit.SaveContentString(
+		ctx,
+		input.ActionContext.ContentService,
+		input.ActionContext,
+		data,
+		"split content",
+		content.MediaType,
+	)
+	if err != nil {
+		return actionkit.NewErrorResult(input.ActionContext, "Failed to save content").SetContext(err.Error()), nil
+	}
+
+	result := actionkit.NewTransformResults(input.ActionContext)
+
+	for n := 0; n < params.NumberOfChildren; n++ {
+		childName := fmt.Sprintf("%s-%d", input.ActionContext.DeltaFileName, n)
+		child := actionkit.NewChildTransformResult(input.ActionContext, childName)
+		child.AddContent(*savedContent)
+		child.AddAnnotation("childIndex", strconv.Itoa(n))
+		child.LogInfo(fmt.Sprintf("Created child #%d", n))
+
+		result.AddChild(*child)
+	}
+
+	return result, nil
+}

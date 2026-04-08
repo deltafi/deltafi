@@ -172,6 +172,7 @@ Switch modes with `deltafi config`. The same commands (`up`, `down`, `status`, e
       - [uninstall](#plugin-uninstall)
       - [describe](#plugin-describe)
       - [generate](#plugin-generate)
+      - [lint](#plugin-lint)
     - [flow](#flow)
       - [graph](#flow-graph)
     - [topic](#topic)
@@ -896,141 +897,142 @@ Manage plugins in DeltaFi.
   ```bash
   deltafi plugin describe <pluginName> [--verbose|-v] [--action|-a <actionName>]
   ```
-- `generate`: Generate a new plugin project
+- `generate`: Generate or extend a plugin project (Java, Python, or Go). Has subcommands `action`, `supplier`, and `update`. Also aliased as `g`.
   ```bash
-  deltafi plugin generate [--java | --python] <plugin-name> [flags]
-  deltafi plugin generate action <plugin-name> <action-name> [flags]
+  deltafi plugin generate [--java | --python | --go] --name <plugin-name> [flags]
+  deltafi plugin generate action <action-name> [--type|-t <type>] [--in-repo <plugin-name>]
+  deltafi plugin generate supplier <supplier-name> [--in-repo <plugin-name>]
+  deltafi plugin generate update [flags]
   ```
-  
+
   **Plugin Generation:**
-  
-  - Generate a new plugin project or update an existing one
+
+  - Create a new plugin project. The plugin name is passed via `--name` so the bare command tab-completes to flags and subcommands.
     ```bash
-    deltafi plugin generate [--java | --python] <plugin-name> [--namespace|-n <namespace>] [--interactive|-i] [--force|-f] [--dry-run|-d]
+    deltafi plugin generate [--java | --python | --go] --name <plugin-name> \
+      [--namespace|-n <namespace>] [--module|-m <module-path>] [--no-git]
     ```
-    - `--java`: Generate a Java plugin (required, mutually exclusive with --python)
-    - `--python`: Generate a Python plugin (required, mutually exclusive with --java)
-    - `plugin-name`: Name of the plugin to generate or update (required)
-    - `--namespace, -n`: Plugin namespace (default: org.deltafi.&lt;plugin-name&gt;, only used when generating new plugin)
-    - `--interactive, -i`: Interactive mode - prompt for each file with diff view (update only)
-    - `--force, -f`: Force overwrite all files without prompting (update only)
-    - `--dry-run, -d`: Show what would be updated without making changes (update only)
-    
-    **Java Plugin Behavior:**
-    - If the plugin directory does not exist: Generates a complete Java plugin project skeleton
-    - If the plugin directory already exists: Updates the plugin with the latest templates
-    
-    **When generating a new Java plugin**, creates:
-    - Project structure following Java/Gradle best practices
-    - `build.gradle` configuration with DeltaFi plugin conventions
-    - `settings.gradle` with repository configuration
-    - `gradle.properties` with DeltaFi SDK version
-    - Gradle wrapper files (`gradlew`, `gradlew.bat`, `gradle-wrapper.properties`)
-    - Dockerfile for containerization (via plugin convention)
-    - README.md with project documentation
-    - Main Spring Boot application class
-    - Empty actions and test directories
-    - Flows directory with `data-source.json` and `variables.json`
-    
-    **When generating a new Python plugin**, creates:
-    - Project structure following Python best practices
-    - `pyproject.toml` configuration with DeltaFi SDK dependency
-    - Dockerfile for containerization
-    - Makefile with common development tasks
-    - README.md with project documentation
-    - Plugin registration file
-    - Empty actions and test directories
-    - Flows directory with `data-source.json` and `variables.yaml`
-    
-    **When updating an existing plugin**, updates files with the latest templates while preserving:
-    - Java: DeltaFi version in `gradle.properties`, additional dependencies in `build.gradle`
-    - Python: Project version in `pyproject.toml`, additional dependencies in `pyproject.toml`
-    - User modifications (with interactive merge prompts)
-    
-    **Update Modes:**
-    - **Default**: Shows summary of changes and asks for single confirmation
-    - **Interactive (`-i`)**: Shows side-by-side colorized diff for each file and prompts (y/n/d/a/q):
-      - `y`: Accept changes
-      - `n`: Skip file
-      - `d`: Show diff (side-by-side colorized)
-      - `a`: Accept all remaining files
-      - `q`: Quit without applying changes
-    - **Force (`-f`)**: Overwrites all files without prompting
-    - **Dry Run (`-d`)**: Shows what would be updated without making changes
-    
+    - `--java` / `--python` / `--go`: Plugin language (required, mutually exclusive)
+    - `--name, -N`: Plugin name (required)
+    - `--namespace, -n`: Plugin namespace (default: `org.deltafi.<plugin-name>` for Java/Python, `org.deltafi` for Go)
+    - `--module, -m`: Go module path (required for Go plugins, e.g. `github.com/org/my-plugin`)
+    - `--no-git`: Skip the automatic `git init` + `git add .` in the new plugin directory
+
+    **Behavior:**
+    - Errors if the plugin directory already exists. Use `plugin generate update` to refresh an existing plugin.
+    - When `git` is available and the new directory is not already inside a git work tree, runs `git init` and stages every generated file as a single changeset (skip with `--no-git`).
+    - For Go: scaffolds `actions/doc.go` and `suppliers/doc.go` placeholders so both packages are valid even with no actions/suppliers, and `main.go` always carries blank imports for both packages (manually-added action files self-register without further wiring).
+
     **Examples:**
     ```bash
-    # Generate a new Java plugin with default namespace
-    deltafi plugin generate --java my-plugin
-    
-    # Generate a Java plugin with custom namespace
-    deltafi plugin generate --java my-plugin --namespace com.example.myplugin
-    
-    # Generate a new Python plugin
-    deltafi plugin generate --python my-plugin
-    
-    # Update an existing plugin (directory already exists)
-    deltafi plugin generate --java my-plugin
-    
-    # Preview what would be updated
-    deltafi plugin generate --java my-plugin --dry-run
-    
-    # Update with interactive merge prompts
-    deltafi plugin generate --python my-plugin --interactive
-    
-    # Force update all files
-    deltafi plugin generate --java my-plugin --force
+    deltafi plugin generate --java   --name my-plugin
+    deltafi plugin generate --python --name my-plugin --namespace com.example.myplugin
+    deltafi plugin generate --go     --name my-plugin --module github.com/org/my-plugin
     ```
-  
+
+  **Updating an existing plugin:**
+
+  - `update`: Refresh an existing plugin's scaffolding to match the current generator templates. Defaults to the current directory; pass `--in-repo` to target a plugin in the configured repos directory.
+    ```bash
+    deltafi plugin generate update [--in-repo <plugin-name>] \
+      [--interactive|-i] [--force|-f] [--dry-run|-d] [--include-source] [--no-git]
+    ```
+    - `--in-repo`: Plugin name in the configured repos directory (default: use current directory)
+    - `--interactive, -i`: Prompt for each file with a side-by-side diff (`y`/`n`/`d`/`a`/`q`)
+    - `--force, -f`: Overwrite all files without prompting
+    - `--dry-run, -d`: Show what would be updated without making changes
+    - `--include-source`: Also re-render user-owned source files (`main.go` for Go, `PluginClass.java` for Java, `plugin.py` for Python). Skipped by default so update is safe to run after the user has customized their plugin code.
+    - `--no-git`: Skip the post-update `git init` (only relevant if the plugin directory is not yet a git repo)
+
+    **What gets refreshed:** build files (`build.gradle`/`pyproject.toml`/`go.mod`), Dockerfiles, `Makefile`, CI files, README, generated flow templates, etc.
+
+    **What gets preserved:** existing dependencies in `gradle.properties` / `pyproject.toml` / `go.mod` (including `// indirect` blocks and `replace` directives), and dynamically-added action/supplier blank imports in Go's `main.go`. Run with `--include-source` to overwrite the user-owned source files anyway.
+
+    **Examples:**
+    ```bash
+    # In the plugin directory
+    deltafi plugin generate update --dry-run
+
+    # Target a plugin in repoPath without cd'ing into it
+    deltafi plugin generate update --in-repo my-plugin --force
+
+    # Refresh source files too (use after upgrading the action kit major version)
+    deltafi plugin generate update --include-source
+    ```
+
   **Action Generation:**
-  
-  - `action &lt;plugin-name&gt; &lt;action-name&gt;`: Generate a new action in an existing plugin
+
+  - `action <action-name>`: Generate a new action in an existing plugin. Defaults to the current directory; pass `--in-repo` to target a plugin in the configured repos directory.
     ```bash
-    deltafi plugin generate action <plugin-name> <action-name> [--type|-t <type>]
+    deltafi plugin generate action <action-name> [--type|-t <type>] [--in-repo <plugin-name>]
     ```
-    - `plugin-name`: Name of the existing plugin (required)
-    - `action-name`: Name of the action to generate (required)
-    - `--type, -t`: Type of action to generate (default: TransformAction)
-    
-    **Language Auto-Detection:**
-    - Language is automatically detected based on the plugin directory:
-      - `build.gradle` file → Java plugin
-      - `pyproject.toml` file → Python plugin
-    
-    **Supported Action Types (Java):**
-    - `TransformAction` (default)
-    - `EgressAction`
-    - `TimedIngressAction`
-    - `JoiningTransformAction`
-    - `TransformManyAction`
-    
-    **Supported Action Types (Python):**
-    - `TransformAction` (default)
-    - `EgressAction`
-    - `IngressAction`
-    - `TimedIngressAction`
-    - `JoiningTransformAction`
-    - `TransformManyAction`
-    - `TransformExecAction`
-    
+    - `action-name`: Name of the action (required). Accepts kebab-case (`my-transform`), PascalCase (`MyTransform`), or fully-suffixed names (`my-transform-action` / `MyTransformAction`); the generator normalizes and adds an `Action` suffix as needed.
+    - `--type, -t`: Action type (default: `TransformAction`)
+    - `--in-repo`: Plugin name in the configured repos directory (default: use current directory)
+
+    **Language auto-detection:** based on `build.gradle` (Java), `pyproject.toml` (Python), or `go.mod` (Go) in the resolved plugin directory.
+
+    **Supported action types:**
+    - Java: `TransformAction` (default), `EgressAction`, `TimedIngressAction`, `JoiningTransformAction`, `TransformManyAction`
+    - Python: `TransformAction` (default), `EgressAction`, `IngressAction`, `TimedIngressAction`, `JoiningTransformAction`, `TransformManyAction`, `TransformExecAction`
+    - Go: `TransformAction` (default), `EgressAction`, `TimedIngressAction`, `JoiningTransformAction`, `TransformManyAction`
+
     **Generates:**
-    - Java: Action implementation file in `src/main/java/org/deltafi/&lt;package&gt;/actions/`, test file in `src/test/java/org/deltafi/&lt;package&gt;/actions/`, flow JSON file in `src/main/resources/flows/`
-    - Python: Action implementation file in `src/&lt;package&gt;/actions/`, test file in `src/&lt;package&gt;/test/`
-    - Initial action with content passthrough behavior, TODO annotations, and logging
-    
+    - Action implementation file (under `actions/` for Go/Python, `src/main/java/.../actions/` for Java)
+    - Test file alongside the action
+    - A starter flow JSON for the action's type
+
+    **Test-only mode:** If the action source file already exists but its `_test.go` / test class is missing, the generator only creates the test and leaves the action alone. This is useful for adding tests to manually-written actions. If both the action and its test already exist, the command errors out.
+
     **Examples:**
     ```bash
-    # Generate a TransformAction (default) - language auto-detected
-    deltafi plugin generate action my-plugin my-transform
-    
-    # Generate an EgressAction
-    deltafi plugin generate action my-plugin my-egress --type EgressAction
-    
-    # Generate action with PascalCase name
-    # Java: Creates SuperDuperAction.java with class SuperDuperAction
-    # Python: Creates super_duper_action.py with class SuperDuperAction
-    deltafi plugin generate action my-plugin SuperDuper
+    # In the plugin directory: generate a default TransformAction
+    deltafi plugin generate action my-transform
+
+    # Target a plugin under repoPath without cd'ing into it
+    deltafi plugin generate action my-egress --type EgressAction --in-repo my-plugin
+
+    # Add a missing test to a manually-written action
+    deltafi plugin generate action my-transform
     ```
+
+  **Supplier Generation (Go only):**
+
+  - `supplier <supplier-name>`: Generate a new lookup table supplier in an existing Go plugin.
+    ```bash
+    deltafi plugin generate supplier <supplier-name> [--in-repo <plugin-name>]
+    ```
+    - `supplier-name`: Name of the supplier (required). Same naming flexibility as action names.
+    - `--in-repo`: Plugin name in the configured repos directory (default: use current directory)
+
+    Generates `suppliers/<name>_supplier.go` and ensures `main.go` carries the blank import for the suppliers package.
+
+- `lint`: Run static checks against an existing plugin. Defaults to the current directory; pass `--in-repo` to target a plugin in the configured repos directory.
+  ```bash
+  deltafi plugin lint [--in-repo <plugin-name>]
+  ```
+  - `--in-repo`: Plugin name in the configured repos directory (default: use current directory)
+
+  Detects the plugin language (Go, Java, or Python) and runs the per-language linter. The Go linter is implemented; Java and Python emit an "info" placeholder until their linters land.
+
+  **Go checks:**
+  - Required scaffolding files are present (`main.go`, `go.mod`, `Makefile`, `Dockerfile`, `Dockerfile.local`, `.gitignore`, `.dockerignore`, `actions/doc.go`, `suppliers/doc.go`); `README.md`, `HEADER`, and `LICENSE` warn if missing
+  - `go.mod` parses, declares the action-kit dependency, and any `replace` directives point at paths that actually exist
+  - `main.go` carries blank imports for the actions and suppliers packages whenever those packages contain source files
+  - Every `actions/*.go` (excluding `doc.go` and `*_test.go`) calls `actionkit.Register(...)` from an `init()` function
+  - Every `suppliers/*.go` (excluding `doc.go`) calls `actionkit.RegisterSupplier(...)` from an `init()` function
+  - Every `flows/*.json` (excluding `variables.json`) is valid JSON, and every action reference in `transformActions`, `egressAction`, `timedIngressAction`, etc. resolves to an action registered in this plugin (unresolved references emit a warning since they may be provided by an upstream plugin)
+
+  Issues are sorted error → warning → info, then by file. Errors fail the run with a non-zero exit code; warnings and info do not.
+
+  **Examples:**
+  ```bash
+  # Lint the plugin in the current directory
+  deltafi plugin lint
+
+  # Lint a plugin under the configured repos directory
+  deltafi plugin lint --in-repo my-plugin
+  ```
 
 #### `flow`
 Commands for visualizing data flow paths.

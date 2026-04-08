@@ -1,0 +1,71 @@
+// ABOUTME: Tests for {{.ActionClassName}}.
+// ABOUTME: Covers multi-child creation, default count, and no-content error.
+
+package actions
+
+import (
+	"context"
+	"strconv"
+	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	actionkit "gitlab.com/deltafi/deltafi/deltafi-go-action-kit/v2"
+)
+
+func Test{{.ActionClassName}}_DefaultTwoChildren(t *testing.T) {
+	tc := actionkit.NewTestContext("split-did")
+	tc.DeltaFileName = "source-file"
+	content := tc.Content("input.txt", "text/plain", "original content")
+
+	input := actionkit.TransformInput{
+		ActionContext: tc.ActionContext,
+		Content:       []actionkit.ActionContent{content},
+		Metadata:      map[string]string{},
+		Params:        map[string]any{},
+	}
+
+	event := actionkit.RunTransform(t, &{{.ActionClassName}}{}, input)
+	te := event.RequireTransform(t)
+
+	require.Len(t, te, 2)
+
+	for i, child := range te {
+		require.Len(t, child.Content, 1, "child %d", i)
+		data, err := child.Content[0].LoadString(context.Background(), tc.Store)
+		require.NoError(t, err, "child %d", i)
+		assert.Equal(t, "original content", data, "child %d", i)
+		assert.Equal(t, strconv.Itoa(i), child.Annotations["childIndex"], "child %d", i)
+		assert.Equal(t, "source-file-"+strconv.Itoa(i), child.Name, "child %d", i)
+	}
+}
+
+func Test{{.ActionClassName}}_ThreeChildren(t *testing.T) {
+	tc := actionkit.NewTestContext("split-did")
+	tc.DeltaFileName = "source-file"
+	content := tc.Content("input.txt", "text/plain", "data")
+
+	input := actionkit.TransformInput{
+		ActionContext: tc.ActionContext,
+		Content:       []actionkit.ActionContent{content},
+		Metadata:      map[string]string{},
+		Params:        map[string]any{"numberOfChildren": 3},
+	}
+
+	event := actionkit.RunTransform(t, &{{.ActionClassName}}{}, input)
+	te := event.RequireTransform(t)
+	assert.Len(t, te, 3)
+}
+
+func Test{{.ActionClassName}}_NoContent(t *testing.T) {
+	tc := actionkit.NewTestContext("split-did")
+
+	input := actionkit.TransformInput{
+		ActionContext: tc.ActionContext,
+		Content:       nil,
+		Params:        map[string]any{},
+	}
+
+	event := actionkit.RunTransform(t, &{{.ActionClassName}}{}, input)
+	event.RequireError(t, "No content provided")
+}

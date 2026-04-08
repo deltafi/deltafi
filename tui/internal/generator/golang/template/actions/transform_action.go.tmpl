@@ -1,0 +1,95 @@
+// ABOUTME: Transform action that processes content and produces transformed output.
+// ABOUTME: Modify this file to implement your transformation logic.
+
+package actions
+
+import (
+	"context"
+	"fmt"
+
+	actionkit "gitlab.com/deltafi/deltafi/deltafi-go-action-kit/v2"
+)
+
+func init() {
+	actionkit.Register("{{.ActionClassName}}", &{{.ActionClassName}}{}).
+		Describe("TODO: Add action description")
+
+	// Uncomment to register with parameters and detailed specifications:
+	// actionkit.Register("{{.ActionClassName}}", &{{.ActionClassName}}{}).
+	// 	WithParams({{.ActionClassName}}Params{}).
+	// 	WithOptions(actionkit.ActionOptions{
+	// 		Description: "TODO: Add action description",
+	// 		InputSpec: &actionkit.InputSpec{
+	// 			ContentSummary: "TODO: Describe expected input",
+	// 		},
+	// 		OutputSpec: &actionkit.OutputSpec{
+	// 			ContentSummary: "TODO: Describe produced output",
+	// 		},
+	// 	})
+}
+
+// {{.ActionClassName}}Params defines the action's configurable parameters.
+// Add fields with json and jsonschema tags to expose them in the DeltaFi UI.
+type {{.ActionClassName}}Params struct {
+	// Example parameter:
+	// ConvertToUpper bool `json:"convertToUpper" jsonschema:"description=Convert content to uppercase,default=false"`
+}
+
+// {{.ActionClassName}} implements the transform action.
+type {{.ActionClassName}} struct{}
+
+func (a *{{.ActionClassName}}) Transform(ctx context.Context, input actionkit.TransformInput) (actionkit.Result, error) {
+	// Uncomment to parse action parameters:
+	// params := {{.ActionClassName}}Params{}
+	// if err := input.ParseParameters(&params); err != nil {
+	// 	return actionkit.NewErrorResult(input.ActionContext, "Failed to parse parameters").SetContext(err.Error()), nil
+	// }
+
+	content, err := input.ContentAt(0)
+	if err != nil {
+		return actionkit.NewErrorResult(input.ActionContext, "No content provided"), nil
+	}
+
+	data, err := content.LoadString(ctx, input.ActionContext.ContentService)
+	if err != nil {
+		return actionkit.NewErrorResult(input.ActionContext, "Failed to load content").SetContext(err.Error()), nil
+	}
+
+	// TODO: Implement your transformation logic here
+	transformed := data
+
+	contentName := fmt.Sprintf("%s-transformed", content.Name)
+	newContent, err := actionkit.SaveContentString(ctx, input.ActionContext.ContentService, input.ActionContext, transformed, contentName, content.MediaType)
+	if err != nil {
+		return actionkit.NewErrorResult(input.ActionContext, "Failed to save content").SetContext(err.Error()), nil
+	}
+
+	result := actionkit.NewTransformResult(input.ActionContext)
+	result.AddContent(*newContent)
+	result.AddAnnotation("{{.ActionName}}", "processed")
+	result.AddMetadata("{{.ActionName}}", "done")
+
+	// Uncomment to query a lookup table:
+	// lookupResults, err := input.ActionContext.LookupClient.Lookup(ctx, "my_lookup_table", &actionkit.LookupOptions{
+	// 	MatchingColumnValues: map[string][]string{"column": {"value"}},
+	// 	ResultColumns:        []string{"result_col"},
+	// })
+	// if err != nil {
+	// 	return actionkit.NewErrorResult(input.ActionContext, "Lookup failed").SetContext(err.Error()), nil
+	// }
+	// for _, row := range lookupResults.Rows {
+	// 	result.AddMetadata("lookup_result", row["result_col"])
+	// }
+
+	// Uncomment to fetch a plugin artifact:
+	// fetched, err := input.ActionContext.ArtifactClient.GetArtifact(ctx, "my-artifact.json", "")
+	// if err != nil {
+	// 	result.LogWarn("Artifact not available: " + err.Error())
+	// } else {
+	// 	result.LogInfo(fmt.Sprintf("Loaded artifact: %d bytes", len(fetched.Data)))
+	// }
+
+	result.LogInfo(fmt.Sprintf("Transformed content: %d bytes", newContent.Size()))
+
+	return result, nil
+}

@@ -155,21 +155,20 @@ func (g *JavaGenerator) GeneratePlugin(pluginName string, options *generator.Plu
 }
 
 // GenerateAction generates a new action in an existing plugin
-func (g *JavaGenerator) GenerateAction(pluginName string, actionName string, actionType string) error {
-	if err := ValidatePluginName(pluginName); err != nil {
-		return err
-	}
+func (g *JavaGenerator) GenerateAction(pluginName string, actionName string, actionType string, options *generator.GenerateActionOptions) error {
 	if err := ValidateActionName(actionName); err != nil {
 		return err
 	}
 
-	config := app.GetInstance().GetConfig()
-	repoPath := config.Development.RepoPath
-	if repoPath == "" {
-		return fmt.Errorf("repoPath not configured in development config")
+	dirOverride := ""
+	if options != nil {
+		dirOverride = options.PluginDir
 	}
-
-	pluginDir := filepath.Join(repoPath, pluginName)
+	pluginDir, err := resolvePluginDir(pluginName, dirOverride)
+	if err != nil {
+		return err
+	}
+	pluginName = filepath.Base(pluginDir)
 
 	// Check if plugin directory exists
 	if _, err := os.Stat(pluginDir); os.IsNotExist(err) {
@@ -244,34 +243,44 @@ func (g *JavaGenerator) GenerateAction(pluginName string, actionName string, act
 		return fmt.Errorf("unsupported action type: %s", actionType)
 	}
 
-	// Generate action file
-	actionContent, err := RenderTemplate(actionTemplate, data)
-	if err != nil {
-		return fmt.Errorf("failed to render action template: %w", err)
+	actionPath := filepath.Join(pluginDir, "src", "main", "java", groupIDPath, "actions", className+".java")
+	testPath := filepath.Join(pluginDir, "src", "test", "java", groupIDPath, "actions", testClassName+".java")
+	actionExists := fileExists(actionPath)
+	testExists := fileExists(testPath)
+
+	if actionExists && testExists {
+		return fmt.Errorf("action and test already exist for %q (action: %s, test: %s)", actionName, actionPath, testPath)
 	}
 
-	actionPath := filepath.Join(pluginDir, "src", "main", "java", groupIDPath, "actions", className+".java")
 	if err := os.MkdirAll(filepath.Dir(actionPath), 0755); err != nil {
 		return fmt.Errorf("failed to create actions directory: %w", err)
 	}
 
-	if err := os.WriteFile(actionPath, actionContent, 0644); err != nil {
-		return fmt.Errorf("failed to write action file: %w", err)
+	if !actionExists {
+		actionContent, err := RenderTemplate(actionTemplate, data)
+		if err != nil {
+			return fmt.Errorf("failed to render action template: %w", err)
+		}
+		if err := os.WriteFile(actionPath, actionContent, 0644); err != nil {
+			return fmt.Errorf("failed to write action file: %w", err)
+		}
+		fmt.Printf("Wrote %s\n", actionPath)
+	} else {
+		fmt.Printf("Action %s already exists; generating test only.\n", actionPath)
 	}
 
-	// Generate test file
-	testContent, err := RenderTemplate(testTemplate, data)
-	if err != nil {
-		return fmt.Errorf("failed to render test template: %w", err)
-	}
-
-	testPath := filepath.Join(pluginDir, "src", "test", "java", groupIDPath, "actions", testClassName+".java")
-	if err := os.MkdirAll(filepath.Dir(testPath), 0755); err != nil {
-		return fmt.Errorf("failed to create test directory: %w", err)
-	}
-
-	if err := os.WriteFile(testPath, testContent, 0644); err != nil {
-		return fmt.Errorf("failed to write test file: %w", err)
+	if !testExists {
+		if err := os.MkdirAll(filepath.Dir(testPath), 0755); err != nil {
+			return fmt.Errorf("failed to create test directory: %w", err)
+		}
+		testContent, err := RenderTemplate(testTemplate, data)
+		if err != nil {
+			return fmt.Errorf("failed to render test template: %w", err)
+		}
+		if err := os.WriteFile(testPath, testContent, 0644); err != nil {
+			return fmt.Errorf("failed to write test file: %w", err)
+		}
+		fmt.Printf("Wrote %s\n", testPath)
 	}
 
 	// Generate flow JSON file based on action type
@@ -296,6 +305,39 @@ func (g *JavaGenerator) GenerateAction(pluginName string, actionName string, act
 	}
 
 	return nil
+}
+
+// LintPlugin is not yet implemented for Java plugins.
+func (g *JavaGenerator) LintPlugin(pluginName string, options *generator.LintOptions) ([]generator.LintIssue, error) {
+	return []generator.LintIssue{
+		{
+			Severity: generator.LintInfo,
+			Message:  "lint is not yet implemented for Java plugins",
+		},
+	}, nil
+}
+
+// resolvePluginDir returns the absolute plugin directory either from an explicit
+// override or by joining the configured repoPath with pluginName.
+func resolvePluginDir(pluginName, dirOverride string) (string, error) {
+	if dirOverride != "" {
+		return dirOverride, nil
+	}
+	if err := ValidatePluginName(pluginName); err != nil {
+		return "", err
+	}
+	config := app.GetInstance().GetConfig()
+	repoPath := config.Development.RepoPath
+	if repoPath == "" {
+		return "", fmt.Errorf("repoPath not configured in development config")
+	}
+	return filepath.Join(repoPath, pluginName), nil
+}
+
+// fileExists returns true when path exists.
+func fileExists(path string) bool {
+	_, err := os.Stat(path)
+	return err == nil
 }
 
 // readGroupIDFromBuildGradle reads the group ID from build.gradle
@@ -326,17 +368,21 @@ func readGroupIDFromBuildGradle(buildGradlePath string) (string, error) {
 
 // UpdatePlugin updates an existing Java plugin with the latest templates
 func (g *JavaGenerator) UpdatePlugin(pluginName string, options *generator.UpdateOptions) error {
-	if err := ValidatePluginName(pluginName); err != nil {
-		return err
+	var pluginDir string
+	if options != nil && options.PluginDir != "" {
+		pluginDir = options.PluginDir
+		pluginName = filepath.Base(pluginDir)
+	} else {
+		if err := ValidatePluginName(pluginName); err != nil {
+			return err
+		}
+		config := app.GetInstance().GetConfig()
+		repoPath := config.Development.RepoPath
+		if repoPath == "" {
+			return fmt.Errorf("repoPath not configured in development config")
+		}
+		pluginDir = filepath.Join(repoPath, pluginName)
 	}
-
-	config := app.GetInstance().GetConfig()
-	repoPath := config.Development.RepoPath
-	if repoPath == "" {
-		return fmt.Errorf("repoPath not configured in development config")
-	}
-
-	pluginDir := filepath.Join(repoPath, pluginName)
 
 	// Check if plugin directory exists
 	if _, err := os.Stat(pluginDir); os.IsNotExist(err) {
@@ -391,11 +437,19 @@ func (g *JavaGenerator) UpdatePlugin(pluginName string, options *generator.Updat
 	// Define files to check/update
 	files := getTemplateFiles(groupIDPath, className)
 
+	includeSource := options != nil && options.IncludeSource
+	pluginClassPath := filepath.Join("src", "main", "java", groupIDPath, className+".java")
+
 	// Collect file diffs
 	var diffs []*generator.FileDiff
 	var filesToUpdate []string
 
 	for templatePath, outputPath := range files {
+		// Skip the plugin class by default — it's user-owned source code.
+		if !includeSource && outputPath == pluginClassPath {
+			continue
+		}
+
 		fullOutputPath := filepath.Join(pluginDir, outputPath)
 
 		// Skip gradle-wrapper.jar as it's a binary file

@@ -1,0 +1,39 @@
+// ABOUTME: Tests for {{.ActionClassName}}.
+// ABOUTME: Covers normal egress and missing content error.
+
+package actions
+
+import (
+	"testing"
+
+	"github.com/stretchr/testify/require"
+	actionkit "gitlab.com/deltafi/deltafi/deltafi-go-action-kit/v2"
+)
+
+func Test{{.ActionClassName}}_Normal(t *testing.T) {
+	tc := actionkit.NewTestContext("test-did")
+	content := tc.Content("test.txt", "text/plain", "hello world")
+
+	input := actionkit.EgressInput{
+		ActionContext: tc.ActionContext,
+		Content:       []actionkit.ActionContent{content},
+		Metadata:      map[string]string{"key1": "val1"},
+	}
+
+	event := actionkit.RunEgress(t, &{{.ActionClassName}}{}, input)
+	event.RequireEgress(t)
+	require.GreaterOrEqual(t, len(event.Messages), 2)
+}
+
+func Test{{.ActionClassName}}_NoContent(t *testing.T) {
+	tc := actionkit.NewTestContext("test-did")
+
+	input := actionkit.EgressInput{
+		ActionContext: tc.ActionContext,
+		Content:       nil,
+		Metadata:      map[string]string{},
+	}
+
+	event := actionkit.RunEgress(t, &{{.ActionClassName}}{}, input)
+	event.RequireError(t, "No content provided")
+}

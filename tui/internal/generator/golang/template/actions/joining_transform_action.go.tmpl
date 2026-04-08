@@ -1,0 +1,92 @@
+// ABOUTME: Joining transform action that merges multiple DeltaFiles into one.
+// ABOUTME: Modify this file to implement your join and transform logic.
+
+package actions
+
+import (
+	"context"
+	"fmt"
+	"maps"
+	"strings"
+
+	actionkit "gitlab.com/deltafi/deltafi/deltafi-go-action-kit/v2"
+)
+
+func init() {
+	actionkit.Register("{{.ActionClassName}}", &{{.ActionClassName}}{}).
+		Describe("TODO: Add action description")
+
+	// Uncomment to register with parameters:
+	// actionkit.Register("{{.ActionClassName}}", &{{.ActionClassName}}{}).
+	// 	Describe("TODO: Add action description").
+	// 	WithParams({{.ActionClassName}}Params{})
+}
+
+// {{.ActionClassName}}Params defines the action's configurable parameters.
+type {{.ActionClassName}}Params struct {
+	// Example parameter:
+	// MaxItems int `json:"maxItems" jsonschema:"description=Maximum items to join,default=10"`
+}
+
+// {{.ActionClassName}} implements the joining transform action.
+type {{.ActionClassName}} struct{}
+
+// Join aggregates multiple inputs into a single input for the Transform phase.
+func (a *{{.ActionClassName}}) Join(ctx context.Context, inputs []actionkit.TransformInput) (actionkit.TransformInput, error) {
+	var allContent []actionkit.ActionContent
+	allMetadata := make(map[string]string)
+
+	// TODO: Implement your join aggregation logic here
+	for _, input := range inputs {
+		allContent = append(allContent, input.Content...)
+		maps.Copy(allMetadata, input.Metadata)
+	}
+
+	return actionkit.TransformInput{
+		ActionContext: inputs[0].ActionContext,
+		Content:       allContent,
+		Metadata:      allMetadata,
+		Params:        inputs[0].Params,
+	}, nil
+}
+
+// Transform processes the joined input and creates the final output.
+func (a *{{.ActionClassName}}) Transform(ctx context.Context, input actionkit.TransformInput) (actionkit.Result, error) {
+	// TODO: Implement your transform logic on the joined input
+	var contentBuilder strings.Builder
+	for i := range input.Content {
+		content, err := input.ContentAt(i)
+		if err != nil {
+			return actionkit.NewErrorResult(input.ActionContext, fmt.Sprintf("Failed to get content at index %d", i)).SetContext(err.Error()), nil
+		}
+		data, err := content.LoadString(ctx, input.ActionContext.ContentService)
+		if err != nil {
+			return actionkit.NewErrorResult(input.ActionContext, fmt.Sprintf("Failed to load content at index %d", i)).SetContext(err.Error()), nil
+		}
+		contentBuilder.WriteString(data)
+		contentBuilder.WriteString("\n")
+	}
+
+	mergedContent, err := actionkit.SaveContentString(
+		ctx,
+		input.ActionContext.ContentService,
+		input.ActionContext,
+		contentBuilder.String(),
+		"merged",
+		"text/plain",
+	)
+	if err != nil {
+		return actionkit.NewErrorResult(input.ActionContext, "Failed to save merged content").SetContext(err.Error()), nil
+	}
+
+	result := actionkit.NewTransformResult(input.ActionContext)
+	result.AddContent(*mergedContent)
+
+	for k, v := range input.Metadata {
+		result.AddMetadata(k, v)
+	}
+
+	result.LogInfo(fmt.Sprintf("Joined %d content items", len(input.Content)))
+
+	return result, nil
+}

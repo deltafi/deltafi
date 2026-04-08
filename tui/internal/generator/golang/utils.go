@@ -1,0 +1,139 @@
+// ABOUTME: Name transformation utilities for Go plugin code generation.
+// ABOUTME: Converts between kebab-case, snake_case, and PascalCase naming conventions.
+
+/*
+ *    DeltaFi - Data transformation and enrichment platform
+ *
+ *    Copyright 2021-2026 DeltaFi Contributors <deltafi@deltafi.org>
+ *
+ *    Licensed under the Apache License, Version 2.0 (the "License");
+ *    you may not use this file except in compliance with the License.
+ *    You may obtain a copy of the License at
+ *
+ *        http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *    Unless required by applicable law or agreed to in writing, software
+ *    distributed under the License is distributed on an "AS IS" BASIS,
+ *    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *    See the License for the specific language governing permissions and
+ *    limitations under the License.
+ */
+package golang
+
+import (
+	"fmt"
+	"strings"
+	"unicode"
+)
+
+// PluginNameToPackageName converts a kebab-case plugin name to a snake_case Go file-friendly name
+// Example: "my-plugin" -> "my_plugin"
+func PluginNameToPackageName(pluginName string) string {
+	return strings.ReplaceAll(pluginName, "-", "_")
+}
+
+// PluginNameToClassName converts a kebab-case plugin name to a PascalCase name
+// Example: "my-plugin" -> "MyPlugin"
+func PluginNameToClassName(pluginName string) string {
+	parts := strings.Split(pluginName, "-")
+	var result strings.Builder
+	for _, part := range parts {
+		if len(part) > 0 {
+			result.WriteString(strings.ToUpper(part[:1]) + part[1:])
+		}
+	}
+	return result.String()
+}
+
+// ActionNameToClassName converts a kebab-case action name to a PascalCase class name
+// Example: "my-new-action" -> "MyNewAction"
+func ActionNameToClassName(actionName string) string {
+	return PluginNameToClassName(actionName)
+}
+
+// ActionNameToFileName converts an action name to a snake_case Go file name (without extension)
+// Handles kebab-case, PascalCase, and mixed case
+// Examples: "my-new-action" -> "my_new_action", "Super" -> "super", "SuperDuper" -> "super_duper"
+func ActionNameToFileName(actionName string) string {
+	if actionName == "" {
+		return ""
+	}
+
+	// First normalize hyphens to underscores
+	result := strings.ReplaceAll(actionName, "-", "_")
+
+	// Build result with underscores before uppercase letters (except at start)
+	var builder strings.Builder
+	for i, r := range result {
+		if unicode.IsUpper(r) {
+			if i > 0 && builder.Len() > 0 {
+				prevChar := rune(result[i-1])
+				if prevChar != '_' {
+					builder.WriteRune('_')
+				}
+			}
+			builder.WriteRune(unicode.ToLower(r))
+		} else {
+			builder.WriteRune(r)
+		}
+	}
+
+	result = builder.String()
+
+	// Clean up multiple consecutive underscores
+	for strings.Contains(result, "__") {
+		result = strings.ReplaceAll(result, "__", "_")
+	}
+
+	result = strings.Trim(result, "_")
+	result = strings.ToLower(result)
+
+	if result == "" {
+		return strings.ToLower(actionName)
+	}
+
+	return result
+}
+
+// validateName validates that a name is valid (starts with letter, contains only letters, digits, and hyphens)
+func validateName(name, nameType string) error {
+	if len(name) == 0 {
+		return &ValidationError{Message: fmt.Sprintf("%s name is required", nameType)}
+	}
+
+	if !unicode.IsLetter(rune(name[0])) {
+		return &ValidationError{Message: fmt.Sprintf("%s name must start with a letter", nameType)}
+	}
+
+	for _, r := range name {
+		if !unicode.IsLetter(r) && !unicode.IsDigit(r) && r != '-' {
+			return &ValidationError{Message: fmt.Sprintf("%s name must contain only letters, digits, and '-'", nameType)}
+		}
+	}
+
+	return nil
+}
+
+// ValidatePluginName validates that a plugin name is valid
+func ValidatePluginName(name string) error {
+	return validateName(name, "plugin")
+}
+
+// ValidateActionName validates that an action name is valid
+func ValidateActionName(name string) error {
+	return validateName(name, "action")
+}
+
+// ValidateSupplierName validates that a supplier name is valid
+func ValidateSupplierName(name string) error {
+	return validateName(name, "supplier")
+}
+
+// ValidationError represents a validation error
+type ValidationError struct {
+	Message string
+}
+
+func (e *ValidationError) Error() string {
+	return e.Message
+}

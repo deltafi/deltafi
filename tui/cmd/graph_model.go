@@ -585,10 +585,7 @@ func (m graphModel) queryModalMaxVisible() int {
 	// - blank line before hint (1 line)
 	// - hint line (1 line)
 	// Total: 11 lines
-	available := max(m.height-11, 5)
-	if available > len(m.queryModalFiltered) {
-		available = len(m.queryModalFiltered)
-	}
+	available := min(max(m.height-11, 5), len(m.queryModalFiltered))
 	return available
 }
 

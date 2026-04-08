@@ -1,3 +1,6 @@
+// ABOUTME: CLI commands for generating plugin projects, actions, and suppliers.
+// ABOUTME: Supports Java, Python, and Go plugins with language auto-detection.
+
 /*
  *    DeltaFi - Data transformation and enrichment platform
  *
@@ -20,12 +23,14 @@ package cmd
 import (
 	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"sort"
 	"strings"
 
 	"github.com/deltafi/tui/internal/app"
 	"github.com/deltafi/tui/internal/generator"
+	goGen "github.com/deltafi/tui/internal/generator/golang"
 	"github.com/deltafi/tui/internal/generator/java"
 	"github.com/deltafi/tui/internal/generator/python"
 	"github.com/deltafi/tui/internal/ui/styles"
@@ -33,114 +38,220 @@ import (
 )
 
 var pluginGenerateCmd = &cobra.Command{
-	Use:   "generate [--java | --python] <plugin-name>",
-	Short: "Generate a new plugin",
-	Long:  "Generate a new plugin project. Use --java for Java plugins or --python for Python plugins.",
-	Args:  cobra.ExactArgs(1),
-	RunE:  runPluginGenerate,
-	ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		return getPluginDirectoryNames(toComplete)
-	},
+	Use:     "generate [--java | --python | --go] --name <plugin-name>",
+	Aliases: []string{"g"},
+	Short:   "Generate a new plugin",
+	Long:    "Generate a new plugin project. Use --java for Java, --python for Python, or --go for Go plugins.",
+	Args:    cobra.NoArgs,
+	RunE:    runPluginGenerate,
 }
 
 var pluginGenerateActionCmd = &cobra.Command{
-	Use:   "action <plugin-name> <action-name>",
+	Use:   "action <action-name>",
 	Short: "Generate a new action in a plugin",
-	Long:  "Generate a new action in an existing plugin. Language is auto-detected based on build.gradle (Java) or pyproject.toml (Python).",
-	Args:  cobra.ExactArgs(2),
-	RunE:  runPluginGenerateAction,
-	ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		// First argument: plugin name
-		if len(args) == 0 {
-			return getPluginDirectoryNames(toComplete)
-		}
-		// Second argument: action name (no completion)
-		return nil, cobra.ShellCompDirectiveNoFileComp
-	},
+	Long: "Generate a new action in an existing plugin. Language is auto-detected based on " +
+		"build.gradle (Java), pyproject.toml (Python), or go.mod (Go). " +
+		"Runs in the current directory by default, or pass --in-repo to target a plugin in " +
+		"the configured repos directory.\n\n" +
+		"If the action source file already exists, only the test file is generated " +
+		"(useful for adding tests to manually-written actions).",
+	Args: cobra.ExactArgs(1),
+	RunE: runPluginGenerateAction,
+}
+
+var pluginGenerateSupplierCmd = &cobra.Command{
+	Use:   "supplier <supplier-name>",
+	Short: "Generate a new lookup table supplier in a Go plugin",
+	Long: "Generate a new lookup table supplier in an existing Go plugin. " +
+		"Runs in the current directory by default, or pass --in-repo to target a plugin in " +
+		"the configured repos directory.",
+	Args: cobra.ExactArgs(1),
+	RunE: runPluginGenerateSupplier,
+}
+
+var pluginGenerateUpdateCmd = &cobra.Command{
+	Use:   "update",
+	Short: "Update an existing plugin to match the latest templates",
+	Long: "Update an existing plugin's scaffolding (build files, Dockerfiles, Makefile, " +
+		"flow files, README, etc.) to match the current generator templates. Runs in the " +
+		"current directory by default, or pass --in-repo to target a plugin in the " +
+		"configured repos directory.\n\n" +
+		"By default, user-owned source files (Go main.go, Java PluginClass.java, " +
+		"Python plugin.py) are NOT touched. Pass --include-source to refresh them too.\n\n" +
+		"Existing go.mod dependencies and dynamic action/supplier blank imports in " +
+		"Go main.go are preserved.",
+	Args: cobra.NoArgs,
+	RunE: runPluginGenerateUpdate,
 }
 
 func init() {
 	pluginCmd.AddCommand(pluginGenerateCmd)
 	pluginGenerateCmd.AddCommand(pluginGenerateActionCmd)
+	pluginGenerateCmd.AddCommand(pluginGenerateSupplierCmd)
+	pluginGenerateCmd.AddCommand(pluginGenerateUpdateCmd)
 
 	// Flags for plugin generation
+	pluginGenerateCmd.Flags().StringP("name", "N", "", "Plugin name (required)")
+	if err := pluginGenerateCmd.MarkFlagRequired("name"); err != nil {
+		panic(err)
+	}
 	pluginGenerateCmd.Flags().Bool("java", false, "Generate a Java plugin")
 	pluginGenerateCmd.Flags().Bool("python", false, "Generate a Python plugin")
-	pluginGenerateCmd.MarkFlagsOneRequired("java", "python")
-	pluginGenerateCmd.MarkFlagsMutuallyExclusive("java", "python")
-	pluginGenerateCmd.Flags().StringP("namespace", "n", "", "Plugin namespace (default: org.deltafi.<plugin-name>)")
-	pluginGenerateCmd.Flags().BoolP("interactive", "i", false, "Interactive mode - prompt for each file (update only)")
-	pluginGenerateCmd.Flags().BoolP("force", "f", false, "Force overwrite all files without prompting (update only)")
-	pluginGenerateCmd.Flags().BoolP("dry-run", "d", false, "Dry run - show what would be updated without making changes (update only)")
+	pluginGenerateCmd.Flags().Bool("go", false, "Generate a Go plugin")
+	pluginGenerateCmd.MarkFlagsOneRequired("java", "python", "go")
+	pluginGenerateCmd.MarkFlagsMutuallyExclusive("java", "python", "go")
+	pluginGenerateCmd.Flags().StringP("namespace", "n", "", "Plugin namespace (default: org.deltafi.<plugin-name> for Java/Python, org.deltafi for Go)")
+	pluginGenerateCmd.Flags().StringP("module", "m", "", "Go module path (required for Go plugins, e.g., github.com/org/my-plugin)")
+	pluginGenerateCmd.Flags().Bool("no-git", false, "Skip automatic `git init` in the new plugin directory")
 
 	// Flags for action generation
 	pluginGenerateActionCmd.Flags().StringP("type", "t", "TransformAction", "Type of action to generate")
+	pluginGenerateActionCmd.Flags().String("in-repo", "", "Plugin name in the configured repos directory (default: use current directory)")
+
+	// Flags for supplier generation
+	pluginGenerateSupplierCmd.Flags().String("in-repo", "", "Plugin name in the configured repos directory (default: use current directory)")
+
+	// Flags for plugin update
+	pluginGenerateUpdateCmd.Flags().String("in-repo", "", "Plugin name in the configured repos directory (default: use current directory)")
+	pluginGenerateUpdateCmd.Flags().BoolP("interactive", "i", false, "Interactive mode - prompt for each file")
+	pluginGenerateUpdateCmd.Flags().BoolP("force", "f", false, "Force overwrite all files without prompting")
+	pluginGenerateUpdateCmd.Flags().BoolP("dry-run", "d", false, "Dry run - show what would be updated without making changes")
+	pluginGenerateUpdateCmd.Flags().Bool("include-source", false, "Refresh user-owned source files (main.go, PluginClass.java, plugin.py) from templates")
+	pluginGenerateUpdateCmd.Flags().Bool("no-git", false, "Skip automatic `git init` in the plugin directory")
 }
 
-// detectPluginLanguage detects the plugin language by checking for build.gradle (Java) or pyproject.toml (Python)
+// resolvePluginDirFromCmd resolves the plugin directory from --in-repo or cwd.
+// Returns the absolute plugin directory and the plugin name (basename).
+func resolvePluginDirFromCmd(cmd *cobra.Command) (string, string, error) {
+	inRepo, _ := cmd.Flags().GetString("in-repo")
+	var pluginDir string
+	if inRepo != "" {
+		config := app.GetInstance().GetConfig()
+		repoPath := config.Development.RepoPath
+		if repoPath == "" {
+			return "", "", fmt.Errorf("repoPath not configured in development config")
+		}
+		pluginDir = filepath.Join(repoPath, inRepo)
+	} else {
+		cwd, err := os.Getwd()
+		if err != nil {
+			return "", "", fmt.Errorf("failed to determine current directory: %w", err)
+		}
+		pluginDir = cwd
+	}
+	if _, err := os.Stat(pluginDir); os.IsNotExist(err) {
+		return "", "", fmt.Errorf("plugin directory does not exist: %s", pluginDir)
+	}
+	return pluginDir, filepath.Base(pluginDir), nil
+}
+
+// detectPluginLanguage detects the plugin language by checking for build files
 func detectPluginLanguage(pluginDir string) (string, error) {
-	buildGradlePath := filepath.Join(pluginDir, "build.gradle")
-	pyprojectPath := filepath.Join(pluginDir, "pyproject.toml")
-
-	hasBuildGradle := false
-	hasPyproject := false
-
-	if _, err := os.Stat(buildGradlePath); err == nil {
-		hasBuildGradle = true
+	markers := map[string]string{
+		"build.gradle":   "java",
+		"pyproject.toml": "python",
+		"go.mod":         "go",
 	}
 
-	if _, err := os.Stat(pyprojectPath); err == nil {
-		hasPyproject = true
+	var detected []string
+	for file, lang := range markers {
+		if _, err := os.Stat(filepath.Join(pluginDir, file)); err == nil {
+			detected = append(detected, lang)
+		}
 	}
 
-	if hasBuildGradle && hasPyproject {
-		return "", fmt.Errorf("plugin directory contains both build.gradle and pyproject.toml - cannot determine language")
+	if len(detected) > 1 {
+		return "", fmt.Errorf("plugin directory contains multiple build files (%s) - cannot determine language", strings.Join(detected, ", "))
 	}
 
-	if hasBuildGradle {
-		return "java", nil
+	if len(detected) == 1 {
+		return detected[0], nil
 	}
 
-	if hasPyproject {
-		return "python", nil
-	}
-
-	return "", fmt.Errorf("plugin directory does not contain build.gradle or pyproject.toml - cannot determine language")
+	return "", fmt.Errorf("plugin directory does not contain build.gradle, pyproject.toml, or go.mod - cannot determine language")
 }
 
 func runPluginGenerate(cmd *cobra.Command, args []string) error {
 	javaFlag, _ := cmd.Flags().GetBool("java")
 	pythonFlag, _ := cmd.Flags().GetBool("python")
-
-	if !javaFlag && !pythonFlag {
-		return fmt.Errorf("must specify either --java or --python flag")
-	}
+	goFlag, _ := cmd.Flags().GetBool("go")
 
 	if javaFlag {
 		return runPluginGenerateJava(cmd, args)
 	}
+	if pythonFlag {
+		return runPluginGeneratePython(cmd, args)
+	}
+	if goFlag {
+		return runPluginGenerateGo(cmd, args)
+	}
 
-	return runPluginGeneratePython(cmd, args)
+	return fmt.Errorf("must specify --java, --python, or --go flag")
+}
+
+func runPluginGenerateUpdate(cmd *cobra.Command, args []string) error {
+	pluginDir, _, err := resolvePluginDirFromCmd(cmd)
+	if err != nil {
+		return err
+	}
+	interactive, _ := cmd.Flags().GetBool("interactive")
+	force, _ := cmd.Flags().GetBool("force")
+	dryRun, _ := cmd.Flags().GetBool("dry-run")
+	noGit, _ := cmd.Flags().GetBool("no-git")
+	includeSource, _ := cmd.Flags().GetBool("include-source")
+
+	language, err := detectPluginLanguage(pluginDir)
+	if err != nil {
+		return fmt.Errorf("failed to detect plugin language: %w", err)
+	}
+
+	var gen generator.Generator
+	switch language {
+	case "java":
+		gen = java.NewJavaGenerator()
+	case "python":
+		gen = python.NewPythonGenerator()
+	case "go":
+		gen = goGen.NewGoGenerator()
+	default:
+		return fmt.Errorf("unsupported language: %s", language)
+	}
+
+	fmt.Printf("Updating %s plugin at %s\n", language, pluginDir)
+	fmt.Println("Refreshes scaffolding (build files, Dockerfiles, Makefile, flow files, README, etc.).")
+	if includeSource {
+		fmt.Println("Source files (main.go / PluginClass.java / plugin.py) will be re-rendered too.")
+	} else {
+		fmt.Println("User-owned source files are preserved (use --include-source to refresh them).")
+	}
+	fmt.Println()
+
+	options := &generator.UpdateOptions{
+		Interactive:   interactive,
+		Force:         force,
+		DryRun:        dryRun,
+		IncludeSource: includeSource,
+		PluginDir:     pluginDir,
+	}
+
+	if err := gen.UpdatePlugin(filepath.Base(pluginDir), options); err != nil {
+		return fmt.Errorf("error updating plugin: %w", err)
+	}
+
+	if !dryRun && !noGit {
+		initGitRepoIfNeeded(pluginDir)
+	}
+
+	return nil
 }
 
 func runPluginGenerateAction(cmd *cobra.Command, args []string) error {
-	pluginName := args[0]
-	actionName := args[1]
-
-	config := app.GetInstance().GetConfig()
-	repoPath := config.Development.RepoPath
-	if repoPath == "" {
-		return fmt.Errorf("repoPath not configured in development config")
+	actionName := args[0]
+	pluginDir, pluginName, err := resolvePluginDirFromCmd(cmd)
+	if err != nil {
+		return err
 	}
 
-	pluginDir := filepath.Join(repoPath, pluginName)
-
-	// Check if plugin directory exists
-	if _, err := os.Stat(pluginDir); os.IsNotExist(err) {
-		return fmt.Errorf("plugin directory does not exist: %s", pluginDir)
-	}
-
-	// Detect language
 	language, err := detectPluginLanguage(pluginDir)
 	if err != nil {
 		return fmt.Errorf("failed to detect plugin language: %w", err)
@@ -148,28 +259,55 @@ func runPluginGenerateAction(cmd *cobra.Command, args []string) error {
 
 	actionType, _ := cmd.Flags().GetString("type")
 
-	if language == "java" {
-		gen := java.NewJavaGenerator()
-		if err := gen.GenerateAction(pluginName, actionName, actionType); err != nil {
-			return fmt.Errorf("error generating action: %w", err)
-		}
-	} else if language == "python" {
-		gen := python.NewPythonGenerator()
-		if err := gen.GenerateAction(pluginName, actionName, actionType); err != nil {
-			return fmt.Errorf("error generating action: %w", err)
-		}
-	} else {
+	var gen generator.Generator
+	switch language {
+	case "java":
+		gen = java.NewJavaGenerator()
+	case "python":
+		gen = python.NewPythonGenerator()
+	case "go":
+		gen = goGen.NewGoGenerator()
+	default:
 		return fmt.Errorf("unsupported language: %s", language)
 	}
 
-	fmt.Println(styles.SuccessStyle.Render("Action generated successfully"))
-	fmt.Printf("Action '%s' added to plugin '%s'\n", actionName, pluginName)
+	opts := &generator.GenerateActionOptions{PluginDir: pluginDir}
+	if err := gen.GenerateAction(pluginName, actionName, actionType, opts); err != nil {
+		return fmt.Errorf("error generating action: %w", err)
+	}
 
+	fmt.Println(styles.SuccessStyle.Render("Action generated successfully"))
 	return nil
 }
 
-func runPluginGenerateJava(cmd *cobra.Command, args []string) error {
-	pluginName := args[0]
+func runPluginGenerateSupplier(cmd *cobra.Command, args []string) error {
+	supplierName := args[0]
+	pluginDir, pluginName, err := resolvePluginDirFromCmd(cmd)
+	if err != nil {
+		return err
+	}
+
+	language, err := detectPluginLanguage(pluginDir)
+	if err != nil {
+		return fmt.Errorf("failed to detect plugin language: %w", err)
+	}
+
+	if language != "go" {
+		return fmt.Errorf("supplier generation is only supported for Go plugins (detected: %s)", language)
+	}
+
+	gen := goGen.NewGoGenerator().(*goGen.GoGenerator)
+	opts := &generator.GenerateSupplierOptions{PluginDir: pluginDir}
+	if err := gen.GenerateSupplier(pluginName, supplierName, opts); err != nil {
+		return fmt.Errorf("error generating supplier: %w", err)
+	}
+
+	fmt.Println(styles.SuccessStyle.Render("Supplier generated successfully"))
+	return nil
+}
+
+func runPluginGenerateGo(cmd *cobra.Command, args []string) error {
+	pluginName, _ := cmd.Flags().GetString("name")
 
 	config := app.GetInstance().GetConfig()
 	repoPath := config.Development.RepoPath
@@ -179,14 +317,59 @@ func runPluginGenerateJava(cmd *cobra.Command, args []string) error {
 
 	pluginDir := filepath.Join(repoPath, pluginName)
 
-	// Check if plugin directory already exists
 	if _, err := os.Stat(pluginDir); err == nil {
-		// Directory exists - run update logic
-		return runPluginGenerateJavaUpdate(cmd, args)
+		return fmt.Errorf("plugin already exists at %s; use `deltafi plugin generate update` to update it", pluginDir)
 	}
 
-	// Directory doesn't exist - run generate logic
-	// Get namespace flag, default to org.deltafi.<package_name>
+	namespace, _ := cmd.Flags().GetString("namespace")
+	if namespace == "" {
+		namespace = "org.deltafi"
+	}
+
+	modulePath, _ := cmd.Flags().GetString("module")
+	if modulePath == "" {
+		return fmt.Errorf("--module flag is required for Go plugins (e.g., github.com/org/%s)", pluginName)
+	}
+
+	gen := goGen.NewGoGenerator()
+	options := &generator.PluginOptions{
+		GroupID:     namespace,
+		Description: fmt.Sprintf("Go plugin for DeltaFi: %s", pluginName),
+		ModulePath:  modulePath,
+	}
+
+	if err := gen.GeneratePlugin(pluginName, options); err != nil {
+		return fmt.Errorf("error generating Go plugin: %w", err)
+	}
+
+	pluginPath := filepath.Join(config.Development.RepoPath, pluginName)
+	if noGit, _ := cmd.Flags().GetBool("no-git"); !noGit {
+		initAndStageGitRepo(pluginPath)
+	}
+
+	fmt.Println(styles.SuccessStyle.Render("Go plugin generated successfully"))
+	fmt.Printf("Plugin location: %s\n", pluginPath)
+	fmt.Printf("Module path: %s\n", modulePath)
+	fmt.Printf("Namespace: %s\n", namespace)
+
+	return nil
+}
+
+func runPluginGenerateJava(cmd *cobra.Command, args []string) error {
+	pluginName, _ := cmd.Flags().GetString("name")
+
+	config := app.GetInstance().GetConfig()
+	repoPath := config.Development.RepoPath
+	if repoPath == "" {
+		return fmt.Errorf("repoPath not configured in development config")
+	}
+
+	pluginDir := filepath.Join(repoPath, pluginName)
+
+	if _, err := os.Stat(pluginDir); err == nil {
+		return fmt.Errorf("plugin already exists at %s; use `deltafi plugin generate update` to update it", pluginDir)
+	}
+
 	namespace, _ := cmd.Flags().GetString("namespace")
 	if namespace == "" {
 		packageName := java.PluginNameToPackageName(pluginName)
@@ -204,6 +387,9 @@ func runPluginGenerateJava(cmd *cobra.Command, args []string) error {
 	}
 
 	pluginPath := filepath.Join(config.Development.RepoPath, pluginName)
+	if noGit, _ := cmd.Flags().GetBool("no-git"); !noGit {
+		initAndStageGitRepo(pluginPath)
+	}
 
 	fmt.Println(styles.SuccessStyle.Render("Java plugin generated successfully"))
 	fmt.Printf("Plugin location: %s\n", pluginPath)
@@ -212,28 +398,8 @@ func runPluginGenerateJava(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-func runPluginGenerateJavaUpdate(cmd *cobra.Command, args []string) error {
-	pluginName := args[0]
-	interactive, _ := cmd.Flags().GetBool("interactive")
-	force, _ := cmd.Flags().GetBool("force")
-	dryRun, _ := cmd.Flags().GetBool("dry-run")
-
-	gen := java.NewJavaGenerator()
-	options := &generator.UpdateOptions{
-		Interactive: interactive,
-		Force:       force,
-		DryRun:      dryRun,
-	}
-
-	if err := gen.UpdatePlugin(pluginName, options); err != nil {
-		return fmt.Errorf("error updating plugin: %w", err)
-	}
-
-	return nil
-}
-
 func runPluginGeneratePython(cmd *cobra.Command, args []string) error {
-	pluginName := args[0]
+	pluginName, _ := cmd.Flags().GetString("name")
 
 	config := app.GetInstance().GetConfig()
 	repoPath := config.Development.RepoPath
@@ -243,14 +409,10 @@ func runPluginGeneratePython(cmd *cobra.Command, args []string) error {
 
 	pluginDir := filepath.Join(repoPath, pluginName)
 
-	// Check if plugin directory already exists
 	if _, err := os.Stat(pluginDir); err == nil {
-		// Directory exists - run update logic
-		return runPluginGeneratePythonUpdate(cmd, args)
+		return fmt.Errorf("plugin already exists at %s; use `deltafi plugin generate update` to update it", pluginDir)
 	}
 
-	// Directory doesn't exist - run generate logic
-	// Get namespace flag, default to org.deltafi.<snake_case_plugin_name>
 	namespace, _ := cmd.Flags().GetString("namespace")
 	if namespace == "" {
 		packageName := python.PluginNameToPackageName(pluginName)
@@ -268,6 +430,9 @@ func runPluginGeneratePython(cmd *cobra.Command, args []string) error {
 	}
 
 	pluginPath := filepath.Join(config.Development.RepoPath, pluginName)
+	if noGit, _ := cmd.Flags().GetBool("no-git"); !noGit {
+		initAndStageGitRepo(pluginPath)
+	}
 
 	fmt.Println(styles.SuccessStyle.Render("Python plugin generated successfully"))
 	fmt.Printf("Plugin location: %s\n", pluginPath)
@@ -276,24 +441,46 @@ func runPluginGeneratePython(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-func runPluginGeneratePythonUpdate(cmd *cobra.Command, args []string) error {
-	pluginName := args[0]
-	interactive, _ := cmd.Flags().GetBool("interactive")
-	force, _ := cmd.Flags().GetBool("force")
-	dryRun, _ := cmd.Flags().GetBool("dry-run")
-
-	gen := python.NewPythonGenerator()
-	options := &generator.UpdateOptions{
-		Interactive: interactive,
-		Force:       force,
-		DryRun:      dryRun,
+// initGitRepoIfNeeded runs `git init` in pluginDir when git is available and
+// pluginDir is not already inside a git working tree. Failures are reported as
+// warnings and never block plugin generation/update.
+func initGitRepoIfNeeded(pluginDir string) {
+	gitPath, err := exec.LookPath("git")
+	if err != nil {
+		return
 	}
 
-	if err := gen.UpdatePlugin(pluginName, options); err != nil {
-		return fmt.Errorf("error updating plugin: %w", err)
+	check := exec.Command(gitPath, "rev-parse", "--is-inside-work-tree")
+	check.Dir = pluginDir
+	if err := check.Run(); err == nil {
+		return
 	}
 
-	return nil
+	init := exec.Command(gitPath, "init", "--quiet")
+	init.Dir = pluginDir
+	if out, err := init.CombinedOutput(); err != nil {
+		fmt.Printf("warning: git init failed in %s: %v\n%s", pluginDir, err, string(out))
+		return
+	}
+	fmt.Printf("Initialized git repository in %s\n", pluginDir)
+}
+
+// initAndStageGitRepo initializes a git repo in pluginDir if needed and then
+// stages every file under pluginDir. Used by `plugin generate` so the new
+// scaffolding shows up as a single staged changeset.
+func initAndStageGitRepo(pluginDir string) {
+	gitPath, err := exec.LookPath("git")
+	if err != nil {
+		return
+	}
+
+	initGitRepoIfNeeded(pluginDir)
+
+	add := exec.Command(gitPath, "add", ".")
+	add.Dir = pluginDir
+	if out, err := add.CombinedOutput(); err != nil {
+		fmt.Printf("warning: git add failed in %s: %v\n%s", pluginDir, err, string(out))
+	}
 }
 
 // getPluginDirectoryNames returns a list of directory names in the repos directory for tab completion
@@ -313,7 +500,6 @@ func getPluginDirectoryNames(toComplete string) ([]string, cobra.ShellCompDirect
 	for _, entry := range entries {
 		if entry.IsDir() {
 			name := entry.Name()
-			// Filter by toComplete prefix if provided
 			if toComplete == "" || strings.HasPrefix(name, toComplete) {
 				dirNames = append(dirNames, name)
 			}

@@ -1,3 +1,5 @@
+//go:build tools
+
 /*
  *    DeltaFi - Data transformation and enrichment platform
  *
@@ -15,7 +17,6 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-//go:build tools
 
 package tools
 

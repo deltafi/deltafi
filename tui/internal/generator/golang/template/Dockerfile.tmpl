@@ -1,0 +1,66 @@
+# syntax=docker/dockerfile:1.4
+#
+# Single Dockerfile that supports both production builds (action kit pulled
+# from its published module version) and local-development builds (action kit
+# replaced with a sibling working copy supplied via
+# `--build-context action-kit=<path>`).
+#
+# Selected by `--build-arg KIT_SOURCE=published|local`. The two `kit-*` stages
+# below differ only in whether they bring in a local action kit; BuildKit
+# tree-shakes the unselected stage and `builder` runs the same shared logic
+# for both modes.
+
+ARG KIT_SOURCE=published
+
+FROM --platform=$BUILDPLATFORM golang:1.26-alpine AS kit-published
+
+FROM --platform=$BUILDPLATFORM golang:1.26-alpine AS kit-local
+COPY --from=action-kit / /action-kit/
+
+FROM kit-${KIT_SOURCE} AS builder
+WORKDIR /build
+
+# Bring in the module files first to maximize layer-cache reuse during
+# `go mod download`. For local builds the replace directive points the action
+# kit at the mounted working copy; otherwise any stale `replace` lines are
+# stripped so the build always resolves the published action kit.
+COPY go.mod go.sum .
+RUN if [ -d /action-kit ]; then \
+        go mod edit -replace gitlab.com/deltafi/deltafi/deltafi-go-action-kit/v2=/action-kit; \
+    else \
+        sed -i '/^replace/d' go.mod; \
+    fi && \
+    go mod download -x
+COPY . .
+
+# Stamp version metadata and the resolved action kit version into the binary
+# via -ldflags. In published mode the version is read from go.mod via
+# `go list`. In local mode the caller supplies ACTIONKIT_VERSION (the Makefile
+# derives it from the local kit's `git describe`) because the replace
+# directive points at a path with no module version available via `go list`.
+ARG VERSION=0.0.0-dev
+ARG ACTIONKIT_VERSION=latest
+RUN if [ -d /action-kit ]; then \
+        go mod edit -replace gitlab.com/deltafi/deltafi/deltafi-go-action-kit/v2=/action-kit; \
+    else \
+        ACTIONKIT_VERSION=$(go list -m -f '{{"{{"}}.Version{{"}}"}}' gitlab.com/deltafi/deltafi/deltafi-go-action-kit/v2); \
+    fi && \
+    CGO_ENABLED=0 GOOS=${TARGETOS} GOARCH=${TARGETARCH} go build -ldflags "\
+      -X main.version=${VERSION} \
+      -X gitlab.com/deltafi/deltafi/deltafi-go-action-kit/v2.Version=${ACTIONKIT_VERSION}" \
+      -o {{.PluginName}} .
+
+# Minimal runtime image with cache TTLs tuned for plugin lookups and artifacts.
+FROM alpine:3.23
+ENV ACTION_THREADS=1
+ENV TABLE_LOOKUP_CACHE_TTL=10s
+ENV TABLE_LOOKUP_FAILURE_CACHE_TTL=1s
+ENV ARTIFACT_CACHE_TTL=10s
+ENV ARTIFACT_FAILURE_CACHE_TTL=1s
+RUN apk --no-cache add ca-certificates
+WORKDIR /app
+COPY --from=builder /build/{{.PluginName}} deltafi-plugin
+COPY --from=builder /build/flows ./flows
+COPY --from=builder /build/integration ./integration
+RUN chmod +x deltafi-plugin
+ENTRYPOINT ["/app/deltafi-plugin"]

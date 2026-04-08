@@ -52,18 +52,24 @@ DOCKER_SOURCE := /go/src/deltafi
 DOCKER_WORKDIR := $(DOCKER_SOURCE)/deltafi-go-action-kit
 DOCKER_GOPATH := $(DOCKER_WORKDIR)/.go
 
+DOCKER_USER := $(shell id -u):$(shell id -g)
+
 DOCKER_CMD := docker run --rm \
+              --user $(DOCKER_USER) \
               -v $(BUILD_DIR):$(DOCKER_SOURCE) \
               -v $(GOPATH):$(DOCKER_GOPATH) \
               -e GOPATH=$(DOCKER_GOPATH) \
+              -e GOFLAGS=-modcacherw \
               -e CGO_ENABLED=0 \
               -e GOCACHE=/tmp/.cache \
               -w $(DOCKER_WORKDIR)
 
 DOCKER_TOOLING_CMD := docker run --rm --platform linux/$(NATIVE_ARCH) \
+              --user $(DOCKER_USER) \
               -v $(BUILD_DIR):$(DOCKER_SOURCE) \
               -v $(GOPATH):$(DOCKER_GOPATH) \
               -e GOPATH=$(DOCKER_GOPATH) \
+              -e GOFLAGS=-modcacherw \
               -e CGO_ENABLED=0 \
               -e GOCACHE=/tmp/.cache \
               -w $(DOCKER_WORKDIR)
@@ -96,8 +102,8 @@ GOCLEAN   = $(GOCMD) clean
 GOTEST    = $(GOTOOLCMD) test -modcacherw
 GOGET     = $(GOCMD) get -modcacherw
 GOVET     = $(GOCMD) vet -modcacherw
-GOFMT     = $(GOCMD) fmt
-GOFIX     = $(GOCMD) fix
+GOFMT     = $(GOCMD) fmt -modcacherw
+GOFIX     = $(GOCMD) fix -modcacherw
 GOTIDY    = $(GOCMD) mod tidy -modcacherw
 GOLINT    = $(CMD_PREFIX) $(GOBINPATH)/golangci-lint
 GOINSTALL = $(GOCMD) install -modcacherw
@@ -178,7 +184,7 @@ deps:
 	@$(GOINSTALL) $(LINT_MODULE)
 
 .PHONY: upgrade
-upgrade:
+upgrade: check-env
 	@$(GOGET) ./...
 	@$(GOTIDY)
 	@$(GOVET) ./...

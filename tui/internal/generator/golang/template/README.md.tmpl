@@ -1,0 +1,63 @@
+# {{.PluginName}}
+
+{{.Description}}
+
+## Prerequisites
+
+- Go 1.26+ (optional — falls back to Docker if not installed)
+- Docker
+- Make
+
+## Common Workflows
+
+### Build and test with the released action kit
+
+```bash
+make build
+make test
+```
+
+### Build and install into a running DeltaFi
+
+```bash
+make install
+```
+
+### Build and test with a local action kit
+
+```bash
+LOCAL_GO_ACTION_KIT=true make build
+LOCAL_GO_ACTION_KIT=true make test
+```
+
+By default this uses `../deltafi/deltafi-go-action-kit`. Override with:
+
+```bash
+LOCAL_GO_ACTION_KIT=true LOCAL_GO_ACTION_KIT_PATH=../path/to/kit make build
+```
+
+### Install a plugin built with the local action kit
+
+```bash
+LOCAL_GO_ACTION_KIT=true make install
+```
+
+## All Targets
+
+```bash
+make build       # Build the plugin binary
+make test        # Run all tests
+make install     # Build Docker image and install into DeltaFi
+make docker      # Build Docker image (tagged :latest and :VERSION)
+make publish     # Build and publish multi-architecture Docker container
+make lint        # Run linter and vet
+make fmt         # Format code
+make tidy        # Format code and tidy modules
+make clean       # Remove build artifacts
+make very-clean  # Remove build artifacts and cached modules
+make help        # Show build environment and available targets
+```
+
+## License
+
+This project is licensed under the terms specified in the LICENSE file.

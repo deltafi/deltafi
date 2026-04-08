@@ -1,0 +1,44 @@
+// ABOUTME: Egress action that sends content to an external destination.
+// ABOUTME: Modify this file to implement your egress logic.
+
+package actions
+
+import (
+	"context"
+	"fmt"
+
+	actionkit "gitlab.com/deltafi/deltafi/deltafi-go-action-kit/v2"
+)
+
+func init() {
+	actionkit.Register("{{.ActionClassName}}", &{{.ActionClassName}}{}).
+		Describe("TODO: Add action description")
+}
+
+// {{.ActionClassName}} implements the egress action.
+type {{.ActionClassName}} struct{}
+
+func (a *{{.ActionClassName}}) Egress(ctx context.Context, input actionkit.EgressInput) (actionkit.Result, error) {
+	if !input.HasContent() {
+		return actionkit.NewErrorResult(input.ActionContext, "No content provided"), nil
+	}
+	content := input.FirstContent()
+
+	data, err := content.LoadString(ctx, input.ActionContext.ContentService)
+	if err != nil {
+		return actionkit.NewErrorResult(input.ActionContext, "Failed to load content").SetContext(err.Error()), nil
+	}
+
+	// TODO: Implement your egress logic here (e.g., send to external system)
+	_ = data
+
+	result := actionkit.NewEgressResult(input.ActionContext)
+	result.LogInfo(fmt.Sprintf("Egressed %d bytes", len(data)))
+	result.LogInfo(fmt.Sprintf("Content name: %s, type: %s", content.Name, content.MediaType))
+
+	for key, value := range input.Metadata {
+		result.LogInfo(fmt.Sprintf("Metadata - %s: %s", key, value))
+	}
+
+	return result, nil
+}

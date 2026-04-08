@@ -1,0 +1,43 @@
+// ABOUTME: Lookup table supplier that provides data rows for table lookups.
+// ABOUTME: Modify this file to return data from your source.
+
+package suppliers
+
+import (
+	"context"
+
+	actionkit "gitlab.com/deltafi/deltafi/deltafi-go-action-kit/v2"
+)
+
+func init() {
+	actionkit.RegisterSupplier(&{{.SupplierClassName}}{})
+}
+
+// {{.SupplierClassName}} provides rows for the "{{.SupplierFileName}}" lookup table.
+type {{.SupplierClassName}} struct{}
+
+func (s *{{.SupplierClassName}}) Table() actionkit.LookupTableDefinition {
+	return actionkit.LookupTableDefinition{
+		// TODO: Define your table name, columns, and key columns
+		Name:       "{{.SupplierFileName}}",
+		Columns:    []string{"key", "value"},
+		KeyColumns: []string{"key"},
+	}
+
+	// Uncomment for a service-backed lookup table that refreshes periodically:
+	// return actionkit.LookupTableDefinition{
+	// 	Name:            "{{.SupplierFileName}}",
+	// 	Columns:         []string{"key", "value"},
+	// 	KeyColumns:      []string{"key"},
+	// 	ServiceBacked:   true,
+	// 	RefreshDuration: "PT1M",
+	// }
+}
+
+func (s *{{.SupplierClassName}}) GetRows(_ context.Context, _ map[string]string, _ map[string][]string, _ []string) ([]map[string]string, error) {
+	// TODO: Return data rows for the lookup table.
+	// Parameters: ctx, variables, matchingColumnValues, resultColumns
+	return []map[string]string{
+		{"key": "example", "value": "data"},
+	}, nil
+}

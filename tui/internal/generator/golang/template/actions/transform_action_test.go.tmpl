@@ -1,0 +1,49 @@
+// ABOUTME: Tests for {{.ActionClassName}}.
+// ABOUTME: Covers basic transform, no-content error, and content pass-through.
+
+package actions
+
+import (
+	"context"
+	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	actionkit "gitlab.com/deltafi/deltafi/deltafi-go-action-kit/v2"
+)
+
+func Test{{.ActionClassName}}_Normal(t *testing.T) {
+	tc := actionkit.NewTestContext("test-did")
+	content := tc.Content("input.txt", "text/plain", "hello world")
+
+	input := actionkit.TransformInput{
+		ActionContext: tc.ActionContext,
+		Content:       []actionkit.ActionContent{content},
+		Metadata:      map[string]string{},
+		Params:        map[string]any{},
+	}
+
+	event := actionkit.RunTransform(t, &{{.ActionClassName}}{}, input)
+	te := event.RequireTransform(t)
+
+	require.Len(t, te[0].Content, 1)
+	data, err := te[0].Content[0].LoadString(context.Background(), tc.Store)
+	require.NoError(t, err)
+	assert.Equal(t, "hello world", data)
+	assert.Equal(t, "processed", te[0].Annotations["{{.ActionName}}"])
+	assert.Equal(t, "done", te[0].Metadata["{{.ActionName}}"])
+}
+
+func Test{{.ActionClassName}}_NoContent(t *testing.T) {
+	tc := actionkit.NewTestContext("test-did")
+
+	input := actionkit.TransformInput{
+		ActionContext: tc.ActionContext,
+		Content:       nil,
+		Metadata:      map[string]string{},
+		Params:        map[string]any{},
+	}
+
+	event := actionkit.RunTransform(t, &{{.ActionClassName}}{}, input)
+	event.RequireError(t, "No content provided")
+}

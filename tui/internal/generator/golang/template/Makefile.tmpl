@@ -1,0 +1,270 @@
+#    DeltaFi - Data transformation and enrichment platform
+#
+#    Copyright 2021-2026 DeltaFi Contributors <deltafi@deltafi.org>
+#
+#    Licensed under the Apache License, Version 2.0 (the "License");
+#    you may not use this file except in compliance with the License.
+#    You may obtain a copy of the License at
+#
+#        http://www.apache.org/licenses/LICENSE-2.0
+#
+#    Unless required by applicable law or agreed to in writing, software
+#    distributed under the License is distributed on an "AS IS" BASIS,
+#    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#    See the License for the specific language governing permissions and
+#    limitations under the License.
+
+.DEFAULT_GOAL := build
+APP_NAME := {{.PluginName}}
+DOCKER_REPO := deltafi/{{.PluginName}}
+ADDITIONAL_DOCKER_ARGS ?=
+SBOM ?= true
+BUILDX_BUILDER ?= deltafi-golang-plugin
+
+# Local action kit development (for build/test targets, not docker image builds)
+LOCAL_GO_ACTION_KIT ?= false
+LOCAL_GO_ACTION_KIT_PATH ?= ../deltafi/deltafi-go-action-kit
+ACTION_KIT_MODULE := gitlab.com/deltafi/deltafi/deltafi-go-action-kit/v2
+
+# Build info
+BUILD_DIR ?= $(realpath $(CURDIR))
+VERSION ?= $(shell git describe --tags --always --dirty=-local 2>/dev/null || echo latest)
+
+# Auto-detect if go is installed
+HAS_GO := $(shell command -v go 2> /dev/null)
+USE_DOCKER ?= $(if $(HAS_GO),false,true)
+
+# Environment checks
+NATIVE_ARCH ?= $(strip $(shell uname -m | tr A-Z a-z))
+ifneq ($(NATIVE_ARCH),arm64)
+  ifneq ($(NATIVE_ARCH),amd64)
+    NATIVE_ARCH := amd64
+  endif
+endif
+
+NATIVE_OS := $(shell basename $(shell uname -o | tr A-Z a-z))
+ifneq ($(NATIVE_OS),darwin)
+  NATIVE_OS := linux
+endif
+
+HAS_DOCKER := $(shell command -v docker 2> /dev/null)
+MIN_GO_VERSION := 1.26
+GO_VERSION_CHECK := $(shell go version 2>/dev/null | grep -q "go$(MIN_GO_VERSION)" && echo 1 || echo 0)
+
+GOPATH ?= $(CURDIR)/.go
+export GOPATH
+
+GOBINPATH = $(GOPATH)/bin
+
+# Docker build settings
+DOCKER_IMAGE := golang:1.26-alpine
+DOCKER_SOURCE := /go/src/{{.PluginName}}
+DOCKER_WORKDIR := $(DOCKER_SOURCE)
+DOCKER_GOPATH := $(DOCKER_WORKDIR)/.go
+DOCKER_USER := $(shell id -u):$(shell id -g)
+
+# Local action kit: set GOWORK as a command prefix so every go invocation sees it,
+# and mount the action kit so the relative path resolves inside docker run containers.
+DOCKER_EXTRA_VOLUMES :=
+DOCKER_GOWORK_ENV :=
+GOWORK_ENV := GOWORK=off
+ifeq ($(LOCAL_GO_ACTION_KIT),true)
+  LOCAL_GO_ACTION_KIT_ABS := $(realpath $(LOCAL_GO_ACTION_KIT_PATH))
+  ACTIONKIT_VERSION ?= $(shell cd $(LOCAL_GO_ACTION_KIT_ABS) && git describe --tags --always --dirty=-local 2>/dev/null || echo latest)
+  DOCKER_KIT_RUN_MOUNT := $(shell python3 -c "import posixpath; print(posixpath.normpath(posixpath.join('$(DOCKER_WORKDIR)', '$(LOCAL_GO_ACTION_KIT_PATH)')))")
+  DOCKER_EXTRA_VOLUMES := -v $(LOCAL_GO_ACTION_KIT_ABS):$(DOCKER_KIT_RUN_MOUNT)
+  DOCKER_GOWORK_ENV := -e GOWORK=$(DOCKER_WORKDIR)/go.work -e ACTIONKIT_VERSION=$(ACTIONKIT_VERSION) -e VERSION=$(VERSION)-local
+  GOWORK_ENV := GOWORK=$(CURDIR)/go.work
+endif
+
+# Docker image build args/contexts. The single Dockerfile selects between
+# published-mode and local-mode via KIT_SOURCE; in local mode the action kit
+# working copy is mounted via --build-context.
+DOCKER_BUILD_ARGS     := --build-arg VERSION=$(VERSION)
+DOCKER_BUILD_CONTEXTS :=
+ifeq ($(LOCAL_GO_ACTION_KIT),true)
+  DOCKER_BUILD_ARGS     += --build-arg KIT_SOURCE=local --build-arg ACTIONKIT_VERSION=$(ACTIONKIT_VERSION)
+  DOCKER_BUILD_CONTEXTS += --build-context action-kit=$(LOCAL_GO_ACTION_KIT_ABS)
+endif
+
+# Wiring shared by both DOCKER_CMD (uses the host OS) and DOCKER_TOOLING_CMD
+# (always linux, used for downloading and building developer tools).
+DOCKER_RUN_COMMON := --rm \
+              --user $(DOCKER_USER) \
+              -v $(BUILD_DIR):$(DOCKER_SOURCE) \
+              -v $(GOPATH):$(DOCKER_GOPATH) \
+              $(DOCKER_EXTRA_VOLUMES) \
+              $(DOCKER_GOWORK_ENV) \
+              -e GOPATH=$(DOCKER_GOPATH) \
+              -e GOFLAGS=-modcacherw \
+              -e CGO_ENABLED=0 \
+              -e GOARCH=$(NATIVE_ARCH) \
+              -e GOCACHE=/tmp/.cache \
+              -w $(DOCKER_WORKDIR)
+
+DOCKER_CMD         := docker run $(DOCKER_RUN_COMMON) -e GOOS=$(NATIVE_OS)
+DOCKER_TOOLING_CMD := docker run --platform linux/$(NATIVE_ARCH) $(DOCKER_RUN_COMMON) -e GOOS=linux
+
+# Conditionally prefix commands with docker
+ifeq ($(USE_DOCKER),true)
+  ifeq ($(HAS_DOCKER),)
+    $(error Docker or golang installation is required)
+  endif
+  CMD_PREFIX := $(DOCKER_CMD) $(DOCKER_IMAGE)
+  TOOLING_CMD_PREFIX := $(DOCKER_TOOLING_CMD) $(DOCKER_IMAGE)
+  GOBINPATH := $(DOCKER_GOPATH)/bin
+else
+  ifeq ($(HAS_GO),false)
+    $(error Go installation or docker is required)
+  endif
+  ifeq ($(GO_VERSION_CHECK), 0)
+    $(warning Go $(MIN_GO_VERSION) or higher is required. Consider using USE_DOCKER=true)
+  endif
+  CMD_PREFIX :=
+  TOOLING_CMD_PREFIX :=
+  GOBINPATH := $(GOPATH)/bin
+endif
+
+# Go commands (GOWORK_ENV ensures workspace is respected for local action kit builds)
+GOCMD     = $(GOWORK_ENV) $(CMD_PREFIX) go
+GOTOOLCMD = $(GOWORK_ENV) $(TOOLING_CMD_PREFIX) go
+GOBUILD   = $(GOCMD) build -modcacherw
+GOCLEAN   = $(GOCMD) clean
+GOTEST    = $(GOTOOLCMD) test -modcacherw
+GOGET     = $(GOCMD) get -modcacherw
+GOVET     = $(GOCMD) vet -modcacherw
+GOFIX     = $(GOCMD) fix -modcacherw
+GOFMT     = $(GOCMD) fmt -modcacherw
+GOTIDY    = $(GOCMD) mod tidy -modcacherw
+GOLINT    = $(CMD_PREFIX) $(GOBINPATH)/golangci-lint
+GOINSTALL = $(GOCMD) install -modcacherw
+
+# Extra modules
+LINT_MODULE = github.com/golangci/golangci-lint/cmd/golangci-lint@latest
+
+# Output
+BIN_DIR = ./bin
+
+.PHONY: all build clean test lint fmt deps tidy very-clean docker docker-build docker-tag publish install help check-env sync-action-kit buildx-builder
+
+all: check-env build test
+
+# Manage go.work for local action kit development.
+# When LOCAL_GO_ACTION_KIT=true, creates a go.work that redirects the action kit
+# to the local path without modifying go.mod. When false, removes go.work so
+# published modules are used. go.work and go.work.sum should be gitignored.
+sync-action-kit:
+ifeq ($(LOCAL_GO_ACTION_KIT),true)
+	@echo "Using local Go action kit: $(LOCAL_GO_ACTION_KIT_ABS)"
+	@rm -f go.work go.work.sum
+	@go work init .
+	@go work edit -replace $(ACTION_KIT_MODULE)=$(LOCAL_GO_ACTION_KIT_PATH)
+	@cat go.work
+else
+	@rm -f go.work go.work.sum
+endif
+
+check-env: sync-action-kit
+	@if [ "$(USE_DOCKER)" = "false" ] && [ "$(GO_VERSION_CHECK)" = "0" ]; then \
+		echo "WARNING: Go $(MIN_GO_VERSION) is required. Consider using USE_DOCKER=true"; \
+	fi
+	@if [ "$(USE_DOCKER)" = "true" ]; then \
+		echo "Using Docker GO environment [ $(NATIVE_OS) $(NATIVE_ARCH) ]"; \
+	fi
+	@mkdir -p $(GOPATH)
+
+help:
+	@echo "Version:     " $(VERSION)
+	@echo ""
+	@echo "Build environment:"
+	@echo "  Has Go:      " $(if $(HAS_GO),yes,no)
+	@echo "  Has Docker:  " $(if $(HAS_DOCKER),yes,no)
+	@echo "  Using Docker:" $(USE_DOCKER)
+	@echo "  GOPATH:      " $(GOPATH)
+	@echo ""
+	@echo "Available targets:"
+	@echo "  all              - Build and run tests"
+	@echo "  build            - Build binary"
+	@echo "  clean            - Remove build artifacts"
+	@echo "  very-clean       - Remove build artifacts and cached modules"
+	@echo "  test             - Run tests"
+	@echo "  lint             - Run linter and vet"
+	@echo "  fmt              - Format code"
+	@echo "  tidy             - Format code and tidy modules"
+	@echo "  deps             - Install dependencies"
+	@echo "  deps-up          - Upgrade dependencies to latest versions"
+	@echo "  upgrade          - Upgrade dependencies, tidy, and lint"
+	@echo "  docker           - Build Docker image (tagged :latest and :VERSION)"
+	@echo "  docker-build     - Build Docker image (tagged :latest)"
+	@echo "  docker-tag       - Tag Docker image with version"
+	@echo "  publish          - Build and publish multi-architecture Docker container"
+	@echo "  install          - Build Docker image and install plugin into DeltaFi"
+	@echo ""
+	@echo "Build options:"
+	@echo "  USE_DOCKER=true|false             - Use Docker for building (auto-detected: $(USE_DOCKER))"
+	@echo "  LOCAL_GO_ACTION_KIT=true|false    - Use a local Go action kit (default: $(LOCAL_GO_ACTION_KIT))"
+	@echo "  LOCAL_GO_ACTION_KIT_PATH=<path>   - Path to local action kit (default: $(LOCAL_GO_ACTION_KIT_PATH))"
+	@echo "  BUILDX_BUILDER=<name>             - buildx builder name used by publish (default: $(BUILDX_BUILDER))"
+
+build: check-env fmt
+	@echo "Building $(BIN_DIR)/$(APP_NAME)"
+	@mkdir -p $(BIN_DIR)
+	@$(GOBUILD) -o $(BIN_DIR)/$(APP_NAME) .
+
+test: check-env
+	@echo "Running all tests"
+	@$(GOTEST) -v ./...
+
+clean:
+	$(GOCLEAN)
+	rm -rf $(BIN_DIR)
+
+very-clean: clean
+	$(GOCLEAN) -modcache
+	rm -rf $(GOPATH)
+
+lint: deps
+	@echo "Running static analysis"
+	@$(GOFIX) ./...
+	@$(GOVET) ./...
+	@$(GOLINT) run
+
+fmt:
+	@$(GOFMT) ./...
+
+tidy: fmt
+	@$(GOTIDY)
+
+deps:
+	@mkdir -p $(GOPATH)
+	@$(GOGET) ./...
+	@$(GOINSTALL) $(LINT_MODULE)
+
+# Docker targets
+docker: docker-build docker-tag
+
+# Ensure a dedicated buildx builder exists for multi-platform plugin builds.
+buildx-builder:
+	@docker buildx inspect $(BUILDX_BUILDER) >/dev/null 2>&1 || docker buildx create --name $(BUILDX_BUILDER) --driver docker-container >/dev/null
+
+docker-build: check-env
+	@echo "Building Docker image $(DOCKER_REPO):latest"
+	docker build $(DOCKER_BUILD_CONTEXTS) $(DOCKER_BUILD_ARGS) -t $(DOCKER_REPO):latest $(BUILD_DIR)
+
+publish: check-env buildx-builder
+	@echo "Publishing docker image for $(DOCKER_REPO):$(VERSION)"
+	@docker buildx build --builder $(BUILDX_BUILDER) --no-cache $(ADDITIONAL_DOCKER_ARGS) $(DOCKER_BUILD_CONTEXTS) $(DOCKER_BUILD_ARGS) --provenance=$(SBOM) --sbom=$(SBOM) --push --platform linux/amd64,linux/arm64 --tag $(DOCKER_REPO):$(VERSION) $(BUILD_DIR)
+
+docker-tag: docker-build
+	@echo "Tagging $(DOCKER_REPO):$(VERSION)"
+	docker tag $(DOCKER_REPO):latest $(DOCKER_REPO):$(VERSION)
+
+install: docker
+	@echo "Installing $(DOCKER_REPO):$(VERSION)"
+	deltafi plugin install --wait "$(DOCKER_REPO):$(VERSION)"
+
+.PHONY: upgrade deps-up
+upgrade: check-env deps-up tidy lint
+
+deps-up:
+	@$(GOGET) -u ./...

@@ -1,0 +1,65 @@
+// ABOUTME: Tests for {{.ActionClassName}}.
+// ABOUTME: Covers join aggregation and transform of merged content.
+
+package actions
+
+import (
+	"context"
+	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	actionkit "gitlab.com/deltafi/deltafi/deltafi-go-action-kit/v2"
+)
+
+func Test{{.ActionClassName}}_Join(t *testing.T) {
+	tc := actionkit.NewTestContext("join-did")
+	content1 := tc.Content("part1.txt", "text/plain", "first")
+	content2 := tc.Content("part2.txt", "text/plain", "second")
+
+	inputs := []actionkit.TransformInput{
+		{
+			ActionContext: tc.ActionContext,
+			Content:       []actionkit.ActionContent{content1},
+			Metadata:      map[string]string{"key": "a"},
+			Params:        map[string]any{},
+		},
+		{
+			ActionContext: tc.ActionContext,
+			Content:       []actionkit.ActionContent{content2},
+			Metadata:      map[string]string{"key": "b"},
+			Params:        map[string]any{},
+		},
+	}
+
+	action := &{{.ActionClassName}}{}
+	merged, err := action.Join(context.Background(), inputs)
+	require.NoError(t, err)
+
+	require.Len(t, merged.Content, 2)
+	assert.Equal(t, "part1.txt", merged.Content[0].Name)
+	assert.Equal(t, "part2.txt", merged.Content[1].Name)
+}
+
+func Test{{.ActionClassName}}_Transform(t *testing.T) {
+	tc := actionkit.NewTestContext("join-did")
+	content1 := tc.Content("p1.txt", "text/plain", "AAA")
+	content2 := tc.Content("p2.txt", "text/plain", "BBB")
+
+	input := actionkit.TransformInput{
+		ActionContext: tc.ActionContext,
+		Content:       []actionkit.ActionContent{content1, content2},
+		Metadata:      map[string]string{"hello": "world"},
+		Params:        map[string]any{},
+	}
+
+	event := actionkit.RunTransform(t, &{{.ActionClassName}}{}, input)
+	te := event.RequireTransform(t)
+
+	require.Len(t, te, 1)
+	data, err := te[0].Content[0].LoadString(context.Background(), tc.Store)
+	require.NoError(t, err)
+	assert.Contains(t, data, "AAA")
+	assert.Contains(t, data, "BBB")
+	assert.Equal(t, "world", te[0].Metadata["hello"])
+}

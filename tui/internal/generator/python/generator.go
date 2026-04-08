@@ -23,7 +23,6 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
-	"strconv"
 	"strings"
 
 	"github.com/deltafi/tui/internal/app"
@@ -87,7 +86,7 @@ func (g *PythonGenerator) GeneratePlugin(pluginName string, options *generator.P
 	}
 
 	// Get DeltaFi version from TUI
-	deltaFiVersion := adjustVersionForSnapshot(app.GetVersion())
+	deltaFiVersion := generator.AdjustVersionForSnapshot(app.GetVersion())
 
 	data := &TemplateData{
 		PluginName:     pluginName,
@@ -133,21 +132,20 @@ func (g *PythonGenerator) GeneratePlugin(pluginName string, options *generator.P
 }
 
 // GenerateAction generates a new action in an existing plugin
-func (g *PythonGenerator) GenerateAction(pluginName string, actionName string, actionType string) error {
-	if err := ValidatePluginName(pluginName); err != nil {
-		return err
-	}
+func (g *PythonGenerator) GenerateAction(pluginName string, actionName string, actionType string, options *generator.GenerateActionOptions) error {
 	if err := ValidateActionName(actionName); err != nil {
 		return err
 	}
 
-	config := app.GetInstance().GetConfig()
-	repoPath := config.Development.RepoPath
-	if repoPath == "" {
-		return fmt.Errorf("repoPath not configured in development config")
+	dirOverride := ""
+	if options != nil {
+		dirOverride = options.PluginDir
 	}
-
-	pluginDir := filepath.Join(repoPath, pluginName)
+	pluginDir, err := resolvePluginDir(pluginName, dirOverride)
+	if err != nil {
+		return err
+	}
+	pluginName = filepath.Base(pluginDir)
 
 	// Check if plugin directory exists
 	if _, err := os.Stat(pluginDir); os.IsNotExist(err) {
@@ -208,34 +206,44 @@ func (g *PythonGenerator) GenerateAction(pluginName string, actionName string, a
 		return fmt.Errorf("unsupported action type: %s", actionType)
 	}
 
-	// Generate action file
-	actionContent, err := RenderTemplate(actionTemplate, data)
-	if err != nil {
-		return fmt.Errorf("failed to render action template: %w", err)
+	actionPath := filepath.Join(pluginDir, "src", packageName, "actions", actionFileName+"_action.py")
+	testPath := filepath.Join(pluginDir, "src", packageName, "test", "test_"+actionFileName+"_action.py")
+	actionExists := fileExists(actionPath)
+	testExists := fileExists(testPath)
+
+	if actionExists && testExists {
+		return fmt.Errorf("action and test already exist for %q (action: %s, test: %s)", actionName, actionPath, testPath)
 	}
 
-	actionPath := filepath.Join(pluginDir, "src", packageName, "actions", actionFileName+"_action.py")
 	if err := os.MkdirAll(filepath.Dir(actionPath), 0755); err != nil {
 		return fmt.Errorf("failed to create actions directory: %w", err)
 	}
 
-	if err := os.WriteFile(actionPath, actionContent, 0644); err != nil {
-		return fmt.Errorf("failed to write action file: %w", err)
+	if !actionExists {
+		actionContent, err := RenderTemplate(actionTemplate, data)
+		if err != nil {
+			return fmt.Errorf("failed to render action template: %w", err)
+		}
+		if err := os.WriteFile(actionPath, actionContent, 0644); err != nil {
+			return fmt.Errorf("failed to write action file: %w", err)
+		}
+		fmt.Printf("Wrote %s\n", actionPath)
+	} else {
+		fmt.Printf("Action %s already exists; generating test only.\n", actionPath)
 	}
 
-	// Generate test file
-	testContent, err := RenderTemplate(testTemplate, data)
-	if err != nil {
-		return fmt.Errorf("failed to render test template: %w", err)
-	}
-
-	testPath := filepath.Join(pluginDir, "src", packageName, "test", "test_"+actionFileName+"_action.py")
-	if err := os.MkdirAll(filepath.Dir(testPath), 0755); err != nil {
-		return fmt.Errorf("failed to create test directory: %w", err)
-	}
-
-	if err := os.WriteFile(testPath, testContent, 0644); err != nil {
-		return fmt.Errorf("failed to write test file: %w", err)
+	if !testExists {
+		if err := os.MkdirAll(filepath.Dir(testPath), 0755); err != nil {
+			return fmt.Errorf("failed to create test directory: %w", err)
+		}
+		testContent, err := RenderTemplate(testTemplate, data)
+		if err != nil {
+			return fmt.Errorf("failed to render test template: %w", err)
+		}
+		if err := os.WriteFile(testPath, testContent, 0644); err != nil {
+			return fmt.Errorf("failed to write test file: %w", err)
+		}
+		fmt.Printf("Wrote %s\n", testPath)
 	}
 
 	// Generate flow JSON file based on action type
@@ -266,6 +274,39 @@ func (g *PythonGenerator) GenerateAction(pluginName string, actionName string, a
 	}
 
 	return nil
+}
+
+// LintPlugin is not yet implemented for Python plugins.
+func (g *PythonGenerator) LintPlugin(pluginName string, options *generator.LintOptions) ([]generator.LintIssue, error) {
+	return []generator.LintIssue{
+		{
+			Severity: generator.LintInfo,
+			Message:  "lint is not yet implemented for Python plugins",
+		},
+	}, nil
+}
+
+// resolvePluginDir returns the absolute plugin directory either from an explicit
+// override or by joining the configured repoPath with pluginName.
+func resolvePluginDir(pluginName, dirOverride string) (string, error) {
+	if dirOverride != "" {
+		return dirOverride, nil
+	}
+	if err := ValidatePluginName(pluginName); err != nil {
+		return "", err
+	}
+	config := app.GetInstance().GetConfig()
+	repoPath := config.Development.RepoPath
+	if repoPath == "" {
+		return "", fmt.Errorf("repoPath not configured in development config")
+	}
+	return filepath.Join(repoPath, pluginName), nil
+}
+
+// fileExists returns true when path exists.
+func fileExists(path string) bool {
+	_, err := os.Stat(path)
+	return err == nil
 }
 
 // readNamespaceFromPlugin reads the namespace (GroupID) from an existing plugin.py file
@@ -315,17 +356,21 @@ func updatePluginRegistration(pluginDir, packageName, className, actionName stri
 
 // UpdatePlugin updates an existing Python plugin with the latest templates
 func (g *PythonGenerator) UpdatePlugin(pluginName string, options *generator.UpdateOptions) error {
-	if err := ValidatePluginName(pluginName); err != nil {
-		return err
+	var pluginDir string
+	if options != nil && options.PluginDir != "" {
+		pluginDir = options.PluginDir
+		pluginName = filepath.Base(pluginDir)
+	} else {
+		if err := ValidatePluginName(pluginName); err != nil {
+			return err
+		}
+		config := app.GetInstance().GetConfig()
+		repoPath := config.Development.RepoPath
+		if repoPath == "" {
+			return fmt.Errorf("repoPath not configured in development config")
+		}
+		pluginDir = filepath.Join(repoPath, pluginName)
 	}
-
-	config := app.GetInstance().GetConfig()
-	repoPath := config.Development.RepoPath
-	if repoPath == "" {
-		return fmt.Errorf("repoPath not configured in development config")
-	}
-
-	pluginDir := filepath.Join(repoPath, pluginName)
 
 	// Check if plugin directory exists
 	if _, err := os.Stat(pluginDir); os.IsNotExist(err) {
@@ -360,7 +405,7 @@ func (g *PythonGenerator) UpdatePlugin(pluginName string, options *generator.Upd
 	}
 
 	// Get DeltaFi version from TUI
-	deltaFiVersion := adjustVersionForSnapshot(app.GetVersion())
+	deltaFiVersion := generator.AdjustVersionForSnapshot(app.GetVersion())
 
 	// Prepare template data
 	data := &TemplateData{
@@ -374,11 +419,19 @@ func (g *PythonGenerator) UpdatePlugin(pluginName string, options *generator.Upd
 	// Define files to check/update
 	files := getTemplateFiles(packageName)
 
+	includeSource := options != nil && options.IncludeSource
+	pluginPyPath := filepath.Join("src", packageName, "plugin.py")
+
 	// Collect file diffs
 	var diffs []*generator.FileDiff
 	var filesToUpdate []string
 
 	for templatePath, outputPath := range files {
+		// Skip plugin.py by default — it's user-owned source code.
+		if !includeSource && outputPath == pluginPyPath {
+			continue
+		}
+
 		fullOutputPath := filepath.Join(pluginDir, outputPath)
 
 		// Read existing file
@@ -649,50 +702,6 @@ func preservePyProjectVersion(oldContent, newContent []byte) []byte {
 	}
 
 	return []byte(newContentStr)
-}
-
-// adjustVersionForSnapshot adjusts a SNAPSHOT version to use the previous patch version
-// For example: 2.34.5-SNAPSHOT -> 2.34.4, 2.34.0-SNAPSHOT -> 2.34.0
-func adjustVersionForSnapshot(version string) string {
-	if version == "" {
-		return "0.0.0" // Fallback if version not set
-	}
-
-	// Check if version is a SNAPSHOT
-	if !strings.Contains(version, "-SNAPSHOT") {
-		return version
-	}
-
-	// Extract the version part before -SNAPSHOT
-	versionPart := strings.Split(version, "-SNAPSHOT")[0]
-
-	// Parse major.minor.patch
-	versionRe := regexp.MustCompile(`^(\d+)\.(\d+)\.(\d+)$`)
-	matches := versionRe.FindStringSubmatch(versionPart)
-	if len(matches) != 4 {
-		// If we can't parse it, return as-is
-		return versionPart
-	}
-
-	// Extract version components
-	major := matches[1]
-	minor := matches[2]
-	patch := matches[3]
-
-	// Decrement patch version (but not below 0)
-	// We'll parse as int, decrement, and convert back
-	patchInt, err := strconv.Atoi(patch)
-	if err != nil {
-		// If we can't parse the patch version, return as-is
-		return versionPart
-	}
-	if patchInt > 0 {
-		patchInt--
-	}
-	// patchInt stays 0 if it was already 0
-
-	// Reconstruct version
-	return fmt.Sprintf("%s.%s.%d", major, minor, patchInt)
 }
 
 // writeFile writes content to a file, creating directories as needed
