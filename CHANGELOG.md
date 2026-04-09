@@ -5,6 +5,38 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 All [Unreleased] changes can be viewed in GitLab.
 
+## [2.52.2] - 2026-04-09
+
+### Added
+- Code generation capability for Go plugins with `deltafi plugin generate` command
+- Added a dedicated `/health` endpoint to nginx to determine if nginx is accepting connections
+
+### Changed
+- Database migrations now conditionally skip TimescaleDB and pg_squeeze operations when the extensions are not installed, allowing DeltaFi to run with plain PostgreSQL
+- Changed the java action-kit to fire plugin artifact onUpdate hooks at startup to match the other action-kits behavior
+- Enabled HTTP/1.1 keepalive connections between nginx and upstream services in compose to mirror the Kubernetes settings
+- In TimedDataSource, the `timedIngressAction` GraphQL field now allows null for pending flows during a plugin install
+
+### Fixed
+- Exclude gradle plugins when publishing to nexus, they are published to the gradle plugin portal
+- Fixed the version information in the generated pom files
+- Fixed the default plugin artifact seeding in the java action-kit, so the artifact is available immediately to actions after it is published
+- Removed redundant auth check from the http redirect configuration
+- When a snapshot revert fails to find an image, any associated flows left behind can now be cleared by removing the failed plugin
+
+### Security
+- Updated Java dependencies due to critical CVEs
+
+### Tech-Debt/Refactor
+- Prepare go action kit for production
+
+### Upgrade and Migration
+- Database migrations now conditionally skip TimescaleDB and pg_squeeze operations when the extensions are not installed
+- Flyway repair runs automatically (once) for upgrades from pre-V69 to update checksums for modified migrations
+- The `timescaleAnalyticsEnabled` property is automatically disabled when TimescaleDB is not installed
+**Note:** Migrating an existing TimescaleDB installation to plain PostgreSQL is not supported. New installations may use plain PostgreSQL. TimescaleDB will be officially removed in 3.0.
+- Database migration V71 adds `snapshot_coordinates` column to `plugins` table (quick)
+
 ## [2.52.1] - 2026-04-06
 
 ### Added
@@ -6015,7 +6047,8 @@ No changes.  UI update only
 ### Security
 - Forced all projects to log4j 2.17.0 to avoid CVEs
 
-[Unreleased]: https://gitlab.com/deltafi/deltafi/-/compare/2.52.1...main
+[Unreleased]: https://gitlab.com/deltafi/deltafi/-/compare/2.52.2...main
+[2.52.2]: https://gitlab.com/deltafi/deltafi/-/compare/2.52.1...2.52.2
 [2.52.1]: https://gitlab.com/deltafi/deltafi/-/compare/2.52.0...2.52.1
 [2.52.0]: https://gitlab.com/deltafi/deltafi/-/compare/2.51.2...2.52.0
 [2.51.2]: https://gitlab.com/deltafi/deltafi/-/compare/2.51.0...2.51.2
