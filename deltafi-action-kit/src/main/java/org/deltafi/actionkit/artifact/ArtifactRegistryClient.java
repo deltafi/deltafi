@@ -256,12 +256,15 @@ class ArtifactRegistryClient {
      *                     is sent alongside {@code makeActive=true}
      * @param defaultBytes raw bytes to publish as the seed version
      */
-    void seedIfMissing(String owner, String artifactName, String alias, byte[] defaultBytes) {
+    /**
+     * Publish {@code defaultBytes} as a new version of the artifact if no version exists yet.
+     * Returns the server-provided manifest on success so the caller can cache the local bytes
+     * with accurate metadata. Returns {@code null} on failure or 409 conflict.
+     */
+    ArtifactManifest seedIfMissing(String owner, String artifactName, String alias, byte[] defaultBytes) {
         String url = coreUrl + ARTIFACTS_PATH + owner + "/" + artifactName;
         String boundary = UUID.randomUUID().toString().replace("-", "");
         try {
-            // Always seed as active so the first version gets the active alias.
-            // If a custom alias was requested, pass it too so it's created at the same time.
             boolean isActive = ArtifactRegistryConstants.ACTIVE_ALIAS.equals(alias);
             ArtifactManifest defaultManifest = new ArtifactManifest(null, null, null, null, Map.of("default", "true"));
             byte[] body = buildMultipartBody(boundary, artifactName, defaultManifest,
@@ -272,19 +275,22 @@ class ArtifactRegistryClient {
                     .build();
             HttpResponse<InputStream> response = httpService.execute(request, HttpResponse.BodyHandlers.ofInputStream());
             int status = response.statusCode();
-            // Drain body regardless
             try (InputStream responseBody = response.body()) {
-                responseBody.transferTo(OutputStream.nullOutputStream());
+                if (status == 409) {
+                    return null;
+                }
+                if (status < 200 || status >= 300) {
+                    log.warn("seedIfMissing failed for {}/{}: HTTP {}", owner, artifactName, status);
+                    return null;
+                }
+                PublishArtifactResponse publishResponse = MAPPER.readValue(responseBody, PublishArtifactResponse.class);
+                return new ArtifactManifest(
+                        publishResponse.getVersion(), null, "application/octet-stream",
+                        publishResponse.getSha256(), Map.of("default", "true"));
             }
-            if (status == 409) {
-                // Another instance already seeded the artifact — that's fine.
-                return;
-            }
-            if (status < 200 || status >= 300) {
-                log.warn("seedIfMissing failed for {}/{}: HTTP {}", owner, artifactName, status);
-            }
-        } catch (IOException e) {
+        } catch (Exception e) {
             log.warn("seedIfMissing failed for {}/{}: {}", owner, artifactName, e.getMessage());
+            return null;
         }
     }
 

@@ -193,17 +193,64 @@ class ArtifactCacheManagerTest {
     }
 
     @Test
-    void resolve_missing_seedDefault_callsSeedIfMissing() {
+    void resolve_missing_seedDefault_returnsRealHandle() {
         String defaultResource = "artifact-test/default.bin";
         ArtifactDescriptor descriptor = descriptor(ArtifactScope.PLUGIN_ONLY, true, defaultResource);
         when(registryClient.download(anyString(), anyString(), anyString())).thenReturn(null);
+
+        ArtifactManifest seededManifest = new ArtifactManifest("20260319.171400.000", null,
+                "application/octet-stream", "sha256abc", Map.of("default", "true"));
+        when(registryClient.seedIfMissing(eq(PLUGIN), eq(ARTIFACT), eq("active"), any(byte[].class)))
+                .thenReturn(seededManifest);
 
         ArtifactHandle handle = cacheManager.resolve(descriptor);
 
         verify(registryClient).seedIfMissing(eq(PLUGIN), eq(ARTIFACT), eq("active"), any(byte[].class));
 
-        assertThat(handle.getBytes()).isEmpty();
-        assertThat(handle.isReady()).isFalse();
+        assertThat(handle.isReady()).isTrue();
+        assertThat(handle.getBytes()).isNotEmpty();
+        assertThat(handle.getVersion()).isEqualTo("20260319.171400.000");
+        assertThat(handle.getSha256()).isEqualTo("sha256abc");
+        assertThat(handle.isDefault()).isTrue();
+    }
+
+    @Test
+    void resolve_missing_seedDefault_throwsOnSeedFailure() {
+        String defaultResource = "artifact-test/default.bin";
+        ArtifactDescriptor descriptor = descriptor(ArtifactScope.PLUGIN_ONLY, true, defaultResource);
+        when(registryClient.download(anyString(), anyString(), anyString())).thenReturn(null);
+        when(registryClient.seedIfMissing(anyString(), anyString(), anyString(), any(byte[].class)))
+                .thenReturn(null);
+
+        assertThatThrownBy(() -> cacheManager.resolve(descriptor))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("Failed to seed");
+    }
+
+    @Test
+    void resolve_missing_seedDefault_supportsOnUpdate() {
+        String defaultResource = "artifact-test/default.bin";
+        ArtifactDescriptor descriptor = descriptor(ArtifactScope.PLUGIN_ONLY, true, defaultResource);
+        when(registryClient.download(PLUGIN, ARTIFACT, "active"))
+                .thenReturn(null)  // resolve miss
+                .thenReturn(new FetchedArtifact(
+                        new ArtifactManifest("v2", "updated", "text/plain", "sha2", null),
+                        SOURCE_PREFIX, "updated".getBytes()));
+
+        ArtifactManifest seededManifest = new ArtifactManifest("v1", null,
+                "application/octet-stream", "sha1", Map.of("default", "true"));
+        when(registryClient.seedIfMissing(eq(PLUGIN), eq(ARTIFACT), eq("active"), any(byte[].class)))
+                .thenReturn(seededManifest);
+
+        ArtifactHandle handle = cacheManager.resolve(descriptor);
+
+        List<String> versions = new ArrayList<>();
+        handle.onUpdate(event -> versions.add(event.newVersion()));
+
+        cacheManager.refreshIfCached(PLUGIN, ARTIFACT, "active");
+        cacheManager.invokeCallbacks(PLUGIN, ARTIFACT, "active", VERSION_EVENT);
+
+        assertThat(versions).containsExactly("v2");
     }
 
     @Test
@@ -895,6 +942,55 @@ class ArtifactCacheManagerTest {
         assertThat(handle.getBytes()).isEqualTo(BYTES);
         assertThat(handle.getVersion()).isEqualTo(VERSION);
         verify(registryClient, times(1)).download(any(), any(), any()); // only the initial resolve
+    }
+
+    // ── Startup callbacks ─────────────────────────────────────────────────────
+
+    @Test
+    void fireStartupCallbacks_invokesAllRegistered() {
+        ArtifactDescriptor descriptor = descriptor(ArtifactScope.PLUGIN_ONLY, true, "");
+        when(registryClient.download(PLUGIN, ARTIFACT, "active"))
+                .thenReturn(new FetchedArtifact(MANIFEST, SOURCE_PREFIX, BYTES));
+
+        ArtifactHandle handle = cacheManager.resolve(descriptor);
+        List<VersionChangedEvent> events = new ArrayList<>();
+        handle.onUpdate(events::add);
+
+        cacheManager.fireStartupCallbacks();
+
+        assertThat(events).hasSize(1);
+        VersionChangedEvent evt = events.getFirst();
+        assertThat(evt.previousVersion()).isNull();
+        assertThat(evt.newVersion()).isEqualTo(VERSION);
+        assertThat(evt.artifactName()).isEqualTo(ARTIFACT);
+        assertThat(evt.alias()).isEqualTo("active");
+    }
+
+    @Test
+    void fireStartupCallbacks_noCallbacksIsNoop() {
+        ArtifactDescriptor descriptor = descriptor(ArtifactScope.PLUGIN_ONLY, true, "");
+        when(registryClient.download(PLUGIN, ARTIFACT, "active"))
+                .thenReturn(new FetchedArtifact(MANIFEST, SOURCE_PREFIX, BYTES));
+
+        cacheManager.resolve(descriptor);
+
+        assertThatCode(() -> cacheManager.fireStartupCallbacks()).doesNotThrowAnyException();
+    }
+
+    @Test
+    void fireStartupCallbacks_failingCallbackDoesNotBlockOthers() {
+        ArtifactDescriptor descriptor = descriptor(ArtifactScope.PLUGIN_ONLY, true, "");
+        when(registryClient.download(PLUGIN, ARTIFACT, "active"))
+                .thenReturn(new FetchedArtifact(MANIFEST, SOURCE_PREFIX, BYTES));
+
+        ArtifactHandle handle = cacheManager.resolve(descriptor);
+        List<String> calls = new ArrayList<>();
+        handle.onUpdate(event -> { throw new RuntimeException("boom"); });
+        handle.onUpdate(event -> calls.add("survived"));
+
+        cacheManager.fireStartupCallbacks();
+
+        assertThat(calls).containsExactly("survived");
     }
 
     private ArtifactDescriptor descriptor(ArtifactScope scope, boolean cacheable, String defaultResource) {

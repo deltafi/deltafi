@@ -21,6 +21,7 @@ import io.valkey.JedisPool;
 import org.deltafi.common.action.EventQueueProperties;
 import org.deltafi.common.http.HttpService;
 import org.deltafi.common.queue.valkey.ValkeyKeyedBlockingQueue;
+import org.springframework.beans.factory.SmartInitializingSingleton;
 import org.springframework.beans.factory.config.BeanFactoryPostProcessor;
 import org.springframework.beans.factory.support.DefaultListableBeanFactory;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -73,6 +74,11 @@ public class ArtifactConfiguration {
     @ConditionalOnMissingBean
     public ArtifactRegistryService artifactRegistry(ArtifactRegistryClient client) {
         return new ArtifactRegistryService(client);
+    }
+
+    @Bean
+    SmartInitializingSingleton artifactStartupCallbackFirer(ArtifactCacheManager cacheManager) {
+        return cacheManager::fireStartupCallbacks;
     }
 
     @Bean

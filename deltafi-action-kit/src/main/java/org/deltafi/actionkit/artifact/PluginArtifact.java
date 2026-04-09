@@ -86,8 +86,8 @@ public @interface PluginArtifact {
      * Classpath resource path to publish if the artifact does not yet exist in the registry.
      *
      * <p>When set, the framework publishes the resource as the first artifact version on startup
-     * (if and only if the artifact is absent). The handle will not be ready for this startup
-     * but resolves on the next one or after an explicit {@link ArtifactHandle#refresh()}.
+     * (if and only if the artifact is absent). The handle is immediately usable with the
+     * seeded bytes and server-provided manifest metadata.
      *
      * <p>When blank (the default), startup is aborted with an {@link IllegalStateException}
      * if the artifact cannot be found.

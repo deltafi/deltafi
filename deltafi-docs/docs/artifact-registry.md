@@ -33,13 +33,13 @@ falls back to `shared`. A plugin can override a shared artifact with its own cop
 
 ## Using Plugin Artifacts in Plugin Code
 
-Both the Java and Python action-kits provide declarative artifact injection. You declare what
+The Java, Python, Golang, and C++ action-kits all provide declarative artifact injection. You declare what
 artifact you need; the framework handles fetching, caching, and live updates.
 
 ### How it works
 
 **Declaration** — artifacts are declared at the class level (Java: field annotation, Python: class
-attribute). The framework injects a live handle at startup.
+attribute, Golang: struct field tag, C++: macro). The framework injects a live handle at startup.
 
 **Default resources** — an optional default file can be bundled with the plugin. On first deploy
 the framework publishes it to the registry automatically; when an operator publishes a real version
@@ -164,7 +164,6 @@ public class RuleEngineAction extends TransformAction<RuleParameters> {
             ArtifactHandle rulesHandle) {
         super("Evaluate rules against input");
         this.rulesHandle = rulesHandle;
-        ruleEngine = RuleEngine.compile(rulesHandle.getBytes());
         rulesHandle.onUpdate(event -> {
             log.info("Rules updated: {} → {}", event.previousVersion(), event.newVersion());
             ruleEngine = RuleEngine.compile(rulesHandle.getBytes());
@@ -207,7 +206,6 @@ public class RuleEngineService {
             )
             ArtifactHandle rulesHandle) {
         this.rulesHandle = rulesHandle;
-        ruleEngine = RuleEngine.compile(rulesHandle.getBytes());
         rulesHandle.onUpdate(event -> {
             log.info("Rules updated: {} → {}", event.previousVersion(), event.newVersion());
             ruleEngine = RuleEngine.compile(rulesHandle.getBytes());
@@ -258,11 +256,10 @@ public class ClassificationAction extends TransformAction<ClassificationParamete
             ArtifactHandle model) {
         super("Classify input using ML model");
         this.model = model;
-        classifier = Classifier.load(model.getInputStream());
-        log.info("Model loaded: version={}, sha256={}",
-                model.getVersion(), model.getSha256());
         model.onUpdate(event -> {
             classifier = Classifier.load(model.getInputStream());
+            log.info("Model loaded: version={}, sha256={}",
+                    model.getVersion(), model.getSha256());
         });
     }
 }
@@ -296,8 +293,9 @@ public class EnrichmentAction extends TransformAction<EnrichmentParameters> {
 
     @PostConstruct
     public void initialize() {
-        rebuild();
-        // Each artifact can be updated independently; all trigger a rebuild
+        // Each artifact can be updated independently; all trigger a rebuild.
+        // The startup callback fires once per artifact after all beans are initialized,
+        // so the service is built automatically — no manual rebuild() call needed.
         config.onUpdate(this::rebuild);
         customerData.onUpdate(this::rebuild);
         geoRegions.onUpdate(this::rebuild);
@@ -352,6 +350,40 @@ artifactRegistry.publishArtifact(
 
 `getArtifact()` and `getSharedArtifact()` throw `IOException` if the artifact is not found.
 `publishArtifact()` sets the `active` alias by default; pass `makeActive = false` to suppress.
+
+### Streaming Large Artifacts
+
+`getArtifact()` buffers the entire artifact in the JVM heap. For large binary artifacts — ML
+models, embedding matrices, large lookup tables — use the streaming variants instead. These open
+a direct HTTP connection to the registry and return an `InputStream` without copying bytes into
+memory:
+
+```java
+// Load a 2 GB ONNX model directly into the runtime — no heap buffer
+try (ArtifactRegistryService.ArtifactStream s =
+        artifactRegistry.streamArtifact("large-model.onnx")) {
+    session = onnxEnvironment.createSession(s.stream());
+}
+
+// Pipe a large lookup table to disk without buffering
+try (ArtifactRegistryService.ArtifactStream s =
+        artifactRegistry.streamArtifact("embeddings.bin")) {
+    log.info("Streaming {} bytes, content-type: {}",
+            s.manifest().size(), s.manifest().contentType());
+    Files.copy(s.stream(), targetPath, StandardCopyOption.REPLACE_EXISTING);
+}
+
+// Shared artifact — same pattern
+try (ArtifactRegistryService.ArtifactStream s =
+        artifactRegistry.streamSharedArtifact("geo-regions.csv")) {
+    geoIndex = GeoIndex.load(s.stream());
+}
+```
+
+The `ArtifactStream` implements `Closeable` and **must** be closed when done (the underlying HTTP
+connection stays open until then). Streaming bypasses the shared cache — each call opens a new
+connection. Use `getArtifact()` for small, frequently-accessed artifacts and `streamArtifact()`
+only when memory pressure is a concern.
 
 ### Go
 
@@ -483,7 +515,7 @@ DELTAFI_WATCH_ARTIFACT(
 )
 ```
 
-#### Publishing Artifacts
+#### Publishing Artifacts (C++)
 
 ```cpp
 std::vector<uint8_t> data(rules_json.begin(), rules_json.end());
@@ -493,7 +525,7 @@ auto resp = context.artifact_client->publish_artifact("output-rules.json", data,
 resp = context.artifact_client->publish_shared_artifact("shared-data.csv", data, "text/csv");
 ```
 
-#### Publishing Artifacts
+#### Publishing Artifacts (Go)
 
 ```go
 data := bytes.NewReader(rulesJSON)
@@ -502,40 +534,6 @@ resp, err := input.ActionContext.ArtifactClient.PublishArtifact(ctx, "output-rul
 // Publish to shared namespace
 resp, err = input.ActionContext.ArtifactClient.PublishSharedArtifact(ctx, "shared-data.csv", data, "text/csv", nil)
 ```
-
-### Streaming Large Artifacts
-
-`getArtifact()` buffers the entire artifact in the JVM heap. For large binary artifacts — ML
-models, embedding matrices, large lookup tables — use the streaming variants instead. These open
-a direct HTTP connection to the registry and return an `InputStream` without copying bytes into
-memory:
-
-```java
-// Load a 2 GB ONNX model directly into the runtime — no heap buffer
-try (ArtifactRegistryService.ArtifactStream s =
-        artifactRegistry.streamArtifact("large-model.onnx")) {
-    session = onnxEnvironment.createSession(s.stream());
-}
-
-// Pipe a large lookup table to disk without buffering
-try (ArtifactRegistryService.ArtifactStream s =
-        artifactRegistry.streamArtifact("embeddings.bin")) {
-    log.info("Streaming {} bytes, content-type: {}",
-            s.manifest().size(), s.manifest().contentType());
-    Files.copy(s.stream(), targetPath, StandardCopyOption.REPLACE_EXISTING);
-}
-
-// Shared artifact — same pattern
-try (ArtifactRegistryService.ArtifactStream s =
-        artifactRegistry.streamSharedArtifact("geo-regions.csv")) {
-    geoIndex = GeoIndex.load(s.stream());
-}
-```
-
-The `ArtifactStream` implements `Closeable` and **must** be closed when done (the underlying HTTP
-connection stays open until then). Streaming bypasses the shared cache — each call opens a new
-connection. Use `getArtifact()` for small, frequently-accessed artifacts and `streamArtifact()`
-only when memory pressure is a concern.
 
 ---
 
@@ -616,7 +614,6 @@ class RuleEngineAction(TransformAction):
 
     def __init__(self):
         super().__init__('Evaluate rules against input')
-        self._rule_engine = RuleEngine.compile(self.rules.get_bytes())
         self.rules.on_update(self._reload)
 
     def _reload(self, event):
@@ -643,11 +640,12 @@ class ClassificationAction(TransformAction):
 
     def __init__(self):
         super().__init__('Classify input using ML model')
+        self.model.on_update(self._reload)
+
+    def _reload(self, event):
         self._classifier = Classifier.load(self.model.get_bytes())
         logger.info("Model loaded: version=%s sha256=%s",
                     self.model.get_version(), self.model.get_sha256())
-        self.model.on_update(lambda event:
-            setattr(self, '_classifier', Classifier.load(self.model.get_bytes())))
 ```
 
 ### Multiple Artifacts
@@ -667,8 +665,9 @@ class EnrichmentAction(TransformAction):
 
     def __init__(self):
         super().__init__('Enrich input with external data')
-        self._rebuild()
-        # Each artifact can be updated independently; all trigger a rebuild
+        # Each artifact can be updated independently; all trigger a rebuild.
+        # The startup callback fires once per artifact after all actions are created,
+        # so the service is built automatically — no manual _rebuild() call needed.
         self.config.on_update(self._rebuild)
         self.customer_data.on_update(self._rebuild)
         self.geo_regions.on_update(self._rebuild)

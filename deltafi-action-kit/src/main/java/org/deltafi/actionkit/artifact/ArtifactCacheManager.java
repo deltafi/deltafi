@@ -236,8 +236,7 @@ class ArtifactCacheManager implements DisposableBean {
             }
         }
 
-        handleMissing(descriptor);
-        return new EmptyArtifactHandle(descriptor.artifactName());
+        return handleMissing(descriptor);
     }
 
     /**
@@ -488,6 +487,26 @@ class ArtifactCacheManager implements DisposableBean {
     }
 
     /**
+     * Fire all registered callbacks with a synthetic event for each cached entry.
+     * Called after all beans are fully initialized so that {@code onUpdate} callbacks
+     * registered in {@code @PostConstruct} methods are included. Each callback receives
+     * a {@link VersionChangedEvent} with {@code previousVersion = null}, mirroring the
+     * Go/C++ pattern where initial resolution is treated as a version change.
+     */
+    void fireStartupCallbacks() {
+        for (Map.Entry<CacheKey, CopyOnWriteArrayList<Consumer<VersionChangedEvent>>> entry : callbacks.entrySet()) {
+            CacheKey key = entry.getKey();
+            CacheEntry cached = cache.get(key);
+            String currentVersion = cached != null ? cached.getArtifact().manifest().version() : "";
+            String prefix = ArtifactRegistryConstants.SHARED_OWNER.equals(key.owner())
+                    ? "shared" : "plugins/" + key.owner();
+            VersionChangedEvent event = new VersionChangedEvent(
+                    prefix, key.artifactName(), key.alias(), null, currentVersion, Instant.now());
+            invokeCallbacks(key.owner(), key.artifactName(), key.alias(), event);
+        }
+    }
+
+    /**
      * Invoke all callbacks registered for {@code (owner, artifactName, alias)}, passing the event.
      * Each callback runs on the caller's thread; failures are logged and do not
      * prevent subsequent callbacks from running.
@@ -588,20 +607,36 @@ class ArtifactCacheManager implements DisposableBean {
         };
     }
 
-    private void handleMissing(ArtifactDescriptor descriptor) {
+    private ArtifactHandle handleMissing(ArtifactDescriptor descriptor) {
         if (!descriptor.seedOnMissing()) {
             throw new IllegalStateException("Artifact not found: " + descriptor.artifactName());
         }
 
+        byte[] bytes;
         try (InputStream in = getClass().getClassLoader().getResourceAsStream(descriptor.defaultResource())) {
             if (in == null) {
                 throw new IllegalStateException("Default resource not found: " + descriptor.defaultResource());
             }
-            byte[] bytes = in.readAllBytes();
-            client.seedIfMissing(descriptor.pluginName(), descriptor.artifactName(), descriptor.alias(), bytes);
+            bytes = in.readAllBytes();
         } catch (IOException e) {
             throw new WrappedIOException(e);
         }
+
+        ArtifactManifest manifest = client.seedIfMissing(
+                descriptor.pluginName(), descriptor.artifactName(), descriptor.alias(), bytes);
+        if (manifest == null) {
+            throw new IllegalStateException("Failed to seed default artifact: " + descriptor.artifactName());
+        }
+
+        String sourcePrefix = "plugins/" + descriptor.pluginName();
+        FetchedArtifact fetched = new FetchedArtifact(manifest, sourcePrefix, bytes);
+        CacheKey key = new CacheKey(descriptor.pluginName(), descriptor.artifactName(), descriptor.alias());
+        cache.put(key, new CacheEntry(fetched, false, descriptor.pluginName(), false));
+
+        evictIfNeeded();
+
+        return new DefaultArtifactHandle(
+                this, descriptor.pluginName(), descriptor.artifactName(), descriptor.alias(), descriptor.cacheable());
     }
 
     private static class WrappedIOException extends RuntimeException {
