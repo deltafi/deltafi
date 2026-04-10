@@ -2666,6 +2666,14 @@ public class DeltaFilesService {
                 sortField != null ? sortField : SummaryByMessageSort.NAME);
     }
 
+    public List<String> getErrorCauses(ErrorSummaryFilter filter) {
+        return deltaFileFlowRepo.getErrorCauses(filter);
+    }
+
+    public List<String> getFilteredCauses(FilteredSummaryFilter filter) {
+        return deltaFileFlowRepo.getFilteredCauses(filter);
+    }
+
     public List<String> annotationKeys() {
         return annotationRepo.findDistinctAnnotationKeys().stream().sorted().toList();
     }

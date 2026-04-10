@@ -146,6 +146,10 @@ const sortDirection = ref("DESC");
 const selectedDids = ref([]);
 
 const props = defineProps({
+  active: {
+    type: Boolean,
+    required: true,
+  },
   flow: {
     type: Object,
     required: false,
@@ -279,14 +283,26 @@ const setupWatchers = () => {
   watch(
     () => [props.flow, props.cause],
     () => {
-      fetchFiltered();
+      if (props.active) {
+        fetchFiltered();
+      }
+    }
+  );
+  watch(
+    () => props.active,
+    (active) => {
+      if (active) {
+        fetchFiltered();
+      }
     }
   );
 };
 
 onMounted(async () => {
   await getPersistedParams();
-  await fetchFiltered();
+  if (props.active) {
+    await fetchFiltered();
+  }
   setupWatchers();
 });
 

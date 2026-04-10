@@ -119,6 +119,10 @@ const ackErrorsDialog = ref({
   visible: false,
 });
 const props = defineProps({
+  active: {
+    type: Boolean,
+    required: true,
+  },
   flow: {
     type: Object,
     required: false,
@@ -207,7 +211,9 @@ const menuItems = ref([
 
 onMounted(async () => {
   await getPersistedParams();
-  await fetchErrorsMessages();
+  if (props.active) {
+    await fetchErrorsMessages();
+  }
   setupWatchers();
 });
 
@@ -348,7 +354,9 @@ const setupWatchers = () => {
     () => props.flow,
     () => {
       unSelectAllRows();
-      fetchErrorsMessages();
+      if (props.active) {
+        fetchErrorsMessages();
+      }
     }
   );
 
@@ -356,7 +364,18 @@ const setupWatchers = () => {
     () => props.acknowledged,
     () => {
       unSelectAllRows();
-      fetchErrorsMessages();
+      if (props.active) {
+        fetchErrorsMessages();
+      }
+    }
+  );
+
+  watch(
+    () => props.active,
+    (active) => {
+      if (active) {
+        fetchErrorsMessages();
+      }
     }
   );
 };

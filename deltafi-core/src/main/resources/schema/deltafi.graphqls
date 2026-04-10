@@ -476,6 +476,9 @@ type Query {
   filteredSummaryByFlow(offset: Int, limit: Int, filter: FilteredSummaryFilter, direction: DeltaFileDirection, sortField: SummaryByFlowSort): FilteredByFlow!
   filteredSummaryByMessage(offset: Int, limit: Int, filter: FilteredSummaryFilter, direction: DeltaFileDirection, sortField: SummaryByMessageSort): FilteredByMessage!
 
+  errorCauses(filter: ErrorSummaryFilter): [String!]!
+  filteredCauses(filter: FilteredSummaryFilter): [String!]!
+
   errorMetadataUnion(dids: [UUID!]!) : [PerActionUniqueKeyValues!]! @deprecated(reason: "Use deltaFile query for single DeltaFile metadata")
   sourceMetadataUnion(dids: [UUID!]!) : [UniqueKeyValues!]! @deprecated(reason: "Use deltaFile query for single DeltaFile metadata")
 

@@ -94,6 +94,8 @@ class DeltaFilesDatafetcherSecurityTest {
         callables.add(() -> deltaFilesDatafetcher.lastWithName(""));
         callables.add(() -> deltaFilesDatafetcher.errorSummaryByFlow(0, 0, null, null, null));
         callables.add(() -> deltaFilesDatafetcher.errorSummaryByMessage(0, 0, null, null, null));
+        callables.add(() -> deltaFilesDatafetcher.errorCauses(null));
+        callables.add(() -> deltaFilesDatafetcher.filteredCauses(null));
         callables.add(() -> deltaFilesDatafetcher.annotationKeys());
         callables.add(() -> deltaFilesDatafetcher.stressTest(null, null, null, null, null));
         callables.add(() -> deltaFilesDatafetcher.sourceMetadataUnion(null));

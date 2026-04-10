@@ -172,6 +172,10 @@ const ackErrorsDialog = ref({
   visible: false,
 });
 const props = defineProps({
+  active: {
+    type: Boolean,
+    required: true,
+  },
   flow: {
     type: Object,
     required: false,
@@ -445,7 +449,9 @@ const setupWatchers = () => {
     () => props.flow,
     () => {
       unSelectAllRows();
-      fetchErrors();
+      if (props.active) {
+        fetchErrors();
+      }
     }
   );
 
@@ -461,7 +467,9 @@ const setupWatchers = () => {
     () => props.acknowledged,
     () => {
       unSelectAllRows();
-      fetchErrors();
+      if (props.active) {
+        fetchErrors();
+      }
     }
   );
 
@@ -470,8 +478,19 @@ const setupWatchers = () => {
     () => {
       const errorMessage = filters.value.last_error_cause.value != null ? filters.value.last_error_cause.value.message : null;
       unSelectAllRows();
-      fetchErrors();
+      if (props.active) {
+        fetchErrors();
+      }
       emit("errorMessageChanged:errorMessage", errorMessage);
+    }
+  );
+
+  watch(
+    () => props.active,
+    (active) => {
+      if (active) {
+        fetchErrors();
+      }
     }
   );
 };
@@ -479,9 +498,11 @@ const setupWatchers = () => {
 onMounted(async () => {
   await getPersistedParams();
   filters.value.last_error_cause.value = props.errorsMessageSelected ? { message: props.errorsMessageSelected } : null;
-  await fetchErrors();
+  if (props.active) {
+    await fetchErrors();
+    getAllErrorsMessage();
+  }
   setupWatchers();
-  getAllErrorsMessage();
 });
 
 const getPersistedParams = async () => {

@@ -302,6 +302,36 @@ public class DeltaFileFlowRepoImpl implements DeltaFileFlowRepoCustom {
     }
 
     @Override
+    public List<String> getErrorCauses(ErrorSummaryFilter filter) {
+        return getDistinctCauses(filter, DeltaFileFlowState.ERROR);
+    }
+
+    @Override
+    public List<String> getFilteredCauses(FilteredSummaryFilter filter) {
+        return getDistinctCauses(filter, DeltaFileFlowState.FILTERED);
+    }
+
+    private List<String> getDistinctCauses(SummaryFilter filter, DeltaFileFlowState flowState) {
+        StringBuilder sql = new StringBuilder(String.format("""
+            SELECT DISTINCT dff.error_or_filter_cause
+            FROM delta_file_flows dff
+            WHERE dff.state = '%s'::dff_state_enum
+            AND dff.error_or_filter_cause IS NOT NULL\s""", flowState.name()));
+
+        addFilterClauses(sql, filter, false);
+
+        sql.append("ORDER BY dff.error_or_filter_cause");
+
+        Query query = entityManager.createNativeQuery(sql.toString());
+
+        addSummaryFilterParameters(query, filter);
+
+        @SuppressWarnings("unchecked")
+        List<String> results = query.getResultList();
+        return results;
+    }
+
+    @Override
     public List<String> distinctColdQueuedActions() {
         String sql = "SELECT DISTINCT action_class FROM cold_queue_entries";
 

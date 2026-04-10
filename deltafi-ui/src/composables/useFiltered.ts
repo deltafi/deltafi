@@ -161,25 +161,18 @@ export default function useFiltered() {
 
   const fetchUniqueMessages = async (queryParams: queryParams) => {
     const searchParams = {
-      filteredSummaryByMessage: {
+      filteredCauses: {
         __args: {
           filter: {
             modifiedAfter: queryParams.startTimeDateString,
             modifiedBefore: queryParams.endTimeDateString,
           },
         },
-        countPerMessage: {
-          message: true,
-        },
       },
     };
 
-    await queryGraphQL(searchParams, "getFilteredByMessage");
-    return _.chain(response.value.data.filteredSummaryByMessage.countPerMessage)
-      .map((o) => o.message)
-      .uniq()
-      .sort()
-      .value();
+    await queryGraphQL(searchParams, "getFilteredCauses");
+    return response.value.data.filteredCauses;
   };
 
   return { data, loading, loaded, fetchAllFiltered, fetchFilteredSummaryByFlow, fetchFilteredSummaryByMessage, fetchUniqueMessages, errors };

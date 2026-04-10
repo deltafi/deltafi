@@ -55,13 +55,13 @@
         </TabList>
         <TabPanels>
           <TabPanel :value="0">
-            <AllFilteredPanel ref="filterSummaryPanel" :flow="flowSelected" :cause="causeSelected" :query-params="model" @refresh-filters="onRefresh()" />
+            <AllFilteredPanel ref="filterSummaryPanel" :active="activeTab === 0" :flow="flowSelected" :cause="causeSelected" :query-params="model" @refresh-filters="onRefresh()" />
           </TabPanel>
           <TabPanel :value="1">
-            <SummaryByFlowPanel ref="filterSummaryFlowPanel" :flow="flowSelected" :query-params="model" @refresh-filters="onRefresh()" @show-all-tab="showAllTab" />
+            <SummaryByFlowPanel ref="filterSummaryFlowPanel" :active="activeTab === 1" :flow="flowSelected" :query-params="model" @refresh-filters="onRefresh()" @show-all-tab="showAllTab" />
           </TabPanel>
           <TabPanel :value="2">
-            <SummaryByCausePanel ref="filterSummaryMessagePanel" :flow="flowSelected" :query-params="model" @refresh-filters="onRefresh()" @show-all-tab="showAllTab" />
+            <SummaryByCausePanel ref="filterSummaryMessagePanel" :active="activeTab === 2" :flow="flowSelected" :query-params="model" @refresh-filters="onRefresh()" @show-all-tab="showAllTab" />
           </TabPanel>
         </TabPanels>
       </Tabs>
@@ -297,12 +297,24 @@ const showAllTab = (flowName, flowType, cause) => {
   activeTab.value = 0;
 };
 
+const refreshActiveTab = () => {
+  switch (activeTab.value) {
+    case 0:
+      filterSummaryPanel.value.fetchFiltered();
+      break;
+    case 1:
+      filterSummaryFlowPanel.value.fetchFilteredFlow();
+      break;
+    case 2:
+      filterSummaryMessagePanel.value.fetchFilteredMessages();
+      break;
+  }
+};
+
 const onRefresh = async () => {
   loading.value = true;
   await customCalendarRef.value.refreshUpdateDateTime();
-  filterSummaryPanel.value.fetchFiltered();
-  filterSummaryFlowPanel.value.fetchFilteredFlow();
-  filterSummaryMessagePanel.value.fetchFilteredMessages();
+  refreshActiveTab();
   loading.value = false;
 };
 

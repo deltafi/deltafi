@@ -74,6 +74,10 @@ const sortDirection = ref("DESC");
 const selectedFiltered = ref([]);
 
 const props = defineProps({
+  active: {
+    type: Boolean,
+    required: true,
+  },
   flow: {
     type: Object,
     required: false,
@@ -117,7 +121,9 @@ const menuItems = ref([
 
 onMounted(async () => {
   await getPersistedParams();
-  fetchFilteredFlow();
+  if (props.active) {
+    fetchFilteredFlow();
+  }
   setupWatchers();
 });
 
@@ -180,7 +186,17 @@ const setupWatchers = () => {
   watch(
     () => props.flow,
     () => {
-      fetchFilteredFlow();
+      if (props.active) {
+        fetchFilteredFlow();
+      }
+    }
+  );
+  watch(
+    () => props.active,
+    (active) => {
+      if (active) {
+        fetchFilteredFlow();
+      }
     }
   );
 };

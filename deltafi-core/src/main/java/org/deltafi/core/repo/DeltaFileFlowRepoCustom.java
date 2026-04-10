@@ -90,6 +90,22 @@ public interface DeltaFileFlowRepoCustom {
     SummaryByFlowAndMessage getFilteredSummaryByMessage(Integer offset, int limit, FilteredSummaryFilter filter, DeltaFileDirection direction, SummaryByMessageSort sortField);
 
     /**
+     * Get the distinct error causes for populating filter dropdowns.
+     *
+     * @param filter optional filter to constrain by time range and acknowledgement
+     * @return sorted list of distinct error cause strings
+     */
+    List<String> getErrorCauses(ErrorSummaryFilter filter);
+
+    /**
+     * Get the distinct filtered causes for populating filter dropdowns.
+     *
+     * @param filter optional filter to constrain by time range
+     * @return sorted list of distinct filtered cause strings
+     */
+    List<String> getFilteredCauses(FilteredSummaryFilter filter);
+
+    /**
      * Get the distinct list of cold queued action classes (queue names)
      *
      * @return distinct list of action classes that have a cold queued DeltaFile

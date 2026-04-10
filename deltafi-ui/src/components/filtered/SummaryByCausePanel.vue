@@ -96,6 +96,10 @@ const selectedCauseGroups = ref([]);
 const selectedFilters = ref([]);
 const emit = defineEmits(["refreshFilters", "showAllTab"]);
 const props = defineProps({
+  active: {
+    type: Boolean,
+    required: true,
+  },
   flow: {
     type: Object,
     required: false,
@@ -145,7 +149,9 @@ const menuItems = ref([
 
 onMounted(async () => {
   await getPersistedParams();
-  fetchFilteredMessages();
+  if (props.active) {
+    fetchFilteredMessages();
+  }
   setupWatchers();
 });
 
@@ -248,8 +254,18 @@ const setupWatchers = () => {
   watch(
     () => props.flow,
     () => {
-      unSelectAllRows();
-      fetchFilteredMessages();
+      if (props.active) {
+        unSelectAllRows();
+        fetchFilteredMessages();
+      }
+    }
+  );
+  watch(
+    () => props.active,
+    (active) => {
+      if (active) {
+        fetchFilteredMessages();
+      }
     }
   );
 };

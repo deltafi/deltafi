@@ -79,21 +79,14 @@ export default function useErrors() {
 
   const fetchUniqueErrorMessages = async () => {
     const searchParams = {
-      errorSummaryByMessage: {
+      errorCauses: {
         __args: {
           filter: { errorAcknowledged: false },
         },
-        countPerMessage: {
-          message: true,
-        },
       },
     };
-    await queryGraphQL(searchParams, "getErrorsByMessage");
-    return _.chain(response.value.data.errorSummaryByMessage.countPerMessage)
-      .map((o) => o.message)
-      .uniq()
-      .sort()
-      .value();
+    await queryGraphQL(searchParams, "getErrorCauses");
+    return response.value.data.errorCauses;
   };
 
   const fetchErrorSummaryByFlow = async (queryParams: queryParams, showAcknowledged: boolean, offSet: Number, perPage: Number, sortField: string, sortDirection: string, flow: string) => {

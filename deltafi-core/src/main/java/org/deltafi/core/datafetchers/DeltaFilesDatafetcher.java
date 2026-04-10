@@ -187,6 +187,18 @@ public class DeltaFilesDatafetcher {
     return deltaFilesService.getFilteredSummaryByMessage(offset, limit, filter, direction, sortField);
   }
 
+  @DgsQuery
+  @NeedsPermission.DeltaFileMetadataView
+  public List<String> errorCauses(@InputArgument ErrorSummaryFilter filter) {
+    return deltaFilesService.getErrorCauses(filter);
+  }
+
+  @DgsQuery
+  @NeedsPermission.DeltaFileMetadataView
+  public List<String> filteredCauses(@InputArgument FilteredSummaryFilter filter) {
+    return deltaFilesService.getFilteredCauses(filter);
+  }
+
   @DgsMutation
   @NeedsPermission.DeltaFileResume
   public List<RetryResult> resume(@InputArgument List<UUID> dids, @InputArgument List<ResumeMetadata> resumeMetadata) {

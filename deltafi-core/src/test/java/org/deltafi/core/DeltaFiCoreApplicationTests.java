@@ -4622,6 +4622,76 @@ class DeltaFiCoreApplicationTests {
 		assertThat(message1.getDids()).isNull();
 	}
 
+	@Test
+	void testGetFilteredCauses() {
+		clearForFlowTests();
+		OffsetDateTime plusTwo = OffsetDateTime.now().plusMinutes(2);
+		loadFilteredDeltaFiles(plusTwo);
+
+		List<String> causes = deltaFilesService.getFilteredCauses(
+				FilteredSummaryFilter.builder().modifiedBefore(plusTwo).build());
+
+		assertThat(causes).containsExactly("filtered one", "filtered two");
+	}
+
+	@Test
+	void testGetFilteredCausesDatafetcher() {
+		clearForFlowTests();
+		OffsetDateTime plusTwo = OffsetDateTime.now().plusMinutes(2);
+		loadFilteredDeltaFiles(plusTwo);
+
+		GraphQLQueryRequest graphQLQueryRequest = new GraphQLQueryRequest(
+				ErrorCausesGraphQLQuery.newRequest().build());
+
+		String query = "{ filteredCauses(filter: {modifiedBefore: \"" + plusTwo + "\"}) }";
+
+		List<String> actual = dgsQueryExecutor.executeAndExtractJsonPath(
+				query,
+				"data." + DgsConstants.QUERY.FilteredCauses);
+
+		assertThat(actual).containsExactly("filtered one", "filtered two");
+	}
+
+	@Test
+	void testGetErrorCauses() {
+		OffsetDateTime now = OffsetDateTime.now();
+		OffsetDateTime plusTwo = OffsetDateTime.now().plusMinutes(2);
+		loadDeltaFilesWithActionErrors(now, plusTwo);
+
+		List<String> causes = deltaFilesService.getErrorCauses(
+				ErrorSummaryFilter.builder().modifiedBefore(plusTwo).build());
+
+		assertThat(causes).containsExactly("causeX", "causeY", "causeZ");
+	}
+
+	@Test
+	void testGetErrorCausesWithAcknowledgedFilter() {
+		OffsetDateTime now = OffsetDateTime.now();
+		OffsetDateTime plusTwo = OffsetDateTime.now().plusMinutes(2);
+		loadDeltaFilesWithActionErrors(now, plusTwo);
+
+		List<String> unacknowledgedCauses = deltaFilesService.getErrorCauses(
+				ErrorSummaryFilter.builder().errorAcknowledged(false).build());
+
+		// All causes present when no time filter
+		assertThat(unacknowledgedCauses).containsExactly("causeA", "causeX", "causeY", "causeZ");
+	}
+
+	@Test
+	void testGetErrorCausesDatafetcher() {
+		OffsetDateTime now = OffsetDateTime.now();
+		OffsetDateTime plusTwo = OffsetDateTime.now().plusMinutes(2);
+		loadDeltaFilesWithActionErrors(now, plusTwo);
+
+		String query = "{ errorCauses(filter: {errorAcknowledged: false}) }";
+
+		List<String> actual = dgsQueryExecutor.executeAndExtractJsonPath(
+				query,
+				"data." + DgsConstants.QUERY.ErrorCauses);
+
+		assertThat(actual).containsExactly("causeA", "causeX", "causeY", "causeZ");
+	}
+
 	private List<UUID> loadFilteredDeltaFiles(OffsetDateTime plusTwo) {
 		deltaFileRepo.deleteAllInBatch();
 

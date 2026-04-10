@@ -58,13 +58,13 @@
         </TabList>
         <TabPanels>
           <TabPanel :value="0">
-            <AllErrorsPanel ref="errorsSummaryPanel" :acknowledged="acknowledged" :flow="flowSelected" :errors-message-selected="errorMessageSelected" :query-params="model" @refresh-errors="onRefresh()" />
+            <AllErrorsPanel ref="errorsSummaryPanel" :active="activeTab === 0" :acknowledged="acknowledged" :flow="flowSelected" :errors-message-selected="errorMessageSelected" :query-params="model" @refresh-errors="onRefresh()" />
           </TabPanel>
           <TabPanel :value="1">
-            <ErrorsSummaryByFlowPanel ref="errorSummaryFlowPanel" :acknowledged="acknowledged" :flow="flowSelected" :query-params="model" @refresh-errors="onRefresh()" @change-tab:show-errors="showErrors" />
+            <ErrorsSummaryByFlowPanel ref="errorSummaryFlowPanel" :active="activeTab === 1" :acknowledged="acknowledged" :flow="flowSelected" :query-params="model" @refresh-errors="onRefresh()" @change-tab:show-errors="showErrors" />
           </TabPanel>
           <TabPanel :value="2">
-            <ErrorsSummaryByMessagePanel ref="errorSummaryMessagePanel" :acknowledged="acknowledged" :flow="flowSelected" :query-params="model" @refresh-errors="onRefresh()" @change-tab:show-errors="showErrors" />
+            <ErrorsSummaryByMessagePanel ref="errorSummaryMessagePanel" :active="activeTab === 2" :acknowledged="acknowledged" :flow="flowSelected" :query-params="model" @refresh-errors="onRefresh()" @change-tab:show-errors="showErrors" />
           </TabPanel>
         </TabPanels>
       </Tabs>
@@ -324,12 +324,24 @@ const refreshButtonBadge = computed(() => {
   return newErrorsCount.value > 0 ? newErrorsCount.value.toString() : null;
 });
 
+const refreshActiveTab = () => {
+  switch (activeTab.value) {
+    case 0:
+      errorsSummaryPanel.value.fetchErrors();
+      break;
+    case 1:
+      errorSummaryFlowPanel.value.fetchErrorsFlow();
+      break;
+    case 2:
+      errorSummaryMessagePanel.value.fetchErrorsMessages();
+      break;
+  }
+};
+
 const onRefresh = () => {
   loading.value = true;
   newErrorsCount.value = 0;
-  errorsSummaryPanel.value.fetchErrors();
-  errorSummaryFlowPanel.value.fetchErrorsFlow();
-  errorSummaryMessagePanel.value.fetchErrorsMessages();
+  refreshActiveTab();
   loading.value = false;
 };
 
