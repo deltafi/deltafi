@@ -732,7 +732,7 @@ func (h *handler) handleAnnotationKeys(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(toVariableOptions(keys))
 }
 
-const defaultValueLimit = 200 // Max annotation values to return in dropdown
+const defaultValueLimit = 5000 // Max annotation values to return in dropdown
 
 func (h *handler) handleAnnotationValues(w http.ResponseWriter, r *http.Request) {
 	key := r.URL.Query().Get("key")
@@ -745,7 +745,7 @@ func (h *handler) handleAnnotationValues(w http.ResponseWriter, r *http.Request)
 	limit := defaultValueLimit
 	if limitStr := r.URL.Query().Get("limit"); limitStr != "" {
 		if l, err := strconv.Atoi(limitStr); err == nil && l > 0 {
-			limit = min(l, 1000)
+			limit = min(l, 5000)
 		}
 	}
 
