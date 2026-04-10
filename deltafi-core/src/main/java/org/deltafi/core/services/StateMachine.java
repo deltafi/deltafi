@@ -21,6 +21,7 @@ import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.deltafi.common.content.Segment;
 import org.deltafi.common.types.*;
+import org.deltafi.core.exceptions.MissingActionConfigException;
 import org.deltafi.core.exceptions.JoinException;
 import org.deltafi.core.exceptions.MissingFlowException;
 import org.deltafi.core.generated.types.RateLimit;
@@ -98,37 +99,74 @@ public class StateMachine {
             } else if (input.flow().getType() == FlowType.DATA_SINK) {
                 actionInputs.addAll(advanceDataSink(input, pendingQueued));
             } else if (input.flow().getType().isDataSource()) {
-                // Data source flows with completed ingress should be marked COMPLETE
-                // so they can publish to subscribers
-                input.flow().setState(DeltaFileFlowState.COMPLETE);
+                advanceDataSource(input);
             }
         }
 
-        input.flow().updateState();
+        if (input.flow().getState() != DeltaFileFlowState.PAUSED && !input.flow().getType().isDataSource()) {
+            input.flow().updateState();
+        }
 
         return actionInputs;
     }
 
     private List<WrappedActionInput> advanceTransform(StateMachineInput input, Map<String, Long> pendingQueued) {
         String pendingAction = input.flow().getNextPendingAction();
-        ActionConfiguration nextTransformAction;
 
         if (pendingAction == null) {
             return new ArrayList<>();
         }
 
         try {
-            nextTransformAction = transformFlowService.findRunningActionConfigOrError(input.flow().getName(), pendingAction);
-        } catch (Exception e) {
+            TransformFlow transformFlow = transformFlowService.getActiveFlowByName(input.flow().getName());
+            if (transformFlow == null) {
+                ActionConfiguration nextTransformAction = transformFlowService.findRunningActionConfigOrError(input.flow().getName(), pendingAction);
+                if (!input.flow().hasFinalAction(nextTransformAction.getName())) {
+                    return addNextAction(input, nextTransformAction, pendingQueued);
+                }
+                return new ArrayList<>();
+            }
+
+            if (transformFlow.isPaused() || transformFlow.isInvalid()) {
+                input.flow().updateState(DeltaFileFlowState.PAUSED);
+                return new ArrayList<>();
+            }
+
+            ActionConfiguration nextTransformAction = transformFlow.findActionConfigByName(pendingAction);
+            if (nextTransformAction == null) {
+                throw new MissingActionConfigException("Flow of type TRANSFORM named " + input.flow().getName() +
+                        " no longer contains an action named " + pendingAction);
+            }
+
+            if (!input.flow().hasFinalAction(nextTransformAction.getName())) {
+                return addNextAction(input, nextTransformAction, pendingQueued);
+            }
+        } catch (MissingFlowException e) {
+            markMissingFlow(input.flow(), e);
+            return new ArrayList<>();
+        } catch (MissingActionConfigException e) {
             markMissingAction(input.flow(), e.getMessage());
             return new ArrayList<>();
         }
 
-        if (nextTransformAction != null && !input.flow().hasFinalAction(nextTransformAction.getName())) {
-            return addNextAction(input, nextTransformAction, pendingQueued);
-        }
-
         return new ArrayList<>();
+    }
+
+    private void advanceDataSource(StateMachineInput input) {
+        try {
+            Flow dataSource = getFlow(input.flow());
+
+            if (dataSource.isPaused() || dataSource.isInvalid()) {
+                input.flow().updateState(DeltaFileFlowState.PAUSED);
+                return;
+            }
+
+            // Data source flows with completed ingress should be marked COMPLETE
+            // so they can publish to subscribers
+            input.flow().updateState(DeltaFileFlowState.COMPLETE);
+        } catch (MissingFlowException e) {
+            addErrorAction(input.flow(), MISSING_FLOW_ACTION, e.getMissingCause(), e.getMessage());
+        }
     }
 
     private List<WrappedActionInput> advanceDataSink(StateMachineInput input, Map<String, Long> pendingQueued) {
@@ -137,13 +175,20 @@ public class StateMachine {
 
         try {
             dataSink = dataSinkService.getActiveFlowByName(input.flow().getName());
+
+            if (dataSink.isPaused() || dataSink.isInvalid()) {
+                input.flow().updateState(DeltaFileFlowState.PAUSED);
+                return new ArrayList<>();
+            }
+
             nextEgressAction = dataSink.getEgressAction();
-        } catch (MissingFlowException missingFlowException) {
-            if (input.flow().lastAction().getState() == ActionState.COMPLETE) {
+        } catch (MissingFlowException e) {
+            if (input.flow().lastAction() != null && input.flow().lastAction().getState() == ActionState.COMPLETE) {
                 // the flow has been turned off but we've already completed egress
                 nextEgressAction = null;
             } else {
-                nextEgressAction = new ActionConfiguration(MISSING_FLOW_ACTION, ActionType.UNKNOWN, "");
+                addErrorAction(input.flow(), MISSING_FLOW_ACTION, e.getMissingCause(), e.getMessage());
+                return new ArrayList<>();
             }
         }
 
@@ -222,7 +267,8 @@ public class StateMachine {
 
         Action lastAction = input.flow().lastAction();
         if (lastAction != null && lastAction.getType() != ActionType.PUBLISH &&
-                (input.flow().getType() == FlowType.DATA_SINK || lastAction.getState() != ActionState.COMPLETE)) {
+                (input.flow().getType() == FlowType.DATA_SINK ||
+                        (lastAction.getState() != ActionState.COMPLETE && lastAction.getState() != ActionState.RETRIED))) {
             return Collections.emptyList();
         }
 
@@ -303,6 +349,14 @@ public class StateMachine {
         Action action = flow.lastAction();
         OffsetDateTime now = OffsetDateTime.now(clock);
         action.error(null, null, now, "Action configuration not found", context);
+    }
+
+    private void addErrorAction(DeltaFileFlow flow, String actionName, String cause, String context) {
+        Action action = flow.queueNewAction(actionName, null, ActionType.UNKNOWN, false, OffsetDateTime.now(clock));
+        action.setState(ActionState.ERROR);
+        action.setErrorCause(cause);
+        action.setErrorContext(context);
+        flow.updateState();
     }
 
     private void addErroredPublishAction(DeltaFileFlow flow, String actionName, String cause, String context) {

@@ -21,6 +21,7 @@ import lombok.Builder;
 import org.deltafi.common.test.time.TestClock;
 import org.deltafi.common.types.*;
 import org.deltafi.core.metrics.MetricService;
+import org.deltafi.core.exceptions.MissingFlowException;
 import org.deltafi.core.types.JoinEntry;
 import org.deltafi.core.configuration.DeltaFiProperties;
 import org.deltafi.core.generated.types.RateLimit;
@@ -46,6 +47,7 @@ import java.time.OffsetDateTime;
 import java.util.*;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.deltafi.common.constant.DeltaFiConstants.MISSING_FLOW_ACTION;
 import static org.deltafi.common.constant.DeltaFiConstants.SYNTHETIC_EGRESS_ACTION_FOR_TEST;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -345,6 +347,71 @@ class StateMachineTest {
     }
 
     @Test
+    void resumedTerminatedPausedFlowStaysPausedWhenFlowIsPaused() {
+        DeltaFile deltaFile = resumedTerminatedPausedTransformFlow();
+        DeltaFileFlow deltaFileFlow = deltaFile.firstFlow();
+
+        TransformFlow transformFlow = TransformFlowMaker.builder()
+                .name(TRANSFORM_FLOW)
+                .flowState(FlowState.PAUSED)
+                .build().makeTransformFlow();
+        transformFlow.setTransformActions(List.of(new ActionConfiguration("TransformAction", ActionType.TRANSFORM,
+                "org.deltafi.action.SomeTransformAction")));
+        when(transformFlowService.getActiveFlowByName(TRANSFORM_FLOW)).thenReturn(transformFlow);
+
+        List<WrappedActionInput> actionInputs = stateMachine.advance(List.of(new StateMachineInput(deltaFile, deltaFileFlow)));
+
+        assertThat(actionInputs).isEmpty();
+        assertThat(deltaFileFlow.getState()).isEqualTo(DeltaFileFlowState.PAUSED);
+        assertThat(deltaFileFlow.lastAction().getName()).isEqualTo(DeltaFileFlow.TERMINATE_PAUSED_FLOW);
+        assertThat(deltaFileFlow.lastAction().getState()).isEqualTo(ActionState.RETRIED);
+    }
+
+    @Test
+    void resumedTerminatedPausedFlowQueuesWhenFlowIsRunning() {
+        DeltaFile deltaFile = resumedTerminatedPausedTransformFlow();
+        DeltaFileFlow deltaFileFlow = deltaFile.firstFlow();
+        when(deltaFiPropertiesService.getDeltaFiProperties()).thenReturn(new DeltaFiProperties());
+
+        TransformFlow transformFlow = TransformFlowMaker.builder()
+                .name(TRANSFORM_FLOW)
+                .flowState(FlowState.RUNNING)
+                .build().makeTransformFlow();
+        ActionConfiguration transformAction = new ActionConfiguration("TransformAction", ActionType.TRANSFORM,
+                "org.deltafi.action.SomeTransformAction");
+        transformFlow.setTransformActions(List.of(transformAction));
+        when(transformFlowService.getActiveFlowByName(TRANSFORM_FLOW)).thenReturn(transformFlow);
+        when(identityService.getUniqueId()).thenReturn("test-identity");
+
+        List<WrappedActionInput> actionInputs = stateMachine.advance(List.of(new StateMachineInput(deltaFile, deltaFileFlow)));
+
+        assertThat(actionInputs).hasSize(1);
+        assertThat(actionInputs.getFirst().getActionContext().getFlowName()).isEqualTo(TRANSFORM_FLOW);
+        assertThat(actionInputs.getFirst().getActionContext().getActionName()).isEqualTo("TransformAction");
+        assertThat(deltaFileFlow.getState()).isEqualTo(DeltaFileFlowState.IN_FLIGHT);
+        assertThat(deltaFileFlow.lastAction().getName()).isEqualTo("TransformAction");
+        assertThat(deltaFileFlow.lastAction().getState()).isEqualTo(ActionState.QUEUED);
+    }
+
+    @Test
+    void resumedTerminatedPausedFlowErrorsWhenFlowIsMissing() {
+        DeltaFile deltaFile = resumedTerminatedPausedTransformFlow();
+        DeltaFileFlow deltaFileFlow = deltaFile.firstFlow();
+        when(deltaFiPropertiesService.getDeltaFiProperties()).thenReturn(new DeltaFiProperties());
+
+        when(transformFlowService.getActiveFlowByName(TRANSFORM_FLOW))
+                .thenThrow(MissingFlowException.notFound(TRANSFORM_FLOW, FlowType.TRANSFORM));
+
+        List<WrappedActionInput> actionInputs = stateMachine.advance(List.of(new StateMachineInput(deltaFile, deltaFileFlow)));
+
+        assertThat(actionInputs).isEmpty();
+        assertThat(deltaFileFlow.getState()).isEqualTo(DeltaFileFlowState.ERROR);
+        assertThat(deltaFileFlow.lastAction().getName()).isEqualTo(MISSING_FLOW_ACTION);
+        assertThat(deltaFileFlow.lastAction().getState()).isEqualTo(ActionState.ERROR);
+        assertThat(deltaFileFlow.lastAction().getErrorCause()).isEqualTo("The transform is no longer installed");
+    }
+
+    @Test
     void marksFlowAsCircularAtMaxDepth() {
         DeltaFiProperties deltaFiProperties = new DeltaFiProperties();
         when(deltaFiPropertiesService.getDeltaFiProperties()).thenReturn(deltaFiProperties);
@@ -387,9 +454,168 @@ class StateMachineTest {
         private TransformFlow makeTransformFlow() {
             TransformFlow transformFlow = new TransformFlow();
             transformFlow.setName(name);
-            transformFlow.setFlowStatus(FlowStatus.newBuilder().state(flowState).testMode(testMode).build());
+            transformFlow.setFlowStatus(FlowStatus.newBuilder().state(flowState).testMode(testMode).valid(true).build());
             return transformFlow;
         }
+    }
+
+    // --- Data Sink: resumed after terminateAllWithError while paused ---
+
+    @Test
+    void resumedTerminatedPausedDataSinkStaysPausedWhenFlowIsPaused() {
+        DeltaFile deltaFile = resumedTerminatedPausedDataSinkFlow();
+        DeltaFileFlow dataSinkFlow = deltaFile.getFlows().stream()
+                .filter(f -> f.getType() == FlowType.DATA_SINK).findFirst().orElseThrow();
+
+        DataSink dataSink = DataSinkMaker.builder()
+                .name(EGRESS_FLOW)
+                .flowState(FlowState.PAUSED)
+                .build().makeDataSink();
+        when(dataSinkService.getActiveFlowByName(EGRESS_FLOW)).thenReturn(dataSink);
+
+        List<WrappedActionInput> actionInputs = stateMachine.advance(List.of(new StateMachineInput(deltaFile, dataSinkFlow)));
+
+        assertThat(actionInputs).isEmpty();
+        assertThat(dataSinkFlow.getState()).isEqualTo(DeltaFileFlowState.PAUSED);
+        assertThat(dataSinkFlow.lastAction().getName()).isEqualTo(DeltaFileFlow.TERMINATE_PAUSED_FLOW);
+        assertThat(dataSinkFlow.lastAction().getState()).isEqualTo(ActionState.RETRIED);
+    }
+
+    @Test
+    void resumedTerminatedPausedDataSinkQueuesWhenFlowIsRunning() {
+        DeltaFile deltaFile = resumedTerminatedPausedDataSinkFlow();
+        DeltaFileFlow dataSinkFlow = deltaFile.getFlows().stream()
+                .filter(f -> f.getType() == FlowType.DATA_SINK).findFirst().orElseThrow();
+        when(deltaFiPropertiesService.getDeltaFiProperties()).thenReturn(new DeltaFiProperties());
+
+        DataSink dataSink = DataSinkMaker.builder()
+                .name(EGRESS_FLOW)
+                .flowState(FlowState.RUNNING)
+                .build().makeDataSink();
+        when(dataSinkService.getActiveFlowByName(EGRESS_FLOW)).thenReturn(dataSink);
+        when(identityService.getUniqueId()).thenReturn("test-identity");
+
+        List<WrappedActionInput> actionInputs = stateMachine.advance(List.of(new StateMachineInput(deltaFile, dataSinkFlow)));
+
+        assertThat(actionInputs).hasSize(1);
+        assertThat(actionInputs.getFirst().getActionContext().getFlowName()).isEqualTo(EGRESS_FLOW);
+        assertThat(actionInputs.getFirst().getActionContext().getActionName()).isEqualTo(EGRESS_ACTION);
+        assertThat(dataSinkFlow.getState()).isEqualTo(DeltaFileFlowState.IN_FLIGHT);
+        assertThat(dataSinkFlow.lastAction().getName()).isEqualTo(EGRESS_ACTION);
+        assertThat(dataSinkFlow.lastAction().getState()).isEqualTo(ActionState.QUEUED);
+    }
+
+    @Test
+    void resumedTerminatedPausedDataSinkErrorsWhenFlowIsMissing() {
+        DeltaFile deltaFile = resumedTerminatedPausedDataSinkFlow();
+        DeltaFileFlow dataSinkFlow = deltaFile.getFlows().stream()
+                .filter(f -> f.getType() == FlowType.DATA_SINK).findFirst().orElseThrow();
+
+        when(dataSinkService.getActiveFlowByName(EGRESS_FLOW))
+                .thenThrow(MissingFlowException.notFound(EGRESS_FLOW, FlowType.DATA_SINK));
+
+        List<WrappedActionInput> actionInputs = stateMachine.advance(List.of(new StateMachineInput(deltaFile, dataSinkFlow)));
+
+        assertThat(actionInputs).isEmpty();
+        assertThat(dataSinkFlow.getState()).isEqualTo(DeltaFileFlowState.ERROR);
+        assertThat(dataSinkFlow.lastAction().getName()).isEqualTo(MISSING_FLOW_ACTION);
+        assertThat(dataSinkFlow.lastAction().getState()).isEqualTo(ActionState.ERROR);
+        assertThat(dataSinkFlow.lastAction().getErrorCause()).isEqualTo("The data sink is no longer installed");
+    }
+
+    private DeltaFile resumedTerminatedPausedDataSinkFlow() {
+        DeltaFile deltaFile = utilService.emptyDeltaFile(UUID.randomUUID(), EGRESS_FLOW);
+        deltaFile.setStage(DeltaFileStage.IN_FLIGHT);
+
+        DeltaFileFlow dataSinkFlow = deltaFile.firstFlow();
+        dataSinkFlow.getFlowDefinition().setType(FlowType.DATA_SINK);
+        dataSinkFlow.setState(DeltaFileFlowState.IN_FLIGHT);
+        dataSinkFlow.setPendingActions(new ArrayList<>(List.of(EGRESS_ACTION)));
+        dataSinkFlow.addAction(DeltaFileFlow.TERMINATE_PAUSED_FLOW, null, ActionType.UNKNOWN, ActionState.RETRIED, OffsetDateTime.now(clock));
+
+        return deltaFile;
+    }
+
+    // --- Data Source: resumed after terminateAllWithError while paused ---
+
+    @Test
+    void resumedTerminatedPausedDataSourceStaysPausedWhenFlowIsPaused() {
+        DeltaFile deltaFile = resumedTerminatedPausedDataSourceFlow();
+        DeltaFileFlow dataSourceFlow = deltaFile.firstFlow();
+
+        RestDataSource restDataSource = new RestDataSource();
+        restDataSource.setName("rest-data-source");
+        restDataSource.setTopic("test-topic");
+        restDataSource.setFlowStatus(FlowStatus.newBuilder().state(FlowState.PAUSED).valid(true).build());
+        when(restDataSourceService.getActiveFlowByName("rest-data-source")).thenReturn(restDataSource);
+
+        List<WrappedActionInput> actionInputs = stateMachine.advance(List.of(new StateMachineInput(deltaFile, dataSourceFlow)));
+
+        assertThat(actionInputs).isEmpty();
+        assertThat(dataSourceFlow.getState()).isEqualTo(DeltaFileFlowState.PAUSED);
+        assertThat(dataSourceFlow.lastAction().getName()).isEqualTo(DeltaFileFlow.TERMINATE_PAUSED_FLOW);
+        assertThat(dataSourceFlow.lastAction().getState()).isEqualTo(ActionState.RETRIED);
+    }
+
+    @Test
+    void resumedTerminatedPausedDataSourceAdvancesWhenFlowIsRunning() {
+        DeltaFile deltaFile = resumedTerminatedPausedDataSourceFlow();
+        DeltaFileFlow dataSourceFlow = deltaFile.firstFlow();
+
+        RestDataSource restDataSource = new RestDataSource();
+        restDataSource.setName("rest-data-source");
+        restDataSource.setTopic("test-topic");
+        restDataSource.setFlowStatus(FlowStatus.newBuilder().state(FlowState.RUNNING).valid(true).build());
+        when(restDataSourceService.getActiveFlowByName("rest-data-source")).thenReturn(restDataSource);
+        when(publisherService.subscribers(Mockito.eq(restDataSource), Mockito.any(), Mockito.eq(dataSourceFlow)))
+                .thenReturn(Collections.emptySet());
+        when(deltaFiPropertiesService.getDeltaFiProperties()).thenReturn(new DeltaFiProperties());
+
+        List<WrappedActionInput> actionInputs = stateMachine.advance(List.of(new StateMachineInput(deltaFile, dataSourceFlow)));
+
+        assertThat(dataSourceFlow.getState()).isEqualTo(DeltaFileFlowState.COMPLETE);
+        assertThat(deltaFile.getStage()).isEqualTo(DeltaFileStage.COMPLETE);
+    }
+
+    @Test
+    void resumedTerminatedPausedDataSourceErrorsWhenFlowIsMissing() {
+        DeltaFile deltaFile = resumedTerminatedPausedDataSourceFlow();
+        DeltaFileFlow dataSourceFlow = deltaFile.firstFlow();
+
+        when(restDataSourceService.getActiveFlowByName("rest-data-source"))
+                .thenThrow(MissingFlowException.notFound("rest-data-source", FlowType.REST_DATA_SOURCE));
+
+        List<WrappedActionInput> actionInputs = stateMachine.advance(List.of(new StateMachineInput(deltaFile, dataSourceFlow)));
+
+        assertThat(actionInputs).isEmpty();
+        assertThat(dataSourceFlow.getState()).isEqualTo(DeltaFileFlowState.ERROR);
+    }
+
+    private DeltaFile resumedTerminatedPausedDataSourceFlow() {
+        DeltaFile deltaFile = utilService.emptyDeltaFile(UUID.randomUUID(), "rest-data-source");
+        deltaFile.setStage(DeltaFileStage.IN_FLIGHT);
+
+        DeltaFileFlow dataSourceFlow = deltaFile.firstFlow();
+        dataSourceFlow.getFlowDefinition().setType(FlowType.REST_DATA_SOURCE);
+        dataSourceFlow.setState(DeltaFileFlowState.IN_FLIGHT);
+        // Data source has completed ingress action + retried synthetic error
+        dataSourceFlow.addAction("IngressAction", null, ActionType.INGRESS, ActionState.COMPLETE, OffsetDateTime.now(clock));
+        dataSourceFlow.addAction(DeltaFileFlow.TERMINATE_PAUSED_FLOW, null, ActionType.UNKNOWN, ActionState.RETRIED, OffsetDateTime.now(clock));
+
+        return deltaFile;
+    }
+
+    private DeltaFile resumedTerminatedPausedTransformFlow() {
+        DeltaFile deltaFile = utilService.emptyDeltaFile(UUID.randomUUID(), TRANSFORM_FLOW);
+        deltaFile.setStage(DeltaFileStage.IN_FLIGHT);
+
+        DeltaFileFlow deltaFileFlow = deltaFile.firstFlow();
+        deltaFileFlow.getFlowDefinition().setType(FlowType.TRANSFORM);
+        deltaFileFlow.setState(DeltaFileFlowState.IN_FLIGHT);
+        deltaFileFlow.setPendingActions(new ArrayList<>(List.of("TransformAction")));
+        deltaFileFlow.addAction(DeltaFileFlow.TERMINATE_PAUSED_FLOW, null, ActionType.UNKNOWN, ActionState.RETRIED, OffsetDateTime.now(clock));
+
+        return deltaFile;
     }
 
     @Builder
@@ -408,7 +634,7 @@ class StateMachineTest {
             dataSink.setName(name);
             ActionConfiguration ActionConfiguration = new ActionConfiguration(egressActionName, ActionType.EGRESS, null);
             dataSink.setEgressAction(ActionConfiguration);
-            dataSink.setFlowStatus(FlowStatus.newBuilder().state(flowState).testMode(testMode).build());
+            dataSink.setFlowStatus(FlowStatus.newBuilder().state(flowState).testMode(testMode).valid(true).build());
             return dataSink;
         }
     }

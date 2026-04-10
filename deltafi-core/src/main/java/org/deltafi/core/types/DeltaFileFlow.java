@@ -45,6 +45,8 @@ import java.util.stream.Collectors;
 @DynamicUpdate
 @EqualsAndHashCode
 public class DeltaFileFlow {
+    public static final String TERMINATE_PAUSED_FLOW = "TERMINATE_PAUSED_FLOW";
+
     @Id
     @Builder.Default
     private UUID id = Generators.timeBasedEpochGenerator().generate();
@@ -186,6 +188,13 @@ public class DeltaFileFlow {
         boolean terminated = actions.stream()
                 .map(a -> a.terminateWithError(time, cause, context))
                 .reduce(false, (a, b) -> a || b);
+        if (!terminated && state == DeltaFileFlowState.PAUSED) {
+            if (getNextPendingAction() != null) {
+                Action action = addAction(TERMINATE_PAUSED_FLOW, null, ActionType.UNKNOWN, ActionState.QUEUED, time);
+                action.error(time, time, time, cause, context);
+                terminated = true;
+            }
+        }
         if (terminated) {
             updateState();
             modified = time;
