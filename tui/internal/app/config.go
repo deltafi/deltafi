@@ -124,6 +124,65 @@ func CreateConfig() error {
 	return config.Save()
 }
 
+// MigrateLegacyConfig moves config.yaml from the legacy ~/.deltafi
+// directory into the executable-relative <TuiPath>/config directory and
+// recreates the shell rc file in the new location. Invoked explicitly via
+// `deltafi config --migrate-config`.
+func MigrateLegacyConfig() error {
+	legacyDir := LegacyConfigPath()
+	targetDir := TuiConfigPath()
+	if legacyDir == targetDir {
+		return nil
+	}
+
+	legacyConfig := filepath.Join(legacyDir, defaultConfigFileName)
+	if _, err := os.Stat(legacyConfig); err != nil {
+		if os.IsNotExist(err) {
+			fmt.Printf("No legacy config found at %s; nothing to migrate.\n", legacyConfig)
+			return nil
+		}
+		return fmt.Errorf("failed to stat legacy config %s: %w", legacyConfig, err)
+	}
+
+	newConfig := filepath.Join(targetDir, defaultConfigFileName)
+	if _, err := os.Stat(newConfig); err == nil {
+		return fmt.Errorf("refusing to overwrite existing config at %s; remove it first if you want to re-migrate", newConfig)
+	}
+
+	if err := os.MkdirAll(targetDir, 0755); err != nil {
+		return fmt.Errorf("failed to create config directory %s: %w", targetDir, err)
+	}
+
+	data, err := os.ReadFile(legacyConfig)
+	if err != nil {
+		return fmt.Errorf("failed to read legacy config %s: %w", legacyConfig, err)
+	}
+	if err := os.WriteFile(newConfig, data, 0644); err != nil {
+		return fmt.Errorf("failed to write config to %s: %w", newConfig, err)
+	}
+	if err := os.Remove(legacyConfig); err != nil {
+		return fmt.Errorf("failed to remove legacy config %s: %w", legacyConfig, err)
+	}
+
+	removeLegacyRcFiles(legacyDir)
+
+	shell := DetectShell()
+	if IsKnownShell(shell) {
+		if err := ConfigureShell(shell, TuiPath()); err != nil {
+			fmt.Fprintf(os.Stderr, "Warning: failed to configure shell rc: %v\n", err)
+		}
+	}
+
+	fmt.Printf("Migrated DeltaFi config from %s to %s\n", legacyConfig, newConfig)
+	return nil
+}
+
+func removeLegacyRcFiles(legacyDir string) {
+	for _, name := range []string{"rc.bash", "rc.zsh", "rc.fish"} {
+		_ = os.Remove(filepath.Join(legacyDir, name))
+	}
+}
+
 // LoadConfig loads the application configuration from the config file
 func LoadConfig() (Config, error) {
 	configFile := configFile()

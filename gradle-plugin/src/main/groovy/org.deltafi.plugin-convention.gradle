@@ -167,17 +167,59 @@ import groovy.json.JsonBuilder
 java.util.LinkedHashMap.metaClass.pprint = { -> new JsonBuilder(delegate).toPrettyString() }
 
 import org.yaml.snakeyaml.Yaml
+def locateDeltafiTuiDir() {
+    def pathEnv = System.getenv('PATH')
+    if (!pathEnv) return null
+    def isWindows = System.getProperty('os.name').toLowerCase().contains('windows')
+    def exeNames = isWindows ? ['deltafi.exe', 'deltafi'] : ['deltafi']
+    for (String dir : pathEnv.split(File.pathSeparator)) {
+        if (!dir) continue
+        for (String name : exeNames) {
+            File candidate = new File(dir, name)
+            if (candidate.isFile() && candidate.canExecute()) {
+                try {
+                    return candidate.getCanonicalFile().getParentFile()
+                } catch (Exception ignored) {
+                    return candidate.getAbsoluteFile().getParentFile()
+                }
+            }
+        }
+    }
+    return null
+}
+
+def findDeltafiConfigFile() {
+    def envPath = System.getenv('DELTAFI_CONFIG_PATH')
+    if (envPath) {
+        File f = new File(envPath, 'config.yaml')
+        if (f.isFile()) return f
+    }
+
+    def homeDir = System.getenv('HOME')
+    if (homeDir) {
+        File f = new File(homeDir + '/.deltafi/config.yaml')
+        if (f.isFile()) return f
+    }
+
+    File tuiDir = locateDeltafiTuiDir()
+    if (tuiDir != null) {
+        File f = new File(tuiDir, 'config/config.yaml')
+        if (f.isFile()) return f
+    }
+
+    return null
+}
+
 def loadDeltafiConfig() {
     def retval = [:];
 
-    def homeDir = System.getenv('HOME');
-    File testFile = new File(homeDir + '/.deltafi/config.yaml');
+    File configFile = findDeltafiConfigFile()
 
-    if ( testFile.isFile() ) {
-        retval = new Yaml().load(testFile.newInputStream());
-        println ('Loaded configuration from ' + testFile.getPath());
+    if (configFile != null) {
+        retval = new Yaml().load(configFile.newInputStream());
+        println ('Loaded configuration from ' + configFile.getPath());
     } else {
-        println ('WARNING: ' + testFile.getPath() + ' not found');
+        println ('WARNING: deltafi config.yaml not found');
     }
     retval = retval ?: [:]
 

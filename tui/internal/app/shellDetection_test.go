@@ -204,6 +204,41 @@ func TestEnsureConfigLine(t *testing.T) {
 		}
 	})
 
+	t.Run("strips stale DeltaFi marker line", func(t *testing.T) {
+		tmpDir := t.TempDir()
+		testFile := filepath.Join(tmpDir, "testrc")
+		staleLine := "[[ -f /old/path/rc.bash ]] && source /old/path/rc.bash " + deltafiShellMarker
+		newLine := "[[ -f /new/path/rc.bash ]] && source /new/path/rc.bash " + deltafiShellMarker
+		existing := "# user content\n" + staleLine + "\n# more user content\n"
+
+		if err := os.WriteFile(testFile, []byte(existing), 0644); err != nil {
+			t.Fatalf("failed to create test file: %v", err)
+		}
+
+		if err := ensureConfigLine(testFile, newLine); err != nil {
+			t.Fatalf("ensureConfigLine() error: %v", err)
+		}
+
+		content, err := os.ReadFile(testFile)
+		if err != nil {
+			t.Fatalf("failed to read file: %v", err)
+		}
+		got := string(content)
+
+		if strings.Contains(got, staleLine) {
+			t.Errorf("stale DeltaFi line should have been removed, got: %q", got)
+		}
+		if !strings.Contains(got, newLine) {
+			t.Errorf("new DeltaFi line should be present, got: %q", got)
+		}
+		if !strings.Contains(got, "# user content") || !strings.Contains(got, "# more user content") {
+			t.Errorf("unrelated user content should be preserved, got: %q", got)
+		}
+		if c := strings.Count(got, deltafiShellMarker); c != 1 {
+			t.Errorf("expected exactly one DeltaFi marker line, found %d", c)
+		}
+	})
+
 	t.Run("adds newline if file doesn't end with one", func(t *testing.T) {
 		tmpDir := t.TempDir()
 		testFile := filepath.Join(tmpDir, "testrc")

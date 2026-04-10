@@ -165,7 +165,7 @@ deltafi:
 
 ## Log Storage Location
 
-Logs are stored in the directory specified by the `LOGS_DIR` environment variable. The default location is `{installDirectory}/logs`, where `installDirectory` is set in your `config.yaml` file (typically `~/.deltafi/config.yaml`).
+Logs are stored in the directory specified by the `LOGS_DIR` environment variable. The default location is `{installDirectory}/logs`, where `installDirectory` is set in your TUI `config.yaml` file (run `deltafi config` to see the resolved value, or `deltafi config --json` to read it programmatically).
 
 For example, if your `config.yaml` contains:
 

@@ -34,7 +34,15 @@ import (
 	"github.com/deltafi/tui/internal/api"
 	"github.com/deltafi/tui/internal/orchestration"
 	"github.com/deltafi/tui/internal/types"
+	"golang.org/x/term"
 )
+
+// IsInteractive reports whether stdin and stdout are both attached to a
+// terminal. Used to decide whether interactive prompts (like the config
+// wizard) can run.
+func IsInteractive() bool {
+	return term.IsTerminal(int(os.Stdin.Fd())) && term.IsTerminal(int(os.Stdout.Fd()))
+}
 
 // App represents the global application state
 type App struct {
@@ -171,12 +179,33 @@ func WaitForRunning() {
 	fmt.Println()
 }
 
+// ConfigPath returns the directory that holds config.yaml and the shell
+// rc files. Resolution order:
+//  1. DELTAFI_CONFIG_PATH if set
+//  2. ~/.deltafi when ~/.deltafi/config.yaml exists (legacy location)
+//  3. <TuiPath>/config (default for new installs)
 func ConfigPath() string {
 	if configPath := os.Getenv("DELTAFI_CONFIG_PATH"); configPath != "" {
 		return configPath
-	} else {
-		return filepath.Join(UserHomeDir(), ".deltafi")
 	}
+	legacy := LegacyConfigPath()
+	if _, err := os.Stat(filepath.Join(legacy, "config.yaml")); err == nil {
+		return legacy
+	}
+	return filepath.Join(TuiPath(), "config")
+}
+
+// LegacyConfigPath returns the historical ~/.deltafi location for the
+// DeltaFi config and rc files. Still honored when a config.yaml exists
+// there; see ConfigPath.
+func LegacyConfigPath() string {
+	return filepath.Join(UserHomeDir(), ".deltafi")
+}
+
+// TuiConfigPath returns the executable-relative config directory used as
+// the migration target and the default for fresh installs.
+func TuiConfigPath() string {
+	return filepath.Join(TuiPath(), "config")
 }
 
 func TuiPath() string {

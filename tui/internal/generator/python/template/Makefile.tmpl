@@ -14,8 +14,9 @@ VENV                     = .venv
 
 # Build mode configuration
 ifeq ($(BUILD_MODE),)
-  ifneq ($(wildcard ~/.deltafi/config.yaml),)
-    ifeq ("$(shell grep deploymentMode ~/.deltafi/config.yaml | sed 's/deploymentMode: //' | xargs echo | tr '[:lower:]' '[:upper:]')", "COREDEVELOPMENT")
+  DELTAFI_CONFIG_YAML := $(firstword $(wildcard ~/.deltafi/config.yaml) $(wildcard $(dir $(shell command -v deltafi 2>/dev/null))config/config.yaml))
+  ifneq ($(DELTAFI_CONFIG_YAML),)
+    ifeq ("$(shell grep deploymentMode $(DELTAFI_CONFIG_YAML) | sed 's/deploymentMode: //' | xargs echo | tr '[:lower:]' '[:upper:]')", "COREDEVELOPMENT")
       BUILD_MODE = custom
     endif
     BUILD_MODE ?= dev

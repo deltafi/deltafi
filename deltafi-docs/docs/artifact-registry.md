@@ -912,11 +912,12 @@ Set `url`, `bucketName`, and `local_artifact_storage` in `site/values.yaml` as a
 
 **Credentials** — add them to your installation's `config/secrets/minio.env` file, which is
 already loaded into the core containers and created with `0600` permissions. The path is
-`<installDirectory>/config/secrets/minio.env`, where `installDirectory` is defined in
-`~/.deltafi/config.yaml`.
+`<installDirectory>/config/secrets/minio.env`, where `installDirectory` comes from the
+TUI configuration (use `deltafi config --json` to read it without worrying about where
+the underlying `config.yaml` lives).
 
 ```bash
-INSTALL_DIR=$(grep 'installDirectory:' ~/.deltafi/config.yaml | awk '{print $2}')
+INSTALL_DIR=$(deltafi config --json | jq -r '.installDirectory')
 SECRETS_FILE="${INSTALL_DIR}/config/secrets/minio.env"
 
 cat >> "$SECRETS_FILE" << 'EOF'

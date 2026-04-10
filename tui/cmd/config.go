@@ -48,6 +48,8 @@ var (
 	forceFlag             bool
 	jsonFlag              bool
 	noStartFlag           bool
+	wizardFlag            bool
+	migrateConfigFlag     bool
 )
 
 func init() {
@@ -66,14 +68,20 @@ func init() {
 
 	configCmd.Flags().BoolVar(&jsonFlag, "json", false, "Output configuration in JSON format and exit")
 	configCmd.Flags().BoolVar(&noStartFlag, "no-start", false, "Do not automatically start DeltaFi if it is not running")
+	configCmd.Flags().BoolVarP(&wizardFlag, "wizard", "w", false, "Run the interactive configuration wizard")
+	configCmd.Flags().BoolVar(&migrateConfigFlag, "migrate-config", false, "Migrate config.yaml from ~/.deltafi to the executable-relative config/ directory")
 }
 
 var configCmd = &cobra.Command{
 	Use:     "config",
-	Short:   "Configure DeltaFi system mode",
-	Long:    `Interactive wizard to initialize DeltaFi system`,
+	Short:   "Show or modify DeltaFi system configuration",
+	Long:    `Print the current DeltaFi configuration. Pass --wizard for the interactive setup, or use the orchestration/deployment flags to apply specific changes non-interactively.`,
 	GroupID: "orchestration",
 	RunE: func(cmd *cobra.Command, args []string) error {
+
+		if migrateConfigFlag {
+			return app.MigrateLegacyConfig()
+		}
 
 		if jsonFlag {
 			config := app.LoadConfigOrDefault()
@@ -82,6 +90,23 @@ var configCmd = &cobra.Command{
 				return fmt.Errorf("error rendering configuration: %w", err)
 			}
 			fmt.Println(styles.ColorizeJSON(string(json)))
+			return nil
+		}
+
+		applyFlags := composeFlag || kindFlag || kubernetesFlag || deploymentFlag || pluginDevelopmentFlag || coreDevelopmentFlag
+
+		// With no flags requesting changes, print the current config and exit.
+		// This avoids the footgun of bare `deltafi config` rewriting the file.
+		// If no config file exists yet, write one from DefaultConfig() so other
+		// commands have a stable file to read.
+		if !applyFlags && !wizardFlag {
+			if !app.ConfigExists() {
+				if err := app.CreateConfig(); err != nil {
+					return fmt.Errorf("failed to create default config: %w", err)
+				}
+				fmt.Printf("Created default config at %s\n\n", filepath.Join(app.ConfigPath(), "config.yaml"))
+			}
+			printConfig(app.LoadConfigOrDefault())
 			return nil
 		}
 
@@ -101,8 +126,7 @@ var configCmd = &cobra.Command{
 		currentOrchestrationMode := config.OrchestrationMode
 		currentDeploymentMode := config.DeploymentMode
 
-		// Handle orchestration and deployment mode flags
-		if composeFlag || kindFlag || kubernetesFlag || deploymentFlag || pluginDevelopmentFlag || coreDevelopmentFlag {
+		if applyFlags {
 			if composeFlag {
 				config.OrchestrationMode = orchestration.Compose
 			} else if kindFlag {
@@ -118,6 +142,9 @@ var configCmd = &cobra.Command{
 				config.DeploymentMode = types.CoreDevelopment
 			}
 		} else {
+			if !app.IsInteractive() {
+				return fmt.Errorf("--wizard requires an interactive terminal; rerun in an interactive shell or pass orchestration/deployment flags directly")
+			}
 			var err error
 			config, err = ExecuteConfigWizard()
 			if err != nil {
@@ -193,6 +220,30 @@ var configCmd = &cobra.Command{
 
 		return nil
 	},
+}
+
+// printConfig writes a human-readable summary of the current configuration to stdout.
+func printConfig(config app.Config) {
+	fmt.Printf("Orchestration mode: %s\n", config.OrchestrationMode.String())
+	fmt.Printf("Deployment mode:    %s\n", config.DeploymentMode.String())
+	if config.CoreVersion != "" {
+		fmt.Printf("Core version:       %s\n", config.CoreVersion)
+	}
+	if config.InstallDirectory != "" {
+		fmt.Printf("Install directory:  %s\n", config.InstallDirectory)
+	}
+	if config.DataDirectory != "" {
+		fmt.Printf("Data directory:     %s\n", config.DataDirectory)
+	}
+	if config.SiteDirectory != "" {
+		fmt.Printf("Site directory:     %s\n", config.SiteDirectory)
+	}
+	if config.Development.RepoPath != "" {
+		fmt.Printf("Repo path:          %s\n", config.Development.RepoPath)
+	}
+	if config.Development.CoreRepo != "" {
+		fmt.Printf("Core repo:          %s\n", config.Development.CoreRepo)
+	}
 }
 
 func ExecuteConfigWizard() (app.Config, error) {

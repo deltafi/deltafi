@@ -6,20 +6,31 @@ DeltaFi uses several configuration files to control system behavior. This docume
 
 | File | Location | Purpose |
 |------|----------|---------|
-| `config.yaml` | `~/.deltafi/` | TUI settings (orchestration mode, directories, version) |
+| `config.yaml` | `<deltafi-install>/config/` | TUI settings (orchestration mode, directories, version) |
 | `values.yaml` | `site/` | Compose mode: DeltaFi service configuration |
 | `compose.yaml` | `site/` | Compose mode: Docker Compose overrides |
 | `kind.values.yaml` | `site/` | KinD mode: Helm values overrides |
 | `templates/` | `site/` | KinD/K8s: Custom Helm templates |
 
-## TUI Configuration (`~/.deltafi/config.yaml`)
+## TUI Configuration (`config.yaml`)
 
-The TUI configuration file controls how the `deltafi` command operates. It's created by the installation wizard (`deltafi config`) and can be modified manually or by re-running the wizard.
+The TUI configuration file controls how the `deltafi` command operates. On the first interactive run it is created by the installation wizard; in non-interactive sessions a default `config.yaml` is written automatically. It can be modified manually or via `deltafi config --wizard`.
 
 ### Location
 
-- Default: `~/.deltafi/config.yaml`
-- Override: Set `DELTAFI_CONFIG_PATH` environment variable
+The TUI resolves the config directory in this order:
+
+1. `$DELTAFI_CONFIG_PATH` (if set) — explicit override.
+2. `~/.deltafi/` — only when `~/.deltafi/config.yaml` already exists. This is the legacy location and is honored for backwards compatibility.
+3. `<deltafi-install>/config/` — the directory next to the `deltafi` executable. This is the default for new installs.
+
+To move an existing `~/.deltafi/config.yaml` (and its `rc.bash`/`rc.zsh`/`rc.fish` siblings) into the new executable-relative location, run:
+
+```bash
+deltafi config --migrate-config
+```
+
+The migration copies `config.yaml` into `<deltafi-install>/config/`, removes the legacy files, and rewrites the shell rc file in the new location. Stale source lines in your shell rc (`.bashrc`/`.zshrc`/`config.fish`) are stripped automatically the next time `deltafi config --wizard` runs.
 
 ### Structure
 
@@ -52,10 +63,10 @@ development:
 
 ```bash
 # Re-run the configuration wizard
-deltafi config
+deltafi config --wizard
 
-# Or edit directly
-vim ~/.deltafi/config.yaml
+# Or edit directly (path resolves via the rules above)
+vim "$(deltafi config --json | jq -r '.installDirectory')/config/config.yaml"
 ```
 
 ## Site Configuration
@@ -129,9 +140,10 @@ deltafi up        # Apply changes
 deltafi up --force  # Force restart all services
 ```
 
-After modifying `~/.deltafi/config.yaml`:
+After modifying `config.yaml`:
 
 ```bash
-deltafi config    # Re-run wizard to validate
+deltafi config            # Print the resulting configuration to verify
+deltafi config --wizard   # Re-run the wizard to validate interactively
 # Or just run any deltafi command - it reads config on each invocation
 ```

@@ -20,6 +20,7 @@ package cmd
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 
 	"github.com/deltafi/tui/internal/app"
 	"github.com/deltafi/tui/internal/command"
@@ -44,37 +45,47 @@ var rootCmd = &cobra.Command{
 	SilenceUsage: true,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		if !app.ConfigExists() {
-			configCmd, _, err := cmd.Root().Find([]string{"config"})
-			if err != nil {
-				fmt.Println(styles.ErrorStyle.Render(err.Error()))
-				os.Exit(1)
-			}
-			if configCmd != nil {
-				return configCmd.RunE(configCmd, args)
-			} else {
-				fmt.Println(styles.ErrorStyle.Render("configuration wizard not found"))
-				os.Exit(1)
-			}
+			return bootstrapMissingConfig(cmd, args)
 		}
 		return cmd.Help()
 	},
 	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
 		if cmd.Name() != "config" && !app.ConfigExists() {
-			configCmd, _, err := cmd.Root().Find([]string{"config"})
-			if err != nil {
-				return err
-			}
-			if configCmd != nil {
-				return configCmd.RunE(configCmd, args)
-			} else {
-				return fmt.Errorf("configuration wizard not found")
-			}
-		} else if cmd.Flags().Changed("api-url") {
+			return bootstrapMissingConfig(cmd, args)
+		}
+		if cmd.Flags().Changed("api-url") {
 			apiURL, _ := cmd.Flags().GetString("api-url")
 			_ = os.Setenv("DELTAFI_API_URL", apiURL)
 		}
 		return nil
 	},
+}
+
+// bootstrapMissingConfig runs the first-time setup path when no config.yaml
+// exists. In an interactive session it delegates to the config wizard. In a
+// non-interactive session it writes a default config.yaml so the caller can
+// continue with the originally requested command.
+func bootstrapMissingConfig(cmd *cobra.Command, args []string) error {
+	if !app.IsInteractive() {
+		if err := app.CreateConfig(); err != nil {
+			return fmt.Errorf("failed to create default config: %w", err)
+		}
+		fmt.Printf("No DeltaFi config found; created default at %s\n", filepath.Join(app.ConfigPath(), "config.yaml"))
+		app.ReloadInstance()
+		return nil
+	}
+
+	configCmd, _, err := cmd.Root().Find([]string{"config"})
+	if err != nil {
+		return err
+	}
+	if configCmd == nil {
+		return fmt.Errorf("configuration wizard not found")
+	}
+
+	wizardFlag = true
+	defer func() { wizardFlag = false }()
+	return configCmd.RunE(configCmd, args)
 }
 
 // Execute adds all child commands to the root command and sets flags appropriately.

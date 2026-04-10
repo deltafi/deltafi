@@ -60,7 +60,7 @@ The TUI supports multiple deployment backends:
 | **KinD** | Kubernetes-in-Docker (for testing K8s features locally) |
 | **Kubernetes** | Production Kubernetes clusters |
 
-Switch modes with `deltafi config`. The same commands (`up`, `down`, `status`, etc.) work across all modes.
+Switch modes with `deltafi config --wizard` (interactive) or by passing the appropriate orchestration/deployment flags (e.g. `deltafi config --compose --core-development`). Bare `deltafi config` prints the current configuration without modifying it. The same commands (`up`, `down`, `status`, etc.) work across all modes.
 
 ## Key Features
 
@@ -260,13 +260,20 @@ deltafi status [--watch|-w]
 - `--watch, -w`: Watch status updates continuously.
 
 #### `config`
-Interactive configuration editor for DeltaFi, or set orchestration and deployment modes directly.
+Show the current DeltaFi configuration, or modify it via the interactive wizard or non-interactive flags.
 
 ```bash
-deltafi config [--compose|--kind|--kubernetes] [--deployment|--plugin-development|--core-development] [--force] [--no-start]
+deltafi config [--wizard] [--json] [--migrate-config] [--compose|--kind|--kubernetes] [--deployment|--plugin-development|--core-development] [--force] [--no-start]
 ```
 
+With no flags, `deltafi config` prints the current configuration and exits without modifying the config file. The TUI looks for `config.yaml` in `$DELTAFI_CONFIG_PATH`, then in `~/.deltafi/` (legacy location, only if a `config.yaml` already exists there), then in `<deltafi-install>/config/` next to the `deltafi` executable.
+
+The first time any `deltafi` command runs without a `config.yaml`, the wizard launches automatically in an interactive shell. In a non-interactive session (CI, scripts) the TUI writes a default `config.yaml` to `<deltafi-install>/config/` and continues with the requested command.
+
 **Flags:**
+- `--wizard, -w`             Run the interactive configuration wizard (errors out in a non-interactive shell)
+- `--json`                   Print the full configuration as JSON and exit
+- `--migrate-config`         Move an existing `~/.deltafi/config.yaml` (and the associated `rc.bash`/`rc.zsh`/`rc.fish`) into `<deltafi-install>/config/` and recreate the shell rc file in the new location
 - `--compose`                Set orchestration mode to Compose
 - `--kind`                   Set orchestration mode to KinD
 - `--kubernetes`             Set orchestration mode to Kubernetes
@@ -276,12 +283,24 @@ deltafi config [--compose|--kind|--kubernetes] [--deployment|--plugin-developmen
 - `--force`                  Force configuration changes without confirmation
 - `--no-start`               Do not automatically start DeltaFi if it is not running
 
-If any of these flags are set, the configuration will be updated and saved immediately, and the wizard will not run. You can set both orchestration and deployment mode in a single invocation. If you change orchestration mode while DeltaFi is running, you will be prompted to confirm (unless --force is used), and the system will be stopped automatically.
+When orchestration or deployment flags are set, the configuration is updated and saved immediately and the wizard is not run. You can set both orchestration and deployment mode in a single invocation. If you change orchestration mode while DeltaFi is running, you will be prompted to confirm (unless `--force` is used) and the system will be stopped automatically.
 
-By default, the config command will automatically start DeltaFi if it is not running after configuration changes. Use the `--no-start` flag to skip this automatic startup behavior.
+After applying changes via `--wizard` or the orchestration/deployment flags, the config command will automatically start DeltaFi if it is not running. Use `--no-start` to skip this automatic startup behavior.
 
 **Examples:**
 ```bash
+# Show the current configuration (creates a default config file on first run)
+deltafi config
+
+# Run the interactive configuration wizard
+deltafi config --wizard
+
+# Print the full configuration as JSON
+deltafi config --json
+
+# Move an existing ~/.deltafi/config.yaml into the executable-relative location
+deltafi config --migrate-config
+
 # Set orchestration mode to Kubernetes and deployment mode to CoreDevelopment
 deltafi config --kubernetes --core-development
 

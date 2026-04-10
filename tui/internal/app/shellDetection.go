@@ -190,32 +190,54 @@ end
 	return nil
 }
 
-// ensureConfigLine ensures a configuration line exists in the specified file
-func ensureConfigLine(filepath string, config string) error {
-	// Read existing content
-	content, err := os.ReadFile(filepath)
+const deltafiShellMarker = "# Required for DeltaFi configuration"
+
+// ensureConfigLine makes sure the given config line is present in the
+// specified shell rc file. Any pre-existing line carrying the DeltaFi
+// marker that points at a different location is removed so stale entries
+// from prior config locations do not accumulate.
+func ensureConfigLine(path string, config string) error {
+	raw, err := os.ReadFile(path)
 	if err != nil && !os.IsNotExist(err) {
 		return err
 	}
 
-	// Check if config line already exists
-	if strings.Contains(string(content), config) {
+	var lines []string
+	if len(raw) > 0 {
+		lines = strings.Split(strings.TrimRight(string(raw), "\n"), "\n")
+	}
+
+	kept := make([]string, 0, len(lines)+1)
+	found := false
+	changed := false
+	for _, line := range lines {
+		if line == config {
+			if found {
+				// Drop duplicate.
+				changed = true
+				continue
+			}
+			found = true
+			kept = append(kept, line)
+			continue
+		}
+		if strings.Contains(line, deltafiShellMarker) {
+			// Drop stale DeltaFi entry pointing at a different location.
+			changed = true
+			continue
+		}
+		kept = append(kept, line)
+	}
+
+	if !found {
+		kept = append(kept, config)
+		changed = true
+	}
+
+	if !changed {
 		return nil
 	}
 
-	// Append config line
-	f, err := os.OpenFile(filepath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
-	if err != nil {
-		return err
-	}
-	defer f.Close()
-
-	if len(content) > 0 && !strings.HasSuffix(string(content), "\n") {
-		if _, err := f.WriteString("\n"); err != nil {
-			return err
-		}
-	}
-
-	_, err = f.WriteString(config + "\n")
-	return err
+	newContent := strings.Join(kept, "\n") + "\n"
+	return os.WriteFile(path, []byte(newContent), 0644)
 }

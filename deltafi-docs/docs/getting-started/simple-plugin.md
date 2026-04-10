@@ -53,8 +53,8 @@ example, the plugin name is "example-plugin".
 deltafi plugin generate --java example-plugin
 ```
 
-Plugins are generated in the `development.repoPath` directory. Check
-`~/.deltafi/config.yaml` on your system for the exact location.
+Plugins are generated in the `development.repoPath` directory. Run
+`deltafi config` to see the resolved value on your system.
 
 Using the `deltafi plugin generate` command above, the following defaults are used:
 - group id: `org.deltafi.example.plugin`
