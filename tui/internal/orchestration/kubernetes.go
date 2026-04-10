@@ -405,7 +405,10 @@ func (o *KubernetesOrchestrator) caChainSecretName() string {
 		return "auth-secret"
 	}
 
-	return config.GetDeltafiAuthSecret()
+	if name := config.GetDeltafiAuthSecret(); name != "" {
+		return name
+	}
+	return "auth-secret"
 }
 
 func (o *KubernetesOrchestrator) getSecret(secretName string) (*corev1.Secret, error) {
