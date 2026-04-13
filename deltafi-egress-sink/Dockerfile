@@ -7,7 +7,7 @@ FROM alpine:latest
 WORKDIR /app
 COPY probe.sh /
 
-RUN apk -U --no-cache add curl \
+RUN apk -U --no-cache add curl libcrypto3 libssl3 \
     && apk upgrade -U --no-cache
 
 RUN mkdir -p /data/deltafi/out && \

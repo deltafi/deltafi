@@ -50,16 +50,16 @@ type DockerAuthConfig struct {
 type valuesData struct {
 	Tag                      string
 	Repo                     string `default:"deltafi"`
-	GrafanaContainer         string `default:"deltafi/grafana:12.4.1-0"`
-	VictoriaMetricsContainer string `default:"deltafi/victoria-metrics:v1.137.0-0"`
-	LogrotateContainer       string `default:"deltafi/logrotate:1.0.0-5"`
-	VectorContainer          string `default:"deltafi/vector:0.53.0-alpine-1"`
-	DozzleContainer          string `default:"deltafi/dozzle:v10.0.2-0"`
-	S3ProxyContainer         string `default:"deltafi/s3proxy:3.0.0-3"`
-	NginxContainer           string `default:"deltafi/nginx:1.29.5-alpine3.23-1"`
-	ValkeyContainer          string `default:"deltafi/valkey:9.0.3-0"`
-	PostgresContainer        string `default:"deltafi/timescaledb:2.19.3-pg16-9"`
-	PostgresLookupContainer  string `default:"deltafi/postgres:16.13-0"`
+	GrafanaContainer         string `default:"deltafi/grafana:12.4.2-0"`
+	VictoriaMetricsContainer string `default:"deltafi/victoria-metrics:v1.140.0-0"`
+	LogrotateContainer       string `default:"deltafi/logrotate:1.0.0-6"`
+	VectorContainer          string `default:"deltafi/vector:0.54.0-alpine-0"`
+	DozzleContainer          string `default:"deltafi/dozzle:v10.3.1-0"`
+	S3ProxyContainer         string `default:"deltafi/s3proxy:3.1.0-0"`
+	NginxContainer           string `default:"deltafi/nginx:1.29.8-alpine3.23-0"`
+	ValkeyContainer          string `default:"deltafi/valkey:9.0.3-1"`
+	PostgresContainer        string `default:"deltafi/timescaledb:2.19.3-pg16-10"`
+	PostgresLookupContainer  string `default:"deltafi/postgres:16.13-1"`
 	JavaIDEContainer         string `default:"deltafi/deltafi-java-dev:jdk21-gradle8.5-2"`
 	JavaDevContainer         string `default:"deltafi/devcontainer-java:jdk21-gradle8.5-0"`
 }
