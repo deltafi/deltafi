@@ -43,6 +43,7 @@ var kubernetesEmbeddedFiles embed.FS
 
 type KubernetesOrchestrator struct {
 	BaseOrchestrator
+
 	distroPath string
 	sitePath   string
 	dataPath   string
@@ -153,7 +154,6 @@ func (o *KubernetesOrchestrator) GetValkeyName() string {
 }
 
 func (o *KubernetesOrchestrator) Up(args []string) error {
-
 	if err := kubernetesPrerequisites(o.namespace); err != nil {
 		return fmt.Errorf("unable to configure Kubernetes for DeltaFi: %w", err)
 	}
@@ -225,7 +225,7 @@ func (o *KubernetesOrchestrator) TemplatesDir() (string, error) {
 
 		helmIgnore := filepath.Join(siteTemplatesDir, ".helmignore")
 		if err := os.WriteFile(helmIgnore, []byte("*.md"), 0644); err != nil {
-			return "", fmt.Errorf("error creating templats/.helmignore file: %w", err)
+			return "", fmt.Errorf("error creating templates/.helmignore file: %w", err)
 		}
 	}
 

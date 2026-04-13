@@ -31,7 +31,6 @@ func isTty() bool {
 }
 
 func executeShellCommand(executable string, args []string, env []string) error {
-
 	c := *exec.Command(executable, args...)
 	c.Env = env
 	c.Stdin = os.Stdin

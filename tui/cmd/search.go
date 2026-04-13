@@ -246,7 +246,6 @@ func (f *searchFilter) toGraphQLFilter() *graphql.DeltaFilesFilter {
 }
 
 func (f *searchFilter) refresh() error {
-
 	now := time.Now()
 
 	if f.startTimeStr != nil {
@@ -274,7 +273,6 @@ func (f *searchFilter) refresh() error {
 }
 
 func (f *searchFilter) getTableColumns(width int) []table.Column {
-
 	sizeWidth := 8
 	modifiedWidth := 20
 	stageWidth := 10
@@ -312,7 +310,6 @@ func (f *searchFilter) getTableColumns(width int) []table.Column {
 }
 
 func (m *searchModel) updateTableColumns() {
-
 	columns := m.filter.getTableColumns(m.width)
 	m.table.SetColumns(columns)
 }
@@ -393,7 +390,7 @@ func initialSearchModel(client *api.Client, filter searchFilter) searchModel {
 }
 
 func getColumnTitle(column string, order *graphql.DeltaFileOrder) string {
-	columnTitle := column
+	var columnTitle string
 
 	switch column {
 	case "modified":
@@ -491,7 +488,6 @@ func (m searchModel) Init() tea.Cmd {
 }
 
 func (m searchModel) fetchDeltaFiles() tea.Msg {
-
 	limit := m.height - 5
 	filter := m.filter.toGraphQLFilter()
 	orderBy := m.filter.order

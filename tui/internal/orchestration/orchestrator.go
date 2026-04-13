@@ -65,7 +65,6 @@ type valuesData struct {
 }
 
 func NewOrchestrator(mode OrchestrationMode, distroPath string, dataPath string, installDirectory string, sitePath string, coreVersion *semver.Version, deploymentMode types.DeploymentMode) Orchestrator {
-
 	orchestrationPath := filepath.Join(distroPath, "orchestration")
 	switch mode {
 	case Kubernetes:

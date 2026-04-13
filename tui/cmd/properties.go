@@ -242,9 +242,9 @@ var getPropertyCmd = &cobra.Command{
 
 		key := args[0]
 
-		value, error := getProperty(key)
-		if error != nil {
-			return wrapInError("Error fetching property", error)
+		value, err := getProperty(key)
+		if err != nil {
+			return wrapInError("Error fetching property", err)
 		}
 		fmt.Println(value)
 		return nil

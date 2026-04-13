@@ -627,7 +627,6 @@ func listIntegrationTestsByName(cmd *cobra.Command, args []string) error {
 }
 
 func listAllIntegrationTests(cmd *cobra.Command, resp *graphql.GetIntegrationTestsResponse) error {
-
 	short, _ := cmd.Flags().GetBool("short")
 	json, _ := cmd.Flags().GetBool("json")
 	plain, _ := cmd.Flags().GetBool("plain")
@@ -656,7 +655,6 @@ func listAllIntegrationTests(cmd *cobra.Command, resp *graphql.GetIntegrationTes
 
 	// Create detailed table for each test
 	for _, test := range resp.GetIntegrationTests {
-
 		// Format plugins
 		var pluginStrs []string
 		for _, plugin := range test.Plugins {

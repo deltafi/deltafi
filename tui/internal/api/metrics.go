@@ -204,7 +204,7 @@ func (m *MetricsClient) BuildQueryURL(metric *MetricDefinition, customQuery stri
 func (m *MetricsClient) QueryRaw(metric *MetricDefinition, customQuery string, from, until time.Duration, maxDataPoints int) ([]byte, error) {
 	queryURL := m.BuildQueryURL(metric, customQuery, from, until, maxDataPoints)
 
-	req, err := http.NewRequest("GET", queryURL, nil)
+	req, err := http.NewRequest(http.MethodGet, queryURL, nil)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create request: %w", err)
 	}
@@ -246,7 +246,7 @@ func (m *MetricsClient) QueryRange(query string, from, until time.Duration, maxD
 		step,
 	)
 
-	req, err := http.NewRequest("GET", queryURL, nil)
+	req, err := http.NewRequest(http.MethodGet, queryURL, nil)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create request: %w", err)
 	}
@@ -293,7 +293,7 @@ func (m *MetricsClient) QueryMetric(metric *MetricDefinition, from, until time.D
 		step,
 	)
 
-	req, err := http.NewRequest("GET", queryURL, nil)
+	req, err := http.NewRequest(http.MethodGet, queryURL, nil)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create request: %w", err)
 	}

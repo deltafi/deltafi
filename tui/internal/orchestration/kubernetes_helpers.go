@@ -138,7 +138,6 @@ func deltafiHelmUninstall(namespace string) error {
 }
 
 func deltafiHelmInstall(namespace string, deltafiChartPath string, siteValuesFile string, siteTemplatesPath string, additionalValuesFiles ...string) error {
-
 	fmt.Println(styles.HEADER("Installing DeltaFi helm chart"))
 	// Check the path to the DeltaFi chart
 	if _, err := os.Stat(deltafiChartPath); os.IsNotExist(err) {

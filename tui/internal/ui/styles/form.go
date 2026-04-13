@@ -26,7 +26,7 @@ func HuhTheme() *huh.Theme {
 	t := huh.ThemeBase()
 
 	var (
-		error      = Red
+		errColor   = Red
 		foreground = Text
 		comment    = Subtext0
 	)
@@ -36,10 +36,10 @@ func HuhTheme() *huh.Theme {
 	t.Focused.Title = t.Focused.Title.Foreground(Blue)
 	t.Focused.NoteTitle = t.Focused.NoteTitle.Foreground(Lavender)
 	t.Focused.Description = t.Focused.Description.Foreground(comment)
-	t.Focused.ErrorIndicator = t.Focused.ErrorIndicator.Foreground(error)
+	t.Focused.ErrorIndicator = t.Focused.ErrorIndicator.Foreground(errColor)
 	t.Focused.Directory = t.Focused.Directory.Foreground(Lavender)
 	t.Focused.File = t.Focused.File.Foreground(foreground)
-	t.Focused.ErrorMessage = t.Focused.ErrorMessage.Foreground(error)
+	t.Focused.ErrorMessage = t.Focused.ErrorMessage.Foreground(errColor)
 	t.Focused.SelectSelector = t.Focused.SelectSelector.Foreground(Yellow)
 	t.Focused.NextIndicator = t.Focused.NextIndicator.Foreground(Yellow)
 	t.Focused.PrevIndicator = t.Focused.PrevIndicator.Foreground(Yellow)

@@ -140,8 +140,8 @@ func TestCompareFiles_IdenticalFile(t *testing.T) {
 
 func TestCompareFiles_IdenticalButDifferentSlices(t *testing.T) {
 	old := []byte("same content")
-	new := []byte("same content")
-	diff := CompareFiles("test.txt", old, new)
+	updated := []byte("same content")
+	diff := CompareFiles("test.txt", old, updated)
 
 	if !diff.IsIdentical {
 		t.Error("expected IsIdentical to be true for same content in different slices")
@@ -189,8 +189,8 @@ func TestGenerateUnifiedDiff_DeletedFile(t *testing.T) {
 
 func TestGenerateUnifiedDiff_ModifiedFile(t *testing.T) {
 	old := "line1\nline2\nline3"
-	new := "line1\nmodified\nline3"
-	diff := CompareFiles("test.txt", []byte(old), []byte(new))
+	updated := "line1\nmodified\nline3"
+	diff := CompareFiles("test.txt", []byte(old), []byte(updated))
 	result := diff.GenerateUnifiedDiff()
 
 	if !strings.Contains(result, "--- test.txt") {
@@ -212,8 +212,8 @@ func TestGenerateUnifiedDiff_ModifiedFile(t *testing.T) {
 
 func TestGenerateUnifiedDiff_AddedLines(t *testing.T) {
 	old := "line1\nline2"
-	new := "line1\nline2\nline3\nline4"
-	diff := CompareFiles("test.txt", []byte(old), []byte(new))
+	updated := "line1\nline2\nline3\nline4"
+	diff := CompareFiles("test.txt", []byte(old), []byte(updated))
 	result := diff.GenerateUnifiedDiff()
 
 	if !strings.Contains(result, "+line3") {
@@ -226,8 +226,8 @@ func TestGenerateUnifiedDiff_AddedLines(t *testing.T) {
 
 func TestGenerateUnifiedDiff_RemovedLines(t *testing.T) {
 	old := "line1\nline2\nline3\nline4"
-	new := "line1\nline2"
-	diff := CompareFiles("test.txt", []byte(old), []byte(new))
+	updated := "line1\nline2"
+	diff := CompareFiles("test.txt", []byte(old), []byte(updated))
 	result := diff.GenerateUnifiedDiff()
 
 	if !strings.Contains(result, "-line3") {
@@ -365,8 +365,8 @@ func TestComputeDiffLines(t *testing.T) {
 
 func TestComputeDiffLines_LineNumbers(t *testing.T) {
 	old := []string{"a", "b", "c"}
-	new := []string{"a", "x", "c", "d"}
-	result := computeDiffLines(old, new)
+	updated := []string{"a", "x", "c", "d"}
+	result := computeDiffLines(old, updated)
 
 	// Check line numbers are assigned correctly
 	expected := []struct {
@@ -557,18 +557,18 @@ func TestFileDiff_MutuallyExclusiveFlags(t *testing.T) {
 
 func BenchmarkCompareFiles(b *testing.B) {
 	old := []byte(strings.Repeat("line\n", 1000))
-	new := []byte(strings.Repeat("line\n", 500) + strings.Repeat("modified\n", 500))
+	updated := []byte(strings.Repeat("line\n", 500) + strings.Repeat("modified\n", 500))
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		CompareFiles("test.txt", old, new)
+		CompareFiles("test.txt", old, updated)
 	}
 }
 
 func BenchmarkGenerateUnifiedDiff(b *testing.B) {
 	old := []byte(strings.Repeat("line\n", 1000))
-	new := []byte(strings.Repeat("line\n", 500) + strings.Repeat("modified\n", 500))
-	diff := CompareFiles("test.txt", old, new)
+	updated := []byte(strings.Repeat("line\n", 500) + strings.Repeat("modified\n", 500))
+	diff := CompareFiles("test.txt", old, updated)
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
@@ -578,18 +578,18 @@ func BenchmarkGenerateUnifiedDiff(b *testing.B) {
 
 func BenchmarkComputeDiffLines(b *testing.B) {
 	old := make([]string, 1000)
-	new := make([]string, 1000)
+	updated := make([]string, 1000)
 	for i := range 1000 {
 		old[i] = "line"
 		if i < 500 {
-			new[i] = "line"
+			updated[i] = "line"
 		} else {
-			new[i] = "modified"
+			updated[i] = "modified"
 		}
 	}
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		computeDiffLines(old, new)
+		computeDiffLines(old, updated)
 	}
 }

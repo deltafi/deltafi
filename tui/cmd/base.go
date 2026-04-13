@@ -174,15 +174,12 @@ func WaitForDeltaFi() {
 }
 
 func GetRunningVersion() *semver.Version {
-	version := &semver.Version{}
-
 	liveVersion, err := graphql.Version()
 	if err == nil {
-		version, _ = semver.NewVersion(liveVersion.Version)
-	} else {
-		version = app.GetInstance().GetConfig().GetCoreVersion()
+		version, _ := semver.NewVersion(liveVersion.Version)
+		return version
 	}
-	return version
+	return app.GetInstance().GetConfig().GetCoreVersion()
 }
 
 func ShellExec(executable string, env []string, args []string) error {

@@ -31,6 +31,7 @@ import (
 
 type downCommand struct {
 	BaseCommand
+
 	spinner spinner.Model
 	done    bool
 	err     error

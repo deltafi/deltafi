@@ -271,6 +271,7 @@ const (
 
 type ConfigWizard struct {
 	BaseCommand
+
 	initialStep        configWizardStep
 	step               configWizardStep
 	config             app.Config
@@ -803,7 +804,6 @@ func (c *ConfigWizard) renderOrchestrationMode() string {
 	menu := c.renderMenu(c.orchestrationModes, "Select Orchestration Mode", c.disabledOptions)
 	description := "Orchestration mode controls how containers for DeltaFi services and plugins are managed.\n\n" + orchestration.OrchestrationMode(c.selectedOption).Description()
 	return c.renderTwoPane(c.width-8, 40, menu, description)
-
 }
 
 func (c *ConfigWizard) renderCloneConfirm() string {

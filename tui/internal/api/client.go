@@ -104,7 +104,7 @@ type RequestOpts struct {
 // If the request fails or the response status code is not 200, an error will be
 // returned.
 func (c *Client) Get(path string, result any, opts *RequestOpts) error {
-	req, err := http.NewRequest("GET", c.baseURL+path, nil)
+	req, err := http.NewRequest(http.MethodGet, c.baseURL+path, nil)
 	if err != nil {
 		return fmt.Errorf("failed to create request: %v", err)
 	}
@@ -316,7 +316,7 @@ func (c *Client) ExportErroredDeltaFile(request ExportErrorsRequest) (io.ReadClo
 
 	if resp.StatusCode != http.StatusOK {
 		_ = resp.Body.Close()
-		if resp.StatusCode == 404 {
+		if resp.StatusCode == http.StatusNotFound {
 			return nil, "", ErrNoneFound
 		}
 		return nil, "", fmt.Errorf("export failed with status: %d", resp.StatusCode)
@@ -392,7 +392,7 @@ func (c *Client) ExportDeltaFiles(request ExportDeltaFilesRequest) (io.ReadClose
 	if resp.StatusCode != http.StatusOK {
 		body, _ := io.ReadAll(resp.Body)
 		_ = resp.Body.Close()
-		if resp.StatusCode == 404 {
+		if resp.StatusCode == http.StatusNotFound {
 			return nil, "", errors.New("no DeltaFiles found matching the filter criteria")
 		}
 		return nil, "", fmt.Errorf("export failed with status %d: %s", resp.StatusCode, string(body))
@@ -450,7 +450,7 @@ func (c *Client) PostToFile(path string, requestBody any, outfile string, opts *
 	if err != nil {
 		return fmt.Errorf("failed to encode request body: %w", err)
 	}
-	req, err = http.NewRequest("POST", c.baseURL+path, bytes.NewBuffer(jsonData))
+	req, err = http.NewRequest(http.MethodPost, c.baseURL+path, bytes.NewBuffer(jsonData))
 	if err != nil {
 		return fmt.Errorf("failed to create request: %w", err)
 	}

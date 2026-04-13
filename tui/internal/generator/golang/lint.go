@@ -617,7 +617,7 @@ func lintLicenseHeaders(pluginDir string) []generator.LintIssue {
 func leadingComments(src string) string {
 	var b strings.Builder
 	inBlock := false
-	for _, line := range strings.Split(src, "\n") {
+	for line := range strings.SplitSeq(src, "\n") {
 		trimmed := strings.TrimSpace(line)
 		switch {
 		case inBlock:

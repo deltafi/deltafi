@@ -309,7 +309,7 @@ func lintPythonPlugin(pluginDir, packageName string) (map[string]bool, []generat
 // containsBase checks whether `bases` (the parenthesized superclass list of a
 // class declaration) references the given base class name as a whole word.
 func containsBase(bases, base string) bool {
-	for _, part := range strings.Split(bases, ",") {
+	for part := range strings.SplitSeq(bases, ",") {
 		name := strings.TrimSpace(part)
 		// Strip any generic parameters or trailing whitespace.
 		if idx := strings.IndexAny(name, "[ "); idx >= 0 {

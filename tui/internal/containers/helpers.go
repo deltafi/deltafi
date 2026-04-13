@@ -53,7 +53,6 @@ func ListTags(context context.Context, imageRef string) ([]string, error) {
 }
 
 func ListNewerVersions(context context.Context, imageRef string, version *semver.Version, limit int) ([]*semver.Version, error) {
-
 	versions := []*semver.Version{}
 	tags, err := ListTags(context, imageRef)
 	if err != nil {

@@ -1,0 +1,29 @@
+version: "2"
+linters:
+  default: fast # standard, all, none, fast
+  enable: []
+  disable:
+    - cyclop
+    - depguard
+    - funlen
+    - funcorder
+    - gochecknoinits
+    - gocognit
+    - gocyclo
+    - godoclint
+    - godot
+    - inamedparam
+    - interfacebloat
+    - lll
+    - maintidx
+    - mnd
+    - nestif
+    - nlreturn
+    - testableexamples
+    - testpackage
+    - wsl
+  settings:
+    dupword:
+      ignore:
+        - "deltafi"
+        - "sell,"

@@ -46,9 +46,9 @@ var cliCmd = &cobra.Command{
 	Short: "Start an interactive Postgres CLI session",
 	Long:  "Start an interactive Postgres CLI session",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		c, error := app.GetOrchestrator().GetPostgresCmd(args)
-		if error != nil {
-			return error
+		c, err := app.GetOrchestrator().GetPostgresCmd(args)
+		if err != nil {
+			return err
 		}
 
 		return executeShellCommand(c)
@@ -64,9 +64,9 @@ var execCmd = &cobra.Command{
 	deltafi postgres eval < query.sql
 	deltafi postgres eval -- -e < query.sql`,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		c, error := app.GetOrchestrator().GetPostgresExecCmd(args)
-		if error != nil {
-			return error
+		c, err := app.GetOrchestrator().GetPostgresExecCmd(args)
+		if err != nil {
+			return err
 		}
 
 		return executeShellCommand(c)

@@ -89,6 +89,7 @@ type tickMsg time.Time
 
 type StatusCommand struct {
 	BaseCommand
+
 	status      api.StatusResponse
 	spinner     spinner.Model
 	points      string

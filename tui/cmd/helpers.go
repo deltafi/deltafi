@@ -46,7 +46,6 @@ var (
 )
 
 func renderAsSimpleTable(t api.Table, plain bool) {
-
 	table := components.NewSimpleTable(&t)
 
 	if plain {
@@ -267,7 +266,6 @@ func renderGlamourMarkdown(text string, interactive bool, renderer *glamour.Term
 }
 
 func GetMarkdownStyle() glamour.TermRendererOption {
-
 	gstyles.DarkStyleConfig.Heading.Color = &markdownHeaderColor
 	gstyles.DarkStyleConfig.H1.Color = &markdownHeaderColor
 	gstyles.DarkStyleConfig.H2.Color = &markdownHeaderColor

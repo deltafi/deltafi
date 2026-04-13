@@ -51,6 +51,7 @@ const (
 
 type ComposeOrchestrator struct {
 	BaseOrchestrator
+
 	distroPath        string
 	dataPath          string
 	logsPath          string
@@ -373,7 +374,6 @@ func (o *ComposeOrchestrator) Environment() []string {
 }
 
 func (o *ComposeOrchestrator) Down(args []string) error {
-
 	err := o.dockerCompose([]string{"down"})
 
 	cmd := exec.Command("docker", "ps", "-a", "--filter", "label=deltafi-group", "-q")

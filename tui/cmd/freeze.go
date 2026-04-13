@@ -47,6 +47,7 @@ const (
 
 type FreezeCommand struct {
 	BaseCommand
+
 	step           freezeWizardStep
 	width          int
 	height         int

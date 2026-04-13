@@ -72,16 +72,16 @@ func RenderErrorString(msg string) string {
 	return fmt.Sprintf("         %s %s", ErrorStyle.Bold(true).Render("Error:"), msg)
 }
 
-func RenderError(error error) string {
-	return fmt.Sprintf("         %s %s", ErrorStyle.Bold(true).Render("Error:"), error.Error())
+func RenderError(err error) string {
+	return fmt.Sprintf("         %s %s", ErrorStyle.Bold(true).Render("Error:"), err.Error())
 }
 
-func RenderErrorWithContext(error error, context string) string {
-	return RenderErrorStringWithContext(error.Error(), context)
+func RenderErrorWithContext(err error, context string) string {
+	return RenderErrorStringWithContext(err.Error(), context)
 }
 
-func RenderErrorStringWithContext(error string, context string) string {
-	return fmt.Sprintf("         %s %s %s", ErrorStyle.Bold(true).Render("Error:"), context, error)
+func RenderErrorStringWithContext(msg string, context string) string {
+	return fmt.Sprintf("         %s %s %s", ErrorStyle.Bold(true).Render("Error:"), context, msg)
 }
 
 func RenderErrors(errors []error) string {

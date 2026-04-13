@@ -141,6 +141,7 @@ func processFile(client *api.Client, filePath string, datasource string, content
 
 type IngressCommand struct {
 	BaseCommand
+
 	progress    progress.Model
 	completed   int
 	totalFiles  int

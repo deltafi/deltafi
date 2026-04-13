@@ -109,7 +109,6 @@ func (m passwordModel) newForm() *huh.Form {
 }
 
 func runSetAdminPassword(cmd *cobra.Command, args []string) error {
-
 	if len(args) > 1 {
 		return fmt.Errorf("too many arguments")
 	}

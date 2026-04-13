@@ -79,6 +79,7 @@ func (d Document) FilterValue() string { return d.Name }
 // DocsCommand handles the documentation browser
 type DocsCommand struct {
 	BaseCommand
+
 	list            list.Model
 	viewport        viewport.Model
 	stack           [][]Document // Navigation stack

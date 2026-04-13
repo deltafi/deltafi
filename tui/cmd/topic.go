@@ -834,5 +834,4 @@ func init() {
 	topicFlowsCmd.Flags().BoolP("plain", "p", false, "Plain output format")
 	topicDataSourcesCmd.Flags().BoolP("json", "j", false, "Output in JSON format")
 	topicDataSourcesCmd.Flags().BoolP("plain", "p", false, "Plain output format")
-
 }

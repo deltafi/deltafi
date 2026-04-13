@@ -97,6 +97,7 @@ func (i PropertyItem) FilterValue() string {
 // PropertiesViewer is the main TUI model for the properties viewer
 type PropertiesViewer struct {
 	BaseCommand
+
 	list           list.Model
 	viewport       viewport.Model
 	textInput      textinput.Model

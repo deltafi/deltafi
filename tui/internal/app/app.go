@@ -129,7 +129,6 @@ func GetSemanticVersion() *semver.Version {
 }
 
 func build() {
-
 	config, err := LoadConfig()
 
 	if err != nil {

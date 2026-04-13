@@ -123,7 +123,6 @@ func (c *Client) PublishArtifact(
 	owner, artifactName, version, filePath, contentType, description string,
 	makeActive bool, labels map[string]string,
 ) (*PublishArtifactResponse, error) {
-
 	f, err := os.Open(filePath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to open file: %w", err)
@@ -197,7 +196,7 @@ func (c *Client) ListArtifactVersions(owner, artifactName string) (*ListVersions
 // The caller is responsible for closing the returned ReadCloser.
 func (c *Client) DownloadArtifact(owner, artifactName, version string) (io.ReadCloser, string, error) {
 	url := c.baseURL + artifactBasePath(owner) + "/" + artifactName + "/versions/" + version
-	req, err := http.NewRequest("GET", url, nil)
+	req, err := http.NewRequest(http.MethodGet, url, nil)
 	if err != nil {
 		return nil, "", fmt.Errorf("failed to create request: %w", err)
 	}
@@ -233,7 +232,7 @@ func (c *Client) RollbackArtifact(owner, artifactName, version string) (*Rollbac
 // DeleteArtifactVersion deletes a specific artifact version (blob + manifest).
 func (c *Client) DeleteArtifactVersion(owner, artifactName, version string) error {
 	url := c.baseURL + artifactBasePath(owner) + "/" + artifactName + "/versions/" + version
-	req, err := http.NewRequest("DELETE", url, nil)
+	req, err := http.NewRequest(http.MethodDelete, url, nil)
 	if err != nil {
 		return fmt.Errorf("failed to create request: %w", err)
 	}
@@ -252,7 +251,7 @@ func (c *Client) DeleteArtifactVersion(owner, artifactName, version string) erro
 // DeleteArtifact deletes all versions of an artifact (blob, manifests, aliases, and config).
 func (c *Client) DeleteArtifact(owner, artifactName string) error {
 	url := c.baseURL + artifactBasePath(owner) + "/" + artifactName
-	req, err := http.NewRequest("DELETE", url, nil)
+	req, err := http.NewRequest(http.MethodDelete, url, nil)
 	if err != nil {
 		return fmt.Errorf("failed to create request: %w", err)
 	}
@@ -271,7 +270,7 @@ func (c *Client) DeleteArtifact(owner, artifactName string) error {
 // DeleteAlias removes an alias from an artifact.
 func (c *Client) DeleteAlias(owner, artifactName, alias string) error {
 	url := c.baseURL + artifactBasePath(owner) + "/" + artifactName + "/aliases/" + alias
-	req, err := http.NewRequest("DELETE", url, nil)
+	req, err := http.NewRequest(http.MethodDelete, url, nil)
 	if err != nil {
 		return fmt.Errorf("failed to create request: %w", err)
 	}

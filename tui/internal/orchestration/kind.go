@@ -36,6 +36,7 @@ var kindEmbeddedFiles embed.FS
 
 type KindOrchestrator struct {
 	*KubernetesOrchestrator
+
 	reposPath      string
 	deploymentMode types.DeploymentMode
 	configPath     string
@@ -64,7 +65,6 @@ func (o *KindOrchestrator) GetAPIBaseURL() (string, error) {
 }
 
 func (o *KindOrchestrator) StartKind() error {
-
 	executable := filepath.Join(o.distroPath, "orchestration", "kind", "kind")
 	args := []string{"up"}
 
@@ -92,7 +92,6 @@ func (o *KindOrchestrator) DestroyKind() error {
 }
 
 func (o *KindOrchestrator) Up(args []string) error {
-
 	if err := o.StartKind(); err != nil {
 		return fmt.Errorf("unable to start Kind cluster: %w", err)
 	}
@@ -209,7 +208,6 @@ func (o *KindOrchestrator) SiteValuesFile() (string, error) {
 }
 
 func (o *KindOrchestrator) executeClusterShellCommand(executable string, args []string, env []string) error {
-
 	dockerArgs := []string{"exec", "-i", "deltafi-control-plane", executable}
 	dockerArgs = append(dockerArgs, args...)
 	return executeShellCommand("docker", dockerArgs, env)

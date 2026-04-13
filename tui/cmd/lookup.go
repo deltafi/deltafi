@@ -53,9 +53,9 @@ var lookupCliCmd = &cobra.Command{
 	Short: "Start an interactive Postgres CLI session for the table lookup service",
 	Long:  "Start an interactive Postgres CLI session for the table lookup service",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		c, error := app.GetOrchestrator().GetPostgresLookupCmd(args)
-		if error != nil {
-			return error
+		c, err := app.GetOrchestrator().GetPostgresLookupCmd(args)
+		if err != nil {
+			return err
 		}
 
 		return executeShellCommand(c)

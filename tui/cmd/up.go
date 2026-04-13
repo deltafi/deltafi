@@ -63,7 +63,6 @@ func Up(force bool) error {
 
 	upgrade := false
 	if activeVersion != nil && activeVersion.Compare(tuiVersion) != 0 {
-
 		if activeVersion.Compare(tuiVersion) == 1 {
 			fmt.Println(styles.ErrorStyle.Render(fmt.Sprintf("Danger: DeltaFi will be DOWNGRADED from (%s) to (%s).  Downgrades to prior versions are not supported and void the warranty of the DeltaFi database integrity.", activeVersion, tuiVersion)))
 		} else {

@@ -29,6 +29,7 @@ import (
 // SplashCommand displays art content in a centered box
 type SplashCommand struct {
 	BaseCommand
+
 	duration time.Duration
 	width    int
 	height   int

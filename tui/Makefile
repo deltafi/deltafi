@@ -116,14 +116,14 @@ GOCLEAN   = $(GOCMD) clean
 GOTEST    = $(GOTOOLCMD) test -modcacherw $(if $(BUILD_TAGS),-tags $(BUILD_TAGS),)
 GOGET     = $(GOCMD) get -modcacherw
 GOVET     = $(GOCMD) vet -modcacherw
+GOFIX     = $(GOCMD) fix -modcacherw
 GOFMT     = $(CMD_PREFIX) gofmt
 GOTIDY    = $(GOCMD) mod tidy -modcacherw
-GOLINT    = $(CMD_PREFIX) $(GOBINPATH)/golangci-lint
+GOLINT    = $(shell which golangci-lint || echo golangci-lint)
 GOINSTALL = $(GOCMD) install -modcacherw
 GOGEN     = $(GOTOOLCMD) run github.com/Khan/genqlient
 
 # Extra modules
-LINT_MODULE = github.com/golangci/golangci-lint/cmd/golangci-lint@latest
 GENQLIENT_MODULE = github.com/Khan/genqlient@latest
 
 # Directories
@@ -132,7 +132,7 @@ DIST_DIR  = $(CURDIR)/dist
 # Cross-compilation targets
 PLATFORMS := linux/amd64 linux/arm64 darwin/amd64 darwin/arm64
 
-.PHONY: all build clean test lint fmt deps dist tidy very-clean debug-make help check-env
+.PHONY: all build clean test lint fmt deps dist tidy very-clean debug-make help check-env upgrade deps-up watch fix vet
 
 all: check-env build test
 
@@ -165,6 +165,7 @@ help:
 	@echo "  fmt              - Format code"
 	@echo "  deps             - Install dependencies"
 	@echo "  cross            - Build all commands for all platforms"
+	@echo "  upgrade          - Upgrade dependencies"
 	@echo ""
 	@echo "Build options:"
 	@echo "  USE_DOCKER=true|false - Use Docker for building (auto-detected: $(USE_DOCKER))"
@@ -204,10 +205,15 @@ very-clean: clean
 	$(GOCLEAN) -modcache
 	rm -rf $(GOPATH) $(BIN_DIR)/deltafi
 
-lint: deps
-	@echo "Pulling dependencies"
-	@$(GOVET) ./...
+lint: vet fix
+	@echo $(GOLINT) run
 	@$(GOLINT) run
+
+vet:
+	@$(GOVET) ./...
+
+fix:
+	@$(GOFIX) ./...
 
 fmt:
 	@$(GOFMT) -w cmd internal
@@ -218,11 +224,16 @@ tidy: fmt
 deps:
 	@mkdir -p $(GOPATH)
 	@$(GOGET) ./...
-	@$(GOINSTALL) $(LINT_MODULE)
 	@$(GOINSTALL) $(GENQLIENT_MODULE)
+
+upgrade: check-env deps-up tidy lint
+
+deps-up:
+	@$(GOGET) -u ./...
 
 # Development targets
 dev: deps fmt lint test build
+
 watch:
 	watchexec -w . -e go "make dev"
 
