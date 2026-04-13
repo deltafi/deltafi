@@ -572,32 +572,38 @@ class TestCoexistence:
         assert versions == ["shared-v2"]
 
 
-# ── Descriptor / Artifact class ───────────────────────────────────────────────
+# ── Artifact base type stubs ──────────────────────────────────────────────────
 
-class TestArtifactDescriptor:
+class TestArtifactBase:
 
-    def test_descriptor_raises_if_not_bound(self):
-        class FakeAction:
-            model = Artifact("my-model")
+    def test_unresolved_get_bytes_raises(self):
+        a = Artifact("my-model")
+        with pytest.raises(RuntimeError, match="not resolved"):
+            a.get_bytes()
 
-        action = FakeAction.__new__(FakeAction)
-        with pytest.raises(RuntimeError, match="not bound"):
-            _ = action.model
+    def test_unresolved_get_string_raises(self):
+        a = Artifact("my-model")
+        with pytest.raises(RuntimeError, match="not resolved"):
+            a.get_string()
 
-    def test_descriptor_class_access_returns_self(self):
-        class FakeAction:
-            model = Artifact("my-model")
+    def test_unresolved_on_update_raises(self):
+        a = Artifact("my-model")
+        with pytest.raises(RuntimeError, match="not resolved"):
+            a.on_update(lambda: None)
 
-        assert isinstance(FakeAction.model, Artifact)
+    def test_unresolved_is_ready_returns_false(self):
+        a = Artifact("my-model")
+        assert a.is_ready() is False
 
-    def test_descriptor_bound_via_instance_dict(self):
-        class FakeAction:
-            model = Artifact("my-model")
+    def test_get_artifact_name(self):
+        a = Artifact("my-model")
+        assert a.get_artifact_name() == "my-model"
 
-        action = FakeAction.__new__(FakeAction)
-        sentinel = object()
-        action.__dict__["model"] = sentinel
-        assert action.model is sentinel
+    def test_seed_on_missing(self):
+        a = Artifact("my-model", default_resource="default.json")
+        assert a.seed_on_missing() is True
+        b = Artifact("my-model")
+        assert b.seed_on_missing() is False
 
 
 # ── VersionChangedEvent helpers ───────────────────────────────────────────────

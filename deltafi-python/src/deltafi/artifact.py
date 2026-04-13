@@ -173,14 +173,24 @@ class VersionChangedEvent:
 
 class Artifact:
     """
-    Class-level descriptor for injecting artifact handles into action instances.
+    Artifact declaration and base type for all artifact handles.
 
-    Declare at class level; the :class:`Plugin` binds the handle at startup::
+    Use as a constructor default to declare an artifact dependency::
 
         class MyAction(TransformAction):
-            model = Artifact("my-model", scope=ArtifactScope.PLUGIN_FIRST)
+            def __init__(self, model: Artifact = Artifact("my-model")):
+                super().__init__("description")
+                self.model = model
+                self.model.on_update(self._reload)
 
-    After binding, ``self.model`` returns an :class:`ArtifactHandle`.
+    The :class:`Plugin` inspects ``__init__`` parameters at startup, resolves
+    each ``Artifact`` default into a resolved :class:`ArtifactHandle`, and
+    passes it to the constructor.  In tests, pass a
+    :class:`~deltafi.test_kit.artifact.TestArtifactHandle` directly.
+
+    Data methods (:meth:`get_bytes`, :meth:`get_string`, etc.) raise
+    ``RuntimeError`` on the base class — they are overridden by resolved
+    subclasses.
     """
 
     def __init__(
@@ -199,36 +209,76 @@ class Artifact:
         self.cacheable = cacheable
         self.preload = preload
         self.default_resource = default_resource
-        self._attr_name: Optional[str] = None  # populated by __set_name__
-
-    def __set_name__(self, owner, name: str):
-        self._attr_name = name
-
-    def __get__(self, obj, objtype=None):
-        if obj is None:
-            return self  # class-level access returns the descriptor itself
-        handle = obj.__dict__.get(self._attr_name)
-        if handle is None:
-            raise RuntimeError(
-                f"Artifact '{self.artifact_name}' not bound. "
-                f"Was the action created via Plugin?"
-            )
-        return handle
-
-    # No __set__ → non-data descriptor → instance __dict__ takes priority after bind.
 
     def seed_on_missing(self) -> bool:
         """True when a default resource path is configured for seeding."""
         return self.default_resource is not None and self.default_resource.strip() != ""
 
+    # ── Handle interface (stubs — overridden by resolved subclasses) ─────────
+
+    def _not_resolved(self):
+        raise RuntimeError(
+            f"Artifact '{self.artifact_name}' not resolved. "
+            f"Was the action created via Plugin or passed a TestArtifactHandle?"
+        )
+
+    def get_artifact_name(self) -> str:
+        return self.artifact_name
+
+    def get_bytes(self) -> bytes:
+        self._not_resolved()
+
+    def get_input_stream(self) -> "io.BytesIO":
+        self._not_resolved()
+
+    def get_string(self, encoding: str = "utf-8") -> str:
+        self._not_resolved()
+
+    def stream(self) -> "ArtifactStream":
+        self._not_resolved()
+
+    def get_manifest(self) -> ArtifactManifest:
+        self._not_resolved()
+
+    def get_version(self) -> Optional[str]:
+        self._not_resolved()
+
+    def get_description(self) -> Optional[str]:
+        self._not_resolved()
+
+    def get_content_type(self) -> Optional[str]:
+        self._not_resolved()
+
+    def get_labels(self) -> Optional[Dict[str, str]]:
+        self._not_resolved()
+
+    def get_sha256(self) -> Optional[str]:
+        self._not_resolved()
+
+    def get_source_prefix(self) -> Optional[str]:
+        self._not_resolved()
+
+    def is_ready(self) -> bool:
+        return False
+
+    def is_default(self) -> bool:
+        self._not_resolved()
+
+    def is_shared(self) -> bool:
+        self._not_resolved()
+
+    def refresh(self):
+        self._not_resolved()
+
+    def on_update(self, callback: Callable) -> "Artifact":
+        self._not_resolved()
+
 
 # ── ArtifactHandle ─────────────────────────────────────────────────────────────
 
-class ArtifactHandle:
+class ArtifactHandle(Artifact):
     """
-    Runtime handle to a resolved artifact.  All reads delegate to the
-    :class:`ArtifactCacheManager` so multiple action instances sharing the same
-    artifact see a single in-memory copy.
+    Resolved handle backed by the :class:`ArtifactCacheManager`.
 
     Non-cacheable handles (``cacheable=False``, the default) always download fresh
     bytes on every :meth:`get_bytes` call, updating the shared cache as a side-effect.
@@ -245,25 +295,18 @@ class ArtifactHandle:
         alias: str,
         cacheable: bool,
     ):
+        super().__init__(artifact_name, alias=alias, cacheable=cacheable)
         self._manager = manager
         self._owner = owner
-        self._artifact_name = artifact_name
-        self._alias = alias
-        self._cacheable = cacheable
-
-    # ── Identity ──────────────────────────────────────────────────────────────
-
-    def get_artifact_name(self) -> str:
-        return self._artifact_name
 
     # ── Bytes ─────────────────────────────────────────────────────────────────
 
     def get_bytes(self) -> bytes:
         """Return artifact bytes.  Cacheable handles use the in-memory copy;
         non-cacheable handles re-download on every call."""
-        if self._cacheable:
-            return self._manager.get_bytes(self._owner, self._artifact_name, self._alias)
-        return self._manager.get_fresh_bytes(self._owner, self._artifact_name, self._alias)
+        if self.cacheable:
+            return self._manager.get_bytes(self._owner, self.artifact_name, self.alias)
+        return self._manager.get_fresh_bytes(self._owner, self.artifact_name, self.alias)
 
     def get_input_stream(self) -> "io.BytesIO":
         """Return artifact content as a :class:`io.BytesIO` stream."""
@@ -276,7 +319,7 @@ class ArtifactHandle:
     # ── Manifest / metadata ───────────────────────────────────────────────────
 
     def _current(self) -> Optional[FetchedArtifact]:
-        return self._manager.get_current(self._owner, self._artifact_name, self._alias)
+        return self._manager.get_current(self._owner, self.artifact_name, self.alias)
 
     def get_manifest(self) -> ArtifactManifest:
         current = self._current()
@@ -312,7 +355,7 @@ class ArtifactHandle:
         return True
 
     def is_default(self) -> bool:
-        current = self._manager.get_current(self._owner, self._artifact_name, self._alias)
+        current = self._manager.get_current(self._owner, self.artifact_name, self.alias)
         return current is not None and current.manifest.is_default()
 
     def is_shared(self) -> bool:
@@ -327,13 +370,13 @@ class ArtifactHandle:
         Use this for large artifacts where buffering the full content in memory
         is undesirable.  For smaller artifacts use :meth:`get_bytes` instead.
         """
-        return self._manager.stream(self._owner, self._artifact_name, self._alias)
+        return self._manager.stream(self._owner, self.artifact_name, self.alias)
 
     # ── Refresh ───────────────────────────────────────────────────────────────
 
     def refresh(self):
         """Force a re-download and update the shared cache entry."""
-        self._manager.refresh(self._owner, self._artifact_name, self._alias)
+        self._manager.refresh(self._owner, self.artifact_name, self.alias)
 
     # ── Update callbacks ──────────────────────────────────────────────────────
 
@@ -349,24 +392,31 @@ class ArtifactHandle:
             handle.on_update(lambda: reload_model())
             handle.on_update(lambda event: print(event.new_version))
         """
-        self._manager.register_callback(self._owner, self._artifact_name, self._alias, callback)
+        self._manager.register_callback(self._owner, self.artifact_name, self.alias, callback)
         return self
 
 
-class _LazyArtifactHandle:
+class _LazyArtifactHandle(Artifact):
     """
-    Wraps an unresolved :class:`Artifact` descriptor.  Resolution (and any
-    startup download) is deferred until the first call that actually needs data.
+    Wraps an unresolved :class:`Artifact`.  Resolution (and any startup
+    download) is deferred until the first call that actually needs data.
 
     ``on_update`` callbacks registered before resolution are buffered and
     forwarded to the real handle once it is resolved.
 
     Created by :class:`~deltafi.plugin.Plugin` when ``Artifact(preload=False)``
-    is declared on an action class.
+    is used.
     """
 
     def __init__(self, descriptor: "Artifact", manager: "ArtifactCacheManager"):
-        self._descriptor = descriptor
+        super().__init__(
+            descriptor.artifact_name,
+            scope=descriptor.scope,
+            alias=descriptor.alias,
+            cacheable=descriptor.cacheable,
+            preload=descriptor.preload,
+            default_resource=descriptor.default_resource,
+        )
         self._manager = manager
         self._delegate: Optional[ArtifactHandle] = None
         self._lock = threading.Lock()
@@ -378,17 +428,14 @@ class _LazyArtifactHandle:
         if self._delegate is None:
             with self._lock:
                 if self._delegate is None:
-                    handle = self._manager.resolve(self._descriptor)
+                    handle = self._manager.resolve(self)
                     for cb in self._pending_callbacks:
                         handle.on_update(cb)
                     self._pending_callbacks.clear()
                     self._delegate = handle
         return self._delegate
 
-    # ── ArtifactHandle interface ───────────────────────────────────────────────
-
-    def get_artifact_name(self) -> str:
-        return self._descriptor.artifact_name
+    # ── Artifact interface ────────────────────────────────────────────────────
 
     def get_bytes(self) -> bytes:
         return self._get_delegate().get_bytes()

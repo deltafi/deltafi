@@ -16,4 +16,4 @@
 #    limitations under the License.
 #
 
-#
+from .artifact import TestArtifactHandle

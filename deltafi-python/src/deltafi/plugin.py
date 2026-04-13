@@ -256,11 +256,11 @@ class Plugin(object):
         return classes
 
     def _init_artifact_infra(self, action_classes):
-        """Start the artifact cache manager and listener if any action class declares Artifact descriptors."""
+        """Start the artifact cache manager and listener if any action class declares Artifact dependencies."""
         has_artifacts = any(
-            isinstance(attr, Artifact)
+            isinstance(param.default, Artifact)
             for cls in action_classes
-            for attr in vars(cls).values()
+            for param in inspect.signature(cls.__init__).parameters.values()
         )
         if not has_artifacts:
             return
@@ -272,26 +272,17 @@ class Plugin(object):
         self._artifact_listener.start()
 
     def _create_action(self, cls):
-        """Instantiate an action, binding resolved artifact handles before __init__ runs."""
-        descriptors = [
-            (name, attr)
-            for name, attr in vars(cls).items()
-            if isinstance(attr, Artifact)
-        ]
-        if not descriptors or self._artifact_cache_manager is None:
-            return cls()
-        # Allocate instance without calling __init__
-        instance = cls.__new__(cls)
-        # Bind artifact handles so they are available inside __init__
-        for name, descriptor in descriptors:
-            if descriptor.preload:
-                handle = self._artifact_cache_manager.resolve(descriptor)
-            else:
-                handle = _LazyArtifactHandle(descriptor, self._artifact_cache_manager)
-            instance.__dict__[name] = handle
-        # Now run __init__ — self.<artifact> is accessible
-        instance.__init__()
-        return instance
+        """Instantiate an action, resolving Artifact defaults via constructor injection."""
+        sig = inspect.signature(cls.__init__)
+        kwargs = {}
+        for name, param in sig.parameters.items():
+            if isinstance(param.default, Artifact) and self._artifact_cache_manager is not None:
+                descriptor = param.default
+                if descriptor.preload:
+                    kwargs[name] = self._artifact_cache_manager.resolve(descriptor)
+                else:
+                    kwargs[name] = _LazyArtifactHandle(descriptor, self._artifact_cache_manager)
+        return cls(**kwargs)
 
     def action_name(self, action):
         return f"{self.coordinates.group_id}.{action.__class__.__name__}"

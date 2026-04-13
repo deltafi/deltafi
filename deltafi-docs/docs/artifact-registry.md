@@ -38,8 +38,9 @@ artifact you need; the framework handles fetching, caching, and live updates.
 
 ### How it works
 
-**Declaration** — artifacts are declared at the class level (Java: field annotation, Python: class
-attribute, Golang: struct field tag, C++: macro). The framework injects a live handle at startup.
+**Declaration** — artifacts are declared in the action class (Java: field annotation, Python:
+constructor parameter with `Artifact` default, Golang: struct field tag, C++: macro). The
+framework injects a live handle at startup.
 
 **Default resources** — an optional default file can be bundled with the plugin. On first deploy
 the framework publishes it to the registry automatically; when an operator publishes a real version
@@ -539,17 +540,23 @@ resp, err = input.ActionContext.ArtifactClient.PublishSharedArtifact(ctx, "share
 
 ## Python Action-Kit
 
+Artifacts are declared as constructor parameters with `Artifact` defaults. The `Plugin` framework
+inspects the constructor, resolves each `Artifact` into a live handle, and passes it in — standard
+Python constructor injection. In tests, pass a `TestArtifactHandle` directly.
+
 ### Basic Example
 
 ```python
 import json
-from deltafi.transform import TransformAction
+from deltafi.action import TransformAction
 from deltafi.artifact import Artifact
 
 class RoutingTransformAction(TransformAction):
 
-    routing_rules = Artifact("routing-rules.json",
-                             default_resource="defaults/routing-rules.json")
+    def __init__(self, routing_rules: Artifact = Artifact(
+            "routing-rules.json", default_resource="defaults/routing-rules.json")):
+        super().__init__("Route input based on configurable rules")
+        self.routing_rules = routing_rules
 
     def transform(self, context, params, transform_input):
         config = json.loads(self.routing_rules.get_string())
@@ -560,12 +567,15 @@ class RoutingTransformAction(TransformAction):
 
 `default_resource` is a file path relative to the working directory (not a classpath resource).
 
-### `Artifact` Descriptor Reference
+### `Artifact` Reference
+
+`Artifact` is the base type for all artifact handles. Use it as a constructor default to declare
+a dependency; the `Plugin` replaces it with a resolved handle at startup.
 
 ```python
 from deltafi.artifact import Artifact, ArtifactScope
 
-handle = Artifact(
+Artifact(
     "my-artifact",                     # required
     alias="active",                    # default
     scope=ArtifactScope.PLUGIN_FIRST,  # default
@@ -575,7 +585,10 @@ handle = Artifact(
 )
 ```
 
-### `ArtifactHandle` API
+### `Artifact` Handle API
+
+All resolved handles (`ArtifactHandle`, `TestArtifactHandle`) inherit from `Artifact` and
+implement these methods. Calling data methods on an unresolved `Artifact` raises `RuntimeError`.
 
 | Method | Return type | Description |
 |---|---|---|
@@ -596,24 +609,23 @@ handle = Artifact(
 | `get_source_prefix()` | `str` | `"shared"` or `"plugins/{owner}"` |
 | `refresh()` | `None` | Force re-download |
 | `stream()` | `ArtifactStream` | Streaming download (context manager, bypasses cache) |
-| `on_update(callback)` | `ArtifactHandle` | Register callback; accepts `VersionChangedEvent` or zero args |
+| `on_update(callback)` | `Artifact` | Register callback; accepts `VersionChangedEvent` or zero args |
 
 ### Reacting to Version Changes
 
 ```python
 import logging
-from deltafi.transform import TransformAction
+from deltafi.action import TransformAction
 from deltafi.artifact import Artifact
 
 logger = logging.getLogger(__name__)
 
 class RuleEngineAction(TransformAction):
 
-    rules = Artifact("rules.yaml", default_resource="defaults/rules.yaml",
-                     cacheable=True)
-
-    def __init__(self):
-        super().__init__('Evaluate rules against input')
+    def __init__(self, rules: Artifact = Artifact(
+            "rules.yaml", default_resource="defaults/rules.yaml", cacheable=True)):
+        super().__init__("Evaluate rules against input")
+        self.rules = rules
         self.rules.on_update(self._reload)
 
     def _reload(self, event):
@@ -636,10 +648,9 @@ the artifact is uploaded.
 ```python
 class ClassificationAction(TransformAction):
 
-    model = Artifact("classification-model.bin")
-
-    def __init__(self):
-        super().__init__('Classify input using ML model')
+    def __init__(self, model: Artifact = Artifact("classification-model.bin")):
+        super().__init__("Classify input using ML model")
+        self.model = model
         self.model.on_update(self._reload)
 
     def _reload(self, event):
@@ -655,16 +666,20 @@ from deltafi.artifact import Artifact, ArtifactScope
 
 class EnrichmentAction(TransformAction):
 
-    # Ships with a default; operators can customize later
-    config        = Artifact("enrichment-config.json",
-                             default_resource="defaults/enrichment-config.json")
-    # Must be provided by the operator — no default makes sense
-    customer_data = Artifact("customer-extract.csv")
-    # Platform-wide lookup table in the shared namespace
-    geo_regions   = Artifact("geo-regions.csv", scope=ArtifactScope.SHARED_ONLY)
-
-    def __init__(self):
-        super().__init__('Enrich input with external data')
+    def __init__(
+            self,
+            # Ships with a default; operators can customize later
+            config: Artifact = Artifact("enrichment-config.json",
+                                        default_resource="defaults/enrichment-config.json"),
+            # Must be provided by the operator — no default makes sense
+            customer_data: Artifact = Artifact("customer-extract.csv"),
+            # Platform-wide lookup table in the shared namespace
+            geo_regions: Artifact = Artifact("geo-regions.csv",
+                                             scope=ArtifactScope.SHARED_ONLY)):
+        super().__init__("Enrich input with external data")
+        self.config = config
+        self.customer_data = customer_data
+        self.geo_regions = geo_regions
         # Each artifact can be updated independently; all trigger a rebuild.
         # The startup callback fires once per artifact after all actions are created,
         # so the service is built automatically — no manual _rebuild() call needed.
@@ -683,6 +698,40 @@ class EnrichmentAction(TransformAction):
 Startup completes once all artifacts without a `default_resource` have been resolved. Each
 artifact can be updated independently and the callback rebuilds the service from all current
 versions.
+
+### Testing Actions with Artifacts
+
+Pass a `TestArtifactHandle` to the constructor — no framework setup needed:
+
+```python
+from deltafi.test_kit import TestArtifactHandle
+
+def test_routing():
+    action = RoutingTransformAction(
+        routing_rules=TestArtifactHandle.from_string('{"default_region": "us-east-1"}'))
+    # ... run test cases against action
+
+def test_enrichment():
+    action = EnrichmentAction(
+        config=TestArtifactHandle.from_string('{"mode": "test"}'),
+        customer_data=TestArtifactHandle.from_string("id,name\n1,Alice"),
+        geo_regions=TestArtifactHandle.from_string("region,code\nUS,1"))
+    # ... run test cases against action
+```
+
+`TestArtifactHandle` supports `from_string(content)` and `from_bytes(data)`. To test version-change
+callbacks, use `fire_update(event)`:
+
+```python
+from deltafi.artifact import VersionChangedEvent
+
+handle = TestArtifactHandle.from_string('{"v": 1}')
+action = RuleEngineAction(rules=handle)
+# Simulate a version change
+handle.fire_update(VersionChangedEvent(
+    prefix="plugins/test", artifact_name="rules.yaml",
+    alias="active", previous_version="v1", new_version="v2"))
+```
 
 ### Streaming Large Artifacts
 
@@ -716,8 +765,10 @@ useful for optional artifacts or those needed only on certain code paths.
 ```python
 class AnalysisAction(TransformAction):
 
-    # Only downloaded when first accessed, not at startup
-    optional_model = Artifact("optional-model.bin", preload=False)
+    def __init__(self, optional_model: Artifact = Artifact(
+            "optional-model.bin", preload=False)):
+        super().__init__("Analyze input with optional model")
+        self.optional_model = optional_model
 
     def transform(self, context, params, transform_input):
         if params.use_model:
