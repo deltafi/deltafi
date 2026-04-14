@@ -400,64 +400,7 @@ The UI provides a specialized editor for `EnvVar` fields that:
 
 ### Setting Up Environment Variables
 
-Environment variables must be available to the plugin at runtime. The method differs depending on whether you're running DeltaFi with Docker Compose or Kubernetes. For a comprehensive overview of site configuration, see [Site Configuration](/operating/site-configuration).
-
-#### Docker Compose
-
-For Compose deployments, inject environment variables into plugins using the `site/compose.yaml` file. This file is automatically created in your DeltaFi installation directory and merges with the base docker-compose configuration.
-
-Add environment variables to a plugin by service name. For plugins installed via the UI, the service name matches the plugin's image name (e.g., `deltafi-stix` for the STIX plugin):
-
-```yaml
-# site/compose.yaml
-services:
-  deltafi-stix:
-    environment:
-      MY_API_KEY: "your-actual-api-key"
-      DB_PASSWORD: "your-actual-password"
-```
-
-After modifying `site/compose.yaml`, run `deltafi up` to apply the changes.
-
-::: tip
-For sensitive values in Compose, the environment variables are stored in plain text in the compose file. If you need more secure secrets management, consider using Docker secrets or an external secrets manager.
-:::
-
-#### Kubernetes
-
-For Kubernetes deployments, you'll need to create a custom Helm template that:
-1. Creates a Secret containing your sensitive values
-2. Patches the plugin's deployment to inject the secret as environment variables
-
-Create a file in `site/templates/` (e.g., `site/templates/my-plugin-secrets.yaml`):
-
-```yaml
-apiVersion: v1
-kind: Secret
-metadata:
-  name: my-plugin-secrets
-type: Opaque
-stringData:
-  MY_API_KEY: "your-actual-api-key"
-  DB_PASSWORD: "your-actual-password"
----
-# Patch the plugin deployment to add env vars from the secret
-# Note: The deployment name matches the plugin image name
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: deltafi-stix
-spec:
-  template:
-    spec:
-      containers:
-        - name: deltafi-stix
-          envFrom:
-            - secretRef:
-                name: my-plugin-secrets
-```
-
-After creating the template, run `deltafi up` to apply the changes.
+Environment variables referenced by `EnvVar` parameters must be available to the plugin at runtime. See [Plugin Environment Variables](operating/site-configuration.md#plugin-environment-variables) for how to configure `deltafi.pluginEnv` in your site values.
 
 ::: tip
 For production environments, consider using external secrets management solutions like HashiCorp Vault, AWS Secrets Manager, or Kubernetes External Secrets Operator to avoid storing secrets directly in your configuration files.
