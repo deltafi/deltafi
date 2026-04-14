@@ -453,6 +453,12 @@ func (g *JavaGenerator) UpdatePlugin(pluginName string, options *generator.Updat
 			return fmt.Errorf("failed to read existing file %s: %w", fullOutputPath, err)
 		}
 
+		// Flow definition files are user-owned; skip them if they already exist.
+		base := filepath.Base(outputPath)
+		if oldContent != nil && (base == "variables.json" || base == "data-source.json") {
+			continue
+		}
+
 		// Generate new content from template
 		newContent, err := RenderTemplate(templatePath, data)
 		if err != nil {

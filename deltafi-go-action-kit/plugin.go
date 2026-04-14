@@ -33,6 +33,8 @@ import (
 	"sync"
 	"syscall"
 	"time"
+
+	"gopkg.in/yaml.v3"
 )
 
 const healthProbeFile = "/tmp/running"
@@ -326,7 +328,7 @@ func RunPlugin(config *PluginConfig) {
 	}
 }
 
-// loadFlowsFromDirectory loads all flow JSON files from a directory (excluding variables.json).
+// loadFlowsFromDirectory loads all flow JSON files from a directory (excluding variable files).
 func loadFlowsFromDirectory(dir string) ([]FlowPlan, error) {
 	if _, err := os.Stat(dir); os.IsNotExist(err) {
 		return nil, nil
@@ -339,7 +341,8 @@ func loadFlowsFromDirectory(dir string) ([]FlowPlan, error) {
 
 	var flows []FlowPlan
 	for _, file := range files {
-		if filepath.Base(file) == "variables.json" {
+		base := filepath.Base(file)
+		if base == "variables.json" || base == "variables.yaml" {
 			continue
 		}
 
@@ -359,11 +362,19 @@ func loadFlowsFromDirectory(dir string) ([]FlowPlan, error) {
 	return flows, nil
 }
 
-// loadVariables loads variables from variables.json in the given directory.
+// loadVariables loads variables from the flows directory, preferring
+// variables.yaml and falling back to variables.json.
 func loadVariables(dir string) ([]Variable, error) {
-	path := filepath.Join(dir, "variables.json")
+	yamlPath := filepath.Join(dir, "variables.yaml")
+	jsonPath := filepath.Join(dir, "variables.json")
+
+	// Prefer YAML; fall back to JSON for existing plugins.
+	path := yamlPath
 	if _, err := os.Stat(path); os.IsNotExist(err) {
-		return nil, nil
+		path = jsonPath
+		if _, err := os.Stat(path); os.IsNotExist(err) {
+			return nil, nil
+		}
 	}
 
 	data, err := os.ReadFile(path)
@@ -371,11 +382,57 @@ func loadVariables(dir string) ([]Variable, error) {
 		return nil, fmt.Errorf("failed to read variables file: %w", err)
 	}
 
-	var variables []Variable
-	if err := json.Unmarshal(data, &variables); err != nil {
-		return nil, fmt.Errorf("failed to parse variables file: %w", err)
+	if filepath.Ext(path) == ".yaml" {
+		return parseYAMLVariables(data, filepath.Base(path))
 	}
 
+	var variables []Variable
+	if err := json.Unmarshal(data, &variables); err != nil {
+		return nil, fmt.Errorf("failed to parse variables file %s: %w", filepath.Base(path), err)
+	}
+	return variables, nil
+}
+
+// parseYAMLVariables decodes a YAML variables file that may contain multiple
+// documents, where each document is either a single Variable or a list of
+// Variables.
+func parseYAMLVariables(data []byte, filename string) ([]Variable, error) {
+	var variables []Variable
+	dec := yaml.NewDecoder(strings.NewReader(string(data)))
+	for {
+		var node yaml.Node
+		if err := dec.Decode(&node); err != nil {
+			if err.Error() == "EOF" {
+				break
+			}
+			return nil, fmt.Errorf("failed to parse variables file %s: %w", filename, err)
+		}
+
+		// A document node wraps the actual content node.
+		content := &node
+		if node.Kind == yaml.DocumentNode && len(node.Content) > 0 {
+			content = node.Content[0]
+		}
+
+		switch content.Kind {
+		case yaml.SequenceNode:
+			var list []Variable
+			if err := content.Decode(&list); err != nil {
+				return nil, fmt.Errorf("failed to parse variables file %s: %w", filename, err)
+			}
+			variables = append(variables, list...)
+		case yaml.MappingNode:
+			var single Variable
+			if err := content.Decode(&single); err != nil {
+				return nil, fmt.Errorf("failed to parse variables file %s: %w", filename, err)
+			}
+			variables = append(variables, single)
+		case yaml.ScalarNode:
+			// Null/empty document — skip.
+		default:
+			return nil, fmt.Errorf("failed to parse variables file %s: unexpected YAML node type", filename)
+		}
+	}
 	return variables, nil
 }
 

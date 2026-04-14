@@ -1,15 +1,17 @@
-# syntax=docker/dockerfile:1.4
-#
+# vi: ft=dockerfile
+
 # Single Dockerfile that supports both production builds (action kit pulled
 # from its published module version) and local-development builds (action kit
 # replaced with a sibling working copy supplied via
 # `--build-context action-kit=<path>`).
-#
+
+# Set to true to prevent `deltafi plugin generate update` from modifying this file.
+ARG CUSTOM_DOCKERFILE=false
+
 # Selected by `--build-arg KIT_SOURCE=published|local`. The two `kit-*` stages
 # below differ only in whether they bring in a local action kit; BuildKit
 # tree-shakes the unselected stage and `builder` runs the same shared logic
 # for both modes.
-
 ARG KIT_SOURCE=published
 
 FROM --platform=$BUILDPLATFORM golang:1.26-alpine AS kit-published
@@ -27,6 +29,7 @@ WORKDIR /build
 COPY go.mod go.sum .
 RUN if [ -d /action-kit ]; then \
         go mod edit -replace gitlab.com/deltafi/deltafi/deltafi-go-action-kit/v2=/action-kit; \
+        cp go.mod go.mod.new; \
     else \
         sed -i '/^replace/d' go.mod; \
     fi && \
@@ -41,7 +44,9 @@ COPY . .
 ARG VERSION=0.0.0-dev
 ARG ACTIONKIT_VERSION=latest
 RUN if [ -d /action-kit ]; then \
-        go mod edit -replace gitlab.com/deltafi/deltafi/deltafi-go-action-kit/v2=/action-kit; \
+        cp go.mod.new go.mod; \
+        go mod tidy; \
+        cat go.mod; \
     else \
         ACTIONKIT_VERSION=$(go list -m -f '{{"{{"}}.Version{{"}}"}}' gitlab.com/deltafi/deltafi/deltafi-go-action-kit/v2); \
     fi && \
@@ -53,10 +58,10 @@ RUN if [ -d /action-kit ]; then \
 # Minimal runtime image with cache TTLs tuned for plugin lookups and artifacts.
 FROM alpine:3.23
 ENV ACTION_THREADS=1
-ENV TABLE_LOOKUP_CACHE_TTL=10s
-ENV TABLE_LOOKUP_FAILURE_CACHE_TTL=1s
 ENV ARTIFACT_CACHE_TTL=10s
 ENV ARTIFACT_FAILURE_CACHE_TTL=1s
+ENV TABLE_LOOKUP_CACHE_TTL=10s
+ENV TABLE_LOOKUP_FAILURE_CACHE_TTL=1s
 RUN apk --no-cache add ca-certificates
 WORKDIR /app
 COPY --from=builder /build/{{.PluginName}} deltafi-plugin

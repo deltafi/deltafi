@@ -30,6 +30,7 @@ import (
 	"strings"
 
 	"github.com/deltafi/tui/internal/generator"
+	"gopkg.in/yaml.v3"
 )
 
 // LintPlugin runs static checks against an existing Go plugin and returns
@@ -382,20 +383,20 @@ func lintSuppliers(pluginDir string) []generator.LintIssue {
 var flowVarRefRe = regexp.MustCompile(`\$\{([A-Za-z_][A-Za-z0-9_]*)\}`)
 
 // loadFlowVariableNames returns the set of variable names declared in
-// flows/variables.json. A nil result means the file is missing or unreadable;
+// flows/variables.yaml. A nil result means the file is missing or unreadable;
 // callers should treat that as "skip the variable-reference check" rather
 // than "no variables declared", since a missing file would otherwise flag
 // every template placeholder as unresolved.
 func loadFlowVariableNames(pluginDir string) map[string]bool {
-	path := filepath.Join(pluginDir, "flows", "variables.json")
+	path := filepath.Join(pluginDir, "flows", "variables.yaml")
 	content, err := os.ReadFile(path)
 	if err != nil {
 		return nil
 	}
 	var vars []struct {
-		Name string `json:"name"`
+		Name string `yaml:"name"`
 	}
-	if err := json.Unmarshal(content, &vars); err != nil {
+	if err := yaml.Unmarshal(content, &vars); err != nil {
 		return nil
 	}
 	names := make(map[string]bool, len(vars))
@@ -420,7 +421,7 @@ func lintFlows(pluginDir string, registeredActions map[string]bool, declaredVars
 		return nil
 	}
 	for _, e := range entries {
-		if e.IsDir() || !strings.HasSuffix(e.Name(), ".json") || e.Name() == "variables.json" {
+		if e.IsDir() || !strings.HasSuffix(e.Name(), ".json") {
 			continue
 		}
 		relPath := filepath.Join("flows", e.Name())
@@ -486,7 +487,7 @@ func lintFlows(pluginDir string, registeredActions map[string]bool, declaredVars
 				issues = append(issues, generator.LintIssue{
 					Severity: generator.LintWarning,
 					File:     relPath,
-					Message:  fmt.Sprintf("references variable %q which is not declared in flows/variables.json", varName),
+					Message:  fmt.Sprintf("references variable %q which is not declared in flows/variables.yaml", varName),
 				})
 			}
 		}

@@ -169,13 +169,13 @@ func (actx *ActionContext) Filterf(format string, a ...any) *FilterResult {
 
 // Variable defines a plugin variable for flow parameterization.
 type Variable struct {
-	Name         string `json:"name"`
-	Description  string `json:"description"`
-	DataType     string `json:"dataType"`
-	Required     bool   `json:"required"`
-	DefaultValue any    `json:"defaultValue,omitempty"`
-	Value        any    `json:"value,omitempty"`
-	Masked       bool   `json:"masked,omitempty"`
+	Name         string `json:"name" yaml:"name"`
+	Description  string `json:"description" yaml:"description"`
+	DataType     string `json:"dataType" yaml:"dataType"`
+	Required     bool   `json:"required" yaml:"required"`
+	DefaultValue any    `json:"defaultValue,omitempty" yaml:"defaultValue,omitempty"`
+	Value        any    `json:"value,omitempty" yaml:"value,omitempty"`
+	Masked       bool   `json:"masked,omitempty" yaml:"masked,omitempty"`
 }
 
 // FlowPlan holds a flow definition as opaque JSON passed through to core.

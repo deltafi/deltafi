@@ -430,11 +430,27 @@ func (g *PythonGenerator) UpdatePlugin(pluginName string, options *generator.Upd
 			return fmt.Errorf("failed to read existing file %s: %w", fullOutputPath, err)
 		}
 
+		// Flow definition files are user-owned; skip them if they already exist.
+		base := filepath.Base(outputPath)
+		if oldContent != nil && (base == "variables.yaml" || base == "data-source.json") {
+			continue
+		}
+
+		// Skip the Dockerfile entirely if the user has opted out of updates.
+		if base == "Dockerfile" && oldContent != nil && generator.IsCustomDockerfile(oldContent) {
+			continue
+		}
+
 		// Generate new content from template
 		newContent, err := RenderTemplate(templatePath, data)
 		if err != nil {
 			// Skip files that don't have templates (like HEADER which might not exist)
 			continue
+		}
+
+		// Preserve user-added and user-modified ENV variables in the Dockerfile
+		if outputPath == "Dockerfile" && oldContent != nil {
+			newContent = generator.PreserveDockerfileEnvVars(oldContent, newContent)
 		}
 
 		// Special handling for pyproject.toml: preserve version field

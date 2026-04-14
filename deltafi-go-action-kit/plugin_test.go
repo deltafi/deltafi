@@ -239,6 +239,80 @@ func TestPlugin_RegisterVariable(t *testing.T) {
 	}
 }
 
+func TestParseYAMLVariables_List(t *testing.T) {
+	data := []byte(`---
+- name: alpha
+  dataType: STRING
+  required: true
+- name: beta
+  dataType: NUMBER
+`)
+	vars, err := parseYAMLVariables(data, "test.yaml")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if len(vars) != 2 {
+		t.Fatalf("got %d variables, want 2", len(vars))
+	}
+	if vars[0].Name != "alpha" || vars[1].Name != "beta" {
+		t.Errorf("names = [%q, %q], want [alpha, beta]", vars[0].Name, vars[1].Name)
+	}
+}
+
+func TestParseYAMLVariables_SingleMap(t *testing.T) {
+	data := []byte(`---
+name: solo
+dataType: BOOLEAN
+required: false
+`)
+	vars, err := parseYAMLVariables(data, "test.yaml")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if len(vars) != 1 {
+		t.Fatalf("got %d variables, want 1", len(vars))
+	}
+	if vars[0].Name != "solo" {
+		t.Errorf("name = %q, want solo", vars[0].Name)
+	}
+}
+
+func TestParseYAMLVariables_MultiDocument(t *testing.T) {
+	data := []byte(`---
+name: first
+dataType: STRING
+required: true
+---
+name: second
+dataType: NUMBER
+required: false
+defaultValue: "42"
+---
+- name: third
+  dataType: BOOLEAN
+`)
+	vars, err := parseYAMLVariables(data, "test.yaml")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if len(vars) != 3 {
+		t.Fatalf("got %d variables, want 3", len(vars))
+	}
+	if vars[0].Name != "first" || vars[1].Name != "second" || vars[2].Name != "third" {
+		t.Errorf("names = [%q, %q, %q]", vars[0].Name, vars[1].Name, vars[2].Name)
+	}
+}
+
+func TestParseYAMLVariables_EmptyFile(t *testing.T) {
+	vars, err := parseYAMLVariables([]byte(""), "test.yaml")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if len(vars) != 0 {
+		t.Fatalf("got %d variables, want 0", len(vars))
+	}
+}
+
 func TestPlugin_SetWorkerCount(t *testing.T) {
 	p := &Plugin{}
 	p.RegisterAction(&Registration{Name: "ActionA", Action: &testTransformAction{}})

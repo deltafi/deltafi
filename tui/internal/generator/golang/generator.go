@@ -52,7 +52,7 @@ func getTemplateFiles() map[string]string {
 		".gitignore.tmpl":             ".gitignore",
 		".dockerignore.tmpl":          ".dockerignore",
 		"flows/data_source.json.tmpl": filepath.Join("flows", "data-source.json"),
-		"flows/variables.json.tmpl":   filepath.Join("flows", "variables.json"),
+		"flows/variables.yaml.tmpl":   filepath.Join("flows", "variables.yaml"),
 		"actions/doc.go.tmpl":         filepath.Join("actions", "doc.go"),
 		"suppliers/doc.go.tmpl":       filepath.Join("suppliers", "doc.go"),
 	}
@@ -441,6 +441,17 @@ func (g *GoGenerator) UpdatePlugin(pluginName string, options *generator.UpdateO
 			return fmt.Errorf("failed to read existing file %s: %w", fullOutputPath, err)
 		}
 
+		// Flow definition files are user-owned; skip them if they already exist.
+		base := filepath.Base(outputPath)
+		if oldContent != nil && (base == "variables.yaml" || base == "data-source.json") {
+			continue
+		}
+
+		// Skip the Dockerfile entirely if the user has opted out of updates.
+		if base == "Dockerfile" && oldContent != nil && generator.IsCustomDockerfile(oldContent) {
+			continue
+		}
+
 		newContent, err := RenderTemplate(templatePath, data)
 		if err != nil {
 			continue
@@ -449,6 +460,11 @@ func (g *GoGenerator) UpdatePlugin(pluginName string, options *generator.UpdateO
 		// Preserve go.mod dependencies (only update module path and action kit version)
 		if outputPath == "go.mod" && oldContent != nil {
 			newContent = preserveGoModDependencies(oldContent, newContent)
+		}
+
+		// Preserve user-added and user-modified ENV variables in the Dockerfile
+		if outputPath == "Dockerfile" && oldContent != nil {
+			newContent = generator.PreserveDockerfileEnvVars(oldContent, newContent)
 		}
 
 		// Preserve blank imports for the plugin's actions/suppliers packages,
