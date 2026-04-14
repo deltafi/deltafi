@@ -73,6 +73,11 @@ spec:
       {{- end }}
       volumes:
       - name: data
+        {{- if .Values.s3proxy.hostPath }}
+        hostPath:
+          path: {{ .Values.s3proxy.hostPath.path }}
+        {{- else }}
         persistentVolumeClaim:
           claimName: {{ .Values.s3proxy.persistence.existingClaim | default "deltafi-minio" }}
+        {{- end }}
 {{- end -}}
