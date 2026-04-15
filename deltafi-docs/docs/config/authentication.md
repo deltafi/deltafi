@@ -36,9 +36,9 @@ Before switching to Client Certificate Authentication, be sure to add a new user
 To enable Client Certificate Authentication (and disable Basic Authentication), complete the following steps:
 
 1. Identify and obtain (in PEM format) the certificate chain for the Certificate Authorities that issued the client certificates you want to accept. Store this chain in a file named `ca-chain.crt`.
-1. Create a Kubernetes secret in the `deltafi` namespace called `auth-secret` that includes the certificate chain from the previous step.
+1. Use teh TUI to create a Kubernetes secret in the `deltafi` namespace called `auth-secret` that includes the certificate chain from the previous step.
 ```bash
-kubectl create secret generic auth-secret --from-file=ca.crt=ca-chain.crt
+deltafi ssl ca-chain load -c ca-chain.crt
 ```
 1. Set `deltafi.auth.mode` to `cert` in your `site.values.yaml` file (as described in the [Install DeltaFi Core](/install/core#install-core) section.)
 ```yaml

@@ -176,22 +176,13 @@ cd ~
 git clone git@gitlab.com:deltafi/deltafi.git
 ```
 
-Next, we’ll install the DeltaFi command-line interface ([TUI](/operating/TUI)). This provides the `deltafi` command - the primary way of interacting with the DeltaFi system. Use the following command to install the DeltaFi TUI.
+Next, we’ll install the DeltaFi command-line interface ([TUI](/operating/TUI)). This provides the `deltafi` command - the primary way of interacting with the DeltaFi system.
 
-```
-~/deltafi/deltafi-cli/install.sh
-```
+See [Quick Start](/getting-started/quick-start) `Install Deltafi` for instructions on installing the TUI
 
-This installs the deltafi command into `/usr/local/bin/deltafi`. Verify this with the `which` command:
+This process utilizes a [Helm](https://helm.sh/) `values.yaml` file for providing system configuration. Any of the values in this file can be overridden in a site-specific values file. The TUI will automatically create this file in the site directory (defined in `~/.deltafi/config.yaml`)
 
-```
-which deltafi
-```
-
-Next, we will use the `deltafi install` command to install the core services of DeltaFi.
-
-This process utilizes a [Helm](https://helm.sh/) values.yaml file for providing system configuration located in `~/deltafi/charts/deltafi/values.yaml`. Any of the values in this file can be overridden in a site-specific values file. For this install, let's create the file `~/site.values.yaml` with the following content:
-
+Configure our `values.yaml` with the following settings
 ```yaml
 deltafi:
   ui:
@@ -211,28 +202,12 @@ This will configure the web UI to be available at deltafi.example.com and to dis
 
 > For a detailed explanation of the values that can be set this way, see the [Configuration](/configuration) section.
 
-Now run the install command passing it the site-specific values file we just created.
+Now run the TUI `up` command which automatically uses the site-specific values file we just created.
 
 ```
-deltafi install --values ~/site.values.yaml
+deltafi up
 ```
 
-This process can take up to 10 minutes. If it succeeds, the output should look something like this:
-
-```
->> 2022-07-08T22:09:07Z Resolving helm dependencies
-...
->> 2022-07-08T22:10:34Z Installing DeltaFi
-Release "deltafi" has been upgraded. Happy Helming!
-NAME: deltafi
-LAST DEPLOYED: Fri Jul  8 22:17:11 2022
-NAMESPACE: deltafi
-STATUS: deployed
-REVISION: 1
->> 2022-07-08T22:17:23Z Loading core flow plans
->> 2022-07-08T22:17:23Z Successfully loaded flow plan error from file error-flowplan.json
->> 2022-07-08T22:17:23Z DeltaFi install complete
-```
 
 ### Verification
 

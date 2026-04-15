@@ -23,7 +23,8 @@
     "text": "Installation",
     "collapsed": true,
     "items": [
-      { "text": "Kubernetes", "link": "/install/kubernetes" }
+      { "text": "Kubernetes", "link": "/install/kubernetes" },
+      { "text": "Post Install Checklist", "link":  "/install/post-install" }
     ]
   },
   {
