@@ -1278,7 +1278,7 @@ class DeltaFilesServiceTest {
         DeltaFilesFilter filter = new DeltaFilesFilter();
         deltaFilesService.acknowledge(filter, "reason");
 
-        Mockito.verify(deltaFileRepo).deltaFiles(filter, 5000);
+        Mockito.verify(deltaFileRepo).deltaFiles(filter, 5000, true);
         assertThat(filter.getStage()).isEqualTo(DeltaFileStage.ERROR);
         assertThat(filter.getErrorAcknowledged()).isFalse();
         assertThat(filter.getModifiedBefore()).isNotNull();
@@ -1615,23 +1615,23 @@ class DeltaFilesServiceTest {
     @Test
     void replayErrorsByFlow() {
         DeltaFile deltaFile = utilService.buildDeltaFile(UUID.randomUUID());
-        Mockito.when(deltaFileRepo.findForResumeByFlowTypeAndName(FlowType.TRANSFORM, "testFlow", false, null, null, 100))
+        Mockito.when(deltaFileRepo.findForResumeByFlowTypeAndName(FlowType.TRANSFORM, "testFlow", false, null, null, 100, false))
                 .thenReturn(List.of(deltaFile));
 
         deltaFilesService.replayErrorsByFlow(FlowType.TRANSFORM, "testFlow", null, null, null, null, 100);
 
-        Mockito.verify(deltaFileRepo).findForResumeByFlowTypeAndName(FlowType.TRANSFORM, "testFlow", false, null, null, 100);
+        Mockito.verify(deltaFileRepo).findForResumeByFlowTypeAndName(FlowType.TRANSFORM, "testFlow", false, null, null, 100, false);
     }
 
     @Test
     void replayErrorsByMessage() {
         DeltaFile deltaFile = utilService.buildDeltaFile(UUID.randomUUID());
-        Mockito.when(deltaFileRepo.findForResumeByErrorCause("test error", false, 100))
+        Mockito.when(deltaFileRepo.findForResumeByErrorCause("test error", false, 100, false))
                 .thenReturn(List.of(deltaFile));
 
         deltaFilesService.replayErrorsByMessage("test error", null, null, 100);
 
-        Mockito.verify(deltaFileRepo).findForResumeByErrorCause("test error", false, 100);
+        Mockito.verify(deltaFileRepo).findForResumeByErrorCause("test error", false, 100, false);
     }
 
     @Test
@@ -1655,23 +1655,23 @@ class DeltaFilesServiceTest {
     @Test
     void replayAndAcknowledgeByFlow() {
         DeltaFile deltaFile = utilService.buildDeltaFile(UUID.randomUUID());
-        Mockito.when(deltaFileRepo.findForResumeByFlowTypeAndName(FlowType.TRANSFORM, "testFlow", false, null, null, 100))
+        Mockito.when(deltaFileRepo.findForResumeByFlowTypeAndName(FlowType.TRANSFORM, "testFlow", false, null, null, 100, false))
                 .thenReturn(List.of(deltaFile));
 
         deltaFilesService.replayAndAcknowledgeByFlow(FlowType.TRANSFORM, "testFlow", "reason", null, null, null, null, 100);
 
-        Mockito.verify(deltaFileRepo).findForResumeByFlowTypeAndName(FlowType.TRANSFORM, "testFlow", false, null, null, 100);
+        Mockito.verify(deltaFileRepo).findForResumeByFlowTypeAndName(FlowType.TRANSFORM, "testFlow", false, null, null, 100, false);
     }
 
     @Test
     void replayAndAcknowledgeByMessage() {
         DeltaFile deltaFile = utilService.buildDeltaFile(UUID.randomUUID());
-        Mockito.when(deltaFileRepo.findForResumeByErrorCause("test error", false, 100))
+        Mockito.when(deltaFileRepo.findForResumeByErrorCause("test error", false, 100, false))
                 .thenReturn(List.of(deltaFile));
 
         deltaFilesService.replayAndAcknowledgeByMessage("test error", "reason", null, null, 100);
 
-        Mockito.verify(deltaFileRepo).findForResumeByErrorCause("test error", false, 100);
+        Mockito.verify(deltaFileRepo).findForResumeByErrorCause("test error", false, 100, false);
     }
 
     @Test
@@ -1792,7 +1792,7 @@ class DeltaFilesServiceTest {
         deltaFilesService.acknowledge(filter, "reason", limit);
 
         // Should use provided limit instead of REQUEUE_BATCH_SIZE
-        Mockito.verify(deltaFileRepo).deltaFiles(filter, limit);
+        Mockito.verify(deltaFileRepo).deltaFiles(filter, limit, true);
         assertThat(filter.getStage()).isEqualTo(DeltaFileStage.ERROR);
         assertThat(filter.getErrorAcknowledged()).isFalse();
     }
@@ -1803,7 +1803,7 @@ class DeltaFilesServiceTest {
         deltaFilesService.acknowledge(filter, "reason", null);
 
         // Should use REQUEUE_BATCH_SIZE when limit is null
-        Mockito.verify(deltaFileRepo).deltaFiles(filter, 5000);
+        Mockito.verify(deltaFileRepo).deltaFiles(filter, 5000, true);
     }
 
     @Test
@@ -1812,7 +1812,7 @@ class DeltaFilesServiceTest {
         deltaFilesService.acknowledge(filter, "reason", 0);
 
         // Should use REQUEUE_BATCH_SIZE when limit is 0
-        Mockito.verify(deltaFileRepo).deltaFiles(filter, 5000);
+        Mockito.verify(deltaFileRepo).deltaFiles(filter, 5000, true);
     }
 
     @Test

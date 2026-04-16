@@ -1084,13 +1084,13 @@ public class DeltaFilesService {
     public List<RetryResult> resumeByFlowTypeAndName(FlowType flowType, String name, List<ResumeMetadata> resumeMetadata,
             boolean includeAcknowledged, OffsetDateTime modifiedAfter, OffsetDateTime modifiedBefore, int limit) {
         List<DeltaFile> deltaFiles = deltaFileRepo.findForResumeByFlowTypeAndName(flowType, name, includeAcknowledged,
-                modifiedAfter, modifiedBefore, limit);
+                modifiedAfter, modifiedBefore, limit, false);
         return this.resumeDeltaFiles(deltaFiles, resumeMetadata);
     }
 
     @Transactional
     public List<RetryResult> resumeByErrorCause(String errorCause, List<ResumeMetadata> resumeMetadata, boolean includeAcknowledged, int limit) {
-        List<DeltaFile> deltaFiles = deltaFileRepo.findForResumeByErrorCause(errorCause, includeAcknowledged, limit);
+        List<DeltaFile> deltaFiles = deltaFileRepo.findForResumeByErrorCause(errorCause, includeAcknowledged, limit, false);
         return this.resumeDeltaFiles(deltaFiles, resumeMetadata);
     }
 
@@ -1412,7 +1412,10 @@ public class DeltaFilesService {
 
     @Transactional
     public List<AcknowledgeResult> acknowledge(List<UUID> dids, String reason) {
-        return acknowledge(didsToDeltaFiles(dids, deltaFiles(dids)), reason);
+        Map<UUID, DeltaFile> found = deltaFileRepo.deltaFiles(
+                DeltaFilesFilter.newBuilder().dids(dids).build(), dids.size(), true)
+                .stream().collect(Collectors.toMap(DeltaFile::getDid, d -> d));
+        return acknowledge(didsToDeltaFiles(dids, found), reason);
     }
 
     public List<AcknowledgeResult> acknowledge(Map<UUID, DeltaFile> deltaFiles, String reason) {
@@ -1474,17 +1477,29 @@ public class DeltaFilesService {
 
         // If limit provided, process only that many
         if (limit != null && limit > 0) {
-            Map<UUID, DeltaFile> toAck = deltaFileRepo.deltaFiles(filter, limit)
-                    .stream().collect(Collectors.toMap(DeltaFile::getDid, d -> d));
-            return acknowledge(toAck, reason);
+            // Run in a transaction so SKIP LOCKED is held through the save
+            List<AcknowledgeResult> batchResults = transactionTemplate.execute(status -> {
+                Map<UUID, DeltaFile> toAck = deltaFileRepo.deltaFiles(filter, limit, true)
+                        .stream().collect(Collectors.toMap(DeltaFile::getDid, d -> d));
+                return acknowledge(toAck, reason);
+            });
+            return batchResults != null ? batchResults : List.of();
         }
 
         int numFound = REQUEUE_BATCH_SIZE;
         while (numFound == REQUEUE_BATCH_SIZE) {
-            Map<UUID, DeltaFile> toAck = deltaFileRepo.deltaFiles(filter, REQUEUE_BATCH_SIZE)
-                    .stream().collect(Collectors.toMap(DeltaFile::getDid, d -> d));
-            results.addAll(acknowledge(toAck, reason));
-            numFound = toAck.size();
+            // Run each batch in a transaction so SKIP LOCKED rows are released between batches
+            List<AcknowledgeResult> batchResults = transactionTemplate.execute(status -> {
+                Map<UUID, DeltaFile> toAck = deltaFileRepo.deltaFiles(filter, REQUEUE_BATCH_SIZE, true)
+                        .stream().collect(Collectors.toMap(DeltaFile::getDid, d -> d));
+                return acknowledge(toAck, reason);
+            });
+            if (batchResults != null) {
+                results.addAll(batchResults);
+                numFound = batchResults.size();
+            } else {
+                numFound = 0;
+            }
         }
 
         return results;
@@ -1494,14 +1509,14 @@ public class DeltaFilesService {
     public List<AcknowledgeResult> acknowledgeByFlow(FlowType flowType, String flowName, String reason,
             OffsetDateTime modifiedAfter, OffsetDateTime modifiedBefore, int limit) {
         List<DeltaFile> deltaFiles = deltaFileRepo.findForResumeByFlowTypeAndName(flowType, flowName, false,
-                modifiedAfter, modifiedBefore, limit);
+                modifiedAfter, modifiedBefore, limit, true);
         Map<UUID, DeltaFile> toAck = deltaFiles.stream().collect(Collectors.toMap(DeltaFile::getDid, d -> d));
         return acknowledge(toAck, reason);
     }
 
     @Transactional
     public List<AcknowledgeResult> acknowledgeByMessage(String errorCause, String reason, int limit) {
-        List<DeltaFile> deltaFiles = deltaFileRepo.findForResumeByErrorCause(errorCause, false, limit);
+        List<DeltaFile> deltaFiles = deltaFileRepo.findForResumeByErrorCause(errorCause, false, limit, true);
         Map<UUID, DeltaFile> toAck = deltaFiles.stream().collect(Collectors.toMap(DeltaFile::getDid, d -> d));
         return acknowledge(toAck, reason);
     }
@@ -1511,14 +1526,14 @@ public class DeltaFilesService {
             List<String> removeSourceMetadata, List<KeyValue> replaceSourceMetadata,
             OffsetDateTime modifiedAfter, OffsetDateTime modifiedBefore, int limit) {
         List<DeltaFile> deltaFiles = deltaFileRepo.findForResumeByFlowTypeAndName(flowType, flowName, false,
-                modifiedAfter, modifiedBefore, limit);
+                modifiedAfter, modifiedBefore, limit, false);
         return replay(deltaFiles.stream().collect(Collectors.toMap(DeltaFile::getDid, d -> d)), removeSourceMetadata, replaceSourceMetadata);
     }
 
     @Transactional
     public List<RetryResult> replayErrorsByMessage(String errorCause,
             List<String> removeSourceMetadata, List<KeyValue> replaceSourceMetadata, int limit) {
-        List<DeltaFile> deltaFiles = deltaFileRepo.findForResumeByErrorCause(errorCause, false, limit);
+        List<DeltaFile> deltaFiles = deltaFileRepo.findForResumeByErrorCause(errorCause, false, limit, false);
         return replay(deltaFiles.stream().collect(Collectors.toMap(DeltaFile::getDid, d -> d)), removeSourceMetadata, replaceSourceMetadata);
     }
 
@@ -1532,14 +1547,14 @@ public class DeltaFilesService {
             List<String> removeSourceMetadata, List<KeyValue> replaceSourceMetadata,
             OffsetDateTime modifiedAfter, OffsetDateTime modifiedBefore, int limit) {
         List<DeltaFile> deltaFiles = deltaFileRepo.findForResumeByFlowTypeAndName(flowType, flowName, false,
-                modifiedAfter, modifiedBefore, limit);
+                modifiedAfter, modifiedBefore, limit, false);
         Map<UUID, DeltaFile> deltaFileMap = deltaFiles.stream().collect(Collectors.toMap(DeltaFile::getDid, d -> d));
         return replayAndAcknowledge(deltaFileMap, reason, removeSourceMetadata, replaceSourceMetadata);
     }
 
     public List<ReplayAndAcknowledgeResult> replayAndAcknowledgeByMessage(String errorCause, String reason,
             List<String> removeSourceMetadata, List<KeyValue> replaceSourceMetadata, int limit) {
-        List<DeltaFile> deltaFiles = deltaFileRepo.findForResumeByErrorCause(errorCause, false, limit);
+        List<DeltaFile> deltaFiles = deltaFileRepo.findForResumeByErrorCause(errorCause, false, limit, false);
         Map<UUID, DeltaFile> deltaFileMap = deltaFiles.stream().collect(Collectors.toMap(DeltaFile::getDid, d -> d));
         return replayAndAcknowledge(deltaFileMap, reason, removeSourceMetadata, replaceSourceMetadata);
     }
@@ -1655,13 +1670,13 @@ public class DeltaFilesService {
     }
 
     public int annotateByFlow(FlowType flowType, String flowName, Map<String, String> annotations, boolean allowOverwrites, int limit) {
-        List<DeltaFile> deltaFiles = deltaFileRepo.findForResumeByFlowTypeAndName(flowType, flowName, true, null, null, limit);
+        List<DeltaFile> deltaFiles = deltaFileRepo.findForResumeByFlowTypeAndName(flowType, flowName, true, null, null, limit, false);
         annotateMatching(deltaFiles, annotations, allowOverwrites);
         return deltaFiles.size();
     }
 
     public int annotateByMessage(String errorCause, Map<String, String> annotations, boolean allowOverwrites, int limit) {
-        List<DeltaFile> deltaFiles = deltaFileRepo.findForResumeByErrorCause(errorCause, true, limit);
+        List<DeltaFile> deltaFiles = deltaFileRepo.findForResumeByErrorCause(errorCause, true, limit, false);
         annotateMatching(deltaFiles, annotations, allowOverwrites);
         return deltaFiles.size();
     }

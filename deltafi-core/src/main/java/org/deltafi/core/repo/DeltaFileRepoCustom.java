@@ -206,19 +206,30 @@ public interface DeltaFileRepoCustom {
      * @param modifiedAfter only include DeltaFiles modified after this time
      * @param modifiedBefore only include DeltaFiles modified before this time
      * @param limit max number of DeltaFile dids to return
+     * @param skipLocked when true, skip rows locked by other transactions (FOR UPDATE SKIP LOCKED)
      * @return the list of dids who can be resumed
      */
     List<DeltaFile> findForResumeByFlowTypeAndName(FlowType flowType, String flowName, boolean includeAcknowledged,
-            OffsetDateTime modifiedAfter, OffsetDateTime modifiedBefore, int limit);
+            OffsetDateTime modifiedAfter, OffsetDateTime modifiedBefore, int limit, boolean skipLocked);
 
     /**
      * Find the ids of the DeltaFiles with the given errorCause that can be resumed
      * @param errorCause error cause to search for using an exact match
      * @param includeAcknowledged include dids of DeltaFiles with acknowledged errors when true
      * @param limit max number of DeltaFile dids to return
+     * @param skipLocked when true, skip rows locked by other transactions (FOR UPDATE SKIP LOCKED)
      * @return the list of dids who can be resumed
      */
-    List<DeltaFile> findForResumeByErrorCause(String errorCause, boolean includeAcknowledged, int limit);
+    List<DeltaFile> findForResumeByErrorCause(String errorCause, boolean includeAcknowledged, int limit, boolean skipLocked);
+
+    /** Return a list of DeltaFiles matching the given criteria, skipping rows locked by other transactions.
+     *
+     * @param filter Filters are used to constrain DeltaFiles that are returned
+     * @param limit Maximum number of DeltaFiles to return
+     * @param skipLocked when true, skip rows locked by other transactions (FOR UPDATE SKIP LOCKED)
+     * @return the list of DeltaFiles
+     */
+    List<DeltaFile> deltaFiles(DeltaFilesFilter filter, int limit, boolean skipLocked);
 
     /**
      * Finds all DeltaFiles marked as waitingForChildren that have no non-terminal children,

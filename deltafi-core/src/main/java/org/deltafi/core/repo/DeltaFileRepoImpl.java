@@ -403,7 +403,7 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
 
     @Override
     public List<DeltaFile> findForResumeByFlowTypeAndName(FlowType flowType, String flowName, boolean includeAcknowledged,
-            OffsetDateTime modifiedAfter, OffsetDateTime modifiedBefore, int limit) {
+            OffsetDateTime modifiedAfter, OffsetDateTime modifiedBefore, int limit, boolean skipLocked) {
         StringBuilder queryBuilder = new StringBuilder("""
                     SELECT df.did
                     FROM delta_files df
@@ -426,6 +426,9 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
         if (modifiedBefore != null) {
             queryBuilder.append(" AND df.modified <= :modifiedBefore");
         }
+        if (skipLocked) {
+            queryBuilder.append(" FOR UPDATE OF df SKIP LOCKED");
+        }
         queryBuilder.append(" LIMIT :limit");
 
         Query query = entityManager.createNativeQuery(queryBuilder.toString(), UUID.class)
@@ -447,7 +450,8 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
     }
 
     @Override
-    public List<DeltaFile> findForResumeByErrorCause(String errorCause, boolean includeAcknowledged, int limit) {
+    public List<DeltaFile> findForResumeByErrorCause(String errorCause, boolean includeAcknowledged, int limit, boolean skipLocked) {
+        String skipLockedClause = skipLocked ? " FOR UPDATE OF df SKIP LOCKED" : "";
         String queryBuilder = """
                     SELECT df.did
                     FROM delta_files df
@@ -461,6 +465,8 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
                         AND flow.error_or_filter_cause = :errorCause
                         AND (:includeAcknowledged OR flow.error_acknowledged IS NULL)
                     )
+                """ + skipLockedClause + """
+
                     LIMIT :limit
                 """;
         Query query = entityManager.createNativeQuery(queryBuilder, UUID.class)
@@ -713,9 +719,17 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
 
     @Override
     public List<DeltaFile> deltaFiles(DeltaFilesFilter filter, int limit) {
+        return deltaFiles(filter, limit, false);
+    }
+
+    @Override
+    public List<DeltaFile> deltaFiles(DeltaFilesFilter filter, int limit, boolean skipLocked) {
         Map<String, Object> parameters = new HashMap<>();
         StringBuilder sqlQuery = new StringBuilder();
         populateQuery(filter, parameters, sqlQuery);
+        if (skipLocked) {
+            sqlQuery.append("FOR UPDATE OF df SKIP LOCKED ");
+        }
         sqlQuery.append("LIMIT :limit");
 
         Query query = entityManager.createNativeQuery(sqlQuery.toString(), DeltaFile.class);

@@ -2893,9 +2893,9 @@ class DeltaFiCoreApplicationTests {
 
 		deltaFileRepo.insertBatch(List.of(shouldResume, shouldAlsoResume, noErrors, differentFlowType, differentFlowName, cancelled, contentDeleted), 1000);
 
-		assertThat(deltaFileRepo.findForResumeByFlowTypeAndName(FlowType.TRANSFORM, TRANSFORM_FLOW_NAME,  true, null, null, 10)).hasSize(2).contains(shouldResume, shouldAlsoResume);
-		assertThat(deltaFileRepo.findForResumeByFlowTypeAndName(FlowType.TRANSFORM, TRANSFORM_FLOW_NAME,  false, null, null, 10)).hasSize(1).contains(shouldResume);
-		assertThat(deltaFileRepo.findForResumeByFlowTypeAndName(FlowType.TRANSFORM, TRANSFORM_FLOW_NAME, true, null, null, 1)).hasSize(1);
+		assertThat(deltaFileRepo.findForResumeByFlowTypeAndName(FlowType.TRANSFORM, TRANSFORM_FLOW_NAME,  true, null, null, 10, false)).hasSize(2).contains(shouldResume, shouldAlsoResume);
+		assertThat(deltaFileRepo.findForResumeByFlowTypeAndName(FlowType.TRANSFORM, TRANSFORM_FLOW_NAME,  false, null, null, 10, false)).hasSize(1).contains(shouldResume);
+		assertThat(deltaFileRepo.findForResumeByFlowTypeAndName(FlowType.TRANSFORM, TRANSFORM_FLOW_NAME, true, null, null, 1, false)).hasSize(1);
 	}
 
 	@Test
@@ -2924,9 +2924,9 @@ class DeltaFiCoreApplicationTests {
 
 		deltaFileRepo.insertBatch(List.of(shouldResumeTransformError, shouldResumeEgressError, transformErrorDiffCause, egressErrorDiffCause, filterCause, cancelled, contentDeleted), 1000);
 
-		assertThat(deltaFileRepo.findForResumeByErrorCause("transform failed",  true,10)).hasSize(2).contains(shouldResumeTransformError, shouldResumeEgressError);
-		assertThat(deltaFileRepo.findForResumeByErrorCause("transform failed",  false, 10)).hasSize(1).contains(shouldResumeTransformError);
-		assertThat(deltaFileRepo.findForResumeByErrorCause("transform failed", true, 1)).hasSize(1);
+		assertThat(deltaFileRepo.findForResumeByErrorCause("transform failed",  true,10, false)).hasSize(2).contains(shouldResumeTransformError, shouldResumeEgressError);
+		assertThat(deltaFileRepo.findForResumeByErrorCause("transform failed",  false, 10, false)).hasSize(1).contains(shouldResumeTransformError);
+		assertThat(deltaFileRepo.findForResumeByErrorCause("transform failed", true, 1, false)).hasSize(1);
 	}
 
 	@Test
@@ -2951,6 +2951,86 @@ class DeltaFiCoreApplicationTests {
 		DeltaFile updated = deltaFilesService.getDeltaFile(shouldAck.getDid());
 		assertThat(updated.lastFlow().getErrorAcknowledged()).isNotNull();
 		assertThat(updated.lastFlow().getErrorAcknowledgedReason()).isEqualTo("test reason");
+	}
+
+	@Test
+	void testAcknowledgeByFlowSkipsLockedRows() throws Exception {
+		acknowledgeSkipsLockedRows(
+				() -> deltaFilesService.acknowledgeByFlow(FlowType.TRANSFORM, TRANSFORM_FLOW_NAME,
+						"test reason", null, null, 1000));
+	}
+
+	@Test
+	void testAcknowledgeByMessageSkipsLockedRows() throws Exception {
+		acknowledgeSkipsLockedRows(
+				() -> deltaFilesService.acknowledgeByMessage("transform failed", "test reason", 1000));
+	}
+
+	@Test
+	void testAcknowledgeMatchingSkipsLockedRows() throws Exception {
+		DeltaFilesFilter filter = new DeltaFilesFilter();
+		filter.setStage(DeltaFileStage.ERROR);
+		acknowledgeSkipsLockedRows(
+				() -> deltaFilesService.acknowledge(filter, "test reason"));
+	}
+
+	/**
+	 * Verifies that acknowledge operations skip rows locked by another transaction (e.g. auto-resume).
+	 * Locks one error row via FOR UPDATE in a separate connection, then runs the acknowledge callable
+	 * in another thread. Before the fix, the acknowledge blocks on the lock and the test times out.
+	 */
+	private void acknowledgeSkipsLockedRows(Callable<List<AcknowledgeResult>> acknowledgeCall) throws Exception {
+		DeltaFile lockedFile = makeErroredDeltaFile();
+		DeltaFile unlockedFile = makeErroredDeltaFile();
+		deltaFileRepo.insertBatch(List.of(lockedFile, unlockedFile), 1000);
+
+		CountDownLatch lockAcquired = new CountDownLatch(1);
+		CountDownLatch releaseLock = new CountDownLatch(1);
+
+		// Lock one delta_file row in a separate connection, simulating auto-resume holding FOR UPDATE locks
+		Thread lockThread = Thread.startVirtualThread(() -> {
+			try (Connection conn = Objects.requireNonNull(jdbcTemplate.getDataSource()).getConnection()) {
+				conn.setAutoCommit(false);
+				try (PreparedStatement ps = conn.prepareStatement(
+						"SELECT did FROM delta_files WHERE did = ? FOR UPDATE")) {
+					ps.setObject(1, lockedFile.getDid());
+					ps.executeQuery();
+					lockAcquired.countDown();
+					releaseLock.await();
+				}
+				conn.rollback();
+			} catch (Exception e) {
+				throw new RuntimeException(e);
+			}
+		});
+
+		assertTrue(lockAcquired.await(5, TimeUnit.SECONDS), "Lock should be acquired");
+
+		// Run acknowledge in a separate thread so we can detect blocking via timeout
+		ExecutorService executor = Executors.newSingleThreadExecutor();
+		try {
+			Future<List<AcknowledgeResult>> future = executor.submit(acknowledgeCall);
+
+			List<AcknowledgeResult> results;
+			try {
+				results = future.get(5, TimeUnit.SECONDS);
+			} catch (TimeoutException e) {
+				fail("Acknowledge blocked on locked rows instead of skipping them (SKIP LOCKED not working)");
+				return;
+			}
+
+			assertThat(results).hasSize(1);
+			assertThat(results.getFirst().getDid()).isEqualTo(unlockedFile.getDid());
+			assertThat(results.getFirst().getSuccess()).isTrue();
+
+			// The locked file should NOT be acknowledged
+			DeltaFile stillLocked = deltaFilesService.getDeltaFile(lockedFile.getDid());
+			assertThat(stillLocked.lastFlow().getErrorAcknowledged()).isNull();
+		} finally {
+			releaseLock.countDown();
+			lockThread.join(5000);
+			executor.shutdownNow();
+		}
 	}
 
 	@Test
