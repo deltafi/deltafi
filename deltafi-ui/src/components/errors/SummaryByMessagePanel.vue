@@ -28,7 +28,7 @@
     </template>
     <DataTable id="errorsSummaryTable" v-model:expanded-rows="expandedErrorGroups" v-model:selection="selectedErrorGroups" aria-label="Errors summary by message" data-key="message" selection-mode="multiple" class="p-datatable-gridlines p-datatable-sm" striped-rows :meta-key-selection="false" :value="groupErrorMessageData" :loading="loading" :rows="perPage" :lazy="true" :total-records="totalErrorsMessage" :row-hover="true" @row-contextmenu="onGroupContextMenu" @sort="onSort($event)" @row-select="onGroupRowSelect" @row-unselect="onGroupRowUnSelect">
       <template #empty> No results to display. </template>
-      <template #loading> Loading. Please wait... </template>
+      <template #loading><span class="datatable-loading-text">Loading. Please wait...</span></template>
       <Column v-if="groupErrorMessageData.length > 0" expander class="expander-column">
         <template #body="{ data }">
           <div @click.stop="onExpandClicked(data)">

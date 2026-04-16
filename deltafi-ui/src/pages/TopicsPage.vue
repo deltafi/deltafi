@@ -28,7 +28,7 @@
     </PageHeader>
     <DataTable aria-label="Topics" v-model:filters="filters" :value="searchableTopics" striped-rows class="p-datatable-sm topics-table" :loading="showLoading" data-key="name" :global-filter-fields="['name', 'subscriberNames', 'publisherNames']">
       <template #empty> No topic information available. </template>
-      <template #loading> Loading topics. Please wait. </template>
+      <template #loading><span class="datatable-loading-text">Loading topics. Please wait.</span></template>
       <Column field="publishers" header="Publishers" :sortable="true">
         <template #body="{ data }">
           <div v-for="publisher in data.publishers" :key="publisher.name" class="my-1">

@@ -31,7 +31,7 @@
         <SplitterPanel id="splitterPanelId" :size="startingPanelOneSize" class="flex align-items-center justify-content-center" :style="`overflow-y: auto; ${panelOneSize}`">
           <DataTable id="dataTableId" ref="dataTableIdRef" aria-label="Installed plugins" v-model:selection="selectedPlugin" :value="pluginsList" selection-mode="single" striped-rows class="p-datatable-sm p-datatable-gridlines plugin-table" sort-field="displayName" :sort-order="1" :row-hover="true" :meta-key-selection="false" data-key="displayName">
             <template #empty> No Plugins found. </template>
-            <template #loading> Loading Plugins. Please wait. </template>
+            <template #loading><span class="datatable-loading-text">Loading Plugins. Please wait.</span></template>
             <Column header="Name" field="displayName" :style="{ width: '25%' }" :sortable="true">
               <template #body="{ data }">
                 <div class="d-flex justify-content-between align-items-center">

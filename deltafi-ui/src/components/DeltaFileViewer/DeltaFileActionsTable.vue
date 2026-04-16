@@ -45,7 +45,7 @@
       <Column v-if="!contentDeleted && $hasPermission('DeltaFileContentView')" header="Content" class="content-column">
         <template #body="{ data: action }">
           <span v-if="action.hasOwnProperty('content') && action.content.length > 0">
-            <ContentDialog :did="did" :flow-number="deltaFile.number" :action-index="action.actionIndex" :content="action.content">
+            <ContentDialog :did="did" :flow-number="deltaFileData.number" :action-index="action.actionIndex" :content="action.content">
               <Button icon="far fa-window-maximize" label="View" class="content-button p-button-link" />
             </ContentDialog>
           </span>
@@ -61,7 +61,7 @@
         </template>
       </Column>
     </DataTable>
-    <ErrorViewerDialog v-model:visible="errorViewer.visible" :did="did" :flow-number="deltaFile.number" :action-index="errorViewer.actionIndex" :action="errorViewer.action" />
+    <ErrorViewerDialog v-model:visible="errorViewer.visible" :did="did" :flow-number="deltaFileData.number" :action-index="errorViewer.actionIndex" :action="errorViewer.action" />
   </div>
 </template>
 
@@ -72,7 +72,7 @@ import DialogTemplate from "@/components/DialogTemplate.vue";
 import ErrorViewerDialog from "@/components/errors/ErrorViewerDialog.vue";
 import Timestamp from "@/components/Timestamp.vue";
 import useUtilFunctions from "@/composables/useUtilFunctions";
-import { computed, reactive, inject } from "vue";
+import { computed, inject, reactive } from "vue";
 
 import _ from "lodash";
 
@@ -99,7 +99,6 @@ const props = defineProps({
 });
 
 const { duration } = useUtilFunctions();
-const deltaFile = reactive(props.deltaFileData);
 const errorViewer = reactive({
   visible: false,
   action: {},
@@ -107,17 +106,18 @@ const errorViewer = reactive({
 });
 
 const contentDeleted = computed(() => {
-  // return deltaFile.contentDeleted !== null;
   return props.contentDeleted;
 });
 
 const actions = computed(() => {
-  return deltaFile.actions.map((action, index) => {
+  return props.deltaFileData.actions.map((action, index) => {
+    const created = new Date(action.created).toISOString();
+    const modified = new Date(action.modified).toISOString();
     const timeElapsed = new Date(action.modified) - new Date(action.created);
-    action.created = new Date(action.created).toISOString();
-    action.modified = new Date(action.modified).toISOString();
     return {
       ...action,
+      created,
+      modified,
       actionIndex: index,
       elapsed: duration(timeElapsed),
     };

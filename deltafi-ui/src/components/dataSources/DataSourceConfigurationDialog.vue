@@ -260,6 +260,23 @@ const model = computed({
 
 const flattenedActionsTypes = ref([]);
 
+const extractSchemaDefaults = (schema) => {
+  const defaults = {};
+  if (schema && schema.properties) {
+    for (const [key, propSchema] of Object.entries(schema.properties)) {
+      if (propSchema.default !== undefined) {
+        defaults[key] = propSchema.default;
+      } else if (propSchema.properties) {
+        const nested = extractSchemaDefaults(propSchema);
+        if (Object.keys(nested).length > 0) {
+          defaults[key] = nested;
+        }
+      }
+    }
+  }
+  return defaults;
+};
+
 const getTimedIngressActions = async () => {
   const tmpFlattenedActionsTypes = [];
   for (const plugins of allActionsData.value) {
@@ -270,7 +287,7 @@ const getTimedIngressActions = async () => {
       action["type"] = action["name"];
       const name = action.name.split(".").pop();
       action["name"] = name;
-      action["parameters"] = {};
+      action["parameters"] = extractSchemaDefaults(action["schema"]);
 
       tmpFlattenedActionsTypes.push(action);
     }
@@ -301,7 +318,7 @@ onBeforeMount(async () => {
       model.value["timedIngressActionOption"] = _.find(flattenedActionsTypes.value, { type: model.value["timedIngressAction"]["type"] });
       model.value["timedIngressActionOption"]["name"] = tmpName;
       if (!_.isEmpty(model.value["timedIngressAction"]["parameters"])) {
-        model.value["timedIngressActionOption"]["parameters"] = model.value["timedIngressAction"]["parameters"];
+        model.value["timedIngressActionOption"]["parameters"] = { ...model.value["timedIngressActionOption"]["parameters"], ...model.value["timedIngressAction"]["parameters"] };
       }
     }
   }

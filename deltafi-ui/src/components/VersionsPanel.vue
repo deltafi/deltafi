@@ -22,9 +22,7 @@
       <template #empty>
         No version information available.
       </template>
-      <template #loading>
-        Loading version information. Please wait.
-      </template>
+      <template #loading><span class="datatable-loading-text">Loading version information. Please wait.</span></template>
       <Column field="app" header="App" :sortable="true" />
       <Column field="container" header="Container" :sortable="true" />
       <Column field="image.name" header="Image" :sortable="true" />

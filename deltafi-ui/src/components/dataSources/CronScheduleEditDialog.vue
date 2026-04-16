@@ -17,7 +17,7 @@
 -->
 
 <template>
-  <Dialog v-bind="$attrs" :header="header" :style="{ width: '60vw', height: 'auto' }" :maximizable="true" :modal="true" :dismissable-mask="true" :draggable="false" :position="modelPosition">
+  <Dialog v-bind="$attrs" :header="header" :style="{ width: '60vw' }" :maximizable="true" :modal="true" :dismissable-mask="true" :draggable="false" :position="modelPosition" :content-style="{ overflow: 'visible' }" @show="editing = true" @hide="editing = false">
     <div>
       <dl>
         <dd>
@@ -34,7 +34,7 @@
 
 <script setup>
 import Dialog from "primevue/dialog";
-import { computed, ref, useAttrs, watch } from "vue";
+import { computed, inject, ref, useAttrs, watch } from "vue";
 import { CronLight } from "@vue-js-cron/light";
 import "@vue-js-cron/light/dist/light.css";
 
@@ -45,6 +45,7 @@ import useDataSource from "@/composables/useDataSource";
 import useNotifications from "@/composables/useNotifications";
 
 const { setTimedDataSourceCronSchedule } = useDataSource();
+const editing = inject("isEditing");
 const attrs = useAttrs();
 const model = ref({});
 const emit = defineEmits(["reloadDataSources", "close"]);

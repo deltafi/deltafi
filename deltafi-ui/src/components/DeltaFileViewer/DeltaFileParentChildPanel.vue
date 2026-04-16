@@ -35,9 +35,7 @@
         <template v-if="!loading" #empty>
           {{ `No ${header} found.` }}
         </template>
-        <template #loading>
-          Loading {{ header }}. Please wait.
-        </template>
+        <template #loading><span class="datatable-loading-text">Loading {{ header }}. Please wait.</span></template>
         <Column field="did" header="DID" class="did-col">
           <template #body="{ data }">
             <DidLink :did="data.did" />

@@ -75,7 +75,7 @@
       </template>
       <DataTable aria-label="DeltaFile search results" v-model:selection="selectedDids" :value="results" data-key="did" selection-mode="multiple" class="p-datatable p-datatable-sm p-datatable-gridlines" striped-rows :loading="loading" loading-icon="pi pi-spinner" :rows="model.perPage" :lazy="true" :total-records="totalRecords" :row-class="actionRowClass" @row-contextmenu="onRowContextMenu" @sort="onSort($event)">
         <template #empty> No DeltaFiles match the provided search criteria. </template>
-        <template #loading> Loading results. Please wait. </template>
+        <template #loading><span class="datatable-loading-text">Loading results. Please wait.</span></template>
         <Column field="did" header="DID" class="did-column">
           <template #body="{ data }">
             <DidLink :did="data.did" />

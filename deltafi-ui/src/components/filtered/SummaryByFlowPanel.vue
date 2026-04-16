@@ -28,7 +28,7 @@
     </template>
     <DataTable id="filteredSummaryTable" v-model:selection="selectedFiltered" aria-label="Filtered summary by flow" selection-mode="multiple" data-key="flow" class="p-datatable-gridlines p-datatable-sm" striped-rows :meta-key-selection="false" :value="filteredFlow" :loading="loading" :rows="perPage" :lazy="true" :total-records="totalFilteredFlow" :row-hover="true" @row-contextmenu="onRowContextMenu" @sort="onSort($event)">
       <template #empty> No results to display. </template>
-      <template #loading> Loading. Please wait... </template>
+      <template #loading><span class="datatable-loading-text">Loading. Please wait...</span></template>
       <Column field="flow" header="Flow" :sortable="true" class="filename-column">
         <template #body="{ data }">
           <a class="monospace" @click="showAllTab(data.flow, data.type)">{{ data.flow }}</a>

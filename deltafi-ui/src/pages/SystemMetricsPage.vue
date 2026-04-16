@@ -24,9 +24,7 @@
         <template #empty>
           No System Metrics available
         </template>
-        <template #loading>
-          Loading System Metrics Data. Please wait.
-        </template>
+        <template #loading><span class="datatable-loading-text">Loading System Metrics Data. Please wait.</span></template>
         <Column class="expander-column" :expander="true" />
         <Column header="Node Name" field="name" :sortable="true" />
         <Column header="App Count" class="apps-column">

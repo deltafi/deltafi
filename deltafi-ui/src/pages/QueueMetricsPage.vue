@@ -45,9 +45,7 @@
             <template #empty>
               No queued actions.
             </template>
-            <template #loading>
-              Loading queue metrics. Please wait.
-            </template>
+            <template #loading><span class="datatable-loading-text">Loading queue metrics. Please wait.</span></template>
             <Column v-if="!rollupByClass" header="Flow" field="flowName" :sortable="true" />
             <Column v-if="!rollupByClass" header="Type" field="flowType" :sortable="true" class="type-column" />
             <Column v-if="!rollupByClass" header="Action" field="actionName" :sortable="true" />

@@ -124,7 +124,7 @@
               </div>
             </template>
             <template #empty> No Actions found. </template>
-            <template #loading> Loading Actions. Please wait. </template>
+            <template #loading><span class="datatable-loading-text">Loading Actions. Please wait.</span></template>
             <Column header-style="width: 3em">
               <template #body="{ data }">
                 <draggable ref="draggableRef" class="dragArea list-group align-items-center justify-content-center w-100 h-100" :list="[data]" :group="{ name: 'transformActions', pull: 'clone', put: false }" item-key="displayName" :clone="cloneAction" ghost-class="tree-action" drag-class="tree-action">

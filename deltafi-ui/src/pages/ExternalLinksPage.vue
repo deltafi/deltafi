@@ -32,7 +32,7 @@
     <Panel header="External links" class="external-links-panel table-panel">
       <DataTable aria-label="External links" v-model:filters="filters" :value="externalLinks" :loading="loading" class="p-datatable-sm p-datatable-gridlines" striped-rows :global-filter-fields="['name', 'description']" :row-hover="true" data-key="name">
         <template #empty> No External Links found </template>
-        <template #loading> Loading External Links. Please wait. </template>
+        <template #loading><span class="datatable-loading-text">Loading External Links. Please wait.</span></template>
         <Column field="name" header="Name" :sortable="true" :style="{ width: '15rem' }">
           <template #body="{ data }">
             <DialogTemplate component-name="externalLink/ExternalLinkConfigurationDialog" header="View External Link" dialog-width="25vw" :row-data-prop="data" row-link-type="External Link" view-link @refresh-page="reloadUIConfigs()">
@@ -57,7 +57,7 @@
     <Panel header="DeltaFile Links" class="external-links-panel table-panel mt-3">
       <DataTable aria-label="DeltaFile links" v-model:filters="filters" :value="deltaFileLinks" :loading="loading" class="p-datatable-sm p-datatable-gridlines" striped-rows :global-filter-fields="['name', 'description']" :row-hover="true">
         <template #empty> No DeltaFile Links found. </template>
-        <template #loading> Loading DeltaFile Links. Please wait. </template>
+        <template #loading><span class="datatable-loading-text">Loading DeltaFile Links. Please wait.</span></template>
         <Column field="name" header="Name" :sortable="true" :style="{ width: '15rem' }">
           <template #body="{ data }">
             <DialogTemplate component-name="externalLink/ExternalLinkConfigurationDialog" header="View DeltaFile Link" dialog-width="25vw" :row-data-prop="data" row-link-type="DeltaFile Link" view-link @refresh-page="reloadUIConfigs()">

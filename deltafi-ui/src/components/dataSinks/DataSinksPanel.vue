@@ -21,7 +21,7 @@
     <CollapsiblePanel header="Data Sinks" class="table-panel pb-3">
       <DataTable v-model:filters="filters" aria-label="Data sinks" :loading="showLoading" :value="dataSinkList" edit-mode="cell" striped-rows class="p-datatable-sm p-datatable-gridlines egress-action-table" :global-filter-fields="['name', 'description']" sort-field="name" :sort-order="1" :row-hover="true" data-key="name">
         <template #empty> No Data Sinks found. </template>
-        <template #loading> Loading Data Sinks. Please wait. </template>
+        <template #loading><span class="datatable-loading-text">Loading Data Sinks. Please wait.</span></template>
         <Column header="Name" field="name" :style="{ width: '25%' }" :sortable="true">
           <template #body="{ data }">
             <div class="d-flex justify-content-between align-items-center">

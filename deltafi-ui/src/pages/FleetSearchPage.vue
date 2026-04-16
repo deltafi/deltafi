@@ -90,7 +90,7 @@
           <span v-if="searchResponse?.results?.length > 0 && isResultFiltered">No member systems match your filter criteria.</span>
           <span v-else>Click "Search Fleet" to search across all systems.</span>
         </template>
-        <template #loading> Searching fleet members. Please wait. </template>
+        <template #loading><span class="datatable-loading-text">Searching fleet members. Please wait.</span></template>
         <Column field="memberName" header="System" class="system-column">
           <template #body="{ data }">
             <div class="member-cell">

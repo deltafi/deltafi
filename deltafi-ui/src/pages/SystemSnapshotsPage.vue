@@ -36,7 +36,7 @@
       </template>
       <DataTable aria-label="System snapshots" :value="snapshots" :first="pageFirst" :rows="pageRows" :total-records="totalCount" class="p-datatable-sm p-datatable-gridlines" striped-rows :row-hover="true" :loading="loading" data-key="id" :lazy="true" @sort="onSort($event)">
         <template #empty> No snapshots to display. </template>
-        <template #loading> Loading. Please wait... </template>
+        <template #loading><span class="datatable-loading-text">Loading. Please wait...</span></template>
         <Column field="id" header="ID" class="id-column">
           <template #body="data">
             <a v-tooltip.top="`View Snapshot`" class="cursor-pointer monospace" @click="showSnapshot(data.data)">{{ data.data.id.split('-').slice(-1)[0] }}</a>

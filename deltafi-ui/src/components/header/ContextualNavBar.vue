@@ -23,8 +23,8 @@
 <template>
   <nav class="contextual-navbar justify-content-between">
     <div>
-      <div class="left-edge-trigger" @mouseenter="startHamburgerHover" @mouseleave="cancelHamburgerHover" />
-      <button class="hamburger-btn" @click="hamburgerMenuVisible = true" @mouseenter="startHamburgerHover" @mouseleave="cancelHamburgerHover">
+      <div class="left-edge-trigger" @mouseenter="startEdgeHover" @mouseleave="cancelEdgeHover" />
+      <button class="hamburger-btn" @click="hamburgerMenuVisible = true">
         <i class="fas fa-bars" />
       </button>
       <HamburgerMenu v-model="hamburgerMenuVisible" @sidebar-enter="onSidebarEnter" @sidebar-leave="onSidebarLeave" />
@@ -171,40 +171,40 @@ const cancelHoverOpen = () => {
   }
 };
 
-// Hamburger menu hover-to-open logic
-let hamburgerHoverTimer: ReturnType<typeof setTimeout> | null = null;
-let hamburgerCloseTimer: ReturnType<typeof setTimeout> | null = null;
+// Left edge hover-to-open logic
+let edgeHoverTimer: ReturnType<typeof setTimeout> | null = null;
+let sidebarCloseTimer: ReturnType<typeof setTimeout> | null = null;
 
-const startHamburgerHover = () => {
-  clearHamburgerCloseTimer();
+const startEdgeHover = () => {
+  clearSidebarCloseTimer();
   if (hamburgerMenuVisible.value) return;
-  hamburgerHoverTimer = setTimeout(() => {
+  edgeHoverTimer = setTimeout(() => {
     hamburgerMenuVisible.value = true;
   }, 300);
 };
 
-const cancelHamburgerHover = () => {
-  if (hamburgerHoverTimer) {
-    clearTimeout(hamburgerHoverTimer);
-    hamburgerHoverTimer = null;
+const cancelEdgeHover = () => {
+  if (edgeHoverTimer) {
+    clearTimeout(edgeHoverTimer);
+    edgeHoverTimer = null;
   }
 };
 
 const onSidebarEnter = () => {
-  clearHamburgerCloseTimer();
-  cancelHamburgerHover();
+  clearSidebarCloseTimer();
+  cancelEdgeHover();
 };
 
 const onSidebarLeave = () => {
-  hamburgerCloseTimer = setTimeout(() => {
+  sidebarCloseTimer = setTimeout(() => {
     hamburgerMenuVisible.value = false;
   }, 300);
 };
 
-const clearHamburgerCloseTimer = () => {
-  if (hamburgerCloseTimer) {
-    clearTimeout(hamburgerCloseTimer);
-    hamburgerCloseTimer = null;
+const clearSidebarCloseTimer = () => {
+  if (sidebarCloseTimer) {
+    clearTimeout(sidebarCloseTimer);
+    sidebarCloseTimer = null;
   }
 };
 

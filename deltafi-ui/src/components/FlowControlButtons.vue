@@ -66,7 +66,7 @@ const config = computed(() => {
     },
     pause: {
       outlined: model.value !== 'PAUSED',
-      severity: model.value === 'PAUSED' ? "warn" : "outline-secondary"
+      severity: model.value === 'PAUSED' ? "warning" : "outline-secondary"
     },
     stop: {
       outlined: model.value !== 'STOPPED',

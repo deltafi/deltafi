@@ -268,6 +268,11 @@ a {
   }
 }
 
+/* Match PrimeVue 3 Bootstrap4-Light-Blue striped row color */
+.p-datatable-striped .p-datatable-tbody > tr:nth-child(even) {
+  background: rgba(0, 0, 0, 0.05) !important;
+}
+
 .p-contextmenu,
 .p-menu {
   width: unset;
@@ -319,12 +324,23 @@ td.did-column {
   border-color: #6c757d !important;
 }
 
-.p-datatable.p-datatable-hoverable-rows .p-datatable-tbody > tr:not(.p-highlight):hover {
+.p-datatable.p-datatable-hoverable .p-datatable-tbody > tr:not(.p-datatable-row-selected):hover {
   text-shadow: 0.02rem 0px black;
 }
 
 .p-tag-secondary {
   background-color: #6c757d;
+}
+
+/* PrimeVue 3 Bootstrap4-Light-Blue selected row styling */
+.p-datatable .p-datatable-tbody > tr.p-datatable-row-selected {
+  background: #007bff !important;
+  color: #ffffff !important;
+}
+
+.p-datatable .p-datatable-tbody > tr.p-datatable-row-selected a,
+.p-datatable .p-datatable-tbody > tr.p-datatable-row-selected .p-row-toggler {
+  color: #ffffff !important;
 }
 /* Ensure panel header actions (icons slot) align items vertically */
 .p-panel-header-actions {
@@ -423,6 +439,16 @@ td.did-column {
   margin-bottom: 0.25rem;
 }
 
+/* PrimeVue 3 panel header background (Bootstrap4-Light-Blue was #efefef) */
+.p-panel-header {
+  background: #efefef !important;
+}
+
+/* Match PrimeVue 3 Bootstrap4-Light-Blue DataTable header background */
+.p-datatable .p-datatable-thead > tr > th {
+  background: #ffffff !important;
+}
+
 /* ── PrimeVue 3 Dialog look ────────────────────────────────────────────── */
 .p-dialog-header {
   padding: 0.5rem 1.5rem !important;
@@ -461,4 +487,43 @@ td.did-column {
 .p-button-label {
   /* Do not wrap button labels to multiple lines, as PrimeVue 4 does by default */
   white-space: nowrap;
+}
+
+/* Style DataTable loading overlay text in a light grey box for readability */
+.p-datatable-mask {
+  background: rgba(0, 0, 0, 0.4) !important;
+  align-items: flex-start !important;
+
+  .datatable-loading-text {
+    position: sticky;
+    top: 45vh;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: #f1f5f9;
+    color: #334155;
+    border: 1px solid #dee2e6;
+    padding: 0.75rem 1.75rem;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    font-size: 1.1rem;
+    font-weight: 500;
+
+    &::before {
+      content: "";
+      display: inline-block;
+      width: 1.1rem;
+      height: 1.1rem;
+      border: 2px solid #cbd5e1;
+      border-top-color: #3b82f6;
+      border-radius: 50%;
+      animation: datatable-spin 0.8s linear infinite;
+    }
+  }
+}
+
+@keyframes datatable-spin {
+  to {
+    transform: rotate(360deg);
+  }
 }

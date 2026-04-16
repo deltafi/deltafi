@@ -29,7 +29,7 @@
       </template>
       <DataTable id="errorsTable" v-model:expanded-rows="expandedRows" v-model:selection="selectedErrors" v-model:filters="filters" aria-label="Errors by DeltaFile" selection-mode="multiple" data-key="did" class="p-datatable-gridlines p-datatable-sm" striped-rows :meta-key-selection="false" :value="errors" :loading="loading" :rows="perPage" :lazy="true" :total-records="totalErrors" :row-hover="true" filter-display="menu" @row-contextmenu="onRowContextMenu" @sort="onSort($event)">
         <template #empty> No results to display. </template>
-        <template #loading> Loading. Please wait... </template>
+        <template #loading><span class="datatable-loading-text">Loading. Please wait...</span></template>
         <Column class="expander-column" :expander="true" />
         <Column field="did" header="DID" class="did-column">
           <template #body="{ data }">

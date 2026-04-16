@@ -47,13 +47,13 @@
         <Column field="elapsed" header="Elapsed" class="elapsed-column" />
         <Column class="file-icon-column">
           <template #body="{ data: flow }">
-            <FlowOutputDialog :did="deltaFile.did" :flow="flow" :parent-flow="getParentFlow(flow)">
+            <FlowOutputDialog :did="deltaFileData.did" :flow="flow" :parent-flow="getParentFlow(flow)">
               <Button :icon="flowHasChanges(flow) ? 'fas fa-file-pen' : 'fas fa-file'" class="p-button-link file-button" />
             </FlowOutputDialog>
           </template>
         </Column>
         <template #expansion="flow">
-          <DeltaFileActionsTable v-if="flow.data.actions.length > 0" :did="deltaFile.did" :delta-file-data="flow.data" :content-deleted="contentDeleted" />
+          <DeltaFileActionsTable v-if="flow.data.actions.length > 0" :did="deltaFileData.did" :delta-file-data="flow.data" :content-deleted="contentDeleted" />
           <span v-else>This flow has no actions.</span>
         </template>
       </DataTable>
@@ -96,7 +96,6 @@ const lastAction = (actions) => {
 };
 
 const { duration } = useUtilFunctions();
-const deltaFile = reactive(props.deltaFileData);
 const errorViewer = reactive({
   visible: false,
   action: {},
@@ -106,7 +105,7 @@ const errorViewer = reactive({
 });
 
 const getFlowByNumber = (flowNumber) => {
-  return deltaFile.flows.find((f) => f.number === flowNumber) || null;
+  return props.deltaFileData.flows.find((f) => f.number === flowNumber) || null;
 };
 
 const getParentFlow = (flow) => {
@@ -224,12 +223,14 @@ function generateTree(flows) {
 }
 
 const flows = computed(() => {
-  const deltaFileFlows = deltaFile.flows.map((flow) => {
+  const deltaFileFlows = props.deltaFileData.flows.map((flow) => {
+    const created = new Date(flow.created).toISOString();
+    const modified = new Date(flow.modified).toISOString();
     const timeElapsed = new Date(flow.modified) - new Date(flow.created);
-    flow.created = new Date(flow.created).toISOString();
-    flow.modified = new Date(flow.modified).toISOString();
     return {
       ...flow,
+      created,
+      modified,
       elapsed: duration(timeElapsed),
     };
   });
@@ -237,7 +238,7 @@ const flows = computed(() => {
 });
 
 const contentDeleted = computed(() => {
-  return deltaFile.contentDeleted !== null ? deltaFile.contentDeleted : false;
+  return props.deltaFileData.contentDeleted !== null ? props.deltaFileData.contentDeleted : false;
 });
 
 const rowClass = (flow) => {
@@ -257,7 +258,7 @@ const rowClick = (event) => {
 
   errorViewer.visible = true;
   errorViewer.action = action;
-  errorViewer.did = deltaFile.did;
+  errorViewer.did = deltaFileData.did;
   errorViewer.flowNumber = flow.number;
   errorViewer.actionIndex = actionIndex;
 };
