@@ -41,7 +41,51 @@ class ExtractXmlTest {
         TransformInput input = TransformInput.builder().content(List.of(content)).build();
 
         ResultType result = action.transform(runner.actionContext(), params, input);
-        TransformResultAssert.assertThat(result).addedMetadata(Map.of("nameMetadata", "John", "emailMetadata", "john@example.com"));
+        TransformResultAssert.assertThat(result).addedMetadata(Map.of("nameMetadata", "John", "emailMetadata", "john@example.com"))
+                .hasContentCount(0);
+    }
+
+    @Test
+    void invalidFormatCausesError() {
+        ExtractXmlParameters params = new ExtractXmlParameters();
+        params.setXpathToKeysMap(Map.of("/person/name", "nameMetadata", "/person/contact/email", "emailMetadata"));
+
+        ActionContent content = saveXml("{\"person\":{\"name\":\"John\",\"contact\":{\"email\":\"john@example.com\"}}}");
+        TransformInput input = TransformInput.builder().content(List.of(content)).build();
+
+        ResultType result = action.transform(runner.actionContext(), params, input);
+        ErrorResultAssert.assertThat(result).hasCause("Unable to read XML content");
+    }
+
+    @Test
+    void invalidFormatPassthroughContent() {
+        ExtractXmlParameters params = new ExtractXmlParameters();
+        params.setRetainExistingContent(false);
+        params.setInvalidFormatMode(InvalidFormatMode.PASSTHROUGH);
+
+        params.setXpathToKeysMap(Map.of("/person/name", "nameMetadata", "/person/contact/email", "emailMetadata"));
+
+        ActionContent content = saveXml("{ \"json\":\"isBetter\"}");
+        TransformInput input = TransformInput.builder().content(List.of(content)).build();
+
+        ResultType result = action.transform(runner.actionContext(), params, input);
+        TransformResultAssert.assertThat(result).addedMetadata(Collections.emptyMap())
+                .hasContentCount(1);
+    }
+
+    @Test
+    void invalidFormatDropContent() {
+        ExtractXmlParameters params = new ExtractXmlParameters();
+        params.setInvalidFormatMode(InvalidFormatMode.DROP);
+
+        params.setXpathToKeysMap(Map.of("/person/name", "nameMetadata", "/person/contact/email", "emailMetadata"));
+
+        ActionContent content = saveXml("{ \"json\":\"isBetter\"}");
+        TransformInput input = TransformInput.builder().content(List.of(content)).build();
+
+        ResultType result = action.transform(runner.actionContext(), params, input);
+        TransformResultAssert.assertThat(result).addedMetadata(Collections.emptyMap())
+                .hasContentCount(0);
     }
 
     @Test

@@ -74,7 +74,7 @@ public class ExtractXml extends TransformAction<ExtractXmlParameters> {
                                 
                                 Values extracted from multiple contents are handled according to handleMultipleKeys.""")
                         .build())
-                .errors("On failure to parse any content from XML",
+                .errors("On failure to parse any content as XML and invalidFormatMode set to ERROR",
                         "On failure to evaluate any XPath expression in xpathToKeysMap keys",
                         "On errorOnKeyNotFound set to true and no values can be extracted from input content for any xpathToKeysMap key")
                 .build());
@@ -82,7 +82,7 @@ public class ExtractXml extends TransformAction<ExtractXmlParameters> {
 
     @Override
     public TransformResultType transform(@NotNull ActionContext context, @NotNull ExtractXmlParameters params,
-            @NotNull TransformInput input) {
+                                         @NotNull TransformInput input) {
         TransformResult result = new TransformResult(context);
 
         DocumentBuilder documentBuilder;
@@ -101,15 +101,24 @@ public class ExtractXml extends TransformAction<ExtractXmlParameters> {
                 continue;
             }
 
+            boolean contentAdded = false;
             if (params.isRetainExistingContent()) {
                 result.addContent(content);
+                contentAdded = true;
             }
 
             Document document;
             try {
                 document = documentBuilder.parse(new InputSource(new StringReader(content.loadString())));
             } catch (SAXException | IOException e) {
-                return new ErrorResult(context, "Unable to read XML content", "Failed to read " + content.getName(), e);
+                if (params.getInvalidFormatMode() == InvalidFormatMode.ERROR) {
+                    return new ErrorResult(context, "Unable to read XML content", "Failed to read " + content.getName(), e);
+                } else {
+                    if (!contentAdded && params.getInvalidFormatMode() == InvalidFormatMode.PASSTHROUGH) {
+                        result.addContent(content);
+                    }
+                    continue;
+                }
             }
 
             for (Map.Entry<String, String> entry : params.getXpathToKeysMap().entrySet()) {

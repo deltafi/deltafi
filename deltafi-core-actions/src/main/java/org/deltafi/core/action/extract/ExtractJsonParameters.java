@@ -38,6 +38,10 @@ public class ExtractJsonParameters extends ExtractParameters {
         return super.getMediaTypes();
     }
 
+    @JsonProperty(defaultValue = "true")
+    @JsonPropertyDescription("If TRUE, JSON scalars will be accepted in content. If FALSE, content must have a JSON object or array root element")
+    private boolean allowScalarRoot = true;
+
     @JsonCreator
     public ExtractJsonParameters(List<String> mediaTypes) {
         super(mediaTypes);

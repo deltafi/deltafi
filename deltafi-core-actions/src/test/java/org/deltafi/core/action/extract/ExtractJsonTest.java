@@ -25,10 +25,14 @@ import org.deltafi.test.asserters.TransformResultAssert;
 import org.deltafi.test.content.DeltaFiTestRunner;
 import org.junit.jupiter.api.Test;
 
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 class ExtractJsonTest {
+
+    private static final String JSON_SCALAR = "true";
+    private static final String NOT_A_ROOT_NODE = "this-is-not-a-valid-root";
+    private static final String INVALID_JSON_SYNTAX = "[{]}";
+    private static final String TWO_OBJECTS = "{\"a\":1}{\"b\":2}";
 
     ExtractJson action = new ExtractJson();
     DeltaFiTestRunner runner = DeltaFiTestRunner.setup();
@@ -42,7 +46,92 @@ class ExtractJsonTest {
         TransformInput input = TransformInput.builder().content(List.of(content)).build();
 
         ResultType result = action.transform(runner.actionContext(), params, input);
-        TransformResultAssert.assertThat(result).addedMetadata(Map.of("nameMetadata", "John", "emailMetadata", "john@example.com"));
+        TransformResultAssert.assertThat(result).addedMetadata(Map.of("nameMetadata", "John", "emailMetadata", "john@example.com"))
+                .hasContentCount(0);
+    }
+
+    @Test
+    void notAValidFormatCausesError() {
+        ExtractJsonParameters params = new ExtractJsonParameters();
+
+        ActionContent content = saveJson(INVALID_JSON_SYNTAX);
+        TransformInput input = TransformInput.builder().content(List.of(content)).build();
+
+        ResultType result = action.transform(runner.actionContext(), params, input);
+        ErrorResultAssert.assertThat(result).hasCause("Unable to read JSON content");
+    }
+
+    @Test
+    void notAValidRootNodeCausesError() {
+        ExtractJsonParameters params = new ExtractJsonParameters();
+
+        ActionContent content = saveJson(NOT_A_ROOT_NODE);
+        TransformInput input = TransformInput.builder().content(List.of(content)).build();
+
+        ResultType result = action.transform(runner.actionContext(), params, input);
+        ErrorResultAssert.assertThat(result).hasCause("Unable to read JSON content");
+    }
+
+    @Test
+    void multiObjectsCausesError() {
+        ExtractJsonParameters params = new ExtractJsonParameters();
+
+        ActionContent content = saveJson(TWO_OBJECTS);
+        TransformInput input = TransformInput.builder().content(List.of(content)).build();
+
+        ResultType result = action.transform(runner.actionContext(), params, input);
+        ErrorResultAssert.assertThat(result).hasCause("Unable to read JSON content");
+    }
+
+    @Test
+    void scalarRootNodeCausesErrorIfNotAllowed() {
+        ExtractJsonParameters params = new ExtractJsonParameters();
+        params.setAllowScalarRoot(false);
+
+        ActionContent content = saveJson(JSON_SCALAR);
+        TransformInput input = TransformInput.builder().content(List.of(content)).build();
+
+        ResultType result = action.transform(runner.actionContext(), params, input);
+        ErrorResultAssert.assertThat(result).hasCause("Unable to read JSON content");
+    }
+
+    @Test
+    void byDefaultScalarRootNodeIsAllowed() {
+        ExtractJsonParameters params = new ExtractJsonParameters();
+
+        ActionContent content = saveJson(JSON_SCALAR);
+        TransformInput input = TransformInput.builder().content(List.of(content)).build();
+
+        ResultType result = action.transform(runner.actionContext(), params, input);
+        TransformResultAssert.assertThat(result).addedMetadata(Collections.emptyMap())
+                .hasContentCount(0);
+    }
+
+    @Test
+    void notAValidFormatIsPassthroughInstead() {
+        ExtractJsonParameters params = new ExtractJsonParameters();
+        params.setRetainExistingContent(false);
+        params.setInvalidFormatMode(InvalidFormatMode.PASSTHROUGH);
+
+        ActionContent content = saveJson(INVALID_JSON_SYNTAX);
+        TransformInput input = TransformInput.builder().content(List.of(content)).build();
+
+        ResultType result = action.transform(runner.actionContext(), params, input);
+        TransformResultAssert.assertThat(result).addedMetadata(Collections.emptyMap())
+                .hasContentCount(1);
+    }
+
+    @Test
+    void notAValidFormatIsDroppedInstead() {
+        ExtractJsonParameters params = new ExtractJsonParameters();
+        params.setInvalidFormatMode(InvalidFormatMode.DROP);
+
+        ActionContent content = saveJson(INVALID_JSON_SYNTAX);
+        TransformInput input = TransformInput.builder().content(List.of(content)).build();
+
+        ResultType result = action.transform(runner.actionContext(), params, input);
+        TransformResultAssert.assertThat(result).addedMetadata(Collections.emptyMap())
+                .hasContentCount(0);
     }
 
     @Test
@@ -70,7 +159,7 @@ class ExtractJsonTest {
         params.setHandleMultipleKeys(policy);
         params.setJsonPathToKeysMap(Map.of("$.values[*]", "valuesMetadata"));
 
-        ActionContent content = saveJson("{\"values\":[\"firstValue\",\"middleValue\"\"firstValue\",,\"lastValue\"]}");
+        ActionContent content = saveJson("{\"values\":[\"firstValue\",\"middleValue\",\"firstValue\",\"lastValue\"]}");
         TransformInput input = TransformInput.builder().content(List.of(content)).build();
 
         ResultType result = action.transform(runner.actionContext(), params, input);

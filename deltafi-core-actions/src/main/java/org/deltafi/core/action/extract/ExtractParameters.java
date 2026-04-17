@@ -45,6 +45,10 @@ public class ExtractParameters extends ContentSelectionParameters {
     @JsonPropertyDescription("Error if a key is not found.")
     private boolean errorOnKeyNotFound = false;
 
+    @JsonProperty(defaultValue = "ERROR")
+    @JsonPropertyDescription("Action to take when the selected content cannot be parsed; DROP, ERROR, or PASSTHROUGH")
+    private InvalidFormatMode invalidFormatMode = InvalidFormatMode.ERROR;
+
     public ExtractParameters(List<String> mediaTypes) {
         super(mediaTypes);
     }

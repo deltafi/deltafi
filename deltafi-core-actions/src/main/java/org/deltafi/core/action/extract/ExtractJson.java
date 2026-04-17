@@ -17,6 +17,11 @@
  */
 package org.deltafi.core.action.extract;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.json.JsonMapper;
 import com.jayway.jsonpath.*;
 import org.deltafi.actionkit.action.content.ActionContent;
 import org.deltafi.actionkit.action.error.ErrorResult;
@@ -32,6 +37,9 @@ import java.util.*;
 public class ExtractJson extends TransformAction<ExtractJsonParameters> {
     private static final Configuration CONFIGURATION = Configuration.builder()
             .options(Option.SUPPRESS_EXCEPTIONS, Option.ALWAYS_RETURN_LIST)
+            .build();
+    private static final ObjectMapper OBJECT_MAPPER = JsonMapper.builder()
+            .enable(DeserializationFeature.FAIL_ON_TRAILING_TOKENS)
             .build();
 
     public ExtractJson() {
@@ -55,7 +63,8 @@ public class ExtractJson extends TransformAction<ExtractJsonParameters> {
                                 
                                 Values extracted from multiple contents are handled according to handleMultipleKeys.""")
                         .build())
-                .errors("""
+                .errors("On failure to parse any content as JSON and invalidFormatMode set to ERROR",
+                        """
                         On errorOnKeyNotFound set to true and no values can be extracted from input content for any
                         jsonPathToKeysMap key""")
                 .build());
@@ -75,11 +84,38 @@ public class ExtractJson extends TransformAction<ExtractJsonParameters> {
                 continue;
             }
 
+            boolean contentAdded = false;
             if (params.isRetainExistingContent()) {
                 result.addContent(content);
+                contentAdded = true;
             }
 
-            ReadContext ctx = JsonPath.using(CONFIGURATION).parse(content.loadString());
+            String jsonString = content.loadString();
+            if (!isValidRoot(params.isAllowScalarRoot(), jsonString)) {
+                if (params.getInvalidFormatMode() == InvalidFormatMode.ERROR) {
+                    return new ErrorResult(context, "Unable to read JSON content", "Failed to read " + content.getName());
+                } else {
+                    if (!contentAdded && params.getInvalidFormatMode() == InvalidFormatMode.PASSTHROUGH) {
+                        result.addContent(content);
+                    }
+                    continue;
+                }
+            }
+
+            ReadContext ctx;
+            try {
+                ctx = JsonPath.using(CONFIGURATION).parse(jsonString);
+            } catch (Exception e) {
+                if (params.getInvalidFormatMode() == InvalidFormatMode.ERROR) {
+                    return new ErrorResult(context, "Unable to read JSON content", "Failed to read " + content.getName(), e);
+                } else {
+                    if (!contentAdded && params.getInvalidFormatMode() == InvalidFormatMode.PASSTHROUGH) {
+                        result.addContent(content);
+                    }
+                    continue;
+                }
+            }
+
             for (Map.Entry<String, String> entry : params.getJsonPathToKeysMap().entrySet()) {
                 String jsonPath = entry.getKey();
                 Object readResult = ctx.read(jsonPath);
@@ -116,5 +152,15 @@ public class ExtractJson extends TransformAction<ExtractJsonParameters> {
         }
 
         return result;
+    }
+
+    private boolean isValidRoot(boolean allowScalar, String json) {
+        JsonNode rootNode = null;
+        try {
+            rootNode = OBJECT_MAPPER.readTree(json);
+        } catch (JsonProcessingException ignored) {
+            return false;
+        }
+        return rootNode != null && (allowScalar || rootNode.isArray() || rootNode.isObject());
     }
 }
