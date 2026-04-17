@@ -665,10 +665,11 @@ public class DeltaFilesDatafetcher {
       String flow = flows[random.nextInt(flows.length)];
 
       deltaFile.setDid(did);
-      deltaFile.setDataSource(dataSource);
+      FlowDefinition dataSourceFlowDef = flowDefinitionService.getOrCreateFlow(dataSource, FlowType.REST_DATA_SOURCE);
+      deltaFile.setDataSourceFlow(dataSourceFlowDef);
       deltaFile.addAnnotations(annotations);
       DeltaFileFlow firstFlow = DeltaFileFlow.builder()
-              .flowDefinition(flowDefinitionService.getOrCreateFlow(dataSource, FlowType.REST_DATA_SOURCE))
+              .flowDefinition(dataSourceFlowDef)
               .build();
       deltaFile.getFlows().add(firstFlow);
 

@@ -286,7 +286,7 @@ class AnalyticEventServiceProvenanceTest {
 
         DeltaFile deltaFile = DeltaFile.builder()
                 .did(UUID.randomUUID())
-                .dataSource("TestDataSource")
+                .dataSourceFlow(FlowDefinition.builder().name("TestDataSource").type(FlowType.TIMED_DATA_SOURCE).build())
                 .name("test-file.txt")
                 .created(OffsetDateTime.now())
                 .flows(new LinkedHashSet<>(List.of(dataSourceFlow)))

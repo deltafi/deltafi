@@ -155,14 +155,18 @@ public class UtilService {
         return deltaFile;
     }
 
-    public static DeltaFile buildDeltaFile(UUID did, String dataSource) {
+    public DeltaFile buildDeltaFile(UUID did, String dataSource) {
+        return buildDeltaFile(did, dataSource, FlowType.REST_DATA_SOURCE);
+    }
+
+    public DeltaFile buildDeltaFile(UUID did, String dataSource, FlowType flowType) {
         DeltaFile deltaFile = DeltaFile.builder()
                 .did(did)
                 .parentDids(new ArrayList<>())
                 .childDids(new ArrayList<>())
                 .ingressBytes(0L)
                 .name("filename")
-                .dataSource(dataSource)
+                .dataSourceFlow(flowDefinitionService.getOrCreateFlow(dataSource, flowType))
                 .flows(new LinkedHashSet<>())
                 .egressed(false)
                 .filtered(false)

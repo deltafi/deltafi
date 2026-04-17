@@ -769,7 +769,7 @@ class DeltaFilesServiceTest {
     @Test
     void testReplayChild() {
         UUID uuid = UUID.randomUUID();
-        DeltaFile deltaFile = UtilService.buildDeltaFile(uuid, "myFlow");
+        DeltaFile deltaFile = utilService.buildDeltaFile(uuid, "myFlow");
 
         DeltaFileFlow flow = deltaFile.addFlow(FlowDefinition.builder().name("dataSource").type(FlowType.TRANSFORM).build(), new DeltaFileFlow(), OffsetDateTime.now(testClock));
 
@@ -814,7 +814,7 @@ class DeltaFilesServiceTest {
     @Test
     void testReplayChildRemovedParentAction() {
         UUID uuid = UUID.randomUUID();
-        DeltaFile deltaFile = UtilService.buildDeltaFile(uuid, "myFlow");
+        DeltaFile deltaFile = utilService.buildDeltaFile(uuid, "myFlow");
 
         DeltaFileFlow flow = deltaFile.addFlow(FlowDefinition.builder().name("dataSource").type(FlowType.TRANSFORM).build(), new DeltaFileFlow(), OffsetDateTime.now(testClock));
 
@@ -842,7 +842,7 @@ class DeltaFilesServiceTest {
     @Test
     void testReplayChildAddedParentAction() {
         UUID uuid = UUID.randomUUID();
-        DeltaFile deltaFile = UtilService.buildDeltaFile(uuid, "myFlow");
+        DeltaFile deltaFile = utilService.buildDeltaFile(uuid, "myFlow");
 
         DeltaFileFlow flow = deltaFile.addFlow(FlowDefinition.builder().name("dataSource").type(FlowType.TRANSFORM).build(), new DeltaFileFlow(), OffsetDateTime.now(testClock));
 
@@ -872,7 +872,7 @@ class DeltaFilesServiceTest {
     @Test
     void testReplayChildRenamedParentAction() {
         UUID uuid = UUID.randomUUID();
-        DeltaFile deltaFile = UtilService.buildDeltaFile(uuid, "myFlow");
+        DeltaFile deltaFile = utilService.buildDeltaFile(uuid, "myFlow");
 
         DeltaFileFlow flow = deltaFile.addFlow(FlowDefinition.builder().name("dataSource").type(FlowType.TRANSFORM).build(), new DeltaFileFlow(), OffsetDateTime.now(testClock));
 
@@ -900,7 +900,7 @@ class DeltaFilesServiceTest {
     @Test
     void testReplayChildSplitActionRenamed() {
         UUID uuid = UUID.randomUUID();
-        DeltaFile deltaFile = UtilService.buildDeltaFile(uuid, "myFlow");
+        DeltaFile deltaFile = utilService.buildDeltaFile(uuid, "myFlow");
 
         DeltaFileFlow flow = deltaFile.addFlow(FlowDefinition.builder().name("dataSource").type(FlowType.TRANSFORM).build(), new DeltaFileFlow(), OffsetDateTime.now(testClock));
 
@@ -930,7 +930,7 @@ class DeltaFilesServiceTest {
     @Test
     void testReplayQueuesWhenFlowIsInvalid() {
         UUID uuid = UUID.randomUUID();
-        DeltaFile deltaFile = UtilService.buildDeltaFile(uuid, "myFlow");
+        DeltaFile deltaFile = utilService.buildDeltaFile(uuid, "myFlow");
 
         DeltaFileFlow flow = deltaFile.addFlow(FlowDefinition.builder().name("dataSource").type(FlowType.TRANSFORM).build(), new DeltaFileFlow(), OffsetDateTime.now(testClock));
 
@@ -965,7 +965,7 @@ class DeltaFilesServiceTest {
     @Test
     void testReplayQueuesWhenPluginNotReady() {
         UUID uuid = UUID.randomUUID();
-        DeltaFile deltaFile = UtilService.buildDeltaFile(uuid, "myFlow");
+        DeltaFile deltaFile = utilService.buildDeltaFile(uuid, "myFlow");
 
         DeltaFileFlow flow = deltaFile.addFlow(FlowDefinition.builder().name("dataSource").type(FlowType.TRANSFORM).build(), new DeltaFileFlow(), OffsetDateTime.now(testClock));
 

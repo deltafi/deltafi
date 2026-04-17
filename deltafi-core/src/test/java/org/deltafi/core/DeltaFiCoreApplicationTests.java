@@ -475,6 +475,10 @@ class DeltaFiCoreApplicationTests {
 		flowDefinitionService.clearCache();
 	}
 
+	private FlowDefinition testFlowDef() {
+		return flowDefinitionService.getOrCreateFlow("test", FlowType.REST_DATA_SOURCE);
+	}
+
 	void refreshFlowCaches() {
 		flowCacheService.refreshCache();
 		for (FlowService<?, ?, ?, ?> flowService : flowServices) {
@@ -2418,7 +2422,7 @@ class DeltaFiCoreApplicationTests {
 		before2.getFlows().forEach(f -> f.setId(UUID.randomUUID()));
 		deltaFileRepo.save(before2);
 		DeltaFile before3 =fullFlowExemplarService.postTransformDeltaFile(did3);
-		before3.setDataSource("flow3");
+		before3.setDataSourceFlow(flowDefinitionService.getOrCreateFlow("flow3", FlowType.REST_DATA_SOURCE));
 		before3.getFlows().forEach(f -> f.setId(UUID.randomUUID()));
 		deltaFileRepo.save(before3);
 
@@ -2467,11 +2471,11 @@ class DeltaFiCoreApplicationTests {
 	@Test
 	void testResumePolicyDryRun() {
 		DeltaFile deltaFile = utilService.buildErrorDeltaFile(UUID.randomUUID(), "flow1", "errorCause", "context", NOW);
-		deltaFile.setDataSource("flow1");
+		deltaFile.setDataSourceFlow(flowDefinitionService.getOrCreateFlow("flow1", FlowType.REST_DATA_SOURCE));
 		deltaFileRepo.save(deltaFile);
 
 		DeltaFile deltaFile2 = utilService.buildErrorDeltaFile(UUID.randomUUID(), "flow2", "errorCause", "context", NOW);
-		deltaFile.setDataSource("flow2");
+		deltaFile2.setDataSourceFlow(flowDefinitionService.getOrCreateFlow("flow2", FlowType.REST_DATA_SOURCE));
 		deltaFileRepo.save(deltaFile2);
 
 		Result missingName = ResumePolicyDatafetcherTestHelper.resumePolicyDryRun(dgsQueryExecutor, "", "flow1", "message");
@@ -3669,7 +3673,7 @@ class DeltaFiCoreApplicationTests {
 		deltaFile1.setContentDeleted(NOW);
 		deltaFile1.firstFlow().firstAction().setMetadata(Map.of("key1", "value1", "key2", "value2"));
 		deltaFile1.setName("filename1");
-		deltaFile1.setDataSource("flow1");
+		deltaFile1.setDataSourceFlow(flowDefinitionService.getOrCreateFlow("flow1", FlowType.REST_DATA_SOURCE));
 		DeltaFileFlow flow1 = deltaFile1.addFlow(flowDefinitionService.getOrCreateFlow("MyDataSink", FlowType.DATA_SINK), deltaFile1.firstFlow(), NOW);
 		flow1.setErrorAcknowledged(NOW);
 		flow1.setActions(List.of(Action.builder().name("action1")
@@ -3690,7 +3694,7 @@ class DeltaFiCoreApplicationTests {
 		deltaFile2.setTotalBytes(2000L);
 		deltaFile2.addAnnotations(Map.of("a.2", "first", "common", "abcdef"));
 		deltaFile2.setName("filename2");
-		deltaFile2.setDataSource("flow2");
+		deltaFile2.setDataSourceFlow(flowDefinitionService.getOrCreateFlow("flow2", FlowType.REST_DATA_SOURCE));
 		DeltaFileFlow flow2 = deltaFile2.addFlow(flowDefinitionService.getOrCreateFlow("MyDataSink", FlowType.DATA_SINK), deltaFile2.firstFlow(), NOW);
 		DeltaFileFlow flow2b = deltaFile2.addFlow(flowDefinitionService.getOrCreateFlow("MyDataSink2", FlowType.DATA_SINK), deltaFile2.firstFlow(), NOW);
 		flow2.setActions(List.of(
@@ -3715,7 +3719,7 @@ class DeltaFiCoreApplicationTests {
 		deltaFile3.setTotalBytes(3000L);
 		deltaFile3.addAnnotations(Map.of("b.2", "first", "common", "abc123"));
 		deltaFile3.setName("filename3");
-		deltaFile3.setDataSource("flow3");
+		deltaFile3.setDataSourceFlow(flowDefinitionService.getOrCreateFlow("flow3", FlowType.REST_DATA_SOURCE));
 		DeltaFileFlow flow3 = deltaFile3.addFlow(flowDefinitionService.getOrCreateFlow("MyTransformFlow", FlowType.TRANSFORM), deltaFile3.firstFlow(), NOW);
 		DeltaFileFlow flow3b = deltaFile3.addFlow(flowDefinitionService.getOrCreateFlow("MyDataSink3", FlowType.DATA_SINK), deltaFile3.firstFlow(), NOW);
 		flow3.setActions(List.of(
@@ -3963,10 +3967,12 @@ class DeltaFiCoreApplicationTests {
 	@Test
 	void testFilterByName() {
 		DeltaFile deltaFile = new DeltaFile();
+		deltaFile.setDataSourceFlow(testFlowDef());
 		deltaFile.setModified(NOW.plusSeconds(1));
 		deltaFile.setName("filename");
 
 		DeltaFile deltaFile1 = new DeltaFile();
+		deltaFile1.setDataSourceFlow(testFlowDef());
 		deltaFile1.setModified(NOW);
 		deltaFile1.setName("file");
 
@@ -3996,21 +4002,25 @@ class DeltaFiCoreApplicationTests {
 		assertThat(deltaFilesService.annotationKeys()).isEmpty();
 
 		DeltaFile nullKeys = new DeltaFile();
+		nullKeys.setDataSourceFlow(testFlowDef());
 		nullKeys.setAnnotations(null);
 		deltaFileRepo.save(nullKeys);
 
 		assertThat(deltaFilesService.annotationKeys()).isEmpty();
 
 		DeltaFile emptyKeys = new DeltaFile();
+		emptyKeys.setDataSourceFlow(testFlowDef());
 		emptyKeys.setAnnotations(Set.of());
 		deltaFileRepo.save(emptyKeys);
 
 		assertThat(deltaFilesService.annotationKeys()).isEmpty();
 
 		DeltaFile withKeys = new DeltaFile();
+		withKeys.setDataSourceFlow(testFlowDef());
 		withKeys.addAnnotations(Map.of("a", "x", "b", "y"));
 
 		DeltaFile otherDomain = new DeltaFile();
+		otherDomain.setDataSourceFlow(testFlowDef());
 		otherDomain.addAnnotations(Map.of("b", "x", "c", "y", "d", "z"));
 		deltaFileRepo.saveAll(List.of(withKeys, otherDomain));
 
@@ -4785,7 +4795,7 @@ class DeltaFiCoreApplicationTests {
 
 		DeltaFile tooNew = fullFlowExemplarService.postTransformDeltaFile(UUID.randomUUID());
 		tooNew.setFiltered(true);
-		tooNew.setDataSource("other");
+		tooNew.setDataSourceFlow(flowDefinitionService.getOrCreateFlow("other", FlowType.REST_DATA_SOURCE));
 		tooNew.setModified(plusTwo);
 		tooNew.firstFlow().getActions().add(filteredAction("another message", plusTwo));
 		tooNew.firstFlow().updateState();
@@ -4793,7 +4803,7 @@ class DeltaFiCoreApplicationTests {
 
 		DeltaFile notMarkedFiltered = fullFlowExemplarService.postTransformDeltaFile(UUID.randomUUID());
 		notMarkedFiltered.setFiltered(null);
-		notMarkedFiltered.setDataSource("other");
+		notMarkedFiltered.setDataSourceFlow(flowDefinitionService.getOrCreateFlow("other", FlowType.REST_DATA_SOURCE));
 		notMarkedFiltered.setModified(plusTwo);
 		notMarkedFiltered.firstFlow().getActions().add(filteredAction("another message", OffsetDateTime.now()));
 		notMarkedFiltered.firstFlow().getActions().getLast().setState(COMPLETE);
@@ -5371,9 +5381,11 @@ class DeltaFiCoreApplicationTests {
 	@Test
 	void annotations() {
 		deltaFileRepo.save(DeltaFile.builder()
+				.dataSourceFlow(testFlowDef())
 				.annotations(Set.of(new Annotation("x", "1"), new Annotation("y", "2")))
 				.build());
 		deltaFileRepo.save(DeltaFile.builder()
+				.dataSourceFlow(testFlowDef())
 				.annotations(Set.of(new Annotation("y", "3"), new Annotation("z", "4")))
 				.build());
 
@@ -5667,6 +5679,7 @@ class DeltaFiCoreApplicationTests {
 		for (int i = 0; i < 1500; i++) {
 			DeltaFile deltaFile = DeltaFile.builder()
 					.did(UUID.randomUUID())
+					.dataSourceFlow(testFlowDef())
 					.stage(DeltaFileStage.COMPLETE)
 					.created(OffsetDateTime.now().minusDays(1))
 					.totalBytes(10)
@@ -5690,6 +5703,7 @@ class DeltaFiCoreApplicationTests {
 	void testDiskSpaceDeleteCompleteAndAcked() {
 		DeltaFile error = DeltaFile.builder()
 				.did(UUID.randomUUID())
+				.dataSourceFlow(testFlowDef())
 				.created(OffsetDateTime.now())
 				.totalBytes(1)
 				.stage(DeltaFileStage.ERROR)
@@ -5702,6 +5716,7 @@ class DeltaFiCoreApplicationTests {
 
 		DeltaFile complete = DeltaFile.builder()
 				.did(UUID.randomUUID())
+				.dataSourceFlow(testFlowDef())
 				.created(OffsetDateTime.now())
 				.totalBytes(2)
 				.stage(DeltaFileStage.COMPLETE)
@@ -5714,6 +5729,7 @@ class DeltaFiCoreApplicationTests {
 
 		DeltaFile errorAcked = DeltaFile.builder()
 				.did(UUID.randomUUID())
+				.dataSourceFlow(testFlowDef())
 				.created(OffsetDateTime.now())
 				.totalBytes(4)
 				.stage(DeltaFileStage.ERROR)
@@ -5737,6 +5753,7 @@ class DeltaFiCoreApplicationTests {
 	void testTimedDeleteContentAlreadyDeleted() {
 		DeltaFile complete = DeltaFile.builder()
 				.did(UUID.randomUUID())
+				.dataSourceFlow(testFlowDef())
 				.created(OffsetDateTime.now())
 				.totalBytes(1)
 				.stage(DeltaFileStage.COMPLETE)
@@ -5746,6 +5763,7 @@ class DeltaFiCoreApplicationTests {
 
 		DeltaFile contentDeleted = DeltaFile.builder()
 				.did(UUID.randomUUID())
+				.dataSourceFlow(testFlowDef())
 				.created(OffsetDateTime.now())
 				.totalBytes(2)
 				.stage(DeltaFileStage.COMPLETE)
@@ -5762,6 +5780,56 @@ class DeltaFiCoreApplicationTests {
 		assertFalse(moreToDelete);
 
 		assertEquals(0, deltaFileRepo.count());
+	}
+
+	@Test
+	void testTimedDeleteMatchesMultipleFlowDefinitionsWithSameName() {
+		// Create two flow_definitions with the same name but different types
+		String sharedName = "shared-data-source";
+		FlowDefinition asRest = flowDefinitionService.getOrCreateFlow(sharedName, FlowType.REST_DATA_SOURCE);
+		FlowDefinition asTimed = flowDefinitionService.getOrCreateFlow(sharedName, FlowType.TIMED_DATA_SOURCE);
+
+		// Create delta files pointing at each flow definition
+		DeltaFile df1 = DeltaFile.builder()
+				.did(UUID.randomUUID())
+				.dataSourceFlow(asRest)
+				.created(OffsetDateTime.now().minusDays(1))
+				.totalBytes(10)
+				.stage(DeltaFileStage.COMPLETE)
+				.flows(Set.of())
+				.build();
+		df1.updateFlags();
+
+		DeltaFile df2 = DeltaFile.builder()
+				.did(UUID.randomUUID())
+				.dataSourceFlow(asTimed)
+				.created(OffsetDateTime.now().minusDays(1))
+				.totalBytes(20)
+				.stage(DeltaFileStage.COMPLETE)
+				.flows(Set.of())
+				.build();
+		df2.updateFlags();
+
+		// Create a delta file with a different data source that should NOT be deleted
+		DeltaFile other = DeltaFile.builder()
+				.did(UUID.randomUUID())
+				.dataSourceFlow(testFlowDef())
+				.created(OffsetDateTime.now().minusDays(1))
+				.totalBytes(5)
+				.stage(DeltaFileStage.COMPLETE)
+				.flows(Set.of())
+				.build();
+		other.updateFlags();
+
+		deltaFileRepo.saveAll(List.of(df1, df2, other));
+		assertEquals(3, deltaFileRepo.count());
+
+		// Delete with flow name filter — should match both flow definitions
+		deltaFilesService.timedDelete(OffsetDateTime.now().plusSeconds(5), null, 0L, sharedName, "policyName", true, 1000, false);
+
+		// Only the "other" delta file should remain
+		assertEquals(1, deltaFileRepo.count());
+		assertTrue(deltaFileRepo.findById(other.getDid()).isPresent());
 	}
 
 	@Test
@@ -6056,6 +6124,8 @@ class DeltaFiCoreApplicationTests {
 		assertEquals(ActionState.JOINING, action.getState());
 
 		ActionInput actionInput = actionInputs.getFirst();
+		assertEquals("joined:" + actionFlow, actionInput.getActionContext().getDataSource(),
+				"Join aggregate data source must use the 'joined:' prefix");
 		assertEquals(2, actionInput.getDeltaFileMessages().size());
 		assertEquals(forQueueHelper(parent1.lastFlow()), actionInput.getDeltaFileMessages().getFirst());
 		assertEquals(forQueueHelper(parent2.lastFlow()), actionInput.getDeltaFileMessages().get(1));

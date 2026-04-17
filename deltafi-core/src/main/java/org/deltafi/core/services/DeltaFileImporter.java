@@ -25,6 +25,7 @@ import org.apache.commons.io.input.BoundedInputStream;
 import org.deltafi.common.content.StorageProperties;
 import org.deltafi.common.storage.s3.ObjectReference;
 import org.deltafi.common.storage.s3.ObjectStorageService;
+import org.deltafi.common.types.FlowType;
 import org.deltafi.common.types.ImportResponse;
 import org.deltafi.core.exceptions.InvalidImportException;
 import org.deltafi.core.repo.DeltaFileRepo;
@@ -88,7 +89,7 @@ public class DeltaFileImporter {
             DeltaFile entity = new DeltaFile();
             entity.setDid(dto.getDid());
             entity.setName(dto.getName());
-            entity.setDataSource(dto.getDataSource());
+            entity.setDataSourceFlow(resolveDataSourceFlow(dto));
             entity.setParentDids(dto.getParentDids());
             entity.setJoinId(dto.getJoinId());
             entity.setChildDids(dto.getChildDids());
@@ -147,6 +148,14 @@ public class DeltaFileImporter {
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
                     "Failed to store content '" + objectName + "': " + e.getMessage());
         }
+    }
+
+    private FlowDefinition resolveDataSourceFlow(DeltaFileDTO dto) {
+        if (dto.getFlows() != null && !dto.getFlows().isEmpty()) {
+            DeltaFileFlowDTO firstFlow = dto.getFlows().iterator().next();
+            return flowDefinitionService.getOrCreateFlow(dto.getDataSource(), firstFlow.getType());
+        }
+        return flowDefinitionService.getOrCreateFlow(dto.getDataSource(), FlowType.REST_DATA_SOURCE);
     }
 
     private DeltaFileFlow toDeltaFileFlow(DeltaFileFlowDTO flow) {

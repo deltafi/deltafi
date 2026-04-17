@@ -58,6 +58,7 @@ public class StateMachine {
     private final MetricService metricService;
     private final AnalyticEventService analyticEventService;
     private final RateLimitService rateLimitService;
+    private final FlowDefinitionService flowDefinitionService;
 
     private static final String FILTERED_TEST_MODE_CAUSE = "Filtered by test mode";
 
@@ -421,7 +422,9 @@ public class StateMachine {
 
         List<UUID> joinedDids = joinEntryService.findJoinedDids(joinEntry.getId());
 
-        WrappedActionInput actionInput = DeltaFileUtil.createAggregateInput(actionConfiguration, currentFlow, joinEntry, joinedDids, coldOrWarm, systemName, returnAddress);
+        String joinedName = "joined:%s".formatted(currentFlow.getName());
+        FlowDefinition joinedDataSource = flowDefinitionService.getOrCreateFlow(joinedName, currentFlow.getType());
+        WrappedActionInput actionInput = DeltaFileUtil.createAggregateInput(actionConfiguration, currentFlow, joinEntry, joinedDids, coldOrWarm, systemName, returnAddress, joinedDataSource);
 
         // TODO - is it safe to do this here before child has been sunk to disk?
         joinEntryService.delete(joinEntry.getId());

@@ -387,7 +387,7 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
             """);
 
         if (dataSource != null) {
-            queryBuilder.append("AND df.data_source = :dataSource ");
+            queryBuilder.append("AND EXISTS (SELECT 1 FROM flow_definitions fd WHERE fd.id = df.data_source_id AND fd.name = :dataSource) ");
         }
 
         Query query = entityManager.createNativeQuery(queryBuilder.toString(), UUID.class);
@@ -496,7 +496,7 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
             params.add(completedBefore);
         }
         if (flow != null) {
-            conditions.append(" AND data_source = ?");
+            conditions.append(" AND data_source_id IN (SELECT fd.id FROM flow_definitions fd WHERE fd.name = ?)");
             params.add(flow);
         }
         if (minBytes > 0L) {
@@ -558,7 +558,7 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
         }
 
         if (flow != null) {
-            queryBuilder.append(" AND df.data_source = :flow");
+            queryBuilder.append(" AND df.data_source_id IN (SELECT fd.id FROM flow_definitions fd WHERE fd.name = :flow)");
             parameters.put("flow", flow);
         }
 
@@ -772,7 +772,7 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
         }
 
         if (filter.getDataSources() != null && !filter.getDataSources().isEmpty()) {
-            criteria.append("AND df.data_source IN (:dataSources) ");
+            criteria.append("AND df.data_source_id IN (SELECT fd.id FROM flow_definitions fd WHERE fd.name IN (:dataSources)) ");
             parameters.put("dataSources", filter.getDataSources());
         }
         if (filter.getDids() != null && !filter.getDids().isEmpty()) {
@@ -1029,13 +1029,13 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
     }
 
     private static final String INSERT_DELTA_FILES = """
-            INSERT INTO delta_files (did, name, data_source, parent_dids, join_id, child_dids,
+            INSERT INTO delta_files (did, name, data_source_id, parent_dids, join_id, child_dids,
                                      requeue_count, ingress_bytes, referenced_bytes, total_bytes, stage,
                                      created, modified, content_deleted, content_deleted_reason,
                                      egressed, filtered, replayed, replay_did, terminal,
                                      content_deletable, content_object_ids, topics, transforms, data_sinks, paused,
                                      waiting_for_children, version, pinned, warnings, user_notes)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CAST(? AS df_stage_enum), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CAST(? AS df_stage_enum), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
             ?, ?, ?, ?, ?, ?)""";
 
     private static final String INSERT_DELTA_FILE_FLOWS = """
@@ -1182,7 +1182,7 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
 
         ps.setObject(1, deltaFile.getDid());
         ps.setString(2, deltaFile.getName());
-        ps.setString(3, deltaFile.getDataSource());
+        ps.setInt(3, deltaFile.getDataSourceFlow().getId());
         ps.setObject(4, conn.createArrayOf("uuid", deltaFile.getParentDids().toArray(new UUID[0])));
         ps.setObject(5, deltaFile.getJoinId());
         ps.setObject(6, conn.createArrayOf("uuid", deltaFile.getChildDids().toArray(new UUID[0])));

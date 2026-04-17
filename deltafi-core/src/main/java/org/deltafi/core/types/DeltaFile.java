@@ -60,7 +60,10 @@ public class DeltaFile {
   @Builder.Default
   private UUID did = Generators.timeBasedEpochGenerator().generate();
   private String name;
-  private String dataSource;
+
+  @ManyToOne(fetch = FetchType.EAGER)
+  @JoinColumn(name = "data_source_id", nullable = false)
+  private FlowDefinition dataSourceFlow;
   @Type(UUIDListType.class)
   @Column(columnDefinition = "uuid[]")
   @Builder.Default
@@ -152,10 +155,22 @@ public class DeltaFile {
   @EqualsAndHashCode.Exclude
   private OffsetDateTime cacheTime = null;
 
+  @com.fasterxml.jackson.annotation.JsonProperty("dataSource")
+  public String getDataSource() {
+    return dataSourceFlow != null ? dataSourceFlow.getName() : null;
+  }
+
+  @com.fasterxml.jackson.annotation.JsonSetter("dataSource")
+  private void setDataSourceFromJson(String dataSource) {
+    if (dataSource != null && this.dataSourceFlow == null) {
+      this.dataSourceFlow = FlowDefinition.builder().name(dataSource).build();
+    }
+  }
+
   public DeltaFile(DeltaFile other) {
     this.did = other.did;
     this.name = other.name;
-    this.dataSource = other.dataSource;
+    this.dataSourceFlow = other.dataSourceFlow;
     this.parentDids = other.parentDids == null ? null : new ArrayList<>(other.parentDids);
     this.joinId = other.joinId;
     this.childDids = other.childDids == null ? null : new ArrayList<>(other.childDids);
@@ -642,7 +657,7 @@ public class DeltaFile {
             .queueName(actionConfiguration.getType())
             .actionContext(ActionContext.builder()
                     .flowName(flow.getName())
-                    .dataSource(dataSource)
+                    .dataSource(getDataSource())
                     .flowId(flow.getId())
                     .actionName(action.getName())
                     .did(did)

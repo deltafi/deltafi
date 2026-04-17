@@ -64,7 +64,7 @@ public class FullFlowExemplarService {
                 .childDids(new ArrayList<>())
                 .ingressBytes(36L)
                 .name("filename")
-                .dataSource(dataSource)
+                .dataSourceFlow(flowDefinitionService.getOrCreateFlow(dataSource, FlowType.TIMED_DATA_SOURCE))
                 .stage(DeltaFileStage.IN_FLIGHT)
                 .created(now())
                 .modified(now())
@@ -159,7 +159,7 @@ public class FullFlowExemplarService {
         flow.getInput().setTopics(Set.of(TRANSFORM_TOPIC));
         flow.queueAction("Utf8TransformAction", null, ActionType.TRANSFORM, false, now());
         deltaFile.setName("input.txt");
-        deltaFile.setDataSource(REST_DATA_SOURCE_NAME);
+        deltaFile.setDataSourceFlow(flowDefinitionService.getOrCreateFlow(REST_DATA_SOURCE_NAME, FlowType.REST_DATA_SOURCE));
         return deltaFile;
     }
 

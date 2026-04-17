@@ -303,7 +303,7 @@ public class DeltaFilesService {
 
         DeltaFile deltaFile = DeltaFile.builder()
                 .did(ingressEventItem.getDid())
-                .dataSource(dataSource.getName())
+                .dataSourceFlow(flowDefinitionService.getOrCreateFlow(dataSource.getName(), flowType))
                 .name(ingressEventItem.getDeltaFileName())
                 .childDids(new ArrayList<>())
                 .requeueCount(0)
@@ -1017,7 +1017,7 @@ public class DeltaFilesService {
         DeltaFile child = DeltaFile.builder()
                 .version(0)
                 .did(transformEvent.getDid())
-                .dataSource(deltaFile.getDataSource())
+                .dataSourceFlow(deltaFile.getDataSourceFlow())
                 .parentDids(List.of(deltaFile.getDid()))
                 .childDids(new ArrayList<>())
                 .requeueCount(0)
@@ -1270,7 +1270,7 @@ public class DeltaFilesService {
                                     .terminal(false)
                                     .contentDeletable(false)
                                     .flows(new LinkedHashSet<>(List.of(flow)))
-                                    .dataSource(deltaFile.getDataSource())
+                                    .dataSourceFlow(deltaFile.getDataSourceFlow())
                                     .name(deltaFile.getName())
                                     .created(now)
                                     .modified(now)
@@ -2878,7 +2878,9 @@ public class DeltaFilesService {
             return handleQueueTimedJoinError(joinEntry, joinDids, reason);
         }
 
-        WrappedActionInput input = DeltaFileUtil.createAggregateInput(actionConfiguration, deltaFileFlow, joinEntry, joinDids, ActionState.QUEUED, getProperties().getSystemName(),  null);
+        String joinedName = "joined:%s".formatted(deltaFileFlow.getName());
+        FlowDefinition joinedDataSource = flowDefinitionService.getOrCreateFlow(joinedName, deltaFileFlow.getType());
+        WrappedActionInput input = DeltaFileUtil.createAggregateInput(actionConfiguration, deltaFileFlow, joinEntry, joinDids, ActionState.QUEUED, getProperties().getSystemName(), null, joinedDataSource);
 
         enqueueActions(List.of(input));
         return joinDids;

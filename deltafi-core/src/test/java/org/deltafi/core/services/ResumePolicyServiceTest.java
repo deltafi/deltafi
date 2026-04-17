@@ -284,7 +284,7 @@ class ResumePolicyServiceTest {
                 .actions(new ArrayList<>(List.of(action1, action2))).build();
         return DeltaFile.builder()
                 .did(UUID.randomUUID())
-                .dataSource(dataSource)
+                .dataSourceFlow(FlowDefinition.builder().name(dataSource).type(FlowType.REST_DATA_SOURCE).build())
                 .flows(Set.of(flow))
                 .build();
     }
@@ -345,7 +345,7 @@ class ResumePolicyServiceTest {
 
         return DeltaFile.builder()
                 .did(UUID.randomUUID())
-                .dataSource(dataSource)
+                .dataSourceFlow(FlowDefinition.builder().name(dataSource).type(FlowType.REST_DATA_SOURCE).build())
                 .requeueCount(0)
                 .stage(DeltaFileStage.IN_FLIGHT)
                 .flows(new LinkedHashSet<>(List.of(flow)))

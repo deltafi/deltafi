@@ -33,7 +33,7 @@ public class DeltaFileUtil {
 
     private DeltaFileUtil() {}
 
-    public static WrappedActionInput createAggregateInput(ActionConfiguration joinAction, DeltaFileFlow currentFlow, JoinEntry joinEntry, List<UUID> joinedDids, ActionState actionState, String systemName, String returnAddress) {
+    public static WrappedActionInput createAggregateInput(ActionConfiguration joinAction, DeltaFileFlow currentFlow, JoinEntry joinEntry, List<UUID> joinedDids, ActionState actionState, String systemName, String returnAddress, FlowDefinition dataSourceFlow) {
         OffsetDateTime now = OffsetDateTime.now();
 
         DeltaFileFlow aggregateFlow = aggregateDeltaFileFlow(currentFlow, now, joinEntry.getMaxFlowDepth());
@@ -47,7 +47,7 @@ public class DeltaFileUtil {
                 .stage(DeltaFileStage.IN_FLIGHT)
                 .joinId(joinEntry.getId())
                 .childDids(List.of())
-                .dataSource("joined:%s".formatted(currentFlow.getName()))
+                .dataSourceFlow(dataSourceFlow)
                 .created(now)
                 .modified(now)
                 .flows(new LinkedHashSet<>(List.of(aggregateFlow))).build();
