@@ -3,6 +3,38 @@
 Lookup tables provide a centralized database solution for actions requiring tabular data. A simple API in the DeltaFi
 Action Kit provides queries for the data.
 
+## Configuration (Kubernetes)
+
+Enabling lookup tables in a RKE2 (Kubernetes) orchestrated environment requires a persistent volume (pv) to be
+configured and available for use prior to the service being enabled. 
+
+Adding the persistent volume below to the inventory file used in [Ansible Setup](install/kubernetes) and rerunning `booststrap-deltafi` 
+```yaml
+---
+k8s_cluster:
+  children:
+    masters:
+      hosts:
+        <host>:
+          persistent_volumes:
+            - name: deltafi-postgres-lookup
+              path: /data/deltafi/postgres-lookup
+              storage_class: deltafi-postgres-lookup
+              size: 10G
+```
+```bash
+cd ~/ansible
+ansible-playbook bootstrap-deltafi.yml -i inventory/site
+```
+Once the persistent volume is available update your `deltafi/site/values.yaml` to enable the service and run 
+`deltafi up` 
+
+```yaml
+deltafi:
+  lookup:
+    enabled: true
+```
+
 ## Lookup Table Suppliers
 
 Lookup table suppliers are defined in Plugins to supply data to lookup tables. Suppliers will provide data on startup
