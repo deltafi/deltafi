@@ -212,37 +212,38 @@ class MyTransformAction(TransformAction):
 package actions
 
 import (
-    "context"
     "strings"
 
-    actionkit "gitlab.com/deltafi/deltafi/deltafi-go-action-kit"
+    actionkit "gitlab.com/deltafi/deltafi/deltafi-go-action-kit/v2"
 )
 
 func init() {
-    actionkit.Register("MyTransformAction", &MyTransformAction{}).
+    actionkit.RegisterTransform("MyTransformAction", &MyTransformAction{}).
         Describe("Transforms input data")
 }
 
+type MyTransformParams struct{}
+
 type MyTransformAction struct{}
 
-func (a *MyTransformAction) Transform(ctx context.Context, input actionkit.TransformInput) (actionkit.Result, error) {
-    content := input.FirstContent()
-    data, err := content.LoadString(ctx, input.ActionContext.ContentService)
+func (a *MyTransformAction) Transform(df *actionkit.Deltafile, params MyTransformParams) *actionkit.Deltafile {
+    content, err := df.FirstContent()
     if err != nil {
-        return actionkit.NewErrorResult(input.ActionContext, "Failed to load content"), nil
+        return df.Errorf("No content available").SetErrorContext(err.Error())
+    }
+
+    data, err := content.LoadString()
+    if err != nil {
+        return df.Errorf("Failed to load content").SetErrorContext(err.Error())
     }
 
     transformed := strings.ToUpper(data)
 
-    newContent, err := actionkit.SaveContentString(ctx, input.ActionContext.ContentService,
-        input.ActionContext, transformed, "output.txt", "text/plain")
-    if err != nil {
-        return actionkit.NewErrorResult(input.ActionContext, "Failed to save"), nil
+    if _, err := df.SaveStringContent(transformed, "output.txt", "text/plain"); err != nil {
+        return df.Errorf("Failed to save content").SetErrorContext(err.Error())
     }
 
-    result := actionkit.NewTransformResult(input.ActionContext)
-    result.AddContent(*newContent)
-    return result, nil
+    return df
 }
 ```
 
@@ -303,19 +304,12 @@ public class MyTransformActionTest {
 ```go
 func TestMyTransformAction(t *testing.T) {
     tc := actionkit.NewTestContext("test-did")
-    content := tc.Content("input.txt", "text/plain", "hello")
+    df := tc.NewDeltafile(tc.Content("input.txt", "text/plain", "hello"))
 
-    input := actionkit.TransformInput{
-        ActionContext: tc.ActionContext,
-        Content:       []actionkit.ActionContent{content},
-        Metadata:      map[string]string{},
-        Params:        map[string]any{},
-    }
+    event := actionkit.RunTransform(t, &MyTransformAction{}, df, MyTransformParams{})
+    te := event.RequireSingleTransform(t)
 
-    event := actionkit.RunTransform(t, &MyTransformAction{}, input)
-    te := event.RequireTransform(t)
-
-    data, _ := te[0].Content[0].LoadString(context.Background(), tc.Store)
+    data := te.RequireContentString(t, 0)
     assert.Equal(t, "HELLO", data)
 }
 ```

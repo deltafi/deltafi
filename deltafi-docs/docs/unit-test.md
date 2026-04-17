@@ -111,14 +111,16 @@ class HelloWorldTransformActionTest {
 
 ## Go Action Testing
 
-The `deltafi-go-action-kit` package includes test helpers for unit testing actions without external services (Redis, MinIO). The package provides:
+The `deltafi-go-action-kit/v2` package includes test helpers for unit testing actions without external services (Redis, MinIO). The package provides:
 
-- `InMemoryContentStore` — an in-memory content store replacing MinIO
-- `MockLookupClient` — configurable mock for lookup table queries
+- `NewTestContext(did)` — creates a `TestContext` with a pre-configured `ActionContext` wired to an in-memory content store
+- `TestContext.Content(name, mediaType, data)` — creates an `ActionContent` from a string for use as input
+- `TestContext.NewDeltafile(contents...)` — creates a `*Deltafile` wired to the test context
+- `TestContext.NewIngressInput()` — creates an `*IngressInput` for ingress action tests
+- `RunTransform`, `RunEgress`, `RunIngress` — generic test runners that execute actions and return `*ActionEvent`
+- `RequireTransform`, `RequireSingleTransform`, `RequireError`, `RequireFilter`, `RequireEgress`, `RequireIngress` — result assertions on `*ActionEvent`
+- `MockLookupClient` — configurable mock for lookup table queries with full query semantics
 - `MockArtifactClient` — configurable mock for artifact registry access
-- `NewTestContext(did)` — creates a pre-configured `ActionContext` wired to the in-memory store
-- `RunTransform`, `RunEgress`, `RunIngress` — test runners that execute actions and return inspectable results
-- `RequireTransform`, `RequireError`, `RequireFilter`, `RequireEgress` — result assertions
 
 ### Test Setup
 
@@ -126,12 +128,11 @@ The `deltafi-go-action-kit` package includes test helpers for unit testing actio
 package actions
 
 import (
-    "context"
     "testing"
 
     "github.com/stretchr/testify/assert"
     "github.com/stretchr/testify/require"
-    actionkit "gitlab.com/deltafi/deltafi/deltafi-go-action-kit"
+    actionkit "gitlab.com/deltafi/deltafi/deltafi-go-action-kit/v2"
 )
 
 func TestMyTransformAction(t *testing.T) {
@@ -141,61 +142,79 @@ func TestMyTransformAction(t *testing.T) {
     // Store test content
     content := tc.Content("input.txt", "text/plain", "hello world")
 
-    // Build the input
-    input := actionkit.TransformInput{
-        ActionContext: tc.ActionContext,
-        Content:       []actionkit.ActionContent{content},
-        Metadata:      map[string]string{"key": "value"},
-        Params:        map[string]any{},
-    }
+    // Create a Deltafile with the test content
+    df := tc.NewDeltafile(content)
 
     // Execute the action and get the result event
-    event := actionkit.RunTransform(t, &MyTransformAction{}, input)
+    event := actionkit.RunTransform(t, &MyTransformAction{}, df, MyTransformParams{})
 
-    // Assert it's a transform result
-    te := event.RequireTransform(t)
+    // Assert it's a single transform result
+    te := event.RequireSingleTransform(t)
 
     // Verify the output content
-    require.Len(t, te[0].Content, 1)
-    data, err := te[0].Content[0].LoadString(context.Background(), tc.Store)
-    require.NoError(t, err)
+    require.Len(t, te.Content, 1)
+    data := te.RequireContentString(t, 0)
     assert.Contains(t, data, "hello world")
     assert.Contains(t, data, "transformed")
 
     // Verify metadata and annotations
-    assert.Equal(t, "transformValue", te[0].Metadata["transformKey"])
+    assert.Equal(t, "transformValue", te.Metadata["transformKey"])
 }
 ```
 
 ### Result Verification
 
-The `ActionEvent` returned by the test runners provides assertion methods for each result type:
+The `*ActionEvent` returned by the test runners provides assertion methods for each result type:
 
 ```go
 func TestFilterResult(t *testing.T) {
     tc := actionkit.NewTestContext("2-starts-with-two")
-    input := actionkit.TransformInput{
-        ActionContext: tc.ActionContext,
-        Content:       []actionkit.ActionContent{tc.Content("in.txt", "text/plain", "data")},
-        Metadata:      map[string]string{},
-        Params:        map[string]any{},
-    }
+    df := tc.NewDeltafile(tc.Content("in.txt", "text/plain", "data"))
 
-    event := actionkit.RunTransform(t, &MyTransformAction{}, input)
+    event := actionkit.RunTransform(t, &MyTransformAction{}, df, MyTransformParams{})
     event.RequireFilter(t, "We prefer dids that do not start with 2")
 }
 
 func TestErrorResult(t *testing.T) {
     tc := actionkit.NewTestContext("test-did")
-    input := actionkit.TransformInput{
-        ActionContext: tc.ActionContext,
-        Content:       nil, // no content
-        Metadata:      map[string]string{},
-        Params:        map[string]any{},
-    }
+    df := tc.NewDeltafile() // no content
 
-    event := actionkit.RunTransform(t, &MyTransformAction{}, input)
+    event := actionkit.RunTransform(t, &MyTransformAction{}, df, MyTransformParams{})
     event.RequireError(t, "No content provided")
+}
+```
+
+### Testing Split Actions
+
+Split actions are transform actions that create children via `df.NewChild(name)`:
+
+```go
+func TestMySplitAction(t *testing.T) {
+    tc := actionkit.NewTestContext("test-did")
+    c1 := tc.Content("file1.txt", "text/plain", "data1")
+    c2 := tc.Content("file2.txt", "text/plain", "data2")
+    df := tc.NewDeltafile(c1, c2)
+
+    event := actionkit.RunTransform(t, &MySplitAction{}, df, MySplitParams{})
+
+    transforms := event.RequireTransform(t)
+    assert.Len(t, transforms, 2)
+}
+```
+
+### Testing Ingress Actions
+
+```go
+func TestMyIngressAction(t *testing.T) {
+    tc := actionkit.NewTestContext("test-did")
+    tc.ActionContext.Memo = "5" // simulate previous memo
+    input := tc.NewIngressInput()
+
+    event := actionkit.RunIngress(t, &MyIngressAction{}, input, MyIngressParams{})
+
+    ie := event.RequireIngress(t)
+    assert.Len(t, ie.IngressItems, 1)
+    assert.Equal(t, "6", ie.Memo)
 }
 ```
 
@@ -204,28 +223,23 @@ func TestErrorResult(t *testing.T) {
 ```go
 func TestWithLookup(t *testing.T) {
     tc := actionkit.NewTestContext("test-did")
-    tc.LookupClient = &actionkit.MockLookupClient{
-        Results: map[string]*actionkit.LookupResults{
-            "my_table": {
-                TotalCount: 2,
-                Rows: []map[string]string{
+    tc.SetLookupClient(t, &actionkit.MockLookupClient{
+        Tables: []actionkit.LookupTable{
+            {
+                Name: "my_table",
+                Rows: []actionkit.LookupRow{
                     {"name": "Alice"},
                     {"name": "Bob"},
                 },
             },
         },
-    }
+    })
 
-    input := actionkit.TransformInput{
-        ActionContext: tc.ActionContext,
-        Content:       []actionkit.ActionContent{tc.Content("in.txt", "text/plain", "data")},
-        Metadata:      map[string]string{},
-        Params:        map[string]any{},
-    }
+    df := tc.NewDeltafile(tc.Content("in.txt", "text/plain", "data"))
 
-    event := actionkit.RunTransform(t, &MyTransformAction{}, input)
-    te := event.RequireTransform(t)
-    assert.NotEmpty(t, te[0].Metadata["lookupResult"])
+    event := actionkit.RunTransform(t, &MyTransformAction{}, df, MyTransformParams{})
+    te := event.RequireSingleTransform(t)
+    assert.NotEmpty(t, te.Metadata["lookupResult"])
 }
 ```
 

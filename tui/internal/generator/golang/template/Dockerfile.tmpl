@@ -41,6 +41,8 @@ COPY . .
 # `go list`. In local mode the caller supplies ACTIONKIT_VERSION (the Makefile
 # derives it from the local kit's `git describe`) because the replace
 # directive points at a path with no module version available via `go list`.
+ARG TARGETOS
+ARG TARGETARCH
 ARG VERSION=0.0.0-dev
 ARG ACTIONKIT_VERSION=latest
 RUN if [ -d /action-kit ]; then \

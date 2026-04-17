@@ -1,11 +1,9 @@
 // ABOUTME: Tests for {{.ActionClassName}}.
-// ABOUTME: Covers multi-child creation, default count, and no-content error.
+// ABOUTME: Covers multi-child creation from content items.
 
 package actions
 
 import (
-	"context"
-	"strconv"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -13,42 +11,30 @@ import (
 	actionkit "gitlab.com/deltafi/deltafi/deltafi-go-action-kit/v2"
 )
 
-func Test{{.ActionClassName}}_DefaultTwoChildren(t *testing.T) {
+func Test{{.ActionClassName}}_SplitsContentIntoChildren(t *testing.T) {
 	tc := actionkit.NewTestContext("split-did")
-	tc.DeltaFileName = "source-file"
-	content := tc.Content("input.txt", "text/plain", "original content")
+	c1 := tc.Content("file1.txt", "text/plain", "data1")
+	c2 := tc.Content("file2.txt", "text/plain", "data2")
 
-	event := actionkit.RunTransform(t, &{{.ActionClassName}}{}, actionkit.NewTransformInput(tc, content))
+	df := tc.NewDeltafile(c1, c2)
+	df.AddMetadata("key", "value")
+
+	event := actionkit.RunTransform(t, &{{.ActionClassName}}{}, df, {{.ActionClassName}}Params{})
 	te := event.RequireTransform(t)
 
 	require.Len(t, te, 2)
 
 	for i, child := range te {
 		require.Len(t, child.Content, 1, "child %d", i)
-		data, err := child.Content[0].LoadString(context.Background())
-		require.NoError(t, err, "child %d", i)
-		assert.Equal(t, "original content", data, "child %d", i)
-		assert.Equal(t, strconv.Itoa(i), child.Annotations["childIndex"], "child %d", i)
-		assert.Equal(t, "source-file-"+strconv.Itoa(i), child.Name, "child %d", i)
+		assert.Equal(t, "value", child.Metadata["key"], "child %d metadata", i)
 	}
-}
-
-func Test{{.ActionClassName}}_ThreeChildren(t *testing.T) {
-	tc := actionkit.NewTestContext("split-did")
-	tc.DeltaFileName = "source-file"
-	content := tc.Content("input.txt", "text/plain", "data")
-
-	input := actionkit.NewTransformInput(tc, content)
-	input.Params = map[string]any{"numberOfChildren": 3}
-
-	event := actionkit.RunTransform(t, &{{.ActionClassName}}{}, input)
-	te := event.RequireTransform(t)
-	assert.Len(t, te, 3)
 }
 
 func Test{{.ActionClassName}}_NoContent(t *testing.T) {
 	tc := actionkit.NewTestContext("split-did")
 
-	event := actionkit.RunTransform(t, &{{.ActionClassName}}{}, actionkit.NewTransformInput(tc))
-	event.RequireError(t, "No content provided")
+	df := tc.NewDeltafile()
+	event := actionkit.RunTransform(t, &{{.ActionClassName}}{}, df, {{.ActionClassName}}Params{})
+	te := event.RequireTransform(t)
+	assert.Len(t, te, 0)
 }

@@ -293,7 +293,7 @@ module gitlab.com/deltafi/deltafi/my-plugin
 
 go 1.26
 
-require gitlab.com/deltafi/deltafi/deltafi-go-action-kit v0.0.0
+require gitlab.com/deltafi/deltafi/deltafi-go-action-kit/v2 v2.52.3
 ```
 
 ### Go Entrypoint
@@ -304,7 +304,7 @@ The entrypoint registers actions and starts the plugin. Actions self-register vi
 package main
 
 import (
-    actionkit "gitlab.com/deltafi/deltafi/deltafi-go-action-kit"
+    actionkit "gitlab.com/deltafi/deltafi/deltafi-go-action-kit/v2"
     _ "gitlab.com/deltafi/deltafi/my-plugin/actions"
 )
 

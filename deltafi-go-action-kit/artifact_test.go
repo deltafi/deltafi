@@ -79,7 +79,7 @@ func TestArtifactClient_PublishArtifact(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client := NewArtifactClient(server.URL, "org.deltafi.test-plugin")
+	client := newArtifactClient(server.URL, "org.deltafi.test-plugin")
 	resp, err := client.PublishArtifact(ctx(), "my-model", strings.NewReader("model-bytes"), "application/octet-stream", &PublishOptions{
 		Version:     "1.0.0",
 		Description: "test model",
@@ -126,7 +126,7 @@ func TestArtifactClient_PublishSharedArtifact(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client := NewArtifactClient(server.URL, "org.deltafi.test-plugin")
+	client := newArtifactClient(server.URL, "org.deltafi.test-plugin")
 	_, err := client.PublishSharedArtifact(ctx(), "shared-model", strings.NewReader("data"), "application/octet-stream", nil)
 	if err != nil {
 		t.Fatalf("PublishSharedArtifact failed: %v", err)
@@ -157,7 +157,7 @@ func TestArtifactClient_PublishArtifact_WithAllOptions(t *testing.T) {
 	defer server.Close()
 
 	makeActive := false
-	client := NewArtifactClient(server.URL, "owner")
+	client := newArtifactClient(server.URL, "owner")
 	_, err := client.PublishArtifact(ctx(), "m", strings.NewReader("data"), "text/plain", &PublishOptions{
 		MakeActive: &makeActive,
 		Alias:      "staging",
@@ -175,7 +175,7 @@ func TestArtifactClient_PublishArtifact_Error(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client := NewArtifactClient(server.URL, "owner")
+	client := newArtifactClient(server.URL, "owner")
 	_, err := client.PublishArtifact(ctx(), "m", strings.NewReader("data"), "text/plain", nil)
 	if err == nil {
 		t.Fatal("expected error for HTTP 409")
@@ -200,7 +200,7 @@ func TestArtifactClient_GetArtifact(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client := NewArtifactClient(server.URL, "org.deltafi.test")
+	client := newArtifactClient(server.URL, "org.deltafi.test")
 	fetched, err := client.GetArtifact(ctx(), "my-model", "")
 	if err != nil {
 		t.Fatalf("GetArtifact failed: %v", err)
@@ -244,7 +244,7 @@ func TestArtifactClient_GetArtifact_WithAlias(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client := NewArtifactClient(server.URL, "owner")
+	client := newArtifactClient(server.URL, "owner")
 	fetched, err := client.GetArtifact(ctx(), "model", "v2")
 	if err != nil {
 		t.Fatalf("GetArtifact failed: %v", err)
@@ -267,7 +267,7 @@ func TestArtifactClient_GetSharedArtifact(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client := NewArtifactClient(server.URL, "owner")
+	client := newArtifactClient(server.URL, "owner")
 	fetched, err := client.GetSharedArtifact(ctx(), "shared-model", "")
 	if err != nil {
 		t.Fatalf("GetSharedArtifact failed: %v", err)
@@ -287,7 +287,7 @@ func TestArtifactClient_GetArtifact_NotFound(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client := NewArtifactClient(server.URL, "owner")
+	client := newArtifactClient(server.URL, "owner")
 	_, err := client.GetArtifact(ctx(), "missing", "")
 	if err == nil {
 		t.Fatal("expected error for missing artifact")
@@ -304,7 +304,7 @@ func TestArtifactClient_GetArtifact_ServerError(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client := NewArtifactClient(server.URL, "owner")
+	client := newArtifactClient(server.URL, "owner")
 	_, err := client.GetArtifact(ctx(), "model", "")
 	if err == nil {
 		t.Fatal("expected error for HTTP 500")
@@ -322,7 +322,7 @@ func TestArtifactClient_StreamArtifact(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client := NewArtifactClient(server.URL, "owner")
+	client := newArtifactClient(server.URL, "owner")
 	stream, err := client.StreamArtifact(ctx(), "model", "v3")
 	if err != nil {
 		t.Fatalf("StreamArtifact failed: %v", err)
@@ -353,7 +353,7 @@ func TestArtifactClient_StreamSharedArtifact(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client := NewArtifactClient(server.URL, "owner")
+	client := newArtifactClient(server.URL, "owner")
 	stream, err := client.StreamSharedArtifact(ctx(), "shared-model", "")
 	if err != nil {
 		t.Fatalf("StreamSharedArtifact failed: %v", err)
@@ -411,7 +411,7 @@ func TestArtifactClient_PublishArtifact_LargeData(t *testing.T) {
 
 	// 1MB of data
 	bigData := bytes.Repeat([]byte("x"), 1<<20)
-	client := NewArtifactClient(server.URL, "owner")
+	client := newArtifactClient(server.URL, "owner")
 	_, err := client.PublishArtifact(ctx(), "big", bytes.NewReader(bigData), "application/octet-stream", nil)
 	if err != nil {
 		t.Fatalf("PublishArtifact failed: %v", err)
@@ -429,7 +429,7 @@ func TestArtifactClient_GetArtifact_Cached(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client := NewArtifactClient(server.URL, "owner")
+	client := newArtifactClient(server.URL, "owner")
 
 	// First call hits server
 	_, err := client.GetArtifact(ctx(), "model", "")
@@ -476,7 +476,7 @@ func TestArtifactClient_GetArtifact_CacheDisabled(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client := NewArtifactClient(server.URL, "owner")
+	client := newArtifactClient(server.URL, "owner")
 	client.SetCacheTTL(0)
 
 	client.GetArtifact(ctx(), "model", "")
@@ -495,7 +495,7 @@ func TestArtifactClient_ClearCache(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client := NewArtifactClient(server.URL, "owner")
+	client := newArtifactClient(server.URL, "owner")
 	client.SetCacheTTL(1 * time.Minute)
 
 	client.GetArtifact(ctx(), "model", "")
@@ -520,7 +520,7 @@ func TestArtifactClient_GetArtifact_FailureCached(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client := NewArtifactClient(server.URL, "owner")
+	client := newArtifactClient(server.URL, "owner")
 
 	// First call fails
 	_, err := client.GetArtifact(ctx(), "model", "")
@@ -564,7 +564,7 @@ func TestArtifactClient_GetArtifact_FailureRecovery(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client := NewArtifactClient(server.URL, "owner")
+	client := newArtifactClient(server.URL, "owner")
 
 	// First call fails
 	_, err := client.GetArtifact(ctx(), "model", "")
@@ -597,7 +597,7 @@ func TestArtifactClient_PublishInvalidatesCache(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client := NewArtifactClient(server.URL, "owner")
+	client := newArtifactClient(server.URL, "owner")
 
 	// Populate cache
 	client.GetArtifact(ctx(), "model", "")
@@ -623,7 +623,7 @@ func TestArtifactClient_StreamBypasses_Cache(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client := NewArtifactClient(server.URL, "owner")
+	client := newArtifactClient(server.URL, "owner")
 
 	s1, _ := client.StreamArtifact(ctx(), "model", "")
 	s1.Reader.Close()
@@ -639,7 +639,7 @@ func TestArtifactClient_CacheTTL_FromEnv(t *testing.T) {
 	os.Setenv("ARTIFACT_CACHE_TTL", "45")
 	defer os.Unsetenv("ARTIFACT_CACHE_TTL")
 
-	client := NewArtifactClient("http://localhost", "owner")
+	client := newArtifactClient("http://localhost", "owner")
 	if got := time.Duration(client.cacheTTL.Load()); got != 45*time.Second {
 		t.Errorf("cacheTTL = %v, want 45s from env", got)
 	}
@@ -649,14 +649,14 @@ func TestArtifactClient_FailureCacheTTL_FromEnv(t *testing.T) {
 	os.Setenv("ARTIFACT_FAILURE_CACHE_TTL", "3s")
 	defer os.Unsetenv("ARTIFACT_FAILURE_CACHE_TTL")
 
-	client := NewArtifactClient("http://localhost", "owner")
+	client := newArtifactClient("http://localhost", "owner")
 	if got := time.Duration(client.failureCacheTTL.Load()); got != 3*time.Second {
 		t.Errorf("failureCacheTTL = %v, want 3s from env", got)
 	}
 }
 
 func TestArtifactClient_CacheTTL_Defaults(t *testing.T) {
-	client := NewArtifactClient("http://localhost", "owner")
+	client := newArtifactClient("http://localhost", "owner")
 	if got := time.Duration(client.cacheTTL.Load()); got != 10*time.Second {
 		t.Errorf("cacheTTL = %v, want 10s default", got)
 	}
@@ -695,7 +695,7 @@ func TestArtifactClient_OnUpdate_CallbackFired(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client := NewArtifactClient(server.URL, "org.deltafi.test")
+	client := newArtifactClient(server.URL, "org.deltafi.test")
 	client.OnUpdate("my-model", "", func(event VersionChangedEvent) {
 		callCount++
 		if event.ArtifactName != "my-model" {
@@ -721,7 +721,7 @@ func TestArtifactClient_OnUpdate_CacheInvalidatedBeforeCallback(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client := NewArtifactClient(server.URL, "owner")
+	client := newArtifactClient(server.URL, "owner")
 	client.SetCacheTTL(1 * time.Minute) // long TTL so cache doesn't expire
 
 	// Populate cache
@@ -752,7 +752,7 @@ func TestArtifactClient_OnUpdate_CacheInvalidatedBeforeCallback(t *testing.T) {
 
 func TestArtifactClient_OnUpdate_SharedCallback(t *testing.T) {
 	callCount := 0
-	client := NewArtifactClient("http://localhost", "owner")
+	client := newArtifactClient("http://localhost", "owner")
 	client.OnSharedUpdate("shared-model", "", func(event VersionChangedEvent) {
 		callCount++
 	})
@@ -766,7 +766,7 @@ func TestArtifactClient_OnUpdate_SharedCallback(t *testing.T) {
 
 func TestArtifactClient_OnUpdate_IgnoresOtherPlugins(t *testing.T) {
 	callCount := 0
-	client := NewArtifactClient("http://localhost", "my-plugin")
+	client := newArtifactClient("http://localhost", "my-plugin")
 	client.OnUpdate("model", "", func(event VersionChangedEvent) {
 		callCount++
 	})
@@ -781,7 +781,7 @@ func TestArtifactClient_OnUpdate_IgnoresOtherPlugins(t *testing.T) {
 
 func TestArtifactClient_OnUpdate_IgnoresNonMatchingArtifact(t *testing.T) {
 	callCount := 0
-	client := NewArtifactClient("http://localhost", "owner")
+	client := newArtifactClient("http://localhost", "owner")
 	client.OnUpdate("model-a", "", func(event VersionChangedEvent) {
 		callCount++
 	})
@@ -795,7 +795,7 @@ func TestArtifactClient_OnUpdate_IgnoresNonMatchingArtifact(t *testing.T) {
 
 func TestArtifactClient_OnUpdate_IgnoresNonMatchingAlias(t *testing.T) {
 	callCount := 0
-	client := NewArtifactClient("http://localhost", "owner")
+	client := newArtifactClient("http://localhost", "owner")
 	client.OnUpdate("model", "staging", func(event VersionChangedEvent) {
 		callCount++
 	})
@@ -810,7 +810,7 @@ func TestArtifactClient_OnUpdate_IgnoresNonMatchingAlias(t *testing.T) {
 
 func TestArtifactClient_OnUpdate_MultipleCallbacks(t *testing.T) {
 	calls := []string{}
-	client := NewArtifactClient("http://localhost", "owner")
+	client := newArtifactClient("http://localhost", "owner")
 	client.OnUpdate("model", "", func(event VersionChangedEvent) {
 		calls = append(calls, "cb1")
 	})
@@ -827,7 +827,7 @@ func TestArtifactClient_OnUpdate_MultipleCallbacks(t *testing.T) {
 
 func TestArtifactClient_OnUpdate_PanicRecovery(t *testing.T) {
 	callCount := 0
-	client := NewArtifactClient("http://localhost", "owner")
+	client := newArtifactClient("http://localhost", "owner")
 	client.OnUpdate("model", "", func(event VersionChangedEvent) {
 		panic("deliberate panic")
 	})
@@ -845,7 +845,7 @@ func TestArtifactClient_OnUpdate_PanicRecovery(t *testing.T) {
 
 func TestArtifactClient_FireStartupCallbacks(t *testing.T) {
 	calls := []VersionChangedEvent{}
-	client := NewArtifactClient("http://localhost", "org.deltafi.test")
+	client := newArtifactClient("http://localhost", "org.deltafi.test")
 	client.OnUpdate("model-a", "", func(event VersionChangedEvent) {
 		calls = append(calls, event)
 	})
@@ -887,7 +887,7 @@ func TestArtifactClient_FireStartupCallbacks(t *testing.T) {
 
 func TestArtifactClient_FireStartupCallbacks_PanicRecovery(t *testing.T) {
 	callCount := 0
-	client := NewArtifactClient("http://localhost", "owner")
+	client := newArtifactClient("http://localhost", "owner")
 	client.OnUpdate("model", "", func(event VersionChangedEvent) {
 		panic("startup panic")
 	})
@@ -904,7 +904,7 @@ func TestArtifactClient_FireStartupCallbacks_PanicRecovery(t *testing.T) {
 }
 
 func TestArtifactClient_HandleVersionChanged_InvalidJSON(t *testing.T) {
-	client := NewArtifactClient("http://localhost", "owner")
+	client := newArtifactClient("http://localhost", "owner")
 	// Should not panic on invalid JSON
 	client.handleVersionChanged("not-json")
 }
@@ -917,7 +917,7 @@ func TestArtifactClient_HandleVersionChanged_InvalidatesCache(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client := NewArtifactClient(server.URL, "owner")
+	client := newArtifactClient(server.URL, "owner")
 	client.SetCacheTTL(1 * time.Minute)
 
 	// Populate cache
@@ -943,7 +943,7 @@ func TestArtifactClient_OnUpdateFetch(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client := NewArtifactClient(server.URL, "owner")
+	client := newArtifactClient(server.URL, "owner")
 	var received *FetchedArtifact
 	var receivedErr error
 
@@ -971,7 +971,7 @@ func TestArtifactClient_OnUpdateFetch_Error(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client := NewArtifactClient(server.URL, "owner")
+	client := newArtifactClient(server.URL, "owner")
 	var receivedErr error
 
 	client.OnUpdateFetch("missing", "", func(fetched *FetchedArtifact, err error) {
@@ -1015,7 +1015,7 @@ func TestArtifactClient_OnUpdateFetchWithDefault(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client := NewArtifactClient(server.URL, "owner")
+	client := newArtifactClient(server.URL, "owner")
 	client.SetCacheTTL(0) // disable caching so second get hits server
 	var received *FetchedArtifact
 
@@ -1059,7 +1059,7 @@ func TestArtifactClient_OnUpdateFetchWithDefault_AlreadyExists(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client := NewArtifactClient(server.URL, "owner")
+	client := newArtifactClient(server.URL, "owner")
 	var received *FetchedArtifact
 
 	client.OnUpdateFetchWithDefault("config.json", "",
@@ -1085,7 +1085,7 @@ func TestArtifactClient_OnUpdateFetch_FiredOnVersionChange(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client := NewArtifactClient(server.URL, "owner")
+	client := newArtifactClient(server.URL, "owner")
 	client.OnUpdateFetch("model", "", func(fetched *FetchedArtifact, err error) {
 		callCount++
 	})
@@ -1105,7 +1105,7 @@ func TestArtifactClient_OnSharedUpdateFetch(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client := NewArtifactClient(server.URL, "owner")
+	client := newArtifactClient(server.URL, "owner")
 	var received *FetchedArtifact
 
 	client.OnSharedUpdateFetch("shared-model", "", func(fetched *FetchedArtifact, err error) {
@@ -1128,7 +1128,7 @@ func TestArtifactClient_FireStartupCallbacks_Incremental(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client := NewArtifactClient(server.URL, "owner")
+	client := newArtifactClient(server.URL, "owner")
 
 	calls1 := 0
 	client.OnUpdateFetch("model-a", "", func(fetched *FetchedArtifact, err error) {
@@ -1168,7 +1168,7 @@ func TestArtifactClient_OnUpdateFetchWithDefault_PublishFails(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client := NewArtifactClient(server.URL, "owner")
+	client := newArtifactClient(server.URL, "owner")
 	client.SetCacheTTL(0)
 	var receivedErr error
 

@@ -15,8 +15,8 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-// ABOUTME: Input types for action execution.
-// ABOUTME: Defines TransformInput, EgressInput, IngressInput, and parameter parsing helpers.
+// ABOUTME: Parameter parsing and type coercion for action parameters.
+// ABOUTME: Handles conversion between JSON wire format and Go struct types.
 
 package actionkit
 
@@ -27,156 +27,6 @@ import (
 	"strings"
 	"sync"
 )
-
-// TransformInput holds the input data for a transform action.
-type TransformInput struct {
-	ActionContext *ActionContext
-	Content       []ActionContent
-	Metadata      map[string]string
-	Params        map[string]any
-}
-
-// HasContent returns true if the input has at least one content item.
-func (i TransformInput) HasContent() bool {
-	return len(i.Content) > 0
-}
-
-// FirstContent returns a pointer to the first content item, or nil if empty.
-func (i TransformInput) FirstContent() *ActionContent {
-	if len(i.Content) == 0 {
-		return nil
-	}
-	return &i.Content[0]
-}
-
-// ContentAt returns a pointer to the content item at the given index.
-// Returns an ExpectedContentError if the index is out of range.
-func (i TransformInput) ContentAt(index int) (*ActionContent, error) {
-	if index < 0 || index >= len(i.Content) {
-		return nil, &ExpectedContentError{Index: index, Count: len(i.Content)}
-	}
-	return &i.Content[index], nil
-}
-
-// ContentNamed returns a pointer to the first content item with the given name.
-// Returns nil if no content with that name exists.
-func (i TransformInput) ContentNamed(name string) *ActionContent {
-	for idx := range i.Content {
-		if i.Content[idx].Name == name {
-			return &i.Content[idx]
-		}
-	}
-	return nil
-}
-
-// GetMetadata returns the metadata value for the given key.
-// Returns a MissingMetadataError if the key is not present.
-func (i TransformInput) GetMetadata(key string) (string, error) {
-	val, ok := i.Metadata[key]
-	if !ok {
-		return "", &MissingMetadataError{Key: key}
-	}
-	return val, nil
-}
-
-// GetMetadataOrDefault returns the metadata value for the given key,
-// or the default value if the key is not present.
-func (i TransformInput) GetMetadataOrDefault(key, defaultValue string) string {
-	if val, ok := i.Metadata[key]; ok {
-		return val
-	}
-	return defaultValue
-}
-
-// ParseParameters unmarshals the raw params into the given struct.
-func (i TransformInput) ParseParameters(dest any) error {
-	return parseRawParams(i.Params, dest)
-}
-
-// EgressInput holds the input data for an egress action.
-type EgressInput struct {
-	ActionContext *ActionContext
-	Content       []ActionContent
-	Metadata      map[string]string
-	Params        map[string]any
-}
-
-// HasContent returns true if the input has at least one content item.
-func (i EgressInput) HasContent() bool {
-	return len(i.Content) > 0
-}
-
-// FirstContent returns a pointer to the first content item, or nil if empty.
-func (i EgressInput) FirstContent() *ActionContent {
-	if len(i.Content) == 0 {
-		return nil
-	}
-	return &i.Content[0]
-}
-
-// ContentAt returns a pointer to the content item at the given index.
-// Returns an ExpectedContentError if the index is out of range.
-func (i EgressInput) ContentAt(index int) (*ActionContent, error) {
-	if index < 0 || index >= len(i.Content) {
-		return nil, &ExpectedContentError{Index: index, Count: len(i.Content)}
-	}
-	return &i.Content[index], nil
-}
-
-// ContentNamed returns a pointer to the first content item with the given name.
-// Returns nil if no content with that name exists.
-func (i EgressInput) ContentNamed(name string) *ActionContent {
-	for idx := range i.Content {
-		if i.Content[idx].Name == name {
-			return &i.Content[idx]
-		}
-	}
-	return nil
-}
-
-// GetMetadata returns the metadata value for the given key.
-// Returns a MissingMetadataError if the key is not present.
-func (i EgressInput) GetMetadata(key string) (string, error) {
-	val, ok := i.Metadata[key]
-	if !ok {
-		return "", &MissingMetadataError{Key: key}
-	}
-	return val, nil
-}
-
-// GetMetadataOrDefault returns the metadata value for the given key,
-// or the default value if the key is not present.
-func (i EgressInput) GetMetadataOrDefault(key, defaultValue string) string {
-	if val, ok := i.Metadata[key]; ok {
-		return val
-	}
-	return defaultValue
-}
-
-// ParseParameters unmarshals the raw params into the given struct.
-func (i EgressInput) ParseParameters(dest any) error {
-	return parseRawParams(i.Params, dest)
-}
-
-// IngressInput holds the input data for a timed ingress action.
-type IngressInput struct {
-	ActionContext *ActionContext
-	Params        map[string]any
-}
-
-// ParseParameters unmarshals the raw params into the given struct.
-func (i IngressInput) ParseParameters(dest any) error {
-	return parseRawParams(i.Params, dest)
-}
-
-// ParseParams unmarshals raw params into a typed struct using generics.
-func ParseParams[T any](raw map[string]any) (T, error) {
-	var result T
-	if err := parseRawParams(raw, &result); err != nil {
-		return result, err
-	}
-	return result, nil
-}
 
 // parseRawParams marshals the map to JSON then unmarshals into the destination struct.
 // DeltaFi core may send all action params as strings after variable substitution,
@@ -210,6 +60,28 @@ func coerceParams(m map[string]any, structType reflect.Type) map[string]any {
 		case float64:
 			if ft == reflect.String {
 				out[k] = strconv.FormatFloat(val, 'f', -1, 64)
+			} else {
+				out[k] = v
+			}
+		case []any:
+			if ft == reflect.Slice {
+				elemKind := sliceElemKind(structType, k)
+				coerced := make([]any, len(val))
+				for i, item := range val {
+					switch elem := item.(type) {
+					case string:
+						coerced[i] = coerceStringForKind(elem, elemKind)
+					case float64:
+						if elemKind == reflect.String {
+							coerced[i] = strconv.FormatFloat(elem, 'f', -1, 64)
+						} else {
+							coerced[i] = elem
+						}
+					default:
+						coerced[i] = elem
+					}
+				}
+				out[k] = coerced
 			} else {
 				out[k] = v
 			}
@@ -283,6 +155,30 @@ func structFieldType(parent reflect.Type, jsonName string) reflect.Type {
 		}
 	}
 	return nil
+}
+
+// sliceElemKind returns the reflect.Kind of the element type for a slice field.
+func sliceElemKind(parent reflect.Type, jsonName string) reflect.Kind {
+	if parent == nil || parent.Kind() != reflect.Struct {
+		return reflect.Invalid
+	}
+	for f := range parent.Fields() {
+		name := f.Tag.Get("json")
+		if idx := strings.IndexByte(name, ','); idx >= 0 {
+			name = name[:idx]
+		}
+		if name == "" || name == "-" {
+			name = f.Name
+		}
+		if name == jsonName && f.Type.Kind() == reflect.Slice {
+			kind := f.Type.Elem().Kind()
+			if kind == reflect.Pointer {
+				kind = f.Type.Elem().Elem().Kind()
+			}
+			return kind
+		}
+	}
+	return reflect.Invalid
 }
 
 // coerceStringForKind converts a string value to the appropriate Go type

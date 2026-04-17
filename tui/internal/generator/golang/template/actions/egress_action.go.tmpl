@@ -4,42 +4,48 @@
 package actions
 
 import (
-	"context"
+	_ "embed"
 
 	actionkit "gitlab.com/deltafi/deltafi/deltafi-go-action-kit/v2"
 )
 
+//go:embed {{.ActionFileName}}_action.yaml
+var {{.ActionFileName}}Options string
+
 func init() {
-	actionkit.Register("{{.ActionClassName}}", &{{.ActionClassName}}{}).
-		Describe("TODO: Add action description")
+	actionkit.RegisterEgress("{{.ActionClassName}}", &{{.ActionClassName}}{}).
+		WithOptionsYAML({{.ActionFileName}}Options)
 }
+
+// {{.ActionClassName}}Params defines the action's configurable parameters.
+type {{.ActionClassName}}Params struct{}
 
 // {{.ActionClassName}} implements the egress action.
 type {{.ActionClassName}} struct{}
 
-func (a *{{.ActionClassName}}) Egress(ctx context.Context, input actionkit.EgressInput) actionkit.Result {
-	actx := input.ActionContext
+func (a *{{.ActionClassName}}) Egress(deltafile *actionkit.Deltafile, params {{.ActionClassName}}Params) *actionkit.Deltafile {
 
-	if !input.HasContent() {
-		return actx.Errorf("No content provided")
+	if !deltafile.HasContent() {
+		return deltafile.Errorf("No content provided")
 	}
-	content := input.FirstContent()
-
-	data, err := content.LoadString(ctx)
+	content, err := deltafile.FirstContent()
 	if err != nil {
-		return actx.Errorf("Failed to load content: %v", err)
+		return deltafile.Errorf("Failed to get content: %v", err)
+	}
+
+	data, err := content.LoadString()
+	if err != nil {
+		return deltafile.Errorf("Failed to load content: %v", err)
 	}
 
 	// TODO: Implement your egress logic here (e.g., send to external system)
 	_ = data
 
-	result := actionkit.NewEgressResult(actx).
-		LogInfo("Egressed %d bytes", len(data)).
-		LogInfo("Content name: %s, type: %s", content.Name, content.MediaType)
-
-	for key, value := range input.Metadata {
-		result.LogInfo("Metadata - %s: %s", key, value)
+	for key, value := range deltafile.GetMetadataMap() {
+		deltafile.LogInfo("Metadata - %s: %s", key, value)
 	}
 
-	return result
+	return deltafile.
+		LogInfo("Egressed %d bytes", len(data)).
+		LogInfo("Content name: %s, type: %s", content.Name, content.MediaType)
 }

@@ -227,7 +227,7 @@ func TestDataSize_Schema(t *testing.T) {
 
 func TestDataSize_SchemaWithDescription(t *testing.T) {
 	type params struct {
-		Limit DataSize `json:"limit" jsonschema:"description=Maximum file size"`
+		Limit DataSize `json:"limit" description:"Maximum file size"`
 	}
 	schema := GenerateSchema(params{})
 	props := schema["properties"].(map[string]any)

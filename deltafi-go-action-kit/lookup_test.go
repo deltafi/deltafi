@@ -68,7 +68,7 @@ func TestLookupClient_Lookup(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client := NewLookupClient(server.URL)
+	client := newLookupClient(server.URL)
 	results, err := client.Lookup(context.Background(), "test_table",
 		WithMatch("color", "red", "blue"),
 		WithResultColumns("score"),
@@ -117,7 +117,7 @@ func TestLookupClient_Lookup_NilOptions(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client := NewLookupClient(server.URL)
+	client := newLookupClient(server.URL)
 	results, err := client.Lookup(context.Background(), "empty_table")
 	if err != nil {
 		t.Fatalf("Lookup failed: %v", err)
@@ -143,7 +143,7 @@ func TestLookupClient_Lookup_Cached(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client := NewLookupClient(server.URL)
+	client := newLookupClient(server.URL)
 
 	// First call hits the server
 	r1, err := client.Lookup(context.Background(), "t", WithResultColumns("a"))
@@ -189,7 +189,7 @@ func TestLookupClient_Lookup_CacheDisabled(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client := NewLookupClient(server.URL)
+	client := newLookupClient(server.URL)
 	client.SetCacheTTL(0)
 
 	client.Lookup(context.Background(), "t", nil)
@@ -213,7 +213,7 @@ func TestLookupClient_ClearCache(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client := NewLookupClient(server.URL)
+	client := newLookupClient(server.URL)
 	client.SetCacheTTL(1 * time.Minute)
 
 	client.Lookup(context.Background(), "t", nil)
@@ -241,7 +241,7 @@ func TestLookupClient_Lookup_FailureCached(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client := NewLookupClient(server.URL)
+	client := newLookupClient(server.URL)
 
 	// First call fails and should be cached
 	_, err := client.Lookup(context.Background(), "t", nil)
@@ -290,7 +290,7 @@ func TestLookupClient_Lookup_FailureRecovery(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client := NewLookupClient(server.URL)
+	client := newLookupClient(server.URL)
 
 	// First call fails
 	_, err := client.Lookup(context.Background(), "t", nil)
@@ -348,7 +348,7 @@ func TestLookupClient_CacheTTL_FromEnv(t *testing.T) {
 	os.Setenv("TABLE_LOOKUP_CACHE_TTL", "45")
 	defer os.Unsetenv("TABLE_LOOKUP_CACHE_TTL")
 
-	client := NewLookupClient("http://localhost")
+	client := newLookupClient("http://localhost")
 	if got := time.Duration(client.cacheTTL.Load()); got != 45*time.Second {
 		t.Errorf("cacheTTL = %v, want 45s from env", got)
 	}
@@ -358,7 +358,7 @@ func TestLookupClient_CacheTTL_FromEnvDuration(t *testing.T) {
 	os.Setenv("TABLE_LOOKUP_CACHE_TTL", "5m")
 	defer os.Unsetenv("TABLE_LOOKUP_CACHE_TTL")
 
-	client := NewLookupClient("http://localhost")
+	client := newLookupClient("http://localhost")
 	if got := time.Duration(client.cacheTTL.Load()); got != 5*time.Minute {
 		t.Errorf("cacheTTL = %v, want 5m from env", got)
 	}
@@ -368,14 +368,14 @@ func TestLookupClient_FailureCacheTTL_FromEnv(t *testing.T) {
 	os.Setenv("TABLE_LOOKUP_FAILURE_CACHE_TTL", "3s")
 	defer os.Unsetenv("TABLE_LOOKUP_FAILURE_CACHE_TTL")
 
-	client := NewLookupClient("http://localhost")
+	client := newLookupClient("http://localhost")
 	if got := time.Duration(client.failureCacheTTL.Load()); got != 3*time.Second {
 		t.Errorf("failureCacheTTL = %v, want 3s from env", got)
 	}
 }
 
 func TestLookupClient_FailureCacheTTL_Default(t *testing.T) {
-	client := NewLookupClient("http://localhost")
+	client := newLookupClient("http://localhost")
 	if got := time.Duration(client.failureCacheTTL.Load()); got != 1*time.Second {
 		t.Errorf("failureCacheTTL = %v, want 1s default", got)
 	}
@@ -392,7 +392,7 @@ func TestLookupClient_Lookup_GraphQLError(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client := NewLookupClient(server.URL)
+	client := newLookupClient(server.URL)
 	_, err := client.Lookup(context.Background(), "missing_table", nil)
 	if err == nil {
 		t.Fatal("expected error for missing table")
@@ -409,7 +409,7 @@ func TestLookupClient_Lookup_HTTPError(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client := NewLookupClient(server.URL)
+	client := newLookupClient(server.URL)
 	_, err := client.Lookup(context.Background(), "table", nil)
 	if err == nil {
 		t.Fatal("expected error for HTTP 500")
@@ -434,7 +434,7 @@ func TestLookupClient_Lookup_WithAllOptions(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client := NewLookupClient(server.URL)
+	client := newLookupClient(server.URL)
 	client.Lookup(context.Background(), "t",
 		WithSort("name", SortDESC),
 		WithOffset(5),
@@ -473,7 +473,7 @@ func TestLookupClient_UploadTable(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client := NewLookupClient(server.URL)
+	client := newLookupClient(server.URL)
 	data := `[{"color":"red","score":"10"}]`
 	err := client.UploadTable(context.Background(), "test_table", "application/json", data)
 	if err != nil {
@@ -498,7 +498,7 @@ func TestLookupClient_UploadTable_Error(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client := NewLookupClient(server.URL)
+	client := newLookupClient(server.URL)
 	err := client.UploadTable(context.Background(), "test_table", "text/csv", "bad,data")
 	if err == nil {
 		t.Fatal("expected error for HTTP 400")
@@ -557,7 +557,7 @@ func TestParseLookupResults_WithTimestamps(t *testing.T) {
 }
 
 func TestPlugin_RegisterLookupTableSupplier(t *testing.T) {
-	p := &Plugin{}
+	p := &plugin{}
 	supplier := &testLookupTableSupplier{
 		table: LookupTableDefinition{
 			Name:          "test_table",
@@ -586,7 +586,7 @@ func TestPlugin_RegisterLookupTableSupplier(t *testing.T) {
 }
 
 func TestPlugin_LookupTables_Empty(t *testing.T) {
-	p := &Plugin{}
+	p := &plugin{}
 	tables := p.lookupTables()
 	if len(tables) != 0 {
 		t.Errorf("lookupTables count = %d, want 0", len(tables))

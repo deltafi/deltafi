@@ -174,11 +174,11 @@ func TestGenerateSchema_PointerToStruct(t *testing.T) {
 // --- Phase 6: descriptions, defaults, enums, required, nested named types ---
 
 type richSchemaParams struct {
-	Name   string `json:"name" jsonschema:"description=The name of the thing,default=unnamed"`
-	Count  int    `json:"count" jsonschema:"description=How many items,default=10"`
-	Active bool   `json:"active" jsonschema:"description=Whether this is active,default=true"`
-	Mode   string `json:"mode" jsonschema:"description=Processing mode,enum=fast,enum=slow,enum=auto"`
-	Label  string `json:"label" jsonschema:"required,description=A required label"`
+	Name   string `json:"name" description:"The name of the thing" default:"unnamed"`
+	Count  int    `json:"count" description:"How many items" default:"10"`
+	Active bool   `json:"active" description:"Whether this is active" default:"true"`
+	Mode   string `json:"mode" description:"Processing mode" enum:"fast,slow,auto"`
+	Label  string `json:"label" description:"A required label" required:"true"`
 }
 
 func TestGenerateSchema_Descriptions(t *testing.T) {
@@ -212,9 +212,18 @@ func TestGenerateSchema_DefaultValues(t *testing.T) {
 		t.Errorf("name default = %v (%T), want \"unnamed\"", nameProps["default"], nameProps["default"])
 	}
 
-	// Integer default coerced to a number (JSON numbers unmarshal as float64)
+	// Integer default coerced from string
 	countProps := props["count"].(map[string]any)
-	if countProps["default"] != float64(10) {
+	switch v := countProps["default"].(type) {
+	case int64:
+		if v != 10 {
+			t.Errorf("count default = %v, want 10", v)
+		}
+	case float64:
+		if v != 10 {
+			t.Errorf("count default = %v, want 10", v)
+		}
+	default:
 		t.Errorf("count default = %v (%T), want 10", countProps["default"], countProps["default"])
 	}
 
@@ -227,7 +236,7 @@ func TestGenerateSchema_DefaultValues(t *testing.T) {
 
 func TestGenerateSchema_DefaultFalse(t *testing.T) {
 	type params struct {
-		Disabled bool `json:"disabled" jsonschema:"default=false"`
+		Disabled bool `json:"disabled" default:"false"`
 	}
 	schema := GenerateSchema(params{})
 	props := schema["properties"].(map[string]any)
@@ -385,6 +394,111 @@ func TestGenerateSchema_MapTypes(t *testing.T) {
 	countsAP := countsProp["additionalProperties"].(map[string]any)
 	if countsAP["type"] != "integer" {
 		t.Errorf("counts additionalProperties type = %v, want integer", countsAP["type"])
+	}
+}
+
+// --- Dedicated struct tags ---
+
+type dedicatedTagParams struct {
+	Name    string `json:"name" description:"The name to use" default:"world"`
+	Count   int    `json:"count" description:"Number of items" default:"5" minimum:"0" maximum:"100"`
+	Mode    string `json:"mode" description:"Processing mode" enum:"fast,slow,auto"`
+	Label   string `json:"label" description:"A required label" required:"true"`
+	Verbose bool   `json:"verbose" description:"Enable verbose output" default:"false"`
+}
+
+func TestGenerateSchema_DedicatedTags_Description(t *testing.T) {
+	schema := GenerateSchema(dedicatedTagParams{})
+	props := schema["properties"].(map[string]any)
+
+	tests := map[string]string{
+		"name":    "The name to use",
+		"count":   "Number of items",
+		"mode":    "Processing mode",
+		"label":   "A required label",
+		"verbose": "Enable verbose output",
+	}
+
+	for field, wantDesc := range tests {
+		propMap := props[field].(map[string]any)
+		if propMap["description"] != wantDesc {
+			t.Errorf("%s description = %v, want %q", field, propMap["description"], wantDesc)
+		}
+	}
+}
+
+func TestGenerateSchema_DedicatedTags_Defaults(t *testing.T) {
+	schema := GenerateSchema(dedicatedTagParams{})
+	props := schema["properties"].(map[string]any)
+
+	nameProps := props["name"].(map[string]any)
+	if nameProps["default"] != "world" {
+		t.Errorf("name default = %v, want \"world\"", nameProps["default"])
+	}
+
+	countProps := props["count"].(map[string]any)
+	// coerceDefault for integer returns int64; JSON round-trip would produce float64.
+	// Both are valid — check the numeric value.
+	switch v := countProps["default"].(type) {
+	case int64:
+		if v != 5 {
+			t.Errorf("count default = %v, want 5", v)
+		}
+	case float64:
+		if v != 5 {
+			t.Errorf("count default = %v, want 5", v)
+		}
+	default:
+		t.Errorf("count default = %v (%T), want 5", countProps["default"], countProps["default"])
+	}
+
+	verboseProps := props["verbose"].(map[string]any)
+	if verboseProps["default"] != false {
+		t.Errorf("verbose default = %v, want false", verboseProps["default"])
+	}
+}
+
+func TestGenerateSchema_DedicatedTags_Enum(t *testing.T) {
+	schema := GenerateSchema(dedicatedTagParams{})
+	props := schema["properties"].(map[string]any)
+
+	modeProps := props["mode"].(map[string]any)
+	enumVals := modeProps["enum"].([]any)
+	want := []string{"fast", "slow", "auto"}
+	if len(enumVals) != len(want) {
+		t.Fatalf("enum length = %d, want %d", len(enumVals), len(want))
+	}
+	for i, w := range want {
+		if enumVals[i] != w {
+			t.Errorf("enum[%d] = %v, want %q", i, enumVals[i], w)
+		}
+	}
+}
+
+func TestGenerateSchema_DedicatedTags_Required(t *testing.T) {
+	schema := GenerateSchema(dedicatedTagParams{})
+	required := schema["required"].([]any)
+	found := false
+	for _, r := range required {
+		if r == "label" {
+			found = true
+		}
+	}
+	if !found {
+		t.Errorf("label not in required: %v", required)
+	}
+}
+
+func TestGenerateSchema_DedicatedTags_MinMax(t *testing.T) {
+	schema := GenerateSchema(dedicatedTagParams{})
+	props := schema["properties"].(map[string]any)
+
+	countProps := props["count"].(map[string]any)
+	if countProps["minimum"] != float64(0) {
+		t.Errorf("count minimum = %v, want 0", countProps["minimum"])
+	}
+	if countProps["maximum"] != float64(100) {
+		t.Errorf("count maximum = %v, want 100", countProps["maximum"])
 	}
 }
 

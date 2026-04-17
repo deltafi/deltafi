@@ -15,16 +15,10 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-// ABOUTME: Action interfaces and type detection for DeltaFi actions.
-// ABOUTME: Defines TransformAction, EgressAction, TimedIngressAction, and optional interfaces.
+// ABOUTME: Action type constants and the ArtifactAware optional interface.
+// ABOUTME: Action method detection is handled by reflection in dispatch.go.
 
 package actionkit
-
-import (
-	"context"
-	"fmt"
-	"maps"
-)
 
 // Action type constants used in registration and event payloads.
 const (
@@ -33,63 +27,11 @@ const (
 	ActionTypeTimedIngress = "TIMED_INGRESS"
 )
 
-// TransformAction processes content and produces transformed output.
-//
-// Implementations report failures by returning an *ErrorResult (typically via
-// actx.Errorf) — there is no separate error return. A panic inside Transform
-// is recovered by the worker and turned into an ErrorResult automatically.
-type TransformAction interface {
-	Transform(ctx context.Context, input TransformInput) Result
-}
-
-// EgressAction sends content to an external destination.
-//
-// Implementations report failures by returning an *ErrorResult (typically via
-// actx.Errorf). Panics are recovered by the worker.
-type EgressAction interface {
-	Egress(ctx context.Context, input EgressInput) Result
-}
-
-// TimedIngressAction creates new DeltaFiles on a schedule.
-//
-// Implementations report failures by returning an *ErrorResult (typically via
-// actx.Errorf). Panics are recovered by the worker.
-type TimedIngressAction interface {
-	Ingress(ctx context.Context, input IngressInput) Result
-}
-
 // ArtifactAware is optionally implemented by actions that need to register
-// artifact version change callbacks. Called once during plugin startup before
-// workers begin processing.
+// artifact version change callbacks. Detected via reflection at startup;
+// called once before workers begin processing.
 type ArtifactAware interface {
 	ConfigureArtifacts(client *ArtifactClient)
-}
-
-// JoinAction is optionally implemented by TransformActions that support joining
-// multiple DeltaFileMessages into a single TransformInput before transformation.
-//
-// Join cannot return an error result by itself — if joining fails, the
-// implementation should panic with a meaningful message; the worker recovers
-// the panic and turns it into an ErrorResult.
-type JoinAction interface {
-	Join(ctx context.Context, inputs []TransformInput) TransformInput
-}
-
-// DefaultJoin merges multiple TransformInputs by concatenating all content
-// and combining all metadata maps. Later inputs override earlier metadata keys.
-func DefaultJoin(inputs []TransformInput) TransformInput {
-	var allContent []ActionContent
-	allMetadata := make(map[string]string)
-	for _, input := range inputs {
-		allContent = append(allContent, input.Content...)
-		maps.Copy(allMetadata, input.Metadata)
-	}
-	return TransformInput{
-		ActionContext: inputs[0].ActionContext,
-		Content:       allContent,
-		Metadata:      allMetadata,
-		Params:        inputs[0].Params,
-	}
 }
 
 // registeredAction pairs an action with its name, detected type, and metadata.
@@ -100,18 +42,5 @@ type registeredAction struct {
 	description string
 	paramType   any
 	options     *ActionOptions
-}
-
-// detectActionType determines the action type from which interface it implements.
-func detectActionType(action any) (string, error) {
-	switch action.(type) {
-	case TransformAction:
-		return ActionTypeTransform, nil
-	case EgressAction:
-		return ActionTypeEgress, nil
-	case TimedIngressAction:
-		return ActionTypeTimedIngress, nil
-	default:
-		return "", fmt.Errorf("action does not implement TransformAction, EgressAction, or TimedIngressAction")
-	}
+	dispatcher  *actionDispatcher
 }

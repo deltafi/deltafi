@@ -141,10 +141,10 @@ func (m *InMemoryContentStore) CreateStringContent(did, name, mediaType, data st
 type LookupRow = map[string]string
 
 // LookupTable is a static lookup table served by MockLookupClient. The mock
-// applies LookupQuery semantics (match, sort, paginate, project) against the
+// applies lookupQueryParams semantics (match, sort, paginate, project) against the
 // rows on every Lookup call, so tests just declare the data.
 type LookupTable struct {
-	// Name is the table name as referenced by actx.LookupClient.Lookup(ctx, name, ...).
+	// Name is the table name as referenced by actionkit.Lookup(name, ...).
 	Name string
 	// Rows are the underlying data rows. Each row maps column name to value.
 	Rows []LookupRow
@@ -155,8 +155,8 @@ type LookupTable struct {
 }
 
 // applyQuery returns the rows from this table after filtering, sorting,
-// paginating, and projecting per the LookupQuery.
-func (t LookupTable) applyQuery(query LookupQuery) []LookupRow {
+// paginating, and projecting per the lookupQueryParams.
+func (t LookupTable) applyQuery(query lookupQueryParams) []LookupRow {
 	rows := filterLookupRows(t.Rows, query.MatchingColumnValues)
 	rows = sortLookupRows(rows, query.SortColumn, query.SortDirection)
 	rows = paginateLookupRows(rows, query.Offset, query.Limit)
@@ -165,8 +165,6 @@ func (t LookupTable) applyQuery(query LookupQuery) []LookupRow {
 }
 
 // filterLookupRows keeps rows whose values match every column criterion.
-// Within a column, any of the listed values is a match (OR). Across columns,
-// every criterion must match (AND). An empty criteria map returns all rows.
 func filterLookupRows(rows []LookupRow, criteria map[string][]string) []LookupRow {
 	if len(criteria) == 0 {
 		return rows
@@ -187,9 +185,7 @@ func filterLookupRows(rows []LookupRow, criteria map[string][]string) []LookupRo
 	return out
 }
 
-// projectLookupRows reduces each row to only the named columns. Columns that
-// do not exist in the row are silently dropped (matching SQL projection).
-// An empty cols slice returns the rows unchanged.
+// projectLookupRows reduces each row to only the named columns.
 func projectLookupRows(rows []LookupRow, cols []string) []LookupRow {
 	if len(cols) == 0 {
 		return rows
@@ -208,7 +204,6 @@ func projectLookupRows(rows []LookupRow, cols []string) []LookupRow {
 }
 
 // sortLookupRows returns a stable copy of rows sorted by the named column.
-// An empty col returns the rows unchanged. Comparison is string-based.
 func sortLookupRows(rows []LookupRow, col string, dir SortDirection) []LookupRow {
 	if col == "" {
 		return rows
@@ -225,8 +220,7 @@ func sortLookupRows(rows []LookupRow, col string, dir SortDirection) []LookupRow
 	return sorted
 }
 
-// paginateLookupRows applies offset and limit to the row slice. nil values
-// for either are treated as "unset". Negative offsets are clamped to zero.
+// paginateLookupRows applies offset and limit to the row slice.
 func paginateLookupRows(rows []LookupRow, offset, limit *int) []LookupRow {
 	if offset != nil && *offset > 0 {
 		if *offset >= len(rows) {
@@ -246,44 +240,22 @@ func lookupValueIn(value string, set []string) bool {
 }
 
 // MockLookupClient implements LookupClientBase with configurable canned responses.
-//
-// Tests can wire it three ways, in order of precedence (highest first):
-//  1. Err — return this error for every call.
-//  2. LookupFunc — call this function for every Lookup; useful for custom logic.
-//  3. Tables — declarative tables; the mock applies LookupQuery semantics
-//     (match, sort, paginate, project) against the configured rows. This is
-//     the cleanest option for typical tests.
-//  4. Results — canned full LookupResults keyed by table name.
-//
-// Lookups that hit none of the above return an empty LookupResults.
 type MockLookupClient struct {
-	// Results maps table names to canned, fully-formed lookup results.
-	Results map[string]*LookupResults
-
-	// Tables is a declarative set of lookup tables. The mock applies the
-	// LookupQuery against each matching table's rows automatically.
-	Tables []LookupTable
-
-	// LookupFunc, when set, handles all Lookup calls. Takes precedence over
-	// Tables and Results. It receives the resolved LookupQuery so custom
-	// handlers can inspect the match criteria without re-applying options.
-	LookupFunc func(ctx context.Context, tableName string, query LookupQuery) (*LookupResults, error)
-
-	// Err is returned for all lookups when non-nil, overriding everything else.
-	Err error
-
-	// LookupCalls records each call to Lookup for assertion.
+	Results    map[string]*LookupResults
+	Tables     []LookupTable
+	LookupFunc func(ctx context.Context, tableName string, query lookupQueryParams) (*LookupResults, error)
+	Err        error
 	LookupCalls []MockLookupCall
 }
 
 // MockLookupCall records the arguments of a Lookup call.
 type MockLookupCall struct {
 	TableName string
-	Query     LookupQuery
+	Query     lookupQueryParams
 }
 
 func (m *MockLookupClient) Lookup(ctx context.Context, tableName string, opts ...LookupOption) (*LookupResults, error) {
-	query := buildLookupQuery(opts)
+	query := buildlookupQueryParams(opts)
 	m.LookupCalls = append(m.LookupCalls, MockLookupCall{TableName: tableName, Query: query})
 	if m.Err != nil {
 		return nil, m.Err
@@ -314,18 +286,10 @@ func (m *MockLookupClient) Lookup(ctx context.Context, tableName string, opts ..
 
 // MockArtifactClient implements ArtifactClientBase with configurable responses.
 type MockArtifactClient struct {
-	// Artifacts maps "owner/name" to fetched artifacts for Get calls.
-	// Plugin-scoped keys use "plugin/name", shared use "shared/name".
-	Artifacts map[string]*FetchedArtifact
-
-	// PublishResponse is returned by all Publish calls.
+	Artifacts       map[string]*FetchedArtifact
 	PublishResponse *PublishResponse
-
-	// Err is returned for all calls when non-nil.
-	Err error
-
-	// PublishCalls records each publish call for assertion.
-	PublishCalls []MockPublishCall
+	Err             error
+	PublishCalls    []MockPublishCall
 }
 
 // MockPublishCall records the arguments of a Publish call.
@@ -416,42 +380,26 @@ type TestContext struct {
 
 // Content creates an ActionContent from a string, using the TestContext's DID.
 // The returned ActionContent is wired back to the TestContext's ActionContext
-// so that content.LoadString(ctx) etc. work without explicit plumbing.
+// so that content.LoadString() etc. work without explicit plumbing.
 func (tc *TestContext) Content(name, mediaType, data string) ActionContent {
 	c := tc.Store.CreateStringContent(tc.DID, name, mediaType, data)
 	c.actx = tc.ActionContext
 	return c
 }
 
-// NewTransformInput builds a TransformInput wired to the TestContext with the
-// given content items, an empty metadata map, and an empty params map. Use the
-// struct literal form directly when you need to populate metadata or params.
-func NewTransformInput(tc *TestContext, contents ...ActionContent) TransformInput {
-	return TransformInput{
-		ActionContext: tc.ActionContext,
-		Content:       contents,
-		Metadata:      map[string]string{},
-		Params:        map[string]any{},
-	}
+// NewDeltafile creates a Deltafile wired to this TestContext with the given
+// content items and empty metadata.
+func (tc *TestContext) NewDeltafile(contents ...ActionContent) *Deltafile {
+	return newDeltafile(tc.ActionContext, contents, nil)
 }
 
-// NewEgressInput builds an EgressInput wired to the TestContext with the given
-// content items, an empty metadata map, and an empty params map.
-func NewEgressInput(tc *TestContext, contents ...ActionContent) EgressInput {
-	return EgressInput{
-		ActionContext: tc.ActionContext,
-		Content:       contents,
-		Metadata:      map[string]string{},
-		Params:        map[string]any{},
-	}
-}
-
-// NewIngressInput builds an IngressInput wired to the TestContext with an
-// empty params map.
-func NewIngressInput(tc *TestContext) IngressInput {
-	return IngressInput{
-		ActionContext: tc.ActionContext,
-		Params:        map[string]any{},
+// NewIngressInput creates an IngressInput wired to this TestContext.
+func (tc *TestContext) NewIngressInput() *IngressInput {
+	return &IngressInput{
+		Memo:       tc.ActionContext.Memo,
+		FlowName:   tc.ActionContext.FlowName,
+		ActionName: tc.ActionContext.ActionName,
+		actx:       tc.ActionContext,
 	}
 }
 
@@ -471,40 +419,90 @@ func NewTestContext(did string) *TestContext {
 			SystemName:     "test-system",
 			StartTime:      time.Now(),
 			ContentService: store,
+			ctx:            context.Background(),
 		},
 		Store: store,
 	}
 }
 
+// SetLookupClient sets the lookup client on the TestContext and global state.
+// The previous global state is restored when the test completes via t.Cleanup,
+// making it safe to use in parallel tests.
+func (tc *TestContext) SetLookupClient(t *testing.T, client LookupClientBase) {
+	tc.ActionContext.LookupClient = client
+	prev := globalState.lookupClient
+	prevCtx := globalState.ctx
+	globalState.lookupClient = client
+	if globalState.ctx == nil {
+		globalState.ctx = context.Background()
+	}
+	t.Cleanup(func() {
+		globalState.lookupClient = prev
+		globalState.ctx = prevCtx
+	})
+}
+
+// SetArtifactClient sets the artifact client on the TestContext and global state.
+// The previous global state is restored when the test completes via t.Cleanup,
+// making it safe to use in parallel tests.
+func (tc *TestContext) SetArtifactClient(t *testing.T, client ArtifactClientBase) {
+	tc.ActionContext.ArtifactClient = client
+	prev := globalState.artifactClient
+	prevCtx := globalState.ctx
+	globalState.artifactClient = client
+	if globalState.ctx == nil {
+		globalState.ctx = context.Background()
+	}
+	t.Cleanup(func() {
+		globalState.artifactClient = prev
+		globalState.ctx = prevCtx
+	})
+}
+
 // --- Result Inspection ---
 
-// ResultEvent converts a Result to an ActionEvent for test assertions.
-// The ActionEvent contains all result data in exported, inspectable fields.
-func ResultEvent(result Result, actx *ActionContext) *ActionEvent {
-	return result.toActionEvent(actx, actx.StartTime)
+// RunTransform executes a transform action and returns the ActionEvent.
+// If the action creates children via df.NewChild, the result is a multi-child
+// transform event (split). Otherwise it's a single transform event.
+func RunTransform[P any](t *testing.T, action interface {
+	Transform(*Deltafile, P) *Deltafile
+}, df *Deltafile, params P) *ActionEvent {
+	t.Helper()
+	startTime := time.Now()
+	action.Transform(df, params)
+	if len(df.children) > 0 {
+		return splitToTransformEvent(df.children, df, df.actx, startTime)
+	}
+	return deltafileToTransformEvent(df, df.actx, startTime)
 }
 
-// --- Action Runners ---
-
-// RunTransform executes a TransformAction and returns the ActionEvent.
-func RunTransform(t *testing.T, action TransformAction, input TransformInput) *ActionEvent {
+// RunEgress executes an egress action and returns the ActionEvent.
+func RunEgress[P any](t *testing.T, action interface {
+	Egress(*Deltafile, P) *Deltafile
+}, df *Deltafile, params P) *ActionEvent {
 	t.Helper()
-	result := action.Transform(context.Background(), input)
-	return ResultEvent(result, input.ActionContext)
+	startTime := time.Now()
+	action.Egress(df, params)
+	return deltafileToEgressEvent(df, df.actx, startTime)
 }
 
-// RunEgress executes an EgressAction and returns the ActionEvent.
-func RunEgress(t *testing.T, action EgressAction, input EgressInput) *ActionEvent {
+// RunIngress executes a timed ingress action and returns the ActionEvent.
+func RunIngress[P any](t *testing.T, action interface {
+	Ingress(*IngressInput, P) *IngressResult
+}, input *IngressInput, params P) *ActionEvent {
 	t.Helper()
-	result := action.Egress(context.Background(), input)
-	return ResultEvent(result, input.ActionContext)
+	startTime := time.Now()
+	ir := action.Ingress(input, params)
+	return ingressResultToEvent(ir, input.actx, startTime)
 }
 
-// RunIngress executes a TimedIngressAction and returns the ActionEvent.
-func RunIngress(t *testing.T, action TimedIngressAction, input IngressInput) *ActionEvent {
+// RunJoin executes a join action and returns the joined Deltafile.
+func RunJoin[P any](t *testing.T, action interface {
+	Join([]*Deltafile, *Deltafile, P) *Deltafile
+}, inputs []*Deltafile, joined *Deltafile, params P) *Deltafile {
 	t.Helper()
-	result := action.Ingress(context.Background(), input)
-	return ResultEvent(result, input.ActionContext)
+	action.Join(inputs, joined, params)
+	return joined
 }
 
 // --- Result Assertions ---
@@ -516,6 +514,17 @@ func (e *ActionEvent) RequireTransform(t *testing.T) []TransformEvent {
 		t.Fatalf("Type = %q, want TRANSFORM", e.Type)
 	}
 	return e.Transform
+}
+
+// RequireSingleTransform asserts the event type is TRANSFORM with exactly one
+// child and returns that single TransformEvent.
+func (e *ActionEvent) RequireSingleTransform(t *testing.T) TransformEvent {
+	t.Helper()
+	te := e.RequireTransform(t)
+	if len(te) != 1 {
+		t.Fatalf("expected 1 transform event, got %d", len(te))
+	}
+	return te[0]
 }
 
 // RequireError asserts the event type is ERROR with the given cause.
@@ -557,4 +566,18 @@ func (e *ActionEvent) RequireIngress(t *testing.T) *IngressEvent {
 		t.Fatalf("Type = %q, want INGRESS", e.Type)
 	}
 	return e.Ingress
+}
+
+// RequireContentString loads the content at the given index as a string,
+// failing the test on error.
+func (te TransformEvent) RequireContentString(t *testing.T, index int) string {
+	t.Helper()
+	if index < 0 || index >= len(te.Content) {
+		t.Fatalf("content index %d out of range (have %d)", index, len(te.Content))
+	}
+	data, err := te.Content[index].LoadString()
+	if err != nil {
+		t.Fatalf("failed to load content[%d]: %v", index, err)
+	}
+	return data
 }

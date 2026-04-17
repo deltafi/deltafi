@@ -15,84 +15,45 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-// ABOUTME: Tests for action type detection.
-// ABOUTME: Verifies detectActionType correctly identifies TransformAction, EgressAction, TimedIngressAction.
+// ABOUTME: Tests for action registration builder methods and join action behavior.
+// ABOUTME: Verifies Registration.Describe, WithParams, WithOptions, and Join merging logic.
 
 package actionkit
 
 import (
-	"context"
 	"testing"
 )
 
-// Test action implementations
+// Test action implementations using the convention-based method signatures.
+
+type noParams struct{}
+
 type testTransformAction struct{}
 
-func (a *testTransformAction) Transform(ctx context.Context, input TransformInput) Result {
-	return NewTransformResult(input.ActionContext)
+func (a *testTransformAction) Transform(df *Deltafile, params noParams) *Deltafile {
+	return df
 }
 
 type testEgressAction struct{}
 
-func (a *testEgressAction) Egress(ctx context.Context, input EgressInput) Result {
-	return NewEgressResult(input.ActionContext)
+func (a *testEgressAction) Egress(df *Deltafile, params noParams) *Deltafile {
+	return df
 }
 
 type testTimedIngressAction struct{}
 
-func (a *testTimedIngressAction) Ingress(ctx context.Context, input IngressInput) Result {
-	return NewIngressResult(input.ActionContext)
-}
-
-type notAnAction struct{}
-
-func TestDetectActionType_Transform(t *testing.T) {
-	actionType, err := detectActionType(&testTransformAction{})
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-	if actionType != ActionTypeTransform {
-		t.Errorf("got %q, want %q", actionType, ActionTypeTransform)
-	}
-}
-
-func TestDetectActionType_Egress(t *testing.T) {
-	actionType, err := detectActionType(&testEgressAction{})
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-	if actionType != ActionTypeEgress {
-		t.Errorf("got %q, want %q", actionType, ActionTypeEgress)
-	}
-}
-
-func TestDetectActionType_TimedIngress(t *testing.T) {
-	actionType, err := detectActionType(&testTimedIngressAction{})
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-	if actionType != ActionTypeTimedIngress {
-		t.Errorf("got %q, want %q", actionType, ActionTypeTimedIngress)
-	}
-}
-
-func TestDetectActionType_NotAnAction(t *testing.T) {
-	_, err := detectActionType(&notAnAction{})
-	if err == nil {
-		t.Error("expected error for non-action type")
-	}
-}
-
-func TestDetectActionType_String(t *testing.T) {
-	_, err := detectActionType("not an action")
-	if err == nil {
-		t.Error("expected error for string")
-	}
+func (a *testTimedIngressAction) Ingress(input *IngressInput, params noParams) *IngressResult {
+	return NewIngressResult()
 }
 
 func TestRegistration_Builder(t *testing.T) {
-	reg := &Registration{Name: "TestAction", Action: &testTransformAction{}}
-	reg.Describe("test description").WithParams(struct{ Name string }{})
+	old := registered
+	registered = nil
+	defer func() { registered = old }()
+
+	RegisterTransform("TestAction", &testTransformAction{})
+	reg := registered[0]
+	reg.Describe("test description").WithParams(noParams{})
 
 	if reg.description != "test description" {
 		t.Errorf("description = %q, want %q", reg.description, "test description")
@@ -103,7 +64,12 @@ func TestRegistration_Builder(t *testing.T) {
 }
 
 func TestRegistration_DefaultDescription(t *testing.T) {
-	reg := &Registration{Name: "TestAction", Action: &testTransformAction{}}
+	old := registered
+	registered = nil
+	defer func() { registered = old }()
+
+	RegisterTransform("TestAction", &testTransformAction{})
+	reg := registered[0]
 
 	if reg.description != "" {
 		t.Errorf("description = %q, want empty", reg.description)
@@ -111,7 +77,11 @@ func TestRegistration_DefaultDescription(t *testing.T) {
 }
 
 func TestRegistration_WithOptions(t *testing.T) {
-	reg := &Registration{Name: "TestAction", Action: &testTransformAction{}}
+	old := registered
+	registered = nil
+	defer func() { registered = old }()
+
+	reg := RegisterTransform("TestAction", &testTransformAction{})
 	reg.WithOptions(ActionOptions{
 		Description: "My action",
 		InputSpec:   &InputSpec{ContentSummary: "text input"},
@@ -131,7 +101,11 @@ func TestRegistration_WithOptions(t *testing.T) {
 }
 
 func TestRegistration_WithOptions_PreservesExplicitDescribe(t *testing.T) {
-	reg := &Registration{Name: "TestAction", Action: &testTransformAction{}}
+	old := registered
+	registered = nil
+	defer func() { registered = old }()
+
+	reg := RegisterTransform("TestAction", &testTransformAction{})
 	reg.Describe("explicit desc").WithOptions(ActionOptions{
 		Description: "options desc",
 	})
@@ -148,104 +122,134 @@ func TestRegistration_WithOptions_PreservesExplicitDescribe(t *testing.T) {
 
 // --- JoinAction ---
 
-type testJoinAction struct {
-	testTransformAction
+type testJoinAction struct{}
+
+func (a *testJoinAction) Transform(df *Deltafile, params noParams) *Deltafile {
+	return df
 }
 
-func (a *testJoinAction) Join(ctx context.Context, inputs []TransformInput) TransformInput {
-	return DefaultJoin(inputs)
+func (a *testJoinAction) Join(inputs []*Deltafile, joined *Deltafile, params noParams) *Deltafile {
+	// Merge content from all inputs
+	for _, input := range inputs {
+		joined.AddContentSlice(input.GetContentSlice())
+		joined.AddMetadataMap(input.GetMetadataMap())
+	}
+	return joined
 }
 
-func TestJoinActionInterface(t *testing.T) {
+func TestJoinAction_MergesContentAndMetadata(t *testing.T) {
+	tc := NewTestContext("d1")
+
+	input0 := tc.NewDeltafile(
+		ActionContent{Name: "file1.txt", MediaType: "text/plain"},
+	)
+	input0.AddMetadata("key1", "val1").AddMetadata("shared", "first")
+
+	input1 := tc.NewDeltafile(
+		ActionContent{Name: "file2.txt", MediaType: "text/plain"},
+		ActionContent{Name: "file3.txt", MediaType: "text/plain"},
+	)
+	input1.AddMetadata("key2", "val2").AddMetadata("shared", "second")
+
+	joined := tc.NewDeltafile()
+
 	action := &testJoinAction{}
+	result := action.Join([]*Deltafile{input0, input1}, joined, noParams{})
 
-	// Should implement both TransformAction and JoinAction
-	if _, ok := any(action).(TransformAction); !ok {
-		t.Error("testJoinAction should implement TransformAction")
+	// Content from all inputs should be in joined output
+	newContent := result.GetNewContentSlice()
+	if len(newContent) != 3 {
+		t.Fatalf("expected 3 content items, got %d", len(newContent))
 	}
-	if _, ok := any(action).(JoinAction); !ok {
-		t.Error("testJoinAction should implement JoinAction")
+	if newContent[0].Name != "file1.txt" {
+		t.Errorf("content[0] = %q", newContent[0].Name)
 	}
-}
-
-func TestJoinActionNotImplemented(t *testing.T) {
-	action := &testTransformAction{}
-	if _, ok := any(action).(JoinAction); ok {
-		t.Error("testTransformAction should not implement JoinAction")
-	}
-}
-
-func TestDefaultJoin(t *testing.T) {
-	actx := &ActionContext{DID: "d1", ActionName: "JoinTest"}
-	inputs := []TransformInput{
-		{
-			ActionContext: actx,
-			Content: []ActionContent{
-				{Name: "file1.txt", MediaType: "text/plain"},
-			},
-			Metadata: map[string]string{"key1": "val1", "shared": "first"},
-			Params:   map[string]any{"p": "v"},
-		},
-		{
-			ActionContext: actx,
-			Content: []ActionContent{
-				{Name: "file2.txt", MediaType: "text/plain"},
-				{Name: "file3.txt", MediaType: "text/plain"},
-			},
-			Metadata: map[string]string{"key2": "val2", "shared": "second"},
-			Params:   map[string]any{"p": "v"},
-		},
-	}
-
-	merged := DefaultJoin(inputs)
-
-	// Content should be concatenated
-	if len(merged.Content) != 3 {
-		t.Fatalf("expected 3 content items, got %d", len(merged.Content))
-	}
-	if merged.Content[0].Name != "file1.txt" {
-		t.Errorf("content[0] = %q", merged.Content[0].Name)
-	}
-	if merged.Content[2].Name != "file3.txt" {
-		t.Errorf("content[2] = %q", merged.Content[2].Name)
+	if newContent[2].Name != "file3.txt" {
+		t.Errorf("content[2] = %q", newContent[2].Name)
 	}
 
 	// Metadata: later inputs override
-	if merged.Metadata["key1"] != "val1" {
-		t.Errorf("metadata key1 = %q", merged.Metadata["key1"])
+	meta := result.GetMetadataMap()
+	if meta["key1"] != "val1" {
+		t.Errorf("metadata key1 = %q", meta["key1"])
 	}
-	if merged.Metadata["key2"] != "val2" {
-		t.Errorf("metadata key2 = %q", merged.Metadata["key2"])
+	if meta["key2"] != "val2" {
+		t.Errorf("metadata key2 = %q", meta["key2"])
 	}
-	if merged.Metadata["shared"] != "second" {
-		t.Errorf("metadata shared = %q, want 'second' (later overrides)", merged.Metadata["shared"])
-	}
-
-	// ActionContext and Params from first input
-	if merged.ActionContext != actx {
-		t.Error("ActionContext should be from first input")
-	}
-	if merged.Params["p"] != "v" {
-		t.Errorf("Params p = %v", merged.Params["p"])
+	if meta["shared"] != "second" {
+		t.Errorf("metadata shared = %q, want 'second' (later overrides)", meta["shared"])
 	}
 }
 
-func TestDefaultJoin_SingleInput(t *testing.T) {
-	actx := &ActionContext{DID: "d1"}
-	inputs := []TransformInput{
-		{
-			ActionContext: actx,
-			Content:       []ActionContent{{Name: "only.txt"}},
-			Metadata:      map[string]string{"k": "v"},
-		},
-	}
+func TestJoinAction_SingleInput(t *testing.T) {
+	tc := NewTestContext("d1")
 
-	merged := DefaultJoin(inputs)
+	input := tc.NewDeltafile(
+		ActionContent{Name: "only.txt"},
+	)
+	input.AddMetadata("k", "v")
 
-	if len(merged.Content) != 1 || merged.Content[0].Name != "only.txt" {
-		t.Errorf("content = %v", merged.Content)
+	joined := tc.NewDeltafile()
+
+	action := &testJoinAction{}
+	result := action.Join([]*Deltafile{input}, joined, noParams{})
+
+	newContent := result.GetNewContentSlice()
+	if len(newContent) != 1 || newContent[0].Name != "only.txt" {
+		t.Errorf("content = %v", newContent)
 	}
-	if merged.Metadata["k"] != "v" {
-		t.Errorf("metadata k = %q", merged.Metadata["k"])
+	meta := result.GetMetadataMap()
+	if meta["k"] != "v" {
+		t.Errorf("metadata k = %q", meta["k"])
+	}
+}
+
+type testJoinErrorAction struct{}
+
+func (a *testJoinErrorAction) Transform(df *Deltafile, params noParams) *Deltafile {
+	return df
+}
+
+func (a *testJoinErrorAction) Join(inputs []*Deltafile, joined *Deltafile, params noParams) *Deltafile {
+	return joined.Errorf("join failed: %d inputs", len(inputs))
+}
+
+func TestJoinAction_ReturnsError(t *testing.T) {
+	tc := NewTestContext("d1")
+	input := tc.NewDeltafile(ActionContent{Name: "f.txt"})
+	joined := tc.NewDeltafile()
+
+	result := (&testJoinErrorAction{}).Join([]*Deltafile{input}, joined, noParams{})
+
+	if !result.hasError {
+		t.Fatal("expected error state on returned Deltafile")
+	}
+	if result.errCause != "join failed: 1 inputs" {
+		t.Errorf("cause = %q", result.errCause)
+	}
+}
+
+type testJoinFilterAction struct{}
+
+func (a *testJoinFilterAction) Transform(df *Deltafile, params noParams) *Deltafile {
+	return df
+}
+
+func (a *testJoinFilterAction) Join(inputs []*Deltafile, joined *Deltafile, params noParams) *Deltafile {
+	return joined.Filterf("not enough inputs")
+}
+
+func TestJoinAction_ReturnsFilter(t *testing.T) {
+	tc := NewTestContext("d1")
+	input := tc.NewDeltafile(ActionContent{Name: "f.txt"})
+	joined := tc.NewDeltafile()
+
+	result := (&testJoinFilterAction{}).Join([]*Deltafile{input}, joined, noParams{})
+
+	if !result.hasFilter {
+		t.Fatal("expected filter state on returned Deltafile")
+	}
+	if result.filterMessage != "not enough inputs" {
+		t.Errorf("message = %q", result.filterMessage)
 	}
 }

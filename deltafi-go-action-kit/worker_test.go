@@ -15,8 +15,8 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-// ABOUTME: Tests for worker deserialization, input building, and orphan detection.
-// ABOUTME: Verifies queue event parsing, input construction, and segment collection logic.
+// ABOUTME: Tests for worker deserialization, Deltafile building, and orphan detection.
+// ABOUTME: Verifies queue event parsing, Deltafile construction, and segment collection logic.
 
 package actionkit
 
@@ -139,7 +139,7 @@ func TestDeserializeQueueEvent_InvalidJSON(t *testing.T) {
 	}
 }
 
-func TestBuildTransformInput(t *testing.T) {
+func TestBuildDeltafileFromEvent(t *testing.T) {
 	actx := &ActionContext{DID: "d1", ActionName: "TestAction"}
 	event := &queueEvent{
 		DeltaFileMessages: []deltaFileMessage{{
@@ -149,94 +149,51 @@ func TestBuildTransformInput(t *testing.T) {
 		ActionParams: map[string]any{"p1": "v1"},
 	}
 
-	input := buildTransformInput(actx, event)
+	df := buildDeltafileFromEvent(actx, event)
 
-	if input.ActionContext != actx {
-		t.Error("ActionContext not set")
+	if !df.HasContent() {
+		t.Error("expected content")
 	}
-	if len(input.Content) != 1 || input.Content[0].Name != "file.txt" {
-		t.Errorf("Content = %v", input.Content)
+	content := df.GetContentSlice()
+	if len(content) != 1 || content[0].Name != "file.txt" {
+		t.Errorf("Content = %v", content)
 	}
-	if input.Metadata["mk"] != "mv" {
-		t.Errorf("Metadata mk = %q", input.Metadata["mk"])
+	val, err := df.GetMetadata("mk")
+	if err != nil {
+		t.Fatalf("GetMetadata(mk): %v", err)
 	}
-	if input.Params["p1"] != "v1" {
-		t.Errorf("Params p1 = %v", input.Params["p1"])
+	if val != "mv" {
+		t.Errorf("Metadata mk = %q", val)
 	}
 }
 
-func TestBuildTransformInput_NoMessages(t *testing.T) {
+func TestBuildDeltafileFromEvent_NoMessages(t *testing.T) {
 	actx := &ActionContext{DID: "d1"}
 	event := &queueEvent{
 		DeltaFileMessages: []deltaFileMessage{},
 		ActionParams:      map[string]any{},
 	}
 
-	input := buildTransformInput(actx, event)
+	df := buildDeltafileFromEvent(actx, event)
 
-	if input.Content != nil {
-		t.Errorf("Content should be nil, got %v", input.Content)
-	}
-	if input.Metadata == nil {
-		t.Error("Metadata should be initialized to empty map")
+	if df.HasContent() {
+		t.Error("Content should be empty")
 	}
 }
 
-func TestBuildEgressInput(t *testing.T) {
-	actx := &ActionContext{DID: "d1"}
-	event := &queueEvent{
-		DeltaFileMessages: []deltaFileMessage{{
-			Metadata:    map[string]string{"ek": "ev"},
-			ContentList: []ActionContent{{Name: "egress.txt"}},
-		}},
-		ActionParams: map[string]any{},
-	}
-
-	input := buildEgressInput(actx, event)
-
-	if input.ActionContext != actx {
-		t.Error("ActionContext not set")
-	}
-	if len(input.Content) != 1 || input.Content[0].Name != "egress.txt" {
-		t.Errorf("Content = %v", input.Content)
-	}
-	if input.Metadata["ek"] != "ev" {
-		t.Errorf("Metadata ek = %q", input.Metadata["ek"])
-	}
-}
-
-func TestBuildIngressInput(t *testing.T) {
-	actx := &ActionContext{DID: "d1"}
-	event := &queueEvent{
-		ActionParams: map[string]any{"ip": "iv"},
-	}
-
-	input := buildIngressInput(actx, event)
-
-	if input.ActionContext != actx {
-		t.Error("ActionContext not set")
-	}
-	if input.Params["ip"] != "iv" {
-		t.Errorf("Params ip = %v", input.Params["ip"])
-	}
-}
-
-func TestCollectResultSegments_TransformResult(t *testing.T) {
-	actx := testActionContext()
-	r := NewTransformResult(actx)
-	r.AddContent(ActionContent{
-		Segments: []Segment{
-			{UUID: "s1"},
-			{UUID: "s2"},
+func TestCollectEventSegments_TransformEvent(t *testing.T) {
+	event := &ActionEvent{
+		Transform: []TransformEvent{
+			{
+				Content: []ActionContent{
+					{Segments: []Segment{{UUID: "s1"}, {UUID: "s2"}}},
+					{Segments: []Segment{{UUID: "s3"}}},
+				},
+			},
 		},
-	})
-	r.AddContent(ActionContent{
-		Segments: []Segment{
-			{UUID: "s3"},
-		},
-	})
+	}
 
-	segs := collectResultSegments(r)
+	segs := collectEventSegments(event)
 	if len(segs) != 3 {
 		t.Fatalf("expected 3 segments, got %d", len(segs))
 	}
@@ -251,76 +208,76 @@ func TestCollectResultSegments_TransformResult(t *testing.T) {
 	}
 }
 
-func TestCollectResultSegments_IngressResult(t *testing.T) {
-	actx := testActionContext()
-	r := NewIngressResult(actx)
+func TestCollectEventSegments_IngressEvent(t *testing.T) {
+	event := &ActionEvent{
+		Ingress: &IngressEvent{
+			IngressItems: []IngressEventItem{
+				{
+					Content: []ActionContent{
+						{Segments: []Segment{{UUID: "is1"}, {UUID: "is2"}}},
+					},
+				},
+			},
+		},
+	}
 
-	item := NewIngressResultItem("file.txt")
-	item.AddContent(ActionContent{
-		Segments: []Segment{{UUID: "is1"}, {UUID: "is2"}},
-	})
-	r.AddItem(*item)
-
-	segs := collectResultSegments(r)
+	segs := collectEventSegments(event)
 	if len(segs) != 2 {
 		t.Fatalf("expected 2 segments, got %d", len(segs))
 	}
 }
 
-func TestCollectResultSegments_ErrorResult(t *testing.T) {
-	actx := testActionContext()
-	r := NewErrorResult(actx, "err")
+func TestCollectEventSegments_ErrorEvent(t *testing.T) {
+	event := &ActionEvent{
+		Error: &ErrorEvent{Cause: "err"},
+	}
 
-	segs := collectResultSegments(r)
+	segs := collectEventSegments(event)
 	if len(segs) != 0 {
-		t.Errorf("expected 0 segments for ErrorResult, got %d", len(segs))
+		t.Errorf("expected 0 segments for ErrorEvent, got %d", len(segs))
 	}
 }
 
-func TestCollectResultSegments_FilterResult(t *testing.T) {
-	actx := testActionContext()
-	r := NewFilterResult(actx, "filtered")
+func TestCollectEventSegments_FilterEvent(t *testing.T) {
+	event := &ActionEvent{
+		Filter: &FilterEvent{Message: "filtered"},
+	}
 
-	segs := collectResultSegments(r)
+	segs := collectEventSegments(event)
 	if len(segs) != 0 {
-		t.Errorf("expected 0 segments for FilterResult, got %d", len(segs))
+		t.Errorf("expected 0 segments for FilterEvent, got %d", len(segs))
 	}
 }
 
-func TestCollectResultSegments_EgressResult(t *testing.T) {
-	actx := testActionContext()
-	r := NewEgressResult(actx)
+func TestCollectEventSegments_EgressEvent(t *testing.T) {
+	event := &ActionEvent{
+		Type: "EGRESS",
+	}
 
-	segs := collectResultSegments(r)
+	segs := collectEventSegments(event)
 	if len(segs) != 0 {
-		t.Errorf("expected 0 segments for EgressResult, got %d", len(segs))
+		t.Errorf("expected 0 segments for EgressEvent, got %d", len(segs))
 	}
 }
 
-func TestCollectResultSegments_TransformResults(t *testing.T) {
-	actx := testActionContext()
-	r := NewTransformResults(actx)
+func TestCollectEventSegments_MultiChildTransform(t *testing.T) {
+	event := &ActionEvent{
+		Transform: []TransformEvent{
+			{
+				Content: []ActionContent{
+					{Segments: []Segment{{UUID: "seg-a", DID: "child-did-0", Size: 100}}},
+				},
+			},
+			{
+				Content: []ActionContent{
+					{Segments: []Segment{{UUID: "seg-b", DID: "child-did-1", Size: 200}}},
+					{Segments: []Segment{{UUID: "seg-c", DID: "child-did-1", Size: 300}}},
+				},
+			},
+		},
+	}
 
-	child1 := NewChildTransformResult(actx, "child-0")
-	child1.AddContent(ActionContent{
-		Name:     "c0.txt",
-		Segments: []Segment{{UUID: "seg-a", DID: "child-did-0", Size: 100}},
-	})
-
-	child2 := NewChildTransformResult(actx, "child-1")
-	child2.AddContent(ActionContent{
-		Name:     "c1.txt",
-		Segments: []Segment{{UUID: "seg-b", DID: "child-did-1", Size: 200}},
-	})
-	child2.AddContent(ActionContent{
-		Name:     "c2.txt",
-		Segments: []Segment{{UUID: "seg-c", DID: "child-did-1", Size: 300}},
-	})
-
-	r.AddChild(*child1)
-	r.AddChild(*child2)
-
-	segs := collectResultSegments(r)
+	segs := collectEventSegments(event)
 	if len(segs) != 3 {
 		t.Fatalf("expected 3 segments, got %d", len(segs))
 	}
@@ -333,72 +290,6 @@ func TestCollectResultSegments_TransformResults(t *testing.T) {
 		if !uuids[expected] {
 			t.Errorf("missing segment %q", expected)
 		}
-	}
-}
-
-func TestBuildTransformInputs_MultipleMessages(t *testing.T) {
-	actx := &ActionContext{DID: "d1", ActionName: "JoinAction"}
-	event := &queueEvent{
-		DeltaFileMessages: []deltaFileMessage{
-			{
-				Metadata:    map[string]string{"index": "0"},
-				ContentList: []ActionContent{{Name: "file0.txt"}},
-			},
-			{
-				Metadata:    map[string]string{"index": "1"},
-				ContentList: []ActionContent{{Name: "file1.txt"}, {Name: "file2.txt"}},
-			},
-			{
-				ContentList: []ActionContent{{Name: "file3.txt"}},
-			},
-		},
-		ActionParams: map[string]any{"p": "v"},
-	}
-
-	inputs := buildTransformInputs(actx, event)
-
-	if len(inputs) != 3 {
-		t.Fatalf("expected 3 inputs, got %d", len(inputs))
-	}
-
-	// First input
-	if inputs[0].Metadata["index"] != "0" {
-		t.Errorf("inputs[0] metadata index = %q", inputs[0].Metadata["index"])
-	}
-	if len(inputs[0].Content) != 1 || inputs[0].Content[0].Name != "file0.txt" {
-		t.Errorf("inputs[0] content = %v", inputs[0].Content)
-	}
-
-	// Second input
-	if len(inputs[1].Content) != 2 {
-		t.Errorf("inputs[1] content count = %d, want 2", len(inputs[1].Content))
-	}
-
-	// Third input should have nil metadata initialized to empty map
-	if inputs[2].Metadata == nil {
-		t.Error("inputs[2] metadata should not be nil")
-	}
-
-	// All inputs should share ActionContext and Params
-	for i, input := range inputs {
-		if input.ActionContext != actx {
-			t.Errorf("inputs[%d] ActionContext not set", i)
-		}
-		if input.Params["p"] != "v" {
-			t.Errorf("inputs[%d] Params p = %v", i, input.Params["p"])
-		}
-	}
-}
-
-func TestBuildTransformInputs_EmptyMessages(t *testing.T) {
-	actx := &ActionContext{DID: "d1"}
-	event := &queueEvent{
-		DeltaFileMessages: []deltaFileMessage{},
-	}
-
-	inputs := buildTransformInputs(actx, event)
-	if len(inputs) != 0 {
-		t.Errorf("expected 0 inputs, got %d", len(inputs))
 	}
 }
 

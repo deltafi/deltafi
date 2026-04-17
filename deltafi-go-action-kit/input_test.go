@@ -15,36 +15,34 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-// ABOUTME: Tests for input types and parameter parsing.
-// ABOUTME: Verifies FirstContent, ParseParameters, and ParseParams generic function.
+// ABOUTME: Tests for Deltafile content access, metadata, and parameter parsing.
+// ABOUTME: Verifies ContentAt, FirstContent, GetMetadata, and parseRawParams.
 
 package actionkit
 
 import "testing"
 
-func TestTransformInput_HasContent(t *testing.T) {
-	empty := TransformInput{}
+func TestDeltafile_HasContent(t *testing.T) {
+	tc := NewTestContext("did")
+	empty := tc.NewDeltafile()
 	if empty.HasContent() {
-		t.Error("HasContent() = true for empty input")
+		t.Error("HasContent() = true for empty deltafile")
 	}
 
-	withContent := TransformInput{
-		Content: []ActionContent{{Name: "file.txt"}},
-	}
+	withContent := tc.NewDeltafile(ActionContent{Name: "file.txt"})
 	if !withContent.HasContent() {
 		t.Error("HasContent() = false when content exists")
 	}
 }
 
-func TestTransformInput_ContentAt(t *testing.T) {
-	input := TransformInput{
-		Content: []ActionContent{
-			{Name: "first.txt"},
-			{Name: "second.txt"},
-		},
-	}
+func TestDeltafile_ContentAt(t *testing.T) {
+	tc := NewTestContext("did")
+	df := tc.NewDeltafile(
+		ActionContent{Name: "first.txt"},
+		ActionContent{Name: "second.txt"},
+	)
 
-	c, err := input.ContentAt(0)
+	c, err := df.ContentAt(0)
 	if err != nil {
 		t.Fatalf("ContentAt(0): %v", err)
 	}
@@ -52,7 +50,7 @@ func TestTransformInput_ContentAt(t *testing.T) {
 		t.Errorf("ContentAt(0).Name = %q", c.Name)
 	}
 
-	c, err = input.ContentAt(1)
+	c, err = df.ContentAt(1)
 	if err != nil {
 		t.Fatalf("ContentAt(1): %v", err)
 	}
@@ -61,12 +59,11 @@ func TestTransformInput_ContentAt(t *testing.T) {
 	}
 }
 
-func TestTransformInput_ContentAt_OutOfBounds(t *testing.T) {
-	input := TransformInput{
-		Content: []ActionContent{{Name: "only.txt"}},
-	}
+func TestDeltafile_ContentAt_OutOfBounds(t *testing.T) {
+	tc := NewTestContext("did")
+	df := tc.NewDeltafile(ActionContent{Name: "only.txt"})
 
-	_, err := input.ContentAt(1)
+	_, err := df.ContentAt(1)
 	if err == nil {
 		t.Fatal("ContentAt(1) should error for single-item content")
 	}
@@ -78,53 +75,53 @@ func TestTransformInput_ContentAt_OutOfBounds(t *testing.T) {
 		t.Errorf("ExpectedContentError = {Index:%d, Count:%d}, want {1, 1}", ece.Index, ece.Count)
 	}
 
-	_, err = input.ContentAt(-1)
+	_, err = df.ContentAt(-1)
 	if err == nil {
 		t.Fatal("ContentAt(-1) should error")
 	}
 }
 
-func TestTransformInput_ContentAt_Empty(t *testing.T) {
-	input := TransformInput{}
-	_, err := input.ContentAt(0)
+func TestDeltafile_ContentAt_Empty(t *testing.T) {
+	tc := NewTestContext("did")
+	df := tc.NewDeltafile()
+	_, err := df.ContentAt(0)
 	if err == nil {
 		t.Fatal("ContentAt(0) should error for empty content")
 	}
 }
 
-func TestTransformInput_ContentNamed(t *testing.T) {
-	input := TransformInput{
-		Content: []ActionContent{
-			{Name: "alpha.txt"},
-			{Name: "beta.txt"},
-			{Name: "gamma.txt"},
-		},
-	}
+func TestDeltafile_ContentNamed(t *testing.T) {
+	tc := NewTestContext("did")
+	df := tc.NewDeltafile(
+		ActionContent{Name: "alpha.txt"},
+		ActionContent{Name: "beta.txt"},
+		ActionContent{Name: "gamma.txt"},
+	)
 
-	c := input.ContentNamed("beta.txt")
-	if c == nil {
-		t.Fatal("ContentNamed(beta.txt) returned nil")
+	c, err := df.ContentNamed("beta.txt")
+	if err != nil {
+		t.Fatalf("ContentNamed(beta.txt): %v", err)
 	}
 	if c.Name != "beta.txt" {
 		t.Errorf("ContentNamed(beta.txt).Name = %q", c.Name)
 	}
 }
 
-func TestTransformInput_ContentNamed_NotFound(t *testing.T) {
-	input := TransformInput{
-		Content: []ActionContent{{Name: "only.txt"}},
-	}
-	if c := input.ContentNamed("missing.txt"); c != nil {
-		t.Errorf("ContentNamed(missing.txt) = %v, want nil", c)
+func TestDeltafile_ContentNamed_NotFound(t *testing.T) {
+	tc := NewTestContext("did")
+	df := tc.NewDeltafile(ActionContent{Name: "only.txt"})
+	_, err := df.ContentNamed("missing.txt")
+	if err == nil {
+		t.Error("ContentNamed(missing.txt) should error")
 	}
 }
 
-func TestTransformInput_GetMetadata(t *testing.T) {
-	input := TransformInput{
-		Metadata: map[string]string{"key1": "val1", "key2": "val2"},
-	}
+func TestDeltafile_GetMetadata(t *testing.T) {
+	tc := NewTestContext("did")
+	// Set metadata on the input side by creating with metadata
+	df2 := newDeltafile(tc.ActionContext, nil, map[string]string{"key1": "val1", "key2": "val2"})
 
-	val, err := input.GetMetadata("key1")
+	val, err := df2.GetMetadata("key1")
 	if err != nil {
 		t.Fatalf("GetMetadata(key1): %v", err)
 	}
@@ -133,12 +130,11 @@ func TestTransformInput_GetMetadata(t *testing.T) {
 	}
 }
 
-func TestTransformInput_GetMetadata_Missing(t *testing.T) {
-	input := TransformInput{
-		Metadata: map[string]string{"key1": "val1"},
-	}
+func TestDeltafile_GetMetadata_Missing(t *testing.T) {
+	tc := NewTestContext("did")
+	df := newDeltafile(tc.ActionContext, nil, map[string]string{"key1": "val1"})
 
-	_, err := input.GetMetadata("missing")
+	_, err := df.GetMetadata("missing")
 	if err == nil {
 		t.Fatal("GetMetadata(missing) should error")
 	}
@@ -151,183 +147,40 @@ func TestTransformInput_GetMetadata_Missing(t *testing.T) {
 	}
 }
 
-func TestTransformInput_GetMetadataOrDefault(t *testing.T) {
-	input := TransformInput{
-		Metadata: map[string]string{"key1": "val1"},
-	}
+func TestDeltafile_GetMetadataOrDefault(t *testing.T) {
+	tc := NewTestContext("did")
+	df := newDeltafile(tc.ActionContext, nil, map[string]string{"key1": "val1"})
 
-	if v := input.GetMetadataOrDefault("key1", "default"); v != "val1" {
+	if v := df.GetMetadataOrDefault("key1", "default"); v != "val1" {
 		t.Errorf("GetMetadataOrDefault(key1) = %q, want val1", v)
 	}
-	if v := input.GetMetadataOrDefault("missing", "default"); v != "default" {
+	if v := df.GetMetadataOrDefault("missing", "default"); v != "default" {
 		t.Errorf("GetMetadataOrDefault(missing) = %q, want default", v)
 	}
 }
 
-func TestEgressInput_HasContent(t *testing.T) {
-	empty := EgressInput{}
-	if empty.HasContent() {
-		t.Error("HasContent() = true for empty input")
-	}
+func TestDeltafile_FirstContent(t *testing.T) {
+	tc := NewTestContext("did")
+	df := tc.NewDeltafile(
+		ActionContent{Name: "first.txt"},
+		ActionContent{Name: "second.txt"},
+	)
 
-	withContent := EgressInput{
-		Content: []ActionContent{{Name: "file.txt"}},
-	}
-	if !withContent.HasContent() {
-		t.Error("HasContent() = false when content exists")
-	}
-}
-
-func TestEgressInput_GetMetadata(t *testing.T) {
-	input := EgressInput{
-		Metadata: map[string]string{"key1": "val1"},
-	}
-
-	val, err := input.GetMetadata("key1")
+	fc, err := df.FirstContent()
 	if err != nil {
-		t.Fatalf("GetMetadata(key1): %v", err)
-	}
-	if val != "val1" {
-		t.Errorf("GetMetadata(key1) = %q", val)
-	}
-
-	_, err = input.GetMetadata("missing")
-	if err == nil {
-		t.Fatal("GetMetadata(missing) should error")
-	}
-}
-
-func TestEgressInput_GetMetadataOrDefault(t *testing.T) {
-	input := EgressInput{
-		Metadata: map[string]string{"key1": "val1"},
-	}
-
-	if v := input.GetMetadataOrDefault("key1", "default"); v != "val1" {
-		t.Errorf("GetMetadataOrDefault(key1) = %q, want val1", v)
-	}
-	if v := input.GetMetadataOrDefault("missing", "default"); v != "default" {
-		t.Errorf("GetMetadataOrDefault(missing) = %q, want default", v)
-	}
-}
-
-func TestTransformInput_FirstContent(t *testing.T) {
-	input := TransformInput{
-		Content: []ActionContent{
-			{Name: "first.txt"},
-			{Name: "second.txt"},
-		},
-	}
-
-	fc := input.FirstContent()
-	if fc == nil {
-		t.Fatal("FirstContent() returned nil")
+		t.Fatalf("FirstContent(): %v", err)
 	}
 	if fc.Name != "first.txt" {
 		t.Errorf("FirstContent().Name = %q, want %q", fc.Name, "first.txt")
 	}
 }
 
-func TestTransformInput_FirstContent_Empty(t *testing.T) {
-	input := TransformInput{}
-	if fc := input.FirstContent(); fc != nil {
-		t.Errorf("FirstContent() = %v, want nil", fc)
-	}
-}
-
-func TestEgressInput_FirstContent(t *testing.T) {
-	input := EgressInput{
-		Content: []ActionContent{
-			{Name: "egress.txt"},
-		},
-	}
-
-	fc := input.FirstContent()
-	if fc == nil {
-		t.Fatal("FirstContent() returned nil")
-	}
-	if fc.Name != "egress.txt" {
-		t.Errorf("FirstContent().Name = %q, want %q", fc.Name, "egress.txt")
-	}
-}
-
-func TestEgressInput_FirstContent_Empty(t *testing.T) {
-	input := EgressInput{}
-	if fc := input.FirstContent(); fc != nil {
-		t.Errorf("FirstContent() = %v, want nil", fc)
-	}
-}
-
-func TestEgressInput_ContentAt(t *testing.T) {
-	input := EgressInput{
-		Content: []ActionContent{
-			{Name: "first.txt"},
-			{Name: "second.txt"},
-		},
-	}
-
-	c, err := input.ContentAt(0)
-	if err != nil {
-		t.Fatalf("ContentAt(0): %v", err)
-	}
-	if c.Name != "first.txt" {
-		t.Errorf("ContentAt(0).Name = %q", c.Name)
-	}
-
-	c, err = input.ContentAt(1)
-	if err != nil {
-		t.Fatalf("ContentAt(1): %v", err)
-	}
-	if c.Name != "second.txt" {
-		t.Errorf("ContentAt(1).Name = %q", c.Name)
-	}
-}
-
-func TestEgressInput_ContentAt_OutOfBounds(t *testing.T) {
-	input := EgressInput{
-		Content: []ActionContent{{Name: "only.txt"}},
-	}
-
-	_, err := input.ContentAt(1)
+func TestDeltafile_FirstContent_Empty(t *testing.T) {
+	tc := NewTestContext("did")
+	df := tc.NewDeltafile()
+	_, err := df.FirstContent()
 	if err == nil {
-		t.Fatal("ContentAt(1) should error for single-item content")
-	}
-	ece, ok := err.(*ExpectedContentError)
-	if !ok {
-		t.Fatalf("expected *ExpectedContentError, got %T", err)
-	}
-	if ece.Index != 1 || ece.Count != 1 {
-		t.Errorf("ExpectedContentError = {Index:%d, Count:%d}, want {1, 1}", ece.Index, ece.Count)
-	}
-
-	_, err = input.ContentAt(-1)
-	if err == nil {
-		t.Fatal("ContentAt(-1) should error")
-	}
-}
-
-func TestEgressInput_ContentNamed(t *testing.T) {
-	input := EgressInput{
-		Content: []ActionContent{
-			{Name: "alpha.txt"},
-			{Name: "beta.txt"},
-		},
-	}
-
-	c := input.ContentNamed("beta.txt")
-	if c == nil {
-		t.Fatal("ContentNamed(beta.txt) returned nil")
-	}
-	if c.Name != "beta.txt" {
-		t.Errorf("ContentNamed(beta.txt).Name = %q", c.Name)
-	}
-}
-
-func TestEgressInput_ContentNamed_NotFound(t *testing.T) {
-	input := EgressInput{
-		Content: []ActionContent{{Name: "only.txt"}},
-	}
-	if c := input.ContentNamed("missing.txt"); c != nil {
-		t.Errorf("ContentNamed(missing.txt) = %v, want nil", c)
+		t.Error("FirstContent() should error for empty content")
 	}
 }
 
@@ -337,18 +190,16 @@ type sampleParams struct {
 	Enabled bool   `json:"enabled"`
 }
 
-func TestTransformInput_ParseParameters(t *testing.T) {
-	input := TransformInput{
-		Params: map[string]any{
-			"name":    "hello",
-			"count":   float64(42), // JSON numbers are float64
-			"enabled": true,
-		},
+func TestParseRawParams(t *testing.T) {
+	raw := map[string]any{
+		"name":    "hello",
+		"count":   float64(42), // JSON numbers are float64
+		"enabled": true,
 	}
 
 	var params sampleParams
-	if err := input.ParseParameters(&params); err != nil {
-		t.Fatalf("ParseParameters: %v", err)
+	if err := parseRawParams(raw, &params); err != nil {
+		t.Fatalf("parseRawParams: %v", err)
 	}
 	if params.Name != "hello" {
 		t.Errorf("Name = %q, want %q", params.Name, "hello")
@@ -361,62 +212,27 @@ func TestTransformInput_ParseParameters(t *testing.T) {
 	}
 }
 
-func TestEgressInput_ParseParameters(t *testing.T) {
-	input := EgressInput{
-		Params: map[string]any{
-			"name": "egress-param",
-		},
-	}
-
+func TestParseRawParams_NilMap(t *testing.T) {
 	var params sampleParams
-	if err := input.ParseParameters(&params); err != nil {
-		t.Fatalf("ParseParameters: %v", err)
+	err := parseRawParams(nil, &params)
+	if err != nil {
+		t.Fatalf("parseRawParams nil: %v", err)
 	}
-	if params.Name != "egress-param" {
-		t.Errorf("Name = %q, want %q", params.Name, "egress-param")
-	}
-}
-
-func TestIngressInput_ParseParameters(t *testing.T) {
-	input := IngressInput{
-		Params: map[string]any{
-			"count": float64(7),
-		},
-	}
-
-	var params sampleParams
-	if err := input.ParseParameters(&params); err != nil {
-		t.Fatalf("ParseParameters: %v", err)
-	}
-	if params.Count != 7 {
-		t.Errorf("Count = %d, want 7", params.Count)
-	}
-}
-
-func TestParseParameters_NilParams(t *testing.T) {
-	input := TransformInput{Params: nil}
-	var params sampleParams
-	if err := input.ParseParameters(&params); err != nil {
-		t.Fatalf("ParseParameters with nil: %v", err)
-	}
-	// Should leave dest at zero values
 	if params.Name != "" {
 		t.Errorf("Name = %q, want empty", params.Name)
 	}
 }
 
-func TestParseParameters_PreservesDefaults(t *testing.T) {
+func TestParseRawParams_PreservesDefaults(t *testing.T) {
 	// When params only has partial keys, json.Unmarshal leaves missing fields untouched
-	input := TransformInput{
-		Params: map[string]any{
-			"name": "partial",
-		},
+	raw := map[string]any{
+		"name": "partial",
 	}
 
 	var params sampleParams
 	params.Count = 99 // pre-set default
-	if err := input.ParseParameters(&params); err != nil {
-		t.Fatalf("ParseParameters: %v", err)
+	if err := parseRawParams(raw, &params); err != nil {
+		t.Fatalf("parseRawParams: %v", err)
 	}
 	if params.Name != "partial" {
 		t.Errorf("Name = %q, want %q", params.Name, "partial")
@@ -427,39 +243,7 @@ func TestParseParameters_PreservesDefaults(t *testing.T) {
 	}
 }
 
-func TestParseParams_Generic(t *testing.T) {
-	raw := map[string]any{
-		"name":    "generic",
-		"count":   float64(10),
-		"enabled": true,
-	}
-
-	params, err := ParseParams[sampleParams](raw)
-	if err != nil {
-		t.Fatalf("ParseParams: %v", err)
-	}
-	if params.Name != "generic" {
-		t.Errorf("Name = %q, want %q", params.Name, "generic")
-	}
-	if params.Count != 10 {
-		t.Errorf("Count = %d, want 10", params.Count)
-	}
-	if !params.Enabled {
-		t.Error("Enabled = false, want true")
-	}
-}
-
-func TestParseParams_NilMap(t *testing.T) {
-	params, err := ParseParams[sampleParams](nil)
-	if err != nil {
-		t.Fatalf("ParseParams nil: %v", err)
-	}
-	if params.Name != "" {
-		t.Errorf("Name = %q, want empty", params.Name)
-	}
-}
-
-func TestParseParams_StringCoercion(t *testing.T) {
+func TestParseRawParams_StringCoercion(t *testing.T) {
 	// DeltaFi core may send all params as strings after variable substitution
 	raw := map[string]any{
 		"name":    "hello",
@@ -467,9 +251,10 @@ func TestParseParams_StringCoercion(t *testing.T) {
 		"enabled": "true",
 	}
 
-	params, err := ParseParams[sampleParams](raw)
+	var params sampleParams
+	err := parseRawParams(raw, &params)
 	if err != nil {
-		t.Fatalf("ParseParams with string values: %v", err)
+		t.Fatalf("parseRawParams with string values: %v", err)
 	}
 	if params.Name != "hello" {
 		t.Errorf("Name = %q, want %q", params.Name, "hello")
@@ -482,21 +267,22 @@ func TestParseParams_StringCoercion(t *testing.T) {
 	}
 }
 
-func TestParseParams_StringCoercionFalse(t *testing.T) {
+func TestParseRawParams_StringCoercionFalse(t *testing.T) {
 	raw := map[string]any{
 		"enabled": "false",
 	}
 
-	params, err := ParseParams[sampleParams](raw)
+	var params sampleParams
+	err := parseRawParams(raw, &params)
 	if err != nil {
-		t.Fatalf("ParseParams: %v", err)
+		t.Fatalf("parseRawParams: %v", err)
 	}
 	if params.Enabled {
 		t.Error("Enabled = true, want false")
 	}
 }
 
-func TestParseParams_StringCoercionFloat(t *testing.T) {
+func TestParseRawParams_StringCoercionFloat(t *testing.T) {
 	type floatParams struct {
 		Rate float64 `json:"rate"`
 	}
@@ -504,16 +290,17 @@ func TestParseParams_StringCoercionFloat(t *testing.T) {
 		"rate": "3.14",
 	}
 
-	params, err := ParseParams[floatParams](raw)
+	var params floatParams
+	err := parseRawParams(raw, &params)
 	if err != nil {
-		t.Fatalf("ParseParams: %v", err)
+		t.Fatalf("parseRawParams: %v", err)
 	}
 	if params.Rate != 3.14 {
 		t.Errorf("Rate = %f, want 3.14", params.Rate)
 	}
 }
 
-func TestParseParams_MixedNativeAndStringValues(t *testing.T) {
+func TestParseRawParams_MixedNativeAndStringValues(t *testing.T) {
 	// Some values native, some strings — both should work
 	raw := map[string]any{
 		"name":    "mixed",
@@ -521,9 +308,10 @@ func TestParseParams_MixedNativeAndStringValues(t *testing.T) {
 		"enabled": "true",
 	}
 
-	params, err := ParseParams[sampleParams](raw)
+	var params sampleParams
+	err := parseRawParams(raw, &params)
 	if err != nil {
-		t.Fatalf("ParseParams: %v", err)
+		t.Fatalf("parseRawParams: %v", err)
 	}
 	if params.Count != 10 {
 		t.Errorf("Count = %d, want 10", params.Count)
@@ -576,7 +364,7 @@ func TestCoerceParams_NonStringValuesPassThrough(t *testing.T) {
 	}
 }
 
-func TestParseParams_NumericStringIntoStringField(t *testing.T) {
+func TestParseRawParams_NumericStringIntoStringField(t *testing.T) {
 	// Reproduces the bug: string fields with numeric-looking defaults (e.g. "44")
 	// must not be coerced to numbers
 	type prefixParams struct {
@@ -591,9 +379,10 @@ func TestParseParams_NumericStringIntoStringField(t *testing.T) {
 		"didErrorPrefix": "44",
 	}
 
-	params, err := ParseParams[prefixParams](raw)
+	var params prefixParams
+	err := parseRawParams(raw, &params)
 	if err != nil {
-		t.Fatalf("ParseParams: %v", err)
+		t.Fatalf("parseRawParams: %v", err)
 	}
 	if params.DidErrorPrefix != "44" {
 		t.Errorf("DidErrorPrefix = %q, want %q", params.DidErrorPrefix, "44")
@@ -603,7 +392,7 @@ func TestParseParams_NumericStringIntoStringField(t *testing.T) {
 	}
 }
 
-func TestParseParams_NumericValueIntoStringField(t *testing.T) {
+func TestParseRawParams_NumericValueIntoStringField(t *testing.T) {
 	// When core sends a float64 for a string-typed field, it should be converted
 	type mixedParams struct {
 		Label string `json:"label"`
@@ -613,16 +402,17 @@ func TestParseParams_NumericValueIntoStringField(t *testing.T) {
 		"label": float64(42),
 	}
 
-	params, err := ParseParams[mixedParams](raw)
+	var params mixedParams
+	err := parseRawParams(raw, &params)
 	if err != nil {
-		t.Fatalf("ParseParams: %v", err)
+		t.Fatalf("parseRawParams: %v", err)
 	}
 	if params.Label != "42" {
 		t.Errorf("Label = %q, want %q", params.Label, "42")
 	}
 }
 
-func TestParseParams_NestedStructCoercion(t *testing.T) {
+func TestParseRawParams_NestedStructCoercion(t *testing.T) {
 	type inner struct {
 		Threshold int    `json:"threshold"`
 		Tag       string `json:"tag"`
@@ -638,9 +428,10 @@ func TestParseParams_NestedStructCoercion(t *testing.T) {
 		},
 	}
 
-	params, err := ParseParams[outer](raw)
+	var params outer
+	err := parseRawParams(raw, &params)
 	if err != nil {
-		t.Fatalf("ParseParams: %v", err)
+		t.Fatalf("parseRawParams: %v", err)
 	}
 	if params.Inner.Threshold != 100 {
 		t.Errorf("Inner.Threshold = %d, want 100", params.Inner.Threshold)
@@ -650,7 +441,7 @@ func TestParseParams_NestedStructCoercion(t *testing.T) {
 	}
 }
 
-func TestParseParams_PointerStructCoercion(t *testing.T) {
+func TestParseRawParams_PointerStructCoercion(t *testing.T) {
 	type inner struct {
 		Value string `json:"value"`
 	}
@@ -664,14 +455,61 @@ func TestParseParams_PointerStructCoercion(t *testing.T) {
 		},
 	}
 
-	params, err := ParseParams[outer](raw)
+	var params outer
+	err := parseRawParams(raw, &params)
 	if err != nil {
-		t.Fatalf("ParseParams: %v", err)
+		t.Fatalf("parseRawParams: %v", err)
 	}
 	if params.Inner == nil {
 		t.Fatal("Inner is nil")
 	}
 	if params.Inner.Value != "99" {
 		t.Errorf("Inner.Value = %q, want %q", params.Inner.Value, "99")
+	}
+}
+
+func TestParseRawParams_SliceStringCoercion(t *testing.T) {
+	type params struct {
+		Counts []int    `json:"counts"`
+		Flags  []bool   `json:"flags"`
+		Names  []string `json:"names"`
+	}
+
+	raw := map[string]any{
+		"counts": []any{"1", "2", "3"},
+		"flags":  []any{"true", "false"},
+		"names":  []any{"alice", "bob"},
+	}
+
+	var p params
+	if err := parseRawParams(raw, &p); err != nil {
+		t.Fatalf("parseRawParams: %v", err)
+	}
+	if len(p.Counts) != 3 || p.Counts[0] != 1 || p.Counts[1] != 2 || p.Counts[2] != 3 {
+		t.Errorf("Counts = %v, want [1 2 3]", p.Counts)
+	}
+	if len(p.Flags) != 2 || p.Flags[0] != true || p.Flags[1] != false {
+		t.Errorf("Flags = %v, want [true false]", p.Flags)
+	}
+	if len(p.Names) != 2 || p.Names[0] != "alice" || p.Names[1] != "bob" {
+		t.Errorf("Names = %v, want [alice bob]", p.Names)
+	}
+}
+
+func TestParseRawParams_SliceFloatToString(t *testing.T) {
+	type params struct {
+		Labels []string `json:"labels"`
+	}
+
+	raw := map[string]any{
+		"labels": []any{1.5, 2.0},
+	}
+
+	var p params
+	if err := parseRawParams(raw, &p); err != nil {
+		t.Fatalf("parseRawParams: %v", err)
+	}
+	if len(p.Labels) != 2 || p.Labels[0] != "1.5" || p.Labels[1] != "2" {
+		t.Errorf("Labels = %v, want [1.5 2]", p.Labels)
 	}
 }

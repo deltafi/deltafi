@@ -23,7 +23,9 @@ package actionkit
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"io"
 	"log"
 	"os"
 	"os/signal"
@@ -58,8 +60,8 @@ type PluginConfig struct {
 	Domain          string // Action name prefix (e.g. "org.deltafi.go-hello-world"), mirrors Java's package name
 }
 
-// Plugin is the main entry point for a DeltaFi action kit plugin.
-type Plugin struct {
+// plugin is the main entry point for a DeltaFi action kit plugin.
+type plugin struct {
 	config           PluginConfig
 	coordinates      PluginCoordinates
 	domain           string
@@ -79,9 +81,9 @@ type artifactWatch struct {
 	shared          bool
 }
 
-// NewPlugin creates a new Plugin with configuration from environment variables
+// newPlugin creates a new plugin with configuration from environment variables
 // and optional overrides.
-func NewPlugin(config *PluginConfig) (*Plugin, error) {
+func newPlugin(config *PluginConfig) (*plugin, error) {
 	cfg := PluginConfig{
 		CoreURL:         envOrDefault("CORE_URL", "http://deltafi-core-service"),
 		ValkeyURL:       envOrDefault("VALKEY_URL", "deltafi-valkey-master:6379"),
@@ -151,7 +153,7 @@ func NewPlugin(config *PluginConfig) (*Plugin, error) {
 		coords = *cfg.Coordinates
 	}
 
-	return &Plugin{
+	return &plugin{
 		config:      cfg,
 		coordinates: coords,
 		domain:      cfg.Domain,
@@ -162,7 +164,7 @@ func NewPlugin(config *PluginConfig) (*Plugin, error) {
 
 // SetWorkerCount configures the number of concurrent workers for a named action.
 // Must be called before Run. Defaults to 1 if not set.
-func (p *Plugin) SetWorkerCount(actionName string, count int) {
+func (p *plugin) SetWorkerCount(actionName string, count int) {
 	if p.workerCounts == nil {
 		p.workerCounts = make(map[string]int)
 	}
@@ -171,7 +173,7 @@ func (p *Plugin) SetWorkerCount(actionName string, count int) {
 
 // workerCount returns the configured worker count for an action.
 // Priority: SetWorkerCount > ACTIONS_ACTIONTHREADS_{NAME} env var > ACTION_THREADS env var > default of 1.
-func (p *Plugin) workerCount(actionName string) int {
+func (p *plugin) workerCount(actionName string) int {
 	if count, ok := p.workerCounts[actionName]; ok && count > 0 {
 		return count
 	}
@@ -191,21 +193,16 @@ func (p *Plugin) workerCount(actionName string) int {
 }
 
 // qualifiedName returns the full action name, prefixed with the domain if set.
-func (p *Plugin) qualifiedName(name string) string {
+func (p *plugin) qualifiedName(name string) string {
 	if p.domain != "" {
 		return p.domain + "." + name
 	}
 	return name
 }
 
-// RegisterAction registers an action from a Registration. The action must implement
-// TransformAction, EgressAction, or TimedIngressAction.
+// RegisterAction registers an action from a Registration.
 // If the plugin has a domain configured, the action name is qualified as "domain.name".
-func (p *Plugin) RegisterAction(reg *Registration) error {
-	actionType, err := detectActionType(reg.Action)
-	if err != nil {
-		return fmt.Errorf("action %q: %w", reg.Name, err)
-	}
+func (p *plugin) RegisterAction(reg *Registration) error {
 	desc := reg.description
 	if desc == "" {
 		desc = "No description provided"
@@ -213,21 +210,22 @@ func (p *Plugin) RegisterAction(reg *Registration) error {
 	p.actions = append(p.actions, registeredAction{
 		name:        p.qualifiedName(reg.Name),
 		action:      reg.Action,
-		actionType:  actionType,
+		actionType:  reg.dispatcher.actionTypeString(),
 		description: desc,
 		paramType:   reg.paramType,
 		options:     reg.options,
+		dispatcher:  reg.dispatcher,
 	})
 	return nil
 }
 
 // RegisterFlow adds a flow plan to the plugin.
-func (p *Plugin) RegisterFlow(flow FlowPlan) {
+func (p *plugin) RegisterFlow(flow FlowPlan) {
 	p.flows = append(p.flows, flow)
 }
 
 // RegisterVariable adds a variable definition to the plugin.
-func (p *Plugin) RegisterVariable(v Variable) {
+func (p *plugin) RegisterVariable(v Variable) {
 	p.variables = append(p.variables, v)
 }
 
@@ -235,21 +233,21 @@ func (p *Plugin) RegisterVariable(v Variable) {
 // If defaultArtifact is non-nil and the artifact does not exist, the default is published.
 // The handler is called with the current artifact contents on startup (before registration)
 // and again each time the artifact is updated.
-func (p *Plugin) WatchArtifact(name string, defaultArtifact *ArtifactDefault, handler func(*FetchedArtifact, error)) {
+func (p *plugin) WatchArtifact(name string, defaultArtifact *ArtifactDefault, handler func(*FetchedArtifact, error)) {
 	p.artifactWatches = append(p.artifactWatches, artifactWatch{
 		name: name, defaultArtifact: defaultArtifact, handler: handler,
 	})
 }
 
 // WatchSharedArtifact is like WatchArtifact but watches the shared namespace.
-func (p *Plugin) WatchSharedArtifact(name string, defaultArtifact *ArtifactDefault, handler func(*FetchedArtifact, error)) {
+func (p *plugin) WatchSharedArtifact(name string, defaultArtifact *ArtifactDefault, handler func(*FetchedArtifact, error)) {
 	p.artifactWatches = append(p.artifactWatches, artifactWatch{
 		name: name, defaultArtifact: defaultArtifact, handler: handler, shared: true,
 	})
 }
 
 // RegisterLookupTableSupplier registers a supplier that provides lookup table data.
-func (p *Plugin) RegisterLookupTableSupplier(supplier LookupTableSupplier) {
+func (p *plugin) RegisterLookupTableSupplier(supplier LookupTableSupplier) {
 	if p.suppliers == nil {
 		p.suppliers = make(map[string]LookupTableSupplier)
 	}
@@ -257,7 +255,7 @@ func (p *Plugin) RegisterLookupTableSupplier(supplier LookupTableSupplier) {
 }
 
 // lookupTables returns the lookup table definitions from all registered suppliers.
-func (p *Plugin) lookupTables() []LookupTableDefinition {
+func (p *plugin) lookupTables() []LookupTableDefinition {
 	if len(p.suppliers) == 0 {
 		return []LookupTableDefinition{}
 	}
@@ -274,7 +272,7 @@ func (p *Plugin) lookupTables() []LookupTableDefinition {
 func RunPlugin(config *PluginConfig) {
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
 
-	plugin, err := NewPlugin(config)
+	plugin, err := newPlugin(config)
 	if err != nil {
 		log.Fatalf("Failed to create plugin: %v", err)
 	}
@@ -402,7 +400,7 @@ func parseYAMLVariables(data []byte, filename string) ([]Variable, error) {
 	for {
 		var node yaml.Node
 		if err := dec.Decode(&node); err != nil {
-			if err.Error() == "EOF" {
+			if errors.Is(err, io.EOF) {
 				break
 			}
 			return nil, fmt.Errorf("failed to parse variables file %s: %w", filename, err)
@@ -465,14 +463,14 @@ func loadIntegrationTests(dir string) ([]json.RawMessage, error) {
 }
 
 // Run starts the full plugin lifecycle: connect, register, poll, heartbeat, shutdown.
-func (p *Plugin) Run(ctx context.Context) error {
+func (p *plugin) Run(ctx context.Context) error {
 	// Signal handling
 	ctx, stop := signal.NotifyContext(ctx, syscall.SIGTERM, syscall.SIGINT)
 	defer stop()
 
 	// Connect to Redis/Valkey
 	log.Printf("Connecting to Redis at %s...", p.config.ValkeyURL)
-	queue, err := NewActionEventQueue(p.config.ValkeyURL, p.config.ValkeyPassword)
+	queue, err := newActionEventQueue(p.config.ValkeyURL, p.config.ValkeyPassword)
 	if err != nil {
 		return fmt.Errorf("failed to connect to redis: %w", err)
 	}
@@ -481,7 +479,7 @@ func (p *Plugin) Run(ctx context.Context) error {
 
 	// Connect to MinIO
 	log.Printf("Connecting to MinIO at %s...", p.config.MinioURL)
-	contentService, err := NewContentService(
+	contentService, err := newContentService(
 		p.config.MinioURL,
 		p.config.MinioAccessKey,
 		p.config.MinioSecretKey,
@@ -494,15 +492,19 @@ func (p *Plugin) Run(ctx context.Context) error {
 	log.Println("Connected to MinIO")
 
 	// Create lookup client
-	lookupClient := NewLookupClient(p.config.CoreURL)
+	lookupClient := newLookupClient(p.config.CoreURL)
 
 	// Create artifact client
 	artifactOwner := p.coordinates.GroupID + "." + p.coordinates.ArtifactID
-	artifactClient := NewArtifactClient(p.config.CoreURL, artifactOwner)
+	artifactClient := newArtifactClient(p.config.CoreURL, artifactOwner)
+
+	// Start cache eviction goroutines
+	var wg sync.WaitGroup
+	lookupClient.startCacheEvictor(ctx, &wg)
+	artifactClient.startCacheEvictor(ctx, &wg)
 
 	// Start lookup table supplier runner before registration so it can respond
 	// to supplier queries that core may issue during registration processing.
-	var wg sync.WaitGroup
 	if len(p.suppliers) > 0 {
 		startLookupTableSupplierRunner(ctx, &wg, queue, p.suppliers)
 		log.Printf("Started lookup table supplier runner for %d table(s)", len(p.suppliers))
@@ -544,6 +546,9 @@ func (p *Plugin) Run(ctx context.Context) error {
 		uploadSupplierData(ctx, lookupClient, p.suppliers)
 	}
 
+	// Initialize package-level state for global Lookup/Artifact functions
+	initGlobalState(ctx, lookupClient, artifactClient)
+
 	// Allow actions to register artifact version change callbacks
 	for _, ra := range p.actions {
 		if aa, ok := ra.action.(ArtifactAware); ok {
@@ -584,6 +589,8 @@ func (p *Plugin) Run(ctx context.Context) error {
 			workerCount:    count,
 			tracker:        tracker,
 			appName:        appName,
+			dispatcher:     ra.dispatcher,
+			paramDefaults:  ra.paramType,
 		}
 		w.start(ctx, &wg)
 		log.Printf("Started %d worker(s) for %s (%s)", count, ra.name, ra.actionType)

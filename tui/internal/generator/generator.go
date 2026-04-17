@@ -100,6 +100,8 @@ type LintIssue struct {
 	File string
 	// Message describes the issue.
 	Message string
+	// Fix, when non-nil, is a function that fixes the issue. Only called when --fix is passed.
+	Fix func() error
 }
 
 // LintOptions contains options for plugin linting.
@@ -107,6 +109,8 @@ type LintOptions struct {
 	// PluginDir, if set, points at the plugin directory directly and bypasses
 	// resolution via repoPath/pluginName.
 	PluginDir string
+	// Fix, when true, applies automatic fixes for any issues that have a Fix function.
+	Fix bool
 }
 
 // PluginOptions contains options for plugin generation

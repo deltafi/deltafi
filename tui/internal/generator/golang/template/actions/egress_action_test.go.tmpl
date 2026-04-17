@@ -13,10 +13,10 @@ import (
 func Test{{.ActionClassName}}_Normal(t *testing.T) {
 	tc := actionkit.NewTestContext("test-did")
 	content := tc.Content("test.txt", "text/plain", "hello world")
-	input := actionkit.NewEgressInput(tc, content)
-	input.Metadata = map[string]string{"key1": "val1"}
+	deltafile := tc.NewDeltafile(content)
+	deltafile.AddMetadata("key1", "val1")
 
-	event := actionkit.RunEgress(t, &{{.ActionClassName}}{}, input)
+	event := actionkit.RunEgress(t, &{{.ActionClassName}}{}, deltafile, {{.ActionClassName}}Params{})
 	event.RequireEgress(t)
 	require.GreaterOrEqual(t, len(event.Messages), 2)
 }
@@ -24,6 +24,7 @@ func Test{{.ActionClassName}}_Normal(t *testing.T) {
 func Test{{.ActionClassName}}_NoContent(t *testing.T) {
 	tc := actionkit.NewTestContext("test-did")
 
-	event := actionkit.RunEgress(t, &{{.ActionClassName}}{}, actionkit.NewEgressInput(tc))
+	deltafile := tc.NewDeltafile()
+	event := actionkit.RunEgress(t, &{{.ActionClassName}}{}, deltafile, {{.ActionClassName}}Params{})
 	event.RequireError(t, "No content provided")
 }

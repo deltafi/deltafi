@@ -23,7 +23,6 @@ package actionkit
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"io"
 	"os"
 	"sync"
@@ -42,7 +41,8 @@ type PluginCoordinates struct {
 	Version    string `json:"version"`
 }
 
-// ActionContext holds per-invocation execution context passed to every action.
+// ActionContext holds per-invocation execution context. Action authors interact
+// with Deltafile, which wraps this; ActionContext is used directly in test setup.
 type ActionContext struct {
 	DID            string
 	DeltaFileName  string
@@ -58,14 +58,15 @@ type ActionContext struct {
 	ContentService ContentServiceBase
 	LookupClient   LookupClientBase
 	ArtifactClient ArtifactClientBase
-	Join           *JoinConfiguration
+	Join           *joinConfiguration
 	JoinedDIDs     []string
 	savedSegments  []Segment
+	ctx            context.Context
 }
 
-// JoinConfiguration holds join parameters from the flow definition.
+// joinConfiguration holds join parameters from the flow definition.
 // MaxAge is serialized by Java's Jackson as seconds (float64).
-type JoinConfiguration struct {
+type joinConfiguration struct {
 	MaxAge      float64 `json:"maxAge"`
 	MinNum      int     `json:"minNum"`
 	MaxNum      int     `json:"maxNum"`
@@ -90,6 +91,7 @@ func (actx *ActionContext) ChildContext() *ActionContext {
 		ContentService: actx.ContentService,
 		LookupClient:   actx.LookupClient,
 		ArtifactClient: actx.ArtifactClient,
+		ctx:            actx.ctx,
 	}
 }
 
@@ -98,73 +100,15 @@ func (actx *ActionContext) trackSegment(seg Segment) {
 	actx.savedSegments = append(actx.savedSegments, seg)
 }
 
-// Save stores data in the configured content service and returns an
-// ActionContent. Equivalent to calling SaveContent with this context's DID
-// and content service, but lets callers avoid plumbing them explicitly.
+// Save stores data in the configured content service and returns an ActionContent.
 func (actx *ActionContext) Save(ctx context.Context, data []byte, name, mediaType string) (*ActionContent, error) {
 	return SaveContent(ctx, actx.ContentService, actx, data, name, mediaType)
 }
 
-// SaveString stores a string in the configured content service and returns an ActionContent.
-func (actx *ActionContext) SaveString(ctx context.Context, s, name, mediaType string) (*ActionContent, error) {
-	return SaveContentString(ctx, actx.ContentService, actx, s, name, mediaType)
-}
-
-// SaveFromReader stores data from an io.Reader in the configured content
-// service and returns an ActionContent. Use size = -1 if the size is not known
-// in advance.
+// SaveFromReader stores data from an io.Reader and returns an ActionContent.
+// Use size = -1 if the size is not known in advance.
 func (actx *ActionContext) SaveFromReader(ctx context.Context, reader io.Reader, size int64, name, mediaType string) (*ActionContent, error) {
 	return SaveContentFromReader(ctx, actx.ContentService, actx, reader, size, name, mediaType)
-}
-
-// Load fetches and concatenates the bytes for the given content via this
-// context's ContentService. The content does not need to be wired to this
-// ActionContext — the service is read directly from the receiver — so this
-// method works as a fallback when content was constructed without a back-reference.
-func (actx *ActionContext) Load(ctx context.Context, content *ActionContent) ([]byte, error) {
-	if content == nil {
-		return nil, fmt.Errorf("nil content")
-	}
-	if actx.ContentService == nil {
-		return nil, fmt.Errorf("ActionContext has no ContentService")
-	}
-	return actx.ContentService.Load(ctx, content.Segments)
-}
-
-// LoadString fetches the bytes for the given content and returns them as a string.
-func (actx *ActionContext) LoadString(ctx context.Context, content *ActionContent) (string, error) {
-	data, err := actx.Load(ctx, content)
-	if err != nil {
-		return "", err
-	}
-	return string(data), nil
-}
-
-// LoadReader returns a streaming reader for the given content via this
-// context's ContentService. The caller must close the returned reader.
-func (actx *ActionContext) LoadReader(ctx context.Context, content *ActionContent) (io.ReadCloser, error) {
-	if content == nil {
-		return nil, fmt.Errorf("nil content")
-	}
-	if actx.ContentService == nil {
-		return nil, fmt.Errorf("ActionContext has no ContentService")
-	}
-	return actx.ContentService.LoadReader(ctx, content.Segments)
-}
-
-// Errorf returns a new ErrorResult whose cause is the formatted message.
-// Use SetContext on the returned result to attach additional detail.
-//
-//	return input.ActionContext.Errorf("Failed to load content: %v", err), nil
-func (actx *ActionContext) Errorf(format string, a ...any) *ErrorResult {
-	return NewErrorResult(actx, fmt.Sprintf(format, a...))
-}
-
-// Filterf returns a new FilterResult whose message is the formatted message.
-//
-//	return input.ActionContext.Filterf("Skipping DID with prefix %q", prefix), nil
-func (actx *ActionContext) Filterf(format string, a ...any) *FilterResult {
-	return NewFilterResult(actx, fmt.Sprintf(format, a...))
 }
 
 // Variable defines a plugin variable for flow parameterization.
@@ -216,11 +160,23 @@ type SafeStringMap struct {
 	m  map[string]string
 }
 
-// Store atomically replaces all entries. Pass nil to clear.
+// Store atomically replaces all entries with a copy of data. Pass nil to clear.
 func (sm *SafeStringMap) Store(data map[string]string) {
+	cp := make(map[string]string, len(data))
+	for k, v := range data {
+		cp[k] = v
+	}
 	sm.mu.Lock()
-	sm.m = data
+	sm.m = cp
 	sm.mu.Unlock()
+}
+
+// Get returns the value for the given key and whether it was found.
+func (sm *SafeStringMap) Get(key string) (string, bool) {
+	sm.mu.RLock()
+	defer sm.mu.RUnlock()
+	v, ok := sm.m[key]
+	return v, ok
 }
 
 // ForEach calls fn for each entry while holding a read lock.

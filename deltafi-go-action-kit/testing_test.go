@@ -16,7 +16,7 @@
  *    limitations under the License.
  */
 // ABOUTME: Tests for the test framework helpers.
-// ABOUTME: Verifies InMemoryContentStore, MockLookupClient, MockArtifactClient, and ResultEvent.
+// ABOUTME: Verifies InMemoryContentStore, MockLookupClient, MockArtifactClient, TestContext, and RunTransform/RunEgress/RunIngress.
 
 package actionkit
 
@@ -171,7 +171,7 @@ func TestInMemoryContentStore_CreateContent(t *testing.T) {
 	}
 
 	// Unbound content's LoadString must report a clear error.
-	if _, err := content.LoadString(context.Background()); err == nil {
+	if _, err := content.LoadString(); err == nil {
 		t.Error("expected error from unbound content.LoadString")
 	}
 }
@@ -371,7 +371,7 @@ func TestTestContext_Content(t *testing.T) {
 	}
 	// Content from tc.Content is bound to the TestContext's ActionContext,
 	// so LoadString works without explicit plumbing.
-	loaded, err := content.LoadString(context.Background())
+	loaded, err := content.LoadString()
 	if err != nil {
 		t.Fatalf("LoadString error: %v", err)
 	}
@@ -380,15 +380,80 @@ func TestTestContext_Content(t *testing.T) {
 	}
 }
 
-func TestResultEvent_Transform(t *testing.T) {
-	tc := NewTestContext("test-did")
-	result := NewTransformResult(tc.ActionContext)
-	result.AddContent(ActionContent{Name: "out.txt", MediaType: "text/plain"})
-	result.AddMetadata("key", "value")
-	result.AddAnnotation("ann", "val")
-	result.LogInfo("test message")
+func TestTestContext_NewDeltafile(t *testing.T) {
+	tc := NewTestContext("did")
+	c1 := tc.Content("a.txt", "text/plain", "alpha")
+	c2 := tc.Content("b.txt", "text/plain", "beta")
 
-	event := ResultEvent(result, tc.ActionContext)
+	df := tc.NewDeltafile(c1, c2)
+	if df.Did != "did" {
+		t.Errorf("Did = %q, want %q", df.Did, "did")
+	}
+	if !df.HasContent() {
+		t.Error("expected content")
+	}
+	content := df.GetContentSlice()
+	if len(content) != 2 {
+		t.Errorf("Content len = %d, want 2", len(content))
+	}
+}
+
+func TestTestContext_NewDeltafile_WithChild(t *testing.T) {
+	tc := NewTestContext("did")
+	c := tc.Content("in.txt", "text/plain", "data")
+
+	df := tc.NewDeltafile(c)
+	if !df.HasContent() {
+		t.Error("expected content")
+	}
+
+	// NewChild should create a child with a different DID
+	child := df.NewChild("child.txt")
+	if child.Did == df.Did {
+		t.Error("child DID should differ from parent")
+	}
+	if child.Name != "child.txt" {
+		t.Errorf("child Name = %q", child.Name)
+	}
+}
+
+func TestTestContext_NewIngressInput(t *testing.T) {
+	tc := NewTestContext("did")
+	input := tc.NewIngressInput()
+	if input.FlowName != tc.ActionContext.FlowName {
+		t.Errorf("FlowName = %q", input.FlowName)
+	}
+	if input.ActionName != tc.ActionContext.ActionName {
+		t.Errorf("ActionName = %q", input.ActionName)
+	}
+
+	// NewDeltafile from IngressInput
+	df := input.NewDeltafile("ingress-file.txt")
+	if df.Name != "ingress-file.txt" {
+		t.Errorf("Name = %q", df.Name)
+	}
+	if df.Did == "" {
+		t.Error("DID should be auto-generated")
+	}
+}
+
+// --- RunTransform / RunEgress / RunIngress helpers ---
+
+type testRunTransformAction struct{}
+
+func (a *testRunTransformAction) Transform(df *Deltafile, params noParams) *Deltafile {
+	df.AddContent(ActionContent{Name: "out.txt", MediaType: "text/plain"})
+	df.AddMetadata("key", "value")
+	df.AddAnnotation("ann", "val")
+	df.LogInfo("test message")
+	return df
+}
+
+func TestRunTransform(t *testing.T) {
+	tc := NewTestContext("test-did")
+	df := tc.NewDeltafile()
+
+	event := RunTransform(t, &testRunTransformAction{}, df, noParams{})
 	if event.Type != "TRANSFORM" {
 		t.Errorf("Type = %q, want TRANSFORM", event.Type)
 	}
@@ -410,11 +475,17 @@ func TestResultEvent_Transform(t *testing.T) {
 	}
 }
 
-func TestResultEvent_Error(t *testing.T) {
-	tc := NewTestContext("test-did")
-	result := NewErrorResult(tc.ActionContext, "something broke").SetContext("extra context")
+type testRunErrorAction struct{}
 
-	event := ResultEvent(result, tc.ActionContext)
+func (a *testRunErrorAction) Transform(df *Deltafile, params noParams) *Deltafile {
+	return df.Errorf("something broke").SetErrorContext("extra context")
+}
+
+func TestRunTransform_Error(t *testing.T) {
+	tc := NewTestContext("test-did")
+	df := tc.NewDeltafile()
+
+	event := RunTransform(t, &testRunErrorAction{}, df, noParams{})
 	if event.Type != "ERROR" {
 		t.Errorf("Type = %q, want ERROR", event.Type)
 	}
@@ -426,11 +497,17 @@ func TestResultEvent_Error(t *testing.T) {
 	}
 }
 
-func TestResultEvent_Filter(t *testing.T) {
-	tc := NewTestContext("test-did")
-	result := NewFilterResult(tc.ActionContext, "filtered out")
+type testRunFilterAction struct{}
 
-	event := ResultEvent(result, tc.ActionContext)
+func (a *testRunFilterAction) Transform(df *Deltafile, params noParams) *Deltafile {
+	return df.Filterf("filtered out")
+}
+
+func TestRunTransform_Filter(t *testing.T) {
+	tc := NewTestContext("test-did")
+	df := tc.NewDeltafile()
+
+	event := RunTransform(t, &testRunFilterAction{}, df, noParams{})
 	if event.Type != "FILTER" {
 		t.Errorf("Type = %q, want FILTER", event.Type)
 	}
@@ -439,12 +516,18 @@ func TestResultEvent_Filter(t *testing.T) {
 	}
 }
 
-func TestResultEvent_Egress(t *testing.T) {
-	tc := NewTestContext("test-did")
-	result := NewEgressResult(tc.ActionContext)
-	result.LogInfo("egressed")
+type testRunEgressAction struct{}
 
-	event := ResultEvent(result, tc.ActionContext)
+func (a *testRunEgressAction) Egress(df *Deltafile, params noParams) *Deltafile {
+	df.LogInfo("egressed")
+	return df
+}
+
+func TestRunEgress(t *testing.T) {
+	tc := NewTestContext("test-did")
+	df := tc.NewDeltafile()
+
+	event := RunEgress(t, &testRunEgressAction{}, df, noParams{})
 	if event.Type != "EGRESS" {
 		t.Errorf("Type = %q, want EGRESS", event.Type)
 	}
@@ -453,16 +536,23 @@ func TestResultEvent_Egress(t *testing.T) {
 	}
 }
 
-func TestResultEvent_Ingress(t *testing.T) {
-	tc := NewTestContext("test-did")
-	result := NewIngressResult(tc.ActionContext)
-	item := NewIngressResultItem("ingressed-file")
+type testRunIngressAction struct{}
+
+func (a *testRunIngressAction) Ingress(input *IngressInput, params noParams) *IngressResult {
+	r := NewIngressResult()
+	item := input.NewDeltafile("ingressed-file")
 	item.AddContent(ActionContent{Name: "data.txt"})
 	item.AddMetadata("key", "val")
-	result.AddItem(*item)
-	result.SetMemo("42")
+	r.AddItem(item)
+	r.SetMemo("42")
+	return r
+}
 
-	event := ResultEvent(result, tc.ActionContext)
+func TestRunIngress(t *testing.T) {
+	tc := NewTestContext("test-did")
+	input := tc.NewIngressInput()
+
+	event := RunIngress(t, &testRunIngressAction{}, input, noParams{})
 	if event.Type != "INGRESS" {
 		t.Errorf("Type = %q, want INGRESS", event.Type)
 	}
@@ -477,16 +567,20 @@ func TestResultEvent_Ingress(t *testing.T) {
 	}
 }
 
-func TestResultEvent_TransformResults(t *testing.T) {
-	tc := NewTestContext("test-did")
-	result := NewTransformResults(tc.ActionContext)
+type testRunSplitAction struct{}
 
-	child := NewChildTransformResult(tc.ActionContext, "child-1")
+func (a *testRunSplitAction) Transform(df *Deltafile, params noParams) *Deltafile {
+	child := df.NewChild("child-1")
 	child.AddContent(ActionContent{Name: "child-content"})
 	child.AddMetadata("ck", "cv")
-	result.AddChild(*child)
+	return df
+}
 
-	event := ResultEvent(result, tc.ActionContext)
+func TestRunSplit(t *testing.T) {
+	tc := NewTestContext("test-did")
+	df := tc.NewDeltafile()
+
+	event := RunTransform(t, &testRunSplitAction{}, df, noParams{})
 	if event.Type != "TRANSFORM" {
 		t.Errorf("Type = %q, want TRANSFORM", event.Type)
 	}
@@ -495,50 +589,6 @@ func TestResultEvent_TransformResults(t *testing.T) {
 	}
 	if event.Transform[0].Name != "child-1" {
 		t.Errorf("Name = %q, want child-1", event.Transform[0].Name)
-	}
-}
-
-func TestNewTransformInput(t *testing.T) {
-	tc := NewTestContext("did")
-	c1 := tc.Content("a.txt", "text/plain", "alpha")
-	c2 := tc.Content("b.txt", "text/plain", "beta")
-
-	input := NewTransformInput(tc, c1, c2)
-	if input.ActionContext != tc.ActionContext {
-		t.Error("ActionContext not wired")
-	}
-	if len(input.Content) != 2 {
-		t.Errorf("Content len = %d, want 2", len(input.Content))
-	}
-	if input.Metadata == nil {
-		t.Error("Metadata should be non-nil")
-	}
-	if input.Params == nil {
-		t.Error("Params should be non-nil")
-	}
-}
-
-func TestNewEgressInput(t *testing.T) {
-	tc := NewTestContext("did")
-	c := tc.Content("out.txt", "text/plain", "data")
-
-	input := NewEgressInput(tc, c)
-	if !input.HasContent() {
-		t.Error("expected content")
-	}
-	if input.ActionContext != tc.ActionContext {
-		t.Error("ActionContext not wired")
-	}
-}
-
-func TestNewIngressInput(t *testing.T) {
-	tc := NewTestContext("did")
-	input := NewIngressInput(tc)
-	if input.ActionContext != tc.ActionContext {
-		t.Error("ActionContext not wired")
-	}
-	if input.Params == nil {
-		t.Error("Params should be non-nil")
 	}
 }
 
@@ -560,7 +610,7 @@ func TestMockLookupClient_TablesFilter(t *testing.T) {
 		},
 	}
 
-	// No filter → all rows + Created/Modified populated.
+	// No filter -> all rows + Created/Modified populated.
 	all, err := mock.Lookup(context.Background(), "colors")
 	if err != nil {
 		t.Fatalf("Lookup err: %v", err)
@@ -602,7 +652,7 @@ func TestMockLookupClient_TablesFilter(t *testing.T) {
 		t.Errorf("primaryRed count = %d, want 1", primaryRed.TotalCount)
 	}
 
-	// No match across columns → empty results.
+	// No match across columns -> empty results.
 	primaryPurple, err := mock.Lookup(context.Background(), "colors",
 		WithMatch("name", "purple"),
 		WithMatch("primary", "true"),

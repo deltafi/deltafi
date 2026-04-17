@@ -16,14 +16,12 @@
  *    limitations under the License.
  */
 // ABOUTME: Tests for core types: PluginCoordinates, ActionContext, Variable, FlowPlan, envOrDefault.
-// ABOUTME: Verifies JSON serialization, FlowPlan round-trip, and environment variable handling.
+// ABOUTME: Verifies JSON serialization, FlowPlan round-trip, Deltafile operations, and environment variable handling.
 
 package actionkit
 
 import (
-	"context"
 	"encoding/json"
-	"errors"
 	"os"
 	"strings"
 	"testing"
@@ -246,7 +244,7 @@ func TestActionContext_ChildContext(t *testing.T) {
 }
 
 func TestJoinConfiguration_JSON(t *testing.T) {
-	jc := JoinConfiguration{
+	jc := joinConfiguration{
 		MaxAge:      3.0,
 		MinNum:      2,
 		MaxNum:      10,
@@ -258,7 +256,7 @@ func TestJoinConfiguration_JSON(t *testing.T) {
 		t.Fatalf("marshal: %v", err)
 	}
 
-	var parsed JoinConfiguration
+	var parsed joinConfiguration
 	if err := json.Unmarshal(data, &parsed); err != nil {
 		t.Fatalf("unmarshal: %v", err)
 	}
@@ -281,7 +279,7 @@ func TestActionContext_JoinFields(t *testing.T) {
 	actx := &ActionContext{
 		DID:        "join-did",
 		ActionName: "JoinAction",
-		Join: &JoinConfiguration{
+		Join: &joinConfiguration{
 			MaxAge: 5.0,
 			MinNum: 3,
 			MaxNum: 20,
@@ -381,19 +379,19 @@ func TestEnvOrDefault(t *testing.T) {
 	}
 }
 
-func TestActionContext_SaveAndLoad(t *testing.T) {
+func TestDeltafile_SaveAndLoad(t *testing.T) {
 	tc := NewTestContext("did-1")
-	ctx := context.Background()
+	df := tc.NewDeltafile()
 
-	saved, err := tc.ActionContext.SaveString(ctx, "hello world", "out.txt", "text/plain")
+	saved, err := df.SaveStringContent("hello world", "out.txt", "text/plain")
 	if err != nil {
-		t.Fatalf("SaveString: %v", err)
+		t.Fatalf("SaveStringContent: %v", err)
 	}
 	if saved.Name != "out.txt" || saved.MediaType != "text/plain" {
 		t.Errorf("saved = %+v", saved)
 	}
 
-	got, err := tc.ActionContext.LoadString(ctx, saved)
+	got, err := saved.LoadString()
 	if err != nil {
 		t.Fatalf("LoadString: %v", err)
 	}
@@ -407,59 +405,53 @@ func TestActionContext_SaveAndLoad(t *testing.T) {
 	}
 }
 
-func TestActionContext_SaveBytesAndLoadBytes(t *testing.T) {
+func TestDeltafile_SaveBytesAndLoadBytes(t *testing.T) {
 	tc := NewTestContext("did-2")
-	ctx := context.Background()
+	df := tc.NewDeltafile()
 	payload := []byte{0x00, 0x01, 0x02, 0x03}
 
-	saved, err := tc.ActionContext.Save(ctx, payload, "out.bin", "application/octet-stream")
+	saved, err := df.SaveBytesContent(payload, "out.bin", "application/octet-stream")
 	if err != nil {
-		t.Fatalf("Save: %v", err)
+		t.Fatalf("SaveBytesContent: %v", err)
 	}
 
-	got, err := tc.ActionContext.Load(ctx, saved)
+	got, err := saved.LoadBytes()
 	if err != nil {
-		t.Fatalf("Load: %v", err)
+		t.Fatalf("LoadBytes: %v", err)
 	}
 	if !bytesEqual(got, payload) {
-		t.Errorf("Load = %v, want %v", got, payload)
+		t.Errorf("LoadBytes = %v, want %v", got, payload)
 	}
 }
 
-func TestActionContext_LoadNilContent(t *testing.T) {
-	tc := NewTestContext("did-3")
-	if _, err := tc.ActionContext.Load(context.Background(), nil); err == nil {
-		t.Error("expected error for nil content")
-	}
-	if _, err := tc.ActionContext.LoadString(context.Background(), nil); err == nil {
-		t.Error("expected error for nil content")
-	}
-}
-
-func TestActionContext_Errorf(t *testing.T) {
+func TestDeltafile_Errorf(t *testing.T) {
 	tc := NewTestContext("did-4")
-	wrapped := errors.New("disk full")
+	df := tc.NewDeltafile()
 
-	result := tc.ActionContext.Errorf("Failed to save: %v", wrapped)
+	result := df.Errorf("Failed to save: %v", "disk full")
 	if result == nil {
 		t.Fatal("Errorf returned nil")
 	}
-	if !strings.Contains(result.cause, "Failed to save") || !strings.Contains(result.cause, "disk full") {
-		t.Errorf("cause = %q", result.cause)
+	if !result.hasError {
+		t.Error("expected error state")
 	}
-	if result.actionName != tc.ActionName {
-		t.Errorf("actionName = %q, want %q", result.actionName, tc.ActionName)
+	if !strings.Contains(result.errCause, "Failed to save") || !strings.Contains(result.errCause, "disk full") {
+		t.Errorf("cause = %q", result.errCause)
 	}
 }
 
-func TestActionContext_Filterf(t *testing.T) {
+func TestDeltafile_Filterf(t *testing.T) {
 	tc := NewTestContext("did-5")
-	result := tc.ActionContext.Filterf("Skipping prefix %q", "44")
+	df := tc.NewDeltafile()
+	result := df.Filterf("Skipping prefix %q", "44")
 	if result == nil {
 		t.Fatal("Filterf returned nil")
 	}
-	if result.message != `Skipping prefix "44"` {
-		t.Errorf("message = %q", result.message)
+	if !result.hasFilter {
+		t.Error("expected filter state")
+	}
+	if result.filterMessage != `Skipping prefix "44"` {
+		t.Errorf("message = %q", result.filterMessage)
 	}
 }
 

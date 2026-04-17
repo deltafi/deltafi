@@ -92,3 +92,17 @@ type Metric struct {
 func formatTime(t time.Time) string {
 	return t.Format(time.RFC3339Nano)
 }
+
+// newBaseEvent creates an ActionEvent with common fields filled in.
+func newBaseEvent(actx *ActionContext, start time.Time, eventType string, messages []LogMessage) *ActionEvent {
+	return &ActionEvent{
+		DID:        actx.DID,
+		FlowName:   actx.FlowName,
+		FlowID:     actx.FlowID,
+		ActionName: actx.ActionName,
+		Start:      formatTime(start),
+		Stop:       formatTime(time.Now()),
+		Type:       eventType,
+		Messages:   messages,
+	}
+}

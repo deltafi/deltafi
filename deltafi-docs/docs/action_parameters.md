@@ -178,23 +178,23 @@ class MyActionParameters(BaseModel):
 ```go
 package actions
 
-import actionkit "gitlab.com/deltafi/deltafi/deltafi-go-action-kit"
+import actionkit "gitlab.com/deltafi/deltafi/deltafi-go-action-kit/v2"
 
 type MyActionParams struct {
-    PrimaryEndpoint   EndpointConfig   `json:"primaryEndpoint" jsonschema:"description=Primary endpoint configuration,required"`
-    FallbackEndpoints []EndpointConfig `json:"fallbackEndpoints" jsonschema:"description=Optional fallback endpoints to try if primary fails"`
+    PrimaryEndpoint   EndpointConfig   `json:"primaryEndpoint" description:"Primary endpoint configuration" required:"true"`
+    FallbackEndpoints []EndpointConfig `json:"fallbackEndpoints" description:"Optional fallback endpoints to try if primary fails"`
 }
 
 type EndpointConfig struct {
-    URL       string      `json:"url" jsonschema:"description=The URL to connect to,required"`
-    TimeoutMs int         `json:"timeoutMs" jsonschema:"description=Connection timeout in milliseconds,default=30000"`
-    Auth      *AuthConfig `json:"auth" jsonschema:"description=Authentication settings for this endpoint"`
+    URL       string      `json:"url" description:"The URL to connect to" required:"true"`
+    TimeoutMs int         `json:"timeoutMs" description:"Connection timeout in milliseconds" default:"30000"`
+    Auth      *AuthConfig `json:"auth" description:"Authentication settings for this endpoint"`
 }
 
 type AuthConfig struct {
-    Type       string           `json:"type" jsonschema:"description=Authentication type: NONE\\, BASIC\\, or BEARER,default=NONE"`
-    Username   string           `json:"username" jsonschema:"description=Username for BASIC auth"`
-    Credential actionkit.EnvVar `json:"credential" jsonschema:"description=Environment variable containing the password or token"`
+    Type       string           `json:"type" description:"Authentication type: NONE, BASIC, or BEARER" default:"NONE"`
+    Username   string           `json:"username" description:"Username for BASIC auth"`
+    Credential actionkit.EnvVar `json:"credential" description:"Environment variable containing the password or token"`
 }
 ```
 
@@ -329,22 +329,30 @@ In Go, use the `actionkit.EnvVar` type in your parameter struct:
 
 ```go
 type MyActionParams struct {
-    APIKeyEnvVar    actionkit.EnvVar `json:"apiKeyEnvVar" jsonschema:"description=Environment variable containing the API key"`
-    PasswordEnvVar  actionkit.EnvVar `json:"passwordEnvVar" jsonschema:"description=Environment variable containing the password"`
+    APIKeyEnvVar    actionkit.EnvVar `json:"apiKeyEnvVar" description:"Environment variable containing the API key"`
+    PasswordEnvVar  actionkit.EnvVar `json:"passwordEnvVar" description:"Environment variable containing the password"`
 }
 ```
 
 The `EnvVar` type resolves the environment variable value at runtime:
 
 ```go
-func (a *MyAction) Transform(ctx context.Context, input actionkit.TransformInput) (actionkit.Result, error) {
-    var params MyActionParams
-    if err := input.ParseParameters(&params); err != nil {
-        return actionkit.NewErrorResult(input.ActionContext, err.Error()), nil
+func (a *MyAction) Transform(df *actionkit.Deltafile, params MyActionParams) *actionkit.Deltafile {
+    // Resolve() returns the value of the named environment variable
+    apiKey, err := params.APIKeyEnvVar.Resolve()
+    if err != nil {
+        return df.Errorf("Failed to resolve API key").SetErrorContext(err.Error())
     }
 
-    // Resolve() returns the value of the named environment variable
-    apiKey := params.APIKeyEnvVar.Resolve()
+    // ResolveOrDefault() returns the default if the env var is not set
+    password := params.PasswordEnvVar.ResolveOrDefault("")
+
+    // IsSet() checks if an env var name has been configured
+    if params.PasswordEnvVar.IsSet() {
+        // use the password
+    }
+
+    // ... use the resolved values
 }
 ```
 

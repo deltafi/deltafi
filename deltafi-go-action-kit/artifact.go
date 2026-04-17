@@ -120,15 +120,15 @@ type artifactCacheEntry struct {
 	expiresAt time.Time
 }
 
-// NewArtifactClient creates a client for artifact registry operations.
+// newArtifactClient creates a client for artifact registry operations.
 // Owner is the plugin identifier (typically "groupId.artifactId").
 // Cache TTL defaults to 10s, overridable via ARTIFACT_CACHE_TTL env var.
 // Failure cache TTL defaults to 1s, overridable via ARTIFACT_FAILURE_CACHE_TTL env var.
-func NewArtifactClient(coreURL string, owner string) *ArtifactClient {
+func newArtifactClient(coreURL string, owner string) *ArtifactClient {
 	c := &ArtifactClient{
 		coreURL:    coreURL,
 		owner:      owner,
-		httpClient: &http.Client{Timeout: 5 * time.Minute},
+		httpClient: &http.Client{Transport: platformTransport.Clone(), Timeout: 5 * time.Minute},
 		cache:      make(map[string]*artifactCacheEntry),
 	}
 	c.cacheTTL.Store(int64(parseCacheTTL(os.Getenv("ARTIFACT_CACHE_TTL"), defaultArtifactCacheTTL)))
@@ -147,6 +147,34 @@ func (ac *ArtifactClient) ClearCache() {
 	ac.mu.Lock()
 	defer ac.mu.Unlock()
 	ac.cache = make(map[string]*artifactCacheEntry)
+}
+
+// startCacheEvictor runs a goroutine that periodically removes expired entries.
+func (ac *ArtifactClient) startCacheEvictor(ctx context.Context, wg *sync.WaitGroup) {
+	wg.Go(func() {
+		ticker := time.NewTicker(60 * time.Second)
+		defer ticker.Stop()
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case <-ticker.C:
+				ac.evictExpired()
+			}
+		}
+	})
+}
+
+// evictExpired removes all expired entries from the cache.
+func (ac *ArtifactClient) evictExpired() {
+	now := time.Now()
+	ac.mu.Lock()
+	defer ac.mu.Unlock()
+	for key, entry := range ac.cache {
+		if !now.Before(entry.expiresAt) {
+			delete(ac.cache, key)
+		}
+	}
 }
 
 func artifactCacheKey(owner, name, alias string) string {
@@ -606,7 +634,7 @@ func (ac *ArtifactClient) FireStartupCallbacks() {
 // StartArtifactListener subscribes to artifact version change events via Valkey pub/sub.
 // It invalidates cached artifacts and fires registered callbacks when versions change.
 // The listener runs until the context is cancelled.
-func (ac *ArtifactClient) StartArtifactListener(ctx context.Context, wg *sync.WaitGroup, queue *ActionEventQueue) {
+func (ac *ArtifactClient) StartArtifactListener(ctx context.Context, wg *sync.WaitGroup, queue *actionEventQueue) {
 	wg.Go(func() {
 		for {
 			if ctx.Err() != nil {
@@ -624,7 +652,7 @@ func (ac *ArtifactClient) StartArtifactListener(ctx context.Context, wg *sync.Wa
 	})
 }
 
-func (ac *ArtifactClient) runArtifactListener(ctx context.Context, queue *ActionEventQueue) {
+func (ac *ArtifactClient) runArtifactListener(ctx context.Context, queue *actionEventQueue) {
 	pubsub := queue.Subscribe(ctx, versionChangedChannel)
 	defer pubsub.Close()
 

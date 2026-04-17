@@ -31,18 +31,34 @@ import (
 
 type regTestTransformAction struct{}
 
-func (a *regTestTransformAction) Transform(ctx context.Context, input TransformInput) Result {
-	return NewTransformResult(input.ActionContext)
+func (a *regTestTransformAction) Transform(df *Deltafile, params noParams) *Deltafile {
+	return df
 }
 
 type regTestEgressAction struct{}
 
-func (a *regTestEgressAction) Egress(ctx context.Context, input EgressInput) Result {
-	return NewEgressResult(input.ActionContext)
+func (a *regTestEgressAction) Egress(df *Deltafile, params noParams) *Deltafile {
+	return df
+}
+
+func registerAction(t *testing.T, p *plugin, reg *Registration) {
+	t.Helper()
+	if err := p.RegisterAction(reg); err != nil {
+		t.Fatalf("RegisterAction: %v", err)
+	}
 }
 
 func TestBuildRegistration(t *testing.T) {
-	p := &Plugin{
+	old := registered
+	registered = nil
+	defer func() { registered = old }()
+
+	transformReg := RegisterTransform("Transform1", &regTestTransformAction{})
+	transformReg.Describe("test transform").WithParams(simpleSchemaParams{})
+
+	egressReg := RegisterEgress("Egress1", &regTestEgressAction{})
+
+	p := &plugin{
 		config: PluginConfig{
 			Image:       "my-image:latest",
 			DisplayName: "Test Plugin",
@@ -53,10 +69,6 @@ func TestBuildRegistration(t *testing.T) {
 			ArtifactID: "test-plugin",
 			Version:    "2.0.0",
 		},
-		actions: []registeredAction{
-			{name: "Transform1", action: &regTestTransformAction{}, actionType: ActionTypeTransform, description: "test transform", paramType: simpleSchemaParams{}},
-			{name: "Egress1", action: &regTestEgressAction{}, actionType: ActionTypeEgress, description: "No description provided"},
-		},
 		flows: []FlowPlan{
 			{Name: "flow1", Type: "TRANSFORM", Raw: json.RawMessage(`{"name":"flow1","type":"TRANSFORM"}`)},
 		},
@@ -64,6 +76,8 @@ func TestBuildRegistration(t *testing.T) {
 			{Name: "var1", DataType: "STRING"},
 		},
 	}
+	registerAction(t, p, transformReg)
+	registerAction(t, p, egressReg)
 
 	reg := buildRegistration(p)
 
@@ -147,7 +161,7 @@ func TestBuildRegistration(t *testing.T) {
 }
 
 func TestBuildRegistration_EmptyPlugin(t *testing.T) {
-	p := &Plugin{
+	p := &plugin{
 		coordinates: PluginCoordinates{GroupID: "g", ArtifactID: "a", Version: "v"},
 	}
 
@@ -165,19 +179,24 @@ func TestBuildRegistration_EmptyPlugin(t *testing.T) {
 }
 
 func TestBuildRegistration_JSONSerializable(t *testing.T) {
-	p := &Plugin{
+	old := registered
+	registered = nil
+	defer func() { registered = old }()
+
+	reg := RegisterTransform("Act", &regTestTransformAction{})
+	reg.Describe("test").WithParams(simpleSchemaParams{})
+
+	p := &plugin{
 		coordinates: PluginCoordinates{GroupID: "g", ArtifactID: "a", Version: "1.0"},
-		actions: []registeredAction{
-			{name: "Act", action: &regTestTransformAction{}, actionType: ActionTypeTransform, description: "test", paramType: simpleSchemaParams{}},
-		},
 		flows: []FlowPlan{
 			{Name: "f", Type: "TRANSFORM", Raw: json.RawMessage(`{"name":"f","type":"TRANSFORM"}`)},
 		},
 	}
+	registerAction(t, p, reg)
 
-	reg := buildRegistration(p)
+	pluginReg := buildRegistration(p)
 
-	data, err := json.Marshal(reg)
+	data, err := json.Marshal(pluginReg)
 	if err != nil {
 		t.Fatalf("marshal: %v", err)
 	}
@@ -200,31 +219,43 @@ func TestBuildRegistration_JSONSerializable(t *testing.T) {
 	}
 }
 
-type regTestJoinTransformAction struct {
-	regTestTransformAction
+type regTestJoinTransformAction struct{}
+
+func (a *regTestJoinTransformAction) Transform(df *Deltafile, params noParams) *Deltafile {
+	return df
 }
 
-func (a *regTestJoinTransformAction) Join(ctx context.Context, inputs []TransformInput) TransformInput {
-	return DefaultJoin(inputs)
+func (a *regTestJoinTransformAction) Join(inputs []*Deltafile, joined *Deltafile, params noParams) *Deltafile {
+	for _, input := range inputs {
+		joined.AddContentSlice(input.GetContentSlice())
+		joined.AddMetadataMap(input.GetMetadataMap())
+	}
+	return joined
 }
 
 func TestBuildRegistration_WithActionOptions(t *testing.T) {
-	opts := &ActionOptions{
+	old := registered
+	registered = nil
+	defer func() { registered = old }()
+
+	withOptsReg := RegisterTransform("WithOpts", &regTestTransformAction{})
+	withOptsReg.Describe("Transform with options").WithOptions(ActionOptions{
 		Description: "Transform with options",
 		InputSpec:   &InputSpec{ContentSummary: "Single text input"},
 		OutputSpec:  &OutputSpec{ContentSummary: "Single text output", Passthrough: true},
 		Filters:     SimpleFilters("Prefix match"),
 		Errors:      SimpleErrors("No content", "Parse failure"),
 		Notes:       []string{"Reference implementation"},
-	}
+	})
 
-	p := &Plugin{
+	noOptsReg := RegisterEgress("NoOpts", &regTestEgressAction{})
+	noOptsReg.Describe("plain")
+
+	p := &plugin{
 		coordinates: PluginCoordinates{GroupID: "g", ArtifactID: "a", Version: "v"},
-		actions: []registeredAction{
-			{name: "WithOpts", action: &regTestTransformAction{}, actionType: ActionTypeTransform, description: "Transform with options", options: opts},
-			{name: "NoOpts", action: &regTestEgressAction{}, actionType: ActionTypeEgress, description: "plain"},
-		},
 	}
+	registerAction(t, p, withOptsReg)
+	registerAction(t, p, noOptsReg)
 
 	reg := buildRegistration(p)
 
@@ -277,13 +308,21 @@ func TestBuildRegistration_WithActionOptions(t *testing.T) {
 }
 
 func TestBuildRegistration_SupportsJoin(t *testing.T) {
-	p := &Plugin{
+	old := registered
+	registered = nil
+	defer func() { registered = old }()
+
+	noJoinReg := RegisterTransform("NoJoin", &regTestTransformAction{})
+	noJoinReg.Describe("test")
+
+	withJoinReg := RegisterJoinTransform("WithJoin", &regTestJoinTransformAction{})
+	withJoinReg.Describe("test")
+
+	p := &plugin{
 		coordinates: PluginCoordinates{GroupID: "g", ArtifactID: "a", Version: "v"},
-		actions: []registeredAction{
-			{name: "NoJoin", action: &regTestTransformAction{}, actionType: ActionTypeTransform, description: "test"},
-			{name: "WithJoin", action: &regTestJoinTransformAction{}, actionType: ActionTypeTransform, description: "test"},
-		},
 	}
+	registerAction(t, p, noJoinReg)
+	registerAction(t, p, withJoinReg)
 
 	reg := buildRegistration(p)
 
@@ -384,7 +423,7 @@ func TestPostRegistration_AllRetriesFail(t *testing.T) {
 }
 
 func TestBuildRegistration_WithLookupTables(t *testing.T) {
-	p := &Plugin{
+	p := &plugin{
 		coordinates: PluginCoordinates{GroupID: "g", ArtifactID: "a", Version: "v"},
 		suppliers: map[string]LookupTableSupplier{
 			"test_colors": &testLookupTableSupplier{

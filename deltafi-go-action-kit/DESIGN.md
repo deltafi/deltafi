@@ -163,7 +163,10 @@ classDiagram
     class Registration {
         +Name string
         +Action any
-        +Register(name, action) *Registration
+        +RegisterTransform(name, action) *Registration
+        +RegisterJoinTransform(name, action) *Registration
+        +RegisterEgress(name, action) *Registration
+        +RegisterIngress(name, action) *Registration
         +Describe(desc) *Registration
         +WithParams(paramType) *Registration
         +WithOptions(ActionOptions) *Registration
@@ -298,7 +301,7 @@ type UpperParams struct {
 type UpperTransform struct{}
 
 func init() {
-    ak.Register("UpperTransform", &UpperTransform{}).
+    ak.RegisterTransform("UpperTransform", &UpperTransform{}).
         Describe("Uppercases content and prepends a prefix").
         WithParams(UpperParams{})
 }
@@ -334,7 +337,7 @@ func (a *UpperTransform) Transform(ctx context.Context, input ak.TransformInput)
 type FileEgress struct{}
 
 func init() {
-    ak.Register("FileEgress", &FileEgress{}).
+    ak.RegisterEgress("FileEgress", &FileEgress{}).
         Describe("Writes content to a local file")
 }
 
@@ -362,7 +365,7 @@ func (a *FileEgress) Egress(ctx context.Context, input ak.EgressInput) (ak.Resul
 type PollingIngress struct{}
 
 func init() {
-    ak.Register("PollingIngress", &PollingIngress{}).
+    ak.RegisterIngress("PollingIngress", &PollingIngress{}).
         Describe("Creates a DeltaFile on each invocation with an incrementing counter")
 }
 
@@ -396,7 +399,7 @@ func (a *PollingIngress) Ingress(ctx context.Context, input ak.IngressInput) (ak
 type MergingTransform struct{}
 
 func init() {
-    ak.Register("MergingTransform", &MergingTransform{}).
+    ak.RegisterJoinTransform("MergingTransform", &MergingTransform{}).
         Describe("Merges multiple DeltaFiles into one")
 }
 
@@ -416,24 +419,23 @@ func (a *MergingTransform) Transform(ctx context.Context, input ak.TransformInpu
 
 ### Multi-Child Split Transform
 
+Split actions are transform actions that create children via `df.NewChild(name)`:
+
 ```go
 type SplitTransform struct{}
 
 func init() {
-    ak.Register("SplitTransform", &SplitTransform{}).
+    ak.RegisterTransform("SplitTransform", &SplitTransform{}).
         Describe("Splits each input content item into a separate child DeltaFile")
 }
 
-func (a *SplitTransform) Transform(ctx context.Context, input ak.TransformInput) (ak.Result, error) {
-    results := ak.NewTransformResults(input.ActionContext)
-
-    for _, c := range input.Content {
-        child := ak.NewChildTransformResult(input.ActionContext, c.Name)
-        child.AddContent(c)
-        results.AddChild(*child)
+func (a *SplitTransform) Transform(df *ak.Deltafile, params SplitParams) *ak.Deltafile {
+    for _, content := range df.GetContentSlice() {
+        child := df.NewChild(content.Name)
+        child.AddContent(content)
+        child.AddMetadataMap(df.GetMetadataMap())
     }
-
-    return results, nil
+    return df
 }
 ```
 
@@ -672,7 +674,7 @@ Actions self-register via `init()` functions using a fluent builder:
 
 ```go
 func init() {
-    actionkit.Register("MyAction", &MyAction{}).
+    actionkit.RegisterTransform("MyAction", &MyAction{}).
         Describe("Transforms data by doing X").
         WithParams(MyParams{}).
         WithOptions(actionkit.ActionOptions{
@@ -690,7 +692,7 @@ func init() {
 
 ### Builder Chain
 
-`Register(name, action)` → `*Registration` with methods:
+`RegisterTransform(name, action)` / `RegisterJoinTransform` / `RegisterEgress` / `RegisterIngress` → `*Registration` with methods:
 
 - `.Describe(desc)` — Sets human-readable description
 - `.WithParams(paramType)` — Sets parameter struct type for JSON schema generation

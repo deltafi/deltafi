@@ -132,17 +132,25 @@ class HelloWorldTimedIngressAction(TimedIngressAction):
 ### Interface
 
 A TimedIngressAction must implement the `Ingress` method which receives:
-* `context.Context` for cancellation and timeouts
-* `IngressInput` providing the action context and parameters
+* `*IngressInput` providing the memo, flow name, and action name
+* A typed params struct containing flow parameters specified for the action
+
+### Ingress Input
+
+```go
+type IngressInput struct {
+    Memo       string
+    FlowName   string
+    ActionName string
+}
+```
+
+The `IngressInput` provides a `NewDeltafile(name)` method to create new Deltafiles for ingestion.
 
 ### Return Types
 
-The `Ingress` method must return a `Result` and an `error`. The `Result` is one of: `IngressResult` or `ErrorResult`.
-
-The `IngressResult` contains a list of `IngressResultItem`, a string `Memo`, boolean `ExecuteImmediate`,
-string `Status`, and string `StatusMessage`.
-
-Each `IngressResultItem` contains the content, metadata, and annotations used to create a DeltaFile.
+The `Ingress` method returns an `*IngressResult`. The result contains ingressed Deltafile items, a memo string,
+executeImmediate flag, and health status fields.
 
 ### Example
 
@@ -150,45 +158,45 @@ Each `IngressResultItem` contains the content, metadata, and annotations used to
 package actions
 
 import (
-    "context"
     "fmt"
     "strconv"
 
-    actionkit "gitlab.com/deltafi/deltafi/deltafi-go-action-kit"
+    actionkit "gitlab.com/deltafi/deltafi/deltafi-go-action-kit/v2"
 )
 
 func init() {
-    actionkit.Register("HelloWorldGoTimedIngressAction", &HelloWorldGoTimedIngress{}).
+    actionkit.RegisterIngress("HelloWorldGoTimedIngressAction", &HelloWorldGoTimedIngress{}).
         Describe("Create some DeltaFiles for hello-world consumption")
 }
 
+type HelloWorldGoTimedIngressParams struct{}
+
 type HelloWorldGoTimedIngress struct{}
 
-func (a *HelloWorldGoTimedIngress) Ingress(ctx context.Context, input actionkit.IngressInput) (actionkit.Result, error) {
+func (a *HelloWorldGoTimedIngress) Ingress(input *actionkit.IngressInput, params HelloWorldGoTimedIngressParams) *actionkit.IngressResult {
     index := 0
-    if input.ActionContext.Memo != "" {
-        if parsed, err := strconv.Atoi(input.ActionContext.Memo); err == nil {
+    if input.Memo != "" {
+        if parsed, err := strconv.Atoi(input.Memo); err == nil {
             index = parsed + 1
         }
     }
 
-    filename := fmt.Sprintf("%s-%d", input.ActionContext.FlowName, index)
+    filename := fmt.Sprintf("%s-%d", input.FlowName, index)
 
-    item := actionkit.NewIngressResultItem(filename)
+    item := input.NewDeltafile(filename)
     item.AddMetadata("index", strconv.Itoa(index))
 
     contentData := fmt.Sprintf("Some content, part %d", index)
-    content, err := actionkit.SaveContentString(ctx, input.ActionContext.ContentService, input.ActionContext, contentData, filename, "text/plain")
-    if err != nil {
-        return actionkit.NewErrorResult(input.ActionContext, "Failed to save content"), nil
+    if _, err := item.SaveBytesContent([]byte(contentData), filename, "text/plain"); err != nil {
+        return actionkit.NewIngressResult().
+            SetStatus("UNHEALTHY").
+            SetStatusMessage("Failed to save content: " + err.Error())
     }
 
-    item.AddContent(*content)
-
-    result := actionkit.NewIngressResult(input.ActionContext)
-    result.AddItem(*item)
+    result := actionkit.NewIngressResult()
+    result.AddItem(item)
     result.SetMemo(strconv.Itoa(index))
-    return result, nil
+    return result
 }
 ```
 

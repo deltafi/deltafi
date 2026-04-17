@@ -4,66 +4,31 @@
 package actions
 
 import (
-	"context"
-	"fmt"
-	"strconv"
+	_ "embed"
 
 	actionkit "gitlab.com/deltafi/deltafi/deltafi-go-action-kit/v2"
 )
 
+//go:embed {{.ActionFileName}}_action.yaml
+var {{.ActionFileName}}Options string
+
 func init() {
-	actionkit.Register("{{.ActionClassName}}", &{{.ActionClassName}}{}).
-		Describe("TODO: Add action description").
-		WithParams({{.ActionClassName}}Params{})
+	actionkit.RegisterTransform("{{.ActionClassName}}", &{{.ActionClassName}}{}).
+		WithParams({{.ActionClassName}}Params{}).
+		WithOptionsYAML({{.ActionFileName}}Options)
 }
 
 // {{.ActionClassName}}Params defines the action's configurable parameters.
-type {{.ActionClassName}}Params struct {
-	NumberOfChildren int `json:"numberOfChildren" jsonschema:"description=Number of child DeltaFiles to create,default=2"`
-}
+type {{.ActionClassName}}Params struct{}
 
 // {{.ActionClassName}} splits input into multiple child DeltaFiles.
 type {{.ActionClassName}} struct{}
 
-func (a *{{.ActionClassName}}) Transform(ctx context.Context, input actionkit.TransformInput) actionkit.Result {
-	actx := input.ActionContext
-
-	params, err := actionkit.ParseParams[{{.ActionClassName}}Params](input.Params)
-	if err != nil {
-		return actx.Errorf("Failed to parse parameters: %v", err)
+func (a *{{.ActionClassName}}) Transform(df *actionkit.Deltafile, params {{.ActionClassName}}Params) *actionkit.Deltafile {
+	for _, content := range df.GetContentSlice() {
+		child := df.NewChild(content.Name)
+		child.AddContent(content)
+		child.AddMetadataMap(df.GetMetadataMap())
 	}
-
-	if params.NumberOfChildren <= 0 {
-		params.NumberOfChildren = 2
-	}
-
-	content, err := input.ContentAt(0)
-	if err != nil {
-		return actx.Errorf("No content provided")
-	}
-
-	data, err := content.LoadString(ctx)
-	if err != nil {
-		return actx.Errorf("Failed to load content: %v", err)
-	}
-
-	// TODO: Implement your splitting logic here
-	savedContent, err := actx.SaveString(ctx, data, "split content", content.MediaType)
-	if err != nil {
-		return actx.Errorf("Failed to save content: %v", err)
-	}
-
-	result := actionkit.NewTransformResults(actx)
-
-	for n := 0; n < params.NumberOfChildren; n++ {
-		childName := fmt.Sprintf("%s-%d", actx.DeltaFileName, n)
-		child := actionkit.NewChildTransformResult(actx, childName).
-			AddContent(*savedContent).
-			AddAnnotation("childIndex", strconv.Itoa(n)).
-			LogInfo("Created child #%d", n)
-
-		result.AddChild(*child)
-	}
-
-	return result
+	return df
 }

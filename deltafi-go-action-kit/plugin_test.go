@@ -16,7 +16,7 @@
  *    limitations under the License.
  */
 // ABOUTME: Tests for Plugin creation, action registration, and configuration.
-// ABOUTME: Verifies NewPlugin env handling, RegisterAction type detection, and RegisterFlow/Variable.
+// ABOUTME: Verifies plugin creation, env handling, RegisterAction type detection, and RegisterFlow/Variable.
 
 package actionkit
 
@@ -32,9 +32,9 @@ func TestNewPlugin_Defaults(t *testing.T) {
 		os.Unsetenv(key)
 	}
 
-	p, err := NewPlugin(nil)
+	p, err := newPlugin(nil)
 	if err != nil {
-		t.Fatalf("NewPlugin: %v", err)
+		t.Fatalf("newPlugin: %v", err)
 	}
 
 	if p.config.CoreURL != "http://deltafi-core-service" {
@@ -75,9 +75,9 @@ func TestNewPlugin_EnvOverrides(t *testing.T) {
 		os.Unsetenv("PROJECT_VERSION")
 	}()
 
-	p, err := NewPlugin(nil)
+	p, err := newPlugin(nil)
 	if err != nil {
-		t.Fatalf("NewPlugin: %v", err)
+		t.Fatalf("newPlugin: %v", err)
 	}
 
 	if p.config.CoreURL != "http://custom-core" {
@@ -97,7 +97,7 @@ func TestNewPlugin_EnvOverrides(t *testing.T) {
 func TestNewPlugin_ConfigOverrides(t *testing.T) {
 	os.Unsetenv("CORE_URL")
 
-	p, err := NewPlugin(&PluginConfig{
+	p, err := newPlugin(&PluginConfig{
 		CoreURL:     "http://override-core",
 		MinioBucket: "custom-bucket",
 		Coordinates: &PluginCoordinates{
@@ -107,7 +107,7 @@ func TestNewPlugin_ConfigOverrides(t *testing.T) {
 		},
 	})
 	if err != nil {
-		t.Fatalf("NewPlugin: %v", err)
+		t.Fatalf("newPlugin: %v", err)
 	}
 
 	if p.config.CoreURL != "http://override-core" {
@@ -125,8 +125,13 @@ func TestNewPlugin_ConfigOverrides(t *testing.T) {
 }
 
 func TestPlugin_RegisterAction_Transform(t *testing.T) {
-	p := &Plugin{}
-	err := p.RegisterAction(&Registration{Name: "MyTransform", Action: &testTransformAction{}})
+	old := registered
+	registered = nil
+	defer func() { registered = old }()
+
+	p := &plugin{}
+	reg := RegisterTransform("MyTransform", &testTransformAction{})
+	err := p.RegisterAction(reg)
 	if err != nil {
 		t.Fatalf("RegisterAction: %v", err)
 	}
@@ -143,8 +148,13 @@ func TestPlugin_RegisterAction_Transform(t *testing.T) {
 }
 
 func TestPlugin_RegisterAction_WithDomain(t *testing.T) {
-	p := &Plugin{domain: "org.deltafi.go-hello-world"}
-	err := p.RegisterAction(&Registration{Name: "MyTransform", Action: &testTransformAction{}})
+	old := registered
+	registered = nil
+	defer func() { registered = old }()
+
+	p := &plugin{domain: "org.deltafi.go-hello-world"}
+	reg := RegisterTransform("MyTransform", &testTransformAction{})
+	err := p.RegisterAction(reg)
 	if err != nil {
 		t.Fatalf("RegisterAction: %v", err)
 	}
@@ -156,8 +166,13 @@ func TestPlugin_RegisterAction_WithDomain(t *testing.T) {
 }
 
 func TestPlugin_RegisterAction_NoDomain(t *testing.T) {
-	p := &Plugin{}
-	p.RegisterAction(&Registration{Name: "MyTransform", Action: &testTransformAction{}})
+	old := registered
+	registered = nil
+	defer func() { registered = old }()
+
+	p := &plugin{}
+	reg := RegisterTransform("MyTransform", &testTransformAction{})
+	p.RegisterAction(reg)
 
 	if p.actions[0].name != "MyTransform" {
 		t.Errorf("name = %q, want %q", p.actions[0].name, "MyTransform")
@@ -165,8 +180,13 @@ func TestPlugin_RegisterAction_NoDomain(t *testing.T) {
 }
 
 func TestPlugin_RegisterAction_Egress(t *testing.T) {
-	p := &Plugin{}
-	err := p.RegisterAction(&Registration{Name: "MyEgress", Action: &testEgressAction{}})
+	old := registered
+	registered = nil
+	defer func() { registered = old }()
+
+	p := &plugin{}
+	reg := RegisterEgress("MyEgress", &testEgressAction{})
+	err := p.RegisterAction(reg)
 	if err != nil {
 		t.Fatalf("RegisterAction: %v", err)
 	}
@@ -177,8 +197,13 @@ func TestPlugin_RegisterAction_Egress(t *testing.T) {
 }
 
 func TestPlugin_RegisterAction_TimedIngress(t *testing.T) {
-	p := &Plugin{}
-	err := p.RegisterAction(&Registration{Name: "MyIngress", Action: &testTimedIngressAction{}})
+	old := registered
+	registered = nil
+	defer func() { registered = old }()
+
+	p := &plugin{}
+	reg := RegisterIngress("MyIngress", &testTimedIngressAction{})
+	err := p.RegisterAction(reg)
 	if err != nil {
 		t.Fatalf("RegisterAction: %v", err)
 	}
@@ -188,19 +213,15 @@ func TestPlugin_RegisterAction_TimedIngress(t *testing.T) {
 	}
 }
 
-func TestPlugin_RegisterAction_Invalid(t *testing.T) {
-	p := &Plugin{}
-	err := p.RegisterAction(&Registration{Name: "Bad", Action: &notAnAction{}})
-	if err == nil {
-		t.Fatal("expected error for non-action type")
-	}
-}
-
 func TestPlugin_RegisterAction_Multiple(t *testing.T) {
-	p := &Plugin{}
-	p.RegisterAction(&Registration{Name: "A1", Action: &testTransformAction{}})
-	p.RegisterAction(&Registration{Name: "A2", Action: &testEgressAction{}})
-	p.RegisterAction(&Registration{Name: "A3", Action: &testTimedIngressAction{}})
+	old := registered
+	registered = nil
+	defer func() { registered = old }()
+
+	p := &plugin{}
+	p.RegisterAction(RegisterTransform("A1", &testTransformAction{}))
+	p.RegisterAction(RegisterEgress("A2", &testEgressAction{}))
+	p.RegisterAction(RegisterIngress("A3", &testTimedIngressAction{}))
 
 	if len(p.actions) != 3 {
 		t.Fatalf("actions count = %d, want 3", len(p.actions))
@@ -208,7 +229,7 @@ func TestPlugin_RegisterAction_Multiple(t *testing.T) {
 }
 
 func TestPlugin_RegisterFlow(t *testing.T) {
-	p := &Plugin{}
+	p := &plugin{}
 
 	flow := FlowPlan{
 		Name: "test-flow",
@@ -226,7 +247,7 @@ func TestPlugin_RegisterFlow(t *testing.T) {
 }
 
 func TestPlugin_RegisterVariable(t *testing.T) {
-	p := &Plugin{}
+	p := &plugin{}
 
 	v := Variable{Name: "myVar", DataType: "STRING", Required: true}
 	p.RegisterVariable(v)
@@ -314,9 +335,13 @@ func TestParseYAMLVariables_EmptyFile(t *testing.T) {
 }
 
 func TestPlugin_SetWorkerCount(t *testing.T) {
-	p := &Plugin{}
-	p.RegisterAction(&Registration{Name: "ActionA", Action: &testTransformAction{}})
-	p.RegisterAction(&Registration{Name: "ActionB", Action: &testEgressAction{}})
+	old := registered
+	registered = nil
+	defer func() { registered = old }()
+
+	p := &plugin{}
+	p.RegisterAction(RegisterTransform("ActionA", &testTransformAction{}))
+	p.RegisterAction(RegisterEgress("ActionB", &testEgressAction{}))
 
 	p.SetWorkerCount("ActionA", 3)
 
@@ -330,7 +355,7 @@ func TestPlugin_SetWorkerCount(t *testing.T) {
 }
 
 func TestPlugin_SetWorkerCount_Override(t *testing.T) {
-	p := &Plugin{}
+	p := &plugin{}
 	p.SetWorkerCount("X", 5)
 	p.SetWorkerCount("X", 10)
 
@@ -343,7 +368,7 @@ func TestPlugin_WorkerCount_EnvVar(t *testing.T) {
 	os.Setenv("ACTION_THREADS", "4")
 	defer os.Unsetenv("ACTION_THREADS")
 
-	p := &Plugin{}
+	p := &plugin{}
 
 	// No explicit SetWorkerCount — should use env var
 	if count := p.workerCount("AnyAction"); count != 4 {
@@ -355,7 +380,7 @@ func TestPlugin_WorkerCount_PerActionEnvVar(t *testing.T) {
 	os.Setenv("ACTIONS_ACTIONTHREADS_MYACTION", "6")
 	defer os.Unsetenv("ACTIONS_ACTIONTHREADS_MYACTION")
 
-	p := &Plugin{}
+	p := &plugin{}
 
 	if count := p.workerCount("MyAction"); count != 6 {
 		t.Errorf("workerCount(MyAction) = %d, want 6 from per-action env var", count)
@@ -371,7 +396,7 @@ func TestPlugin_WorkerCount_QualifiedNameEnvVar(t *testing.T) {
 	os.Setenv("ACTIONS_ACTIONTHREADS_ORG_DELTAFI_GO_HELLO_WORLD_MYTRANSFORM", "5")
 	defer os.Unsetenv("ACTIONS_ACTIONTHREADS_ORG_DELTAFI_GO_HELLO_WORLD_MYTRANSFORM")
 
-	p := &Plugin{}
+	p := &plugin{}
 
 	if count := p.workerCount("org.deltafi.go-hello-world.MyTransform"); count != 5 {
 		t.Errorf("workerCount = %d, want 5 from qualified env var", count)
@@ -384,7 +409,7 @@ func TestPlugin_WorkerCount_PerActionEnvOverridesGlobalEnv(t *testing.T) {
 	defer os.Unsetenv("ACTION_THREADS")
 	defer os.Unsetenv("ACTIONS_ACTIONTHREADS_MYACTION")
 
-	p := &Plugin{}
+	p := &plugin{}
 
 	// Per-action env takes priority over global env
 	if count := p.workerCount("MyAction"); count != 8 {
@@ -402,7 +427,7 @@ func TestPlugin_WorkerCount_SetOverridesAllEnv(t *testing.T) {
 	defer os.Unsetenv("ACTION_THREADS")
 	defer os.Unsetenv("ACTIONS_ACTIONTHREADS_SPECIFICACTION")
 
-	p := &Plugin{}
+	p := &plugin{}
 	p.SetWorkerCount("SpecificAction", 7)
 
 	// Explicit count takes priority over both env vars
@@ -419,7 +444,7 @@ func TestPlugin_WorkerCount_InvalidEnv(t *testing.T) {
 	os.Setenv("ACTION_THREADS", "not-a-number")
 	defer os.Unsetenv("ACTION_THREADS")
 
-	p := &Plugin{}
+	p := &plugin{}
 
 	if count := p.workerCount("AnyAction"); count != 1 {
 		t.Errorf("workerCount = %d, want 1 (invalid env should fallback to default)", count)
@@ -430,7 +455,7 @@ func TestPlugin_WorkerCount_ZeroEnv(t *testing.T) {
 	os.Setenv("ACTION_THREADS", "0")
 	defer os.Unsetenv("ACTION_THREADS")
 
-	p := &Plugin{}
+	p := &plugin{}
 
 	if count := p.workerCount("AnyAction"); count != 1 {
 		t.Errorf("workerCount = %d, want 1 (zero should fallback to default)", count)
@@ -438,7 +463,7 @@ func TestPlugin_WorkerCount_ZeroEnv(t *testing.T) {
 }
 
 func TestPlugin_WatchArtifact(t *testing.T) {
-	p := &Plugin{}
+	p := &plugin{}
 
 	handler := func(fetched *FetchedArtifact, err error) {}
 	p.WatchArtifact("config.yaml", &ArtifactDefault{
@@ -461,7 +486,7 @@ func TestPlugin_WatchArtifact(t *testing.T) {
 }
 
 func TestPlugin_WatchSharedArtifact(t *testing.T) {
-	p := &Plugin{}
+	p := &plugin{}
 
 	handler := func(fetched *FetchedArtifact, err error) {}
 	p.WatchSharedArtifact("shared-config", nil, handler)
@@ -478,7 +503,7 @@ func TestPlugin_WatchSharedArtifact(t *testing.T) {
 }
 
 func TestPlugin_RegisterMultipleFlowsAndVariables(t *testing.T) {
-	p := &Plugin{}
+	p := &plugin{}
 
 	p.RegisterFlow(FlowPlan{Name: "f1", Raw: json.RawMessage(`{}`)})
 	p.RegisterFlow(FlowPlan{Name: "f2", Raw: json.RawMessage(`{}`)})
@@ -493,3 +518,4 @@ func TestPlugin_RegisterMultipleFlowsAndVariables(t *testing.T) {
 		t.Errorf("variables count = %d, want 3", len(p.variables))
 	}
 }
+

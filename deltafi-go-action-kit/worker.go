@@ -16,7 +16,7 @@
  *    limitations under the License.
  */
 // ABOUTME: Action execution engine with poller and worker goroutines.
-// ABOUTME: Polls Redis queues for work, executes actions, publishes results, and cleans up orphans.
+// ABOUTME: Polls Redis queues for work, dispatches actions via reflection, publishes results.
 
 package actionkit
 
@@ -35,13 +35,15 @@ type actionWorker struct {
 	name           string
 	action         any
 	actionType     string
-	queue          *ActionEventQueue
+	queue          *actionEventQueue
 	contentService ContentServiceBase
 	lookupClient   LookupClientBase
 	artifactClient ArtifactClientBase
 	workerCount    int
 	tracker        *inFlightTracker
 	appName        string
+	dispatcher     *actionDispatcher
+	paramDefaults  any
 }
 
 // queueEvent is the deserialized ActionInput from the Redis queue.
@@ -71,7 +73,7 @@ type queueActionContext struct {
 	Hostname      string             `json:"hostname"`
 	SystemName    string             `json:"systemName"`
 	Memo          string             `json:"memo"`
-	Join          *JoinConfiguration `json:"join"`
+	Join          *joinConfiguration `json:"join"`
 	JoinedDIDs    []string           `json:"joinedDids"`
 }
 
@@ -148,63 +150,38 @@ func (w *actionWorker) work(ctx context.Context, ch <-chan []byte) {
 // execute runs the action with panic recovery and returns an ActionEvent.
 func (w *actionWorker) execute(ctx context.Context, event *queueEvent) *ActionEvent {
 	startTime := time.Now()
-	actx := w.buildActionContext(event)
+	actx := w.buildActionContext(ctx, event)
 
 	// Track for heartbeat long-running task reporting
 	w.tracker.start(actx.DID, actx.ActionName, w.appName)
 	defer w.tracker.stop(actx.DID, actx.ActionName)
 
-	var result Result
+	var actionEvent *ActionEvent
 
-	// Panic recovery: any panic inside the action becomes an ErrorResult so a
+	// Panic recovery: any panic inside the action becomes an error event so a
 	// crashing action does not take down the worker.
 	func() {
 		defer func() {
 			if r := recover(); r != nil {
 				stack := string(debug.Stack())
 				log.Printf("[%s] panic: %v\n%s", w.name, r, stack)
-				result = NewErrorResult(actx, fmt.Sprintf("panic: %v", r)).SetContext(stack)
+				ae := errorEvent(actx, startTime, fmt.Sprintf("panic: %v", r))
+				ae.Error.Context = stack
+				actionEvent = ae
 			}
 		}()
 
-		result = w.invokeAction(ctx, actx, event)
+		actionEvent = w.dispatcher.invoke(actx, event, w.paramDefaults, startTime)
 	}()
 
-	actionEvent := result.toActionEvent(actx, startTime)
-
 	// Orphan cleanup
-	w.cleanupOrphans(ctx, actx, result)
+	w.cleanupOrphans(ctx, actx, actionEvent)
 
 	return actionEvent
 }
 
-// invokeAction calls the appropriate method on the action based on its type.
-// Any failure inside the action is reported via the returned Result; the only
-// failure mode of invokeAction itself is an unrecognized action type, which is
-// surfaced as an ErrorResult.
-func (w *actionWorker) invokeAction(ctx context.Context, actx *ActionContext, event *queueEvent) Result {
-	switch action := w.action.(type) {
-	case TransformAction:
-		if joinAction, ok := w.action.(JoinAction); ok && actx.Join != nil {
-			inputs := buildTransformInputs(actx, event)
-			merged := joinAction.Join(ctx, inputs)
-			return action.Transform(ctx, merged)
-		}
-		input := buildTransformInput(actx, event)
-		return action.Transform(ctx, input)
-	case EgressAction:
-		input := buildEgressInput(actx, event)
-		return action.Egress(ctx, input)
-	case TimedIngressAction:
-		input := buildIngressInput(actx, event)
-		return action.Ingress(ctx, input)
-	default:
-		return NewErrorResult(actx, fmt.Sprintf("unknown action type for %s", w.name))
-	}
-}
-
 // buildActionContext creates an ActionContext from the queue event.
-func (w *actionWorker) buildActionContext(event *queueEvent) *ActionContext {
+func (w *actionWorker) buildActionContext(ctx context.Context, event *queueEvent) *ActionContext {
 	return &ActionContext{
 		DID:            event.ActionContext.DID,
 		DeltaFileName:  event.ActionContext.DeltaFileName,
@@ -222,71 +199,17 @@ func (w *actionWorker) buildActionContext(event *queueEvent) *ActionContext {
 		ArtifactClient: w.artifactClient,
 		Join:           event.ActionContext.Join,
 		JoinedDIDs:     event.ActionContext.JoinedDIDs,
-	}
-}
-
-func buildTransformInput(actx *ActionContext, event *queueEvent) TransformInput {
-	input := TransformInput{
-		ActionContext: actx,
-		Params:        event.ActionParams,
-		Metadata:      make(map[string]string),
-	}
-	if len(event.DeltaFileMessages) > 0 {
-		msg := event.DeltaFileMessages[0]
-		input.Content = msg.ContentList
-		input.Metadata = msg.Metadata
-	}
-	bindContents(actx, input.Content)
-	return input
-}
-
-// buildTransformInputs creates one TransformInput per DeltaFileMessage for join actions.
-func buildTransformInputs(actx *ActionContext, event *queueEvent) []TransformInput {
-	inputs := make([]TransformInput, len(event.DeltaFileMessages))
-	for i, msg := range event.DeltaFileMessages {
-		inputs[i] = TransformInput{
-			ActionContext: actx,
-			Content:       msg.ContentList,
-			Metadata:      msg.Metadata,
-			Params:        event.ActionParams,
-		}
-		if inputs[i].Metadata == nil {
-			inputs[i].Metadata = make(map[string]string)
-		}
-		bindContents(actx, inputs[i].Content)
-	}
-	return inputs
-}
-
-func buildEgressInput(actx *ActionContext, event *queueEvent) EgressInput {
-	input := EgressInput{
-		ActionContext: actx,
-		Params:        event.ActionParams,
-		Metadata:      make(map[string]string),
-	}
-	if len(event.DeltaFileMessages) > 0 {
-		msg := event.DeltaFileMessages[0]
-		input.Content = msg.ContentList
-		input.Metadata = msg.Metadata
-	}
-	bindContents(actx, input.Content)
-	return input
-}
-
-func buildIngressInput(actx *ActionContext, event *queueEvent) IngressInput {
-	return IngressInput{
-		ActionContext: actx,
-		Params:        event.ActionParams,
+		ctx:            ctx,
 	}
 }
 
 // cleanupOrphans deletes segments saved during execution but not referenced in the result.
-func (w *actionWorker) cleanupOrphans(ctx context.Context, actx *ActionContext, result Result) {
+func (w *actionWorker) cleanupOrphans(ctx context.Context, actx *ActionContext, event *ActionEvent) {
 	if len(actx.savedSegments) == 0 {
 		return
 	}
 
-	referenced := collectResultSegments(result)
+	referenced := collectEventSegments(event)
 	refSet := make(map[string]bool, len(referenced))
 	for _, seg := range referenced {
 		refSet[seg.UUID] = true
@@ -306,30 +229,21 @@ func (w *actionWorker) cleanupOrphans(ctx context.Context, actx *ActionContext, 
 	}
 }
 
-// collectResultSegments extracts all segment references from a result's content.
-func collectResultSegments(result Result) []Segment {
+// collectEventSegments extracts all segment references from an ActionEvent's content.
+func collectEventSegments(event *ActionEvent) []Segment {
 	var segments []Segment
-
-	switch r := result.(type) {
-	case *TransformResult:
-		for _, c := range r.content {
+	for _, te := range event.Transform {
+		for _, c := range te.Content {
 			segments = append(segments, c.Segments...)
 		}
-	case *TransformResults:
-		for _, child := range r.children {
-			for _, c := range child.content {
-				segments = append(segments, c.Segments...)
-			}
-		}
-	case *IngressResult:
-		for _, item := range r.items {
-			for _, c := range item.content {
-				segments = append(segments, c.Segments...)
-			}
-		}
-		// ErrorResult, FilterResult, EgressResult have no content segments
 	}
-
+	if event.Ingress != nil {
+		for _, item := range event.Ingress.IngressItems {
+			for _, c := range item.Content {
+				segments = append(segments, c.Segments...)
+			}
+		}
+	}
 	return segments
 }
 

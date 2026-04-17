@@ -58,17 +58,17 @@ type actionDescriptor struct {
 }
 
 // buildRegistration constructs the registration payload from the plugin's state.
-func buildRegistration(p *Plugin) pluginRegistration {
+func buildRegistration(p *plugin) pluginRegistration {
 	actions := make([]actionDescriptor, len(p.actions))
 	for i, ra := range p.actions {
 		desc := actionDescriptor{
-			Name: ra.name,
-			Type: ra.actionType,
+			Name:        ra.name,
+			Type:        ra.actionType,
+			Description: ra.description,
+			Options:     ra.options,
 		}
 
-		desc.Description = ra.description
-		desc.Options = ra.options
-		if _, ok := ra.action.(JoinAction); ok {
+		if ra.dispatcher != nil && ra.dispatcher.hasJoin {
 			desc.SupportsJoin = true
 		}
 
@@ -102,7 +102,7 @@ func buildRegistration(p *Plugin) pluginRegistration {
 	}
 }
 
-func displayName(p *Plugin) string {
+func displayName(p *plugin) string {
 	if p.config.DisplayName != "" {
 		return p.config.DisplayName
 	}
@@ -136,7 +136,7 @@ func postRegistration(ctx context.Context, coreURL string, reg pluginRegistratio
 		}
 		req.Header.Set("Content-Type", "application/json")
 
-		resp, err := http.DefaultClient.Do(req)
+		resp, err := platformClient.Do(req)
 		if err != nil {
 			lastErr = fmt.Errorf("POST %s failed: %w", url, err)
 			log.Printf("Registration error: %v", lastErr)

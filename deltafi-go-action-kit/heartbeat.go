@@ -88,7 +88,7 @@ func (t *inFlightTracker) snapshot() []*actionExecution {
 
 // startHeartbeat runs a goroutine that sends heartbeats and reports long-running tasks.
 // It tracks which tasks have been reported to Redis so completed tasks can be removed.
-func startHeartbeat(ctx context.Context, wg *sync.WaitGroup, queue *ActionEventQueue, actionNames []string, tracker *inFlightTracker, appName string) {
+func startHeartbeat(ctx context.Context, wg *sync.WaitGroup, queue *actionEventQueue, actionNames []string, tracker *inFlightTracker, appName string) {
 	wg.Go(func() {
 		ticker := time.NewTicker(heartbeatInterval)
 		defer ticker.Stop()

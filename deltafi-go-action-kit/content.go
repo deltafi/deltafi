@@ -81,19 +81,28 @@ func (ac ActionContent) contentService() (ContentServiceBase, error) {
 	return ac.actx.ContentService, nil
 }
 
+// contentContext returns the context from the wired ActionContext, or
+// context.Background() if no ActionContext is set.
+func (ac ActionContent) contentContext() context.Context {
+	if ac.actx != nil && ac.actx.ctx != nil {
+		return ac.actx.ctx
+	}
+	return context.Background()
+}
+
 // LoadBytes fetches and concatenates all segments from storage using the
 // ContentService wired to this content's ActionContext.
-func (ac ActionContent) LoadBytes(ctx context.Context) ([]byte, error) {
+func (ac ActionContent) LoadBytes() ([]byte, error) {
 	cs, err := ac.contentService()
 	if err != nil {
 		return nil, err
 	}
-	return cs.Load(ctx, ac.Segments)
+	return cs.Load(ac.contentContext(), ac.Segments)
 }
 
 // LoadString fetches all segments and returns the content as a string.
-func (ac ActionContent) LoadString(ctx context.Context) (string, error) {
-	data, err := ac.LoadBytes(ctx)
+func (ac ActionContent) LoadString() (string, error) {
+	data, err := ac.LoadBytes()
 	if err != nil {
 		return "", err
 	}
@@ -102,12 +111,12 @@ func (ac ActionContent) LoadString(ctx context.Context) (string, error) {
 
 // LoadReader returns a streaming io.ReadCloser for this content.
 // The caller must close the returned reader when done.
-func (ac ActionContent) LoadReader(ctx context.Context) (io.ReadCloser, error) {
+func (ac ActionContent) LoadReader() (io.ReadCloser, error) {
 	cs, err := ac.contentService()
 	if err != nil {
 		return nil, err
 	}
-	return cs.LoadReader(ctx, ac.Segments)
+	return cs.LoadReader(ac.contentContext(), ac.Segments)
 }
 
 // Size returns the total size of all segments in bytes.
@@ -119,7 +128,8 @@ func (ac ActionContent) Size() int64 {
 	return total
 }
 
-// Copy returns a deep copy of this content.
+// Copy returns a deep copy of this content, preserving the ActionContext
+// back-reference so that LoadBytes/LoadString/LoadReader work on the copy.
 func (ac ActionContent) Copy() ActionContent {
 	segs := make([]Segment, len(ac.Segments))
 	copy(segs, ac.Segments)
@@ -133,6 +143,7 @@ func (ac ActionContent) Copy() ActionContent {
 		MediaType: ac.MediaType,
 		Segments:  segs,
 		Tags:      tags,
+		actx:      ac.actx,
 	}
 }
 
@@ -184,6 +195,7 @@ func (ac ActionContent) SubcontentNamed(offset, size int64, name, mediaType stri
 		Name:      name,
 		MediaType: mediaType,
 		Segments:  segs,
+		actx:      ac.actx,
 	}
 }
 
@@ -194,7 +206,10 @@ func (ac *ActionContent) Append(other ActionContent) {
 
 // Prepend adds all segments from another ActionContent to the beginning of this content.
 func (ac *ActionContent) Prepend(other ActionContent) {
-	ac.Segments = append(other.Segments, ac.Segments...)
+	merged := make([]Segment, 0, len(other.Segments)+len(ac.Segments))
+	merged = append(merged, other.Segments...)
+	merged = append(merged, ac.Segments...)
+	ac.Segments = merged
 }
 
 // SetName updates the content name.
@@ -238,16 +253,16 @@ type ContentServiceBase interface {
 	Delete(ctx context.Context, segments []Segment) error
 }
 
-// ContentService wraps a MinIO client for content storage operations.
-type ContentService struct {
+// contentService wraps a MinIO client for content storage operations.
+type contentService struct {
 	client *minio.Client
 	bucket string
 }
 
-// NewContentService creates a ContentService connected to MinIO.
+// newContentService creates a contentService connected to MinIO.
 // The endpoint can include a scheme (http:// or https://); if present, it is
 // stripped and used to infer the Secure setting (unless useSSL is explicitly true).
-func NewContentService(endpoint, accessKey, secretKey, bucket string, useSSL bool) (*ContentService, error) {
+func newContentService(endpoint, accessKey, secretKey, bucket string, useSSL bool) (*contentService, error) {
 	if after, ok := strings.CutPrefix(endpoint, "https://"); ok {
 		endpoint = after
 		useSSL = true
@@ -261,11 +276,11 @@ func NewContentService(endpoint, accessKey, secretKey, bucket string, useSSL boo
 	if err != nil {
 		return nil, fmt.Errorf("failed to create minio client: %w", err)
 	}
-	return &ContentService{client: client, bucket: bucket}, nil
+	return &contentService{client: client, bucket: bucket}, nil
 }
 
 // Save stores data in MinIO and returns a Segment reference.
-func (cs *ContentService) Save(ctx context.Context, did string, data []byte) (Segment, error) {
+func (cs *contentService) Save(ctx context.Context, did string, data []byte) (Segment, error) {
 	segUUID := uuid.New().String()
 	seg := Segment{
 		UUID:   segUUID,
@@ -285,7 +300,7 @@ func (cs *ContentService) Save(ctx context.Context, did string, data []byte) (Se
 // SaveFromReader stores data from an io.Reader in MinIO and returns a Segment reference.
 // The size parameter must match the number of bytes available from the reader.
 // Use -1 if the size is unknown; MinIO will buffer internally to determine it.
-func (cs *ContentService) SaveFromReader(ctx context.Context, did string, reader io.Reader, size int64) (Segment, error) {
+func (cs *contentService) SaveFromReader(ctx context.Context, did string, reader io.Reader, size int64) (Segment, error) {
 	segUUID := uuid.New().String()
 	seg := Segment{
 		UUID:   segUUID,
@@ -306,7 +321,7 @@ func (cs *ContentService) SaveFromReader(ctx context.Context, did string, reader
 }
 
 // Load fetches and concatenates data from the given segments.
-func (cs *ContentService) Load(ctx context.Context, segments []Segment) ([]byte, error) {
+func (cs *contentService) Load(ctx context.Context, segments []Segment) ([]byte, error) {
 	var buf bytes.Buffer
 	for _, seg := range segments {
 		obj, err := cs.client.GetObject(ctx, cs.bucket, seg.objectPath(), minio.GetObjectOptions{})
@@ -346,7 +361,7 @@ func readSegment(obj *minio.Object, seg Segment) (data []byte, err error) {
 
 // LoadReader returns a streaming io.ReadCloser for the given segments.
 // The caller must close the returned reader when done.
-func (cs *ContentService) LoadReader(ctx context.Context, segments []Segment) (io.ReadCloser, error) {
+func (cs *contentService) LoadReader(ctx context.Context, segments []Segment) (io.ReadCloser, error) {
 	if len(segments) == 0 {
 		return io.NopCloser(bytes.NewReader(nil)), nil
 	}
@@ -400,7 +415,7 @@ func (mc *multiCloser) Close() error {
 }
 
 // Delete removes the objects for the given segments from MinIO.
-func (cs *ContentService) Delete(ctx context.Context, segments []Segment) error {
+func (cs *contentService) Delete(ctx context.Context, segments []Segment) error {
 	for _, seg := range segments {
 		if err := cs.client.RemoveObject(ctx, cs.bucket, seg.objectPath(), minio.RemoveObjectOptions{}); err != nil {
 			return fmt.Errorf("failed to remove object %s: %w", seg.objectPath(), err)

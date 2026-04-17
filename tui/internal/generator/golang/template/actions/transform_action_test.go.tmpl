@@ -4,7 +4,6 @@
 package actions
 
 import (
-	"context"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -16,11 +15,12 @@ func Test{{.ActionClassName}}_Normal(t *testing.T) {
 	tc := actionkit.NewTestContext("test-did")
 	content := tc.Content("input.txt", "text/plain", "hello world")
 
-	event := actionkit.RunTransform(t, &{{.ActionClassName}}{}, actionkit.NewTransformInput(tc, content))
+	deltafile := tc.NewDeltafile(content)
+	event := actionkit.RunTransform(t, &{{.ActionClassName}}{}, deltafile, {{.ActionClassName}}Params{})
 	te := event.RequireTransform(t)
 
 	require.Len(t, te[0].Content, 1)
-	data, err := te[0].Content[0].LoadString(context.Background())
+	data, err := te[0].Content[0].LoadString()
 	require.NoError(t, err)
 	assert.Equal(t, "hello world", data)
 	assert.Equal(t, "processed", te[0].Annotations["{{.ActionName}}"])
@@ -30,6 +30,7 @@ func Test{{.ActionClassName}}_Normal(t *testing.T) {
 func Test{{.ActionClassName}}_NoContent(t *testing.T) {
 	tc := actionkit.NewTestContext("test-did")
 
-	event := actionkit.RunTransform(t, &{{.ActionClassName}}{}, actionkit.NewTransformInput(tc))
+	deltafile := tc.NewDeltafile()
+	event := actionkit.RunTransform(t, &{{.ActionClassName}}{}, deltafile, {{.ActionClassName}}Params{})
 	event.RequireError(t, "No content provided")
 }

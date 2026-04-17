@@ -4,87 +4,74 @@
 package actions
 
 import (
-	"context"
+	_ "embed"
 
 	actionkit "gitlab.com/deltafi/deltafi/deltafi-go-action-kit/v2"
 )
 
-func init() {
-	actionkit.Register("{{.ActionClassName}}", &{{.ActionClassName}}{}).
-		Describe("TODO: Add action description")
+//go:embed {{.ActionFileName}}_action.yaml
+var {{.ActionFileName}}Options string
 
-	// Uncomment to register with parameters and detailed specifications:
-	// actionkit.Register("{{.ActionClassName}}", &{{.ActionClassName}}{}).
+func init() {
+	actionkit.RegisterTransform("{{.ActionClassName}}", &{{.ActionClassName}}{}).
+		WithOptionsYAML({{.ActionFileName}}Options)
+
+	// Uncomment to register with parameters:
+	// actionkit.RegisterTransform("{{.ActionClassName}}", &{{.ActionClassName}}{}).
 	// 	WithParams({{.ActionClassName}}Params{}).
-	// 	WithOptions(actionkit.ActionOptions{
-	// 		Description: "TODO: Add action description",
-	// 		InputSpec: &actionkit.InputSpec{
-	// 			ContentSummary: "TODO: Describe expected input",
-	// 		},
-	// 		OutputSpec: &actionkit.OutputSpec{
-	// 			ContentSummary: "TODO: Describe produced output",
-	// 		},
-	// 	})
+	// 	WithOptionsYAML({{.ActionFileName}}Options)
 }
 
 // {{.ActionClassName}}Params defines the action's configurable parameters.
-// Add fields with json and jsonschema tags to expose them in the DeltaFi UI.
+// Add fields with json and description/default tags to expose them in the DeltaFi UI.
 type {{.ActionClassName}}Params struct {
 	// Example parameter:
-	// ConvertToUpper bool `json:"convertToUpper" jsonschema:"description=Convert content to uppercase,default=false"`
+	// ConvertToUpper bool `json:"convertToUpper" description:"Convert content to uppercase" default:"false"`
 }
 
 // {{.ActionClassName}} implements the transform action.
 type {{.ActionClassName}} struct{}
 
-func (a *{{.ActionClassName}}) Transform(ctx context.Context, input actionkit.TransformInput) actionkit.Result {
-	actx := input.ActionContext
+func (a *{{.ActionClassName}}) Transform(deltafile *actionkit.Deltafile, params {{.ActionClassName}}Params) *actionkit.Deltafile {
 
-	// Uncomment to parse action parameters:
-	// params := {{.ActionClassName}}Params{}
-	// if err := input.ParseParameters(&params); err != nil {
-	// 	return actx.Errorf("Failed to parse parameters: %v", err)
-	// }
-
-	content, err := input.ContentAt(0)
+	content, err := deltafile.ContentAt(0)
 	if err != nil {
-		return actx.Errorf("No content provided")
+		return deltafile.Errorf("No content provided")
 	}
 
-	data, err := content.LoadString(ctx)
+	data, err := content.LoadString()
 	if err != nil {
-		return actx.Errorf("Failed to load content: %v", err)
+		return deltafile.Errorf("Failed to load content: %v", err)
 	}
 
 	// TODO: Implement your transformation logic here
 	transformed := data
 
-	newContent, err := actx.SaveString(ctx, transformed, content.Name+"-transformed", content.MediaType)
+	_, err = deltafile.SaveStringContent(transformed, content.Name+"-transformed", content.MediaType)
 	if err != nil {
-		return actx.Errorf("Failed to save content: %v", err)
+		return deltafile.Errorf("Failed to save content: %v", err)
 	}
 
 	// Uncomment to query a lookup table:
-	// lookupResults, err := actx.LookupClient.Lookup(ctx, "my_lookup_table",
-	// 	actionkit.WithMatch("column", "value"),
-	// 	actionkit.WithResultColumns("result_col"),
-	// )
+	// results, err := actionkit.Lookup("my_lookup_table",
+	// 	actionkit.LookupQuery().
+	// 		WithMatch("column", "value").
+	// 		WithResultColumns("result_col"))
 	// if err != nil {
-	// 	return actx.Errorf("Lookup failed: %v", err)
+	// 	return deltafile.Errorf("Lookup failed: %v", err)
 	// }
-	// _ = lookupResults
+	// _ = results
 
 	// Uncomment to fetch a plugin artifact:
-	// fetched, err := actx.ArtifactClient.GetArtifact(ctx, "my-artifact.json", "")
+	// fetched, err := actionkit.GetArtifact("my-artifact.json", "")
 	// if err != nil {
-	// 	// handle missing artifact (e.g. log it)
+	// 	// handle missing artifact
 	// } else {
 	// 	_ = fetched.Data
 	// }
 
-	return actionkit.NewTransformResult(actx).
-		AddContent(*newContent).
+	return deltafile.
 		AddAnnotation("{{.ActionName}}", "processed").
 		AddMetadata("{{.ActionName}}", "done").
-		LogInfo("Transformed content: %d bytes", newContent.Size())
+		LogInfo("Transformed content: %d bytes", content.Size())
 }

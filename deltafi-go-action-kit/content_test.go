@@ -131,6 +131,46 @@ func TestActionContent_Copy_NilTags(t *testing.T) {
 	}
 }
 
+func TestActionContent_Copy_PreservesActx(t *testing.T) {
+	tc := NewTestContext("test-did")
+	content := tc.Content("file.txt", "text/plain", "hello world")
+
+	copied := content.Copy()
+
+	// The copy should be able to load content via the preserved actx
+	data, err := copied.LoadString()
+	if err != nil {
+		t.Fatalf("LoadString on copy failed: %v", err)
+	}
+	if data != "hello world" {
+		t.Errorf("LoadString = %q, want %q", data, "hello world")
+	}
+}
+
+func TestActionContent_Prepend_DoesNotMutateOther(t *testing.T) {
+	// Give "other" extra backing-array capacity so a naive append could
+	// silently overwrite memory beyond its length.
+	otherSegs := make([]Segment, 1, 4)
+	otherSegs[0] = Segment{UUID: "u-other", Offset: 0, Size: 200, DID: "d1"}
+	other := ActionContent{Segments: otherSegs}
+
+	ac := &ActionContent{
+		Segments: []Segment{{UUID: "u-self", Offset: 0, Size: 100, DID: "d1"}},
+	}
+
+	ac.Prepend(other)
+
+	// ac should have [u-other, u-self]
+	if len(ac.Segments) != 2 || ac.Segments[0].UUID != "u-other" || ac.Segments[1].UUID != "u-self" {
+		t.Errorf("ac.Segments = %v, want [u-other, u-self]", ac.Segments)
+	}
+
+	// other must still have exactly its original segment
+	if len(other.Segments) != 1 || other.Segments[0].UUID != "u-other" {
+		t.Errorf("other.Segments was mutated: %v", other.Segments)
+	}
+}
+
 // --- Subcontent ---
 
 func TestActionContent_Subcontent_SingleSegment(t *testing.T) {

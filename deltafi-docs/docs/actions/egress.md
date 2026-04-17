@@ -112,25 +112,18 @@ class HelloWorldEgressAction(EgressAction):
 ### Interface
 
 An EgressAction must implement the `Egress` method which receives:
-* `context.Context` for cancellation and timeouts
-* `EgressInput` providing the formatted content and metadata to send
+* `*Deltafile` providing the content, metadata, and context fields
+* A typed params struct containing flow parameters specified for the action
 
-### Egress Input
-
-```go
-type EgressInput struct {
-    ActionContext *ActionContext
-    Content       []ActionContent
-    Metadata      map[string]string
-    Params        map[string]any
-}
-```
+The action returns the same `*Deltafile`. A successful egress simply returns the Deltafile unchanged.
 
 ### Return Types
 
-The `Egress` method must return a `Result` and an `error`. The `Result` is one of: `EgressResult` or `ErrorResult`.
+The `Egress` method returns a `*Deltafile`. The kit inspects the Deltafile's state:
 
-Returning an `EgressResult` indicates a successful egress.
+* **Egress result** — when the Deltafile is returned without error or filter state (successful egress)
+* **Error result** — when `Errorf` has been called on the Deltafile
+* **Filter result** — when `Filterf` has been called on the Deltafile
 
 ### Example
 
@@ -138,31 +131,36 @@ Returning an `EgressResult` indicates a successful egress.
 package actions
 
 import (
-    "context"
     "strings"
 
-    actionkit "gitlab.com/deltafi/deltafi/deltafi-go-action-kit"
+    actionkit "gitlab.com/deltafi/deltafi/deltafi-go-action-kit/v2"
 )
 
 func init() {
-    actionkit.Register("HelloWorldGoEgressAction", &HelloWorldGoEgress{}).
+    actionkit.RegisterEgress("HelloWorldGoEgressAction", &HelloWorldGoEgress{}).
         Describe("Hello pretends to egress")
 }
 
+type HelloWorldGoEgressParams struct{}
+
 type HelloWorldGoEgress struct{}
 
-func (a *HelloWorldGoEgress) Egress(ctx context.Context, input actionkit.EgressInput) (actionkit.Result, error) {
-    content := input.FirstContent()
-    data, err := content.LoadString(ctx, input.ActionContext.ContentService)
+func (a *HelloWorldGoEgress) Egress(df *actionkit.Deltafile, params HelloWorldGoEgressParams) *actionkit.Deltafile {
+    content, err := df.FirstContent()
     if err != nil {
-        return actionkit.NewErrorResult(input.ActionContext, "Failed to load content"), nil
+        return df.Errorf("Failed to load content").SetErrorContext(err.Error())
+    }
+
+    data, err := content.LoadString()
+    if err != nil {
+        return df.Errorf("Failed to load content").SetErrorContext(err.Error())
     }
 
     if strings.Contains(data, "error") {
-        return actionkit.NewErrorResult(input.ActionContext, "Failed to egress"), nil
+        return df.Errorf("Failed to egress")
     }
 
-    return actionkit.NewEgressResult(input.ActionContext), nil
+    return df
 }
 ```
 

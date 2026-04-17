@@ -4,7 +4,6 @@
 package actions
 
 import (
-	"context"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -17,16 +16,16 @@ func Test{{.ActionClassName}}_Join(t *testing.T) {
 	content1 := tc.Content("part1.txt", "text/plain", "first")
 	content2 := tc.Content("part2.txt", "text/plain", "second")
 
-	in1 := actionkit.NewTransformInput(tc, content1)
-	in1.Metadata = map[string]string{"key": "a"}
-	in2 := actionkit.NewTransformInput(tc, content2)
-	in2.Metadata = map[string]string{"key": "b"}
+	in1 := tc.NewDeltafile(content1)
+	in1.AddMetadata("key", "a")
+	in2 := tc.NewDeltafile(content2)
+	in2.AddMetadata("key", "b")
 
-	merged := (&{{.ActionClassName}}{}).Join(context.Background(), []actionkit.TransformInput{in1, in2})
+	joined := tc.NewDeltafile()
+	result := actionkit.RunJoin(t, &{{.ActionClassName}}{}, []*actionkit.Deltafile{in1, in2}, joined, {{.ActionClassName}}Params{})
 
-	require.Len(t, merged.Content, 2)
-	assert.Equal(t, "part1.txt", merged.Content[0].Name)
-	assert.Equal(t, "part2.txt", merged.Content[1].Name)
+	require.True(t, result.HasContent())
+	assert.Len(t, result.GetNewContentSlice(), 2)
 }
 
 func Test{{.ActionClassName}}_Transform(t *testing.T) {
@@ -34,14 +33,14 @@ func Test{{.ActionClassName}}_Transform(t *testing.T) {
 	content1 := tc.Content("p1.txt", "text/plain", "AAA")
 	content2 := tc.Content("p2.txt", "text/plain", "BBB")
 
-	input := actionkit.NewTransformInput(tc, content1, content2)
-	input.Metadata = map[string]string{"hello": "world"}
+	deltafile := tc.NewDeltafile(content1, content2)
+	deltafile.AddMetadata("hello", "world")
 
-	event := actionkit.RunTransform(t, &{{.ActionClassName}}{}, input)
+	event := actionkit.RunTransform(t, &{{.ActionClassName}}{}, deltafile, {{.ActionClassName}}Params{})
 	te := event.RequireTransform(t)
 
 	require.Len(t, te, 1)
-	data, err := te[0].Content[0].LoadString(context.Background())
+	data, err := te[0].Content[0].LoadString()
 	require.NoError(t, err)
 	assert.Contains(t, data, "AAA")
 	assert.Contains(t, data, "BBB")

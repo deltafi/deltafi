@@ -66,8 +66,14 @@ func (g *GoGenerator) LintPlugin(pluginName string, options *generator.LintOptio
 
 	issues = append(issues, lintSuppliers(pluginDir)...)
 
-	declaredVars := loadFlowVariableNames(pluginDir)
+	declaredVars, varIssues := loadFlowVariables(pluginDir)
+	issues = append(issues, varIssues...)
 	issues = append(issues, lintFlows(pluginDir, registeredActions, declaredVars)...)
+
+	issues = append(issues, lintDockerfileGoVersion(pluginDir)...)
+	issues = append(issues, lintGoWorkGitignore(pluginDir)...)
+
+	issues = append(issues, lintIntegrationTests(pluginDir)...)
 
 	issues = append(issues, lintLicenseHeaders(pluginDir)...)
 
@@ -190,9 +196,10 @@ func lintGoMod(pluginDir string) (string, []generator.LintIssue) {
 var (
 	importBlockRe      = regexp.MustCompile(`(?s)import\s*\((.*?)\)`)
 	blankImportLineRe  = regexp.MustCompile(`(?m)^\s*_\s+"([^"]+)"`)
-	registerCallRe     = regexp.MustCompile(`actionkit\.Register\(\s*"([^"]+)"`)
+	registerCallRe     = regexp.MustCompile(`actionkit\.Register(Transform|JoinTransform|Egress|Ingress)\(\s*"([^"]+)"`)
 	registerSupplierRe = regexp.MustCompile(`actionkit\.RegisterSupplier\(`)
 	initFuncRe         = regexp.MustCompile(`func\s+init\s*\(\s*\)\s*\{`)
+	withParamsRe       = regexp.MustCompile(`WithParams\(`)
 )
 
 // flowActionFields lists the keys in a flow JSON document whose values
@@ -235,10 +242,28 @@ func lintMainGoBlankImports(pluginDir, modulePath string) []generator.LintIssue 
 		}
 		want := modulePath + "/" + sub
 		if !blanks[want] {
+			importLine := "\t_ \"" + want + "\""
+			filePath := mainPath
 			issues = append(issues, generator.LintIssue{
 				Severity: generator.LintError,
 				File:     "main.go",
 				Message:  fmt.Sprintf("missing blank import %q (required to wire %s/init() registrations)", "_ \""+want+"\"", sub),
+				Fix: func() error {
+					data, err := os.ReadFile(filePath)
+					if err != nil {
+						return err
+					}
+					src := string(data)
+					// Find the import block's closing paren and insert before it.
+					loc := importBlockRe.FindStringIndex(src)
+					if loc == nil {
+						return fmt.Errorf("no import block found in main.go")
+					}
+					// loc[1]-1 is the closing ')'. Insert the line before it.
+					insertAt := loc[1] - 1
+					fixed := src[:insertAt] + importLine + "\n" + src[insertAt:]
+					return os.WriteFile(filePath, []byte(fixed), 0644)
+				},
 			})
 		}
 	}
@@ -265,10 +290,24 @@ func packageHasSources(dir string) bool {
 	return false
 }
 
+// registerMethodPatterns maps each Register* variant to a regex that must match
+// somewhere in the same file, verifying the action struct has the expected method.
+var registerMethodPatterns = map[string]*regexp.Regexp{
+	"Transform":     regexp.MustCompile(`func\s+\([^)]+\)\s+Transform\(\s*\w+\s+\*actionkit\.Deltafile`),
+	"JoinTransform": regexp.MustCompile(`func\s+\([^)]+\)\s+Join\(\s*\w+\s+\[\]\*actionkit\.Deltafile`),
+	"Egress":        regexp.MustCompile(`func\s+\([^)]+\)\s+Egress\(\s*\w+\s+\*actionkit\.Deltafile`),
+	"Ingress":       regexp.MustCompile(`func\s+\([^)]+\)\s+Ingress\(\s*\w+\s+\*actionkit\.IngressInput`),
+}
+
+// registeredActionInfo holds metadata about a registered action for cross-referencing with flows.
+type registeredActionInfo struct {
+	variant string // "Transform", "JoinTransform", "Egress", "Ingress"
+}
+
 // lintActions inspects every actions/*.go file and returns the set of registered
-// action names plus any issues found.
-func lintActions(pluginDir string) (map[string]bool, []generator.LintIssue) {
-	registered := map[string]bool{}
+// action names (with metadata) plus any issues found.
+func lintActions(pluginDir string) (map[string]registeredActionInfo, []generator.LintIssue) {
+	registered := map[string]registeredActionInfo{}
 	var issues []generator.LintIssue
 
 	// Track where each action name was first registered so we can point at
@@ -305,7 +344,7 @@ func lintActions(pluginDir string) (map[string]bool, []generator.LintIssue) {
 			issues = append(issues, generator.LintIssue{
 				Severity: generator.LintError,
 				File:     relPath,
-				Message:  "no actionkit.Register(...) call found - action will not be registered",
+				Message:  "no actionkit.Register<Type>(...) call found - action will not be registered",
 			})
 			continue
 		}
@@ -313,11 +352,12 @@ func lintActions(pluginDir string) (map[string]bool, []generator.LintIssue) {
 			issues = append(issues, generator.LintIssue{
 				Severity: generator.LintWarning,
 				File:     relPath,
-				Message:  "actionkit.Register found but no init() function - registration may not run on plugin startup",
+				Message:  "actionkit.Register<Type> found but no init() function - registration may not run on plugin startup",
 			})
 		}
 		for _, m := range registers {
-			actionName := m[1]
+			regVariant := m[1] // "Transform", "JoinTransform", etc.
+			actionName := m[2]
 			if prior, ok := registeredBy[actionName]; ok && prior != relPath {
 				issues = append(issues, generator.LintIssue{
 					Severity: generator.LintError,
@@ -327,10 +367,65 @@ func lintActions(pluginDir string) (map[string]bool, []generator.LintIssue) {
 				continue
 			}
 			registeredBy[actionName] = relPath
-			registered[actionName] = true
+			registered[actionName] = registeredActionInfo{variant: regVariant}
+
+			// Verify the file contains the expected method for the registration variant.
+			if pat, ok := registerMethodPatterns[regVariant]; ok {
+				if !pat.MatchString(src) {
+					issues = append(issues, generator.LintIssue{
+						Severity: generator.LintError,
+						File:     relPath,
+						Message:  fmt.Sprintf("Register%s used but no matching method signature found in this file", regVariant),
+					})
+				}
+			}
 		}
+
+		if len(registers) > 1 {
+			issues = append(issues, generator.LintIssue{
+				Severity: generator.LintInfo,
+				File:     relPath,
+				Message:  fmt.Sprintf("file registers %d actions - convention is one action per file", len(registers)),
+			})
+		}
+
+		// Warn when WithParams is chained but the param struct appears to have no exported fields,
+		// or when a param struct has fields but WithParams is not called (defaults won't be set).
+		issues = append(issues, lintWithParams(src, relPath)...)
 	}
 	return registered, issues
+}
+
+// paramStructRe matches a type declaration for a params struct and captures its body.
+var paramStructRe = regexp.MustCompile(`type\s+\w+Params\s+struct\s*\{([^}]*)\}`)
+
+// exportedFieldRe matches an exported (capitalized) field in a struct body.
+var exportedFieldRe = regexp.MustCompile(`(?m)^\s*[A-Z]\w*\s+`)
+
+// lintWithParams checks consistency between WithParams usage and param struct fields.
+func lintWithParams(src, relPath string) []generator.LintIssue {
+	var issues []generator.LintIssue
+	hasWithParams := withParamsRe.MatchString(src)
+
+	for _, m := range paramStructRe.FindAllStringSubmatch(src, -1) {
+		body := m[1]
+		hasFields := exportedFieldRe.MatchString(body)
+		if hasWithParams && !hasFields {
+			issues = append(issues, generator.LintIssue{
+				Severity: generator.LintWarning,
+				File:     relPath,
+				Message:  "WithParams is called but the params struct has no exported fields",
+			})
+		}
+		if hasFields && !hasWithParams {
+			issues = append(issues, generator.LintIssue{
+				Severity: generator.LintInfo,
+				File:     relPath,
+				Message:  "params struct has exported fields but WithParams is not called - default values will be zero-valued",
+			})
+		}
+	}
+	return issues
 }
 
 // lintSuppliers checks every suppliers/*.go file calls actionkit.RegisterSupplier in init().
@@ -382,30 +477,38 @@ func lintSuppliers(pluginDir string) []generator.LintIssue {
 // flowVarRefRe matches ${variableName} placeholders inside flow JSON payloads.
 var flowVarRefRe = regexp.MustCompile(`\$\{([A-Za-z_][A-Za-z0-9_]*)\}`)
 
-// loadFlowVariableNames returns the set of variable names declared in
-// flows/variables.yaml. A nil result means the file is missing or unreadable;
-// callers should treat that as "skip the variable-reference check" rather
-// than "no variables declared", since a missing file would otherwise flag
-// every template placeholder as unresolved.
-func loadFlowVariableNames(pluginDir string) map[string]bool {
+// loadFlowVariables returns the set of variable names declared in
+// flows/variables.yaml and any issues found (e.g. duplicates). A nil names
+// result means the file is missing or unreadable; callers should treat that
+// as "skip the variable-reference check" rather than "no variables declared".
+func loadFlowVariables(pluginDir string) (map[string]bool, []generator.LintIssue) {
 	path := filepath.Join(pluginDir, "flows", "variables.yaml")
 	content, err := os.ReadFile(path)
 	if err != nil {
-		return nil
+		return nil, nil
 	}
 	var vars []struct {
 		Name string `yaml:"name"`
 	}
 	if err := yaml.Unmarshal(content, &vars); err != nil {
-		return nil
+		return nil, nil
 	}
 	names := make(map[string]bool, len(vars))
+	var issues []generator.LintIssue
 	for _, v := range vars {
-		if v.Name != "" {
-			names[v.Name] = true
+		if v.Name == "" {
+			continue
 		}
+		if names[v.Name] {
+			issues = append(issues, generator.LintIssue{
+				Severity: generator.LintWarning,
+				File:     filepath.Join("flows", "variables.yaml"),
+				Message:  fmt.Sprintf("variable %q is declared more than once - later declaration silently overrides", v.Name),
+			})
+		}
+		names[v.Name] = true
 	}
-	return names
+	return names, issues
 }
 
 // lintFlows scans flows/*.json files for action references, required fields,
@@ -413,7 +516,7 @@ func loadFlowVariableNames(pluginDir string) map[string]bool {
 // declared in this plugin. Unresolved action references emit a warning since
 // they could legitimately be provided by an upstream plugin we depend on.
 // If declaredVars is nil the variable-reference check is skipped.
-func lintFlows(pluginDir string, registeredActions map[string]bool, declaredVars map[string]bool) []generator.LintIssue {
+func lintFlows(pluginDir string, registeredActions map[string]registeredActionInfo, declaredVars map[string]bool) []generator.LintIssue {
 	var issues []generator.LintIssue
 	dir := filepath.Join(pluginDir, "flows")
 	entries, err := os.ReadDir(dir)
@@ -460,17 +563,29 @@ func lintFlows(pluginDir string, registeredActions map[string]bool, declaredVars
 		}
 
 		for _, field := range flowActionFields {
-			refs := extractActionTypeRefs(doc[field])
-			for _, ref := range refs {
-				class := ref
-				if i := strings.LastIndex(ref, "."); i >= 0 {
-					class = ref[i+1:]
+			actionEntries := extractActionEntries(doc[field])
+			for _, entry := range actionEntries {
+				class := entry.typeRef
+				if i := strings.LastIndex(entry.typeRef, "."); i >= 0 {
+					class = entry.typeRef[i+1:]
 				}
-				if !registeredActions[class] && !registeredActions[ref] {
+				info, found := registeredActions[class]
+				if !found {
+					info, found = registeredActions[entry.typeRef]
+				}
+				if !found {
 					issues = append(issues, generator.LintIssue{
 						Severity: generator.LintWarning,
 						File:     relPath,
-						Message:  fmt.Sprintf("references action %q which is not registered in this plugin (may be provided by another plugin)", ref),
+						Message:  fmt.Sprintf("references action %q which is not registered in this plugin (may be provided by another plugin)", entry.typeRef),
+					})
+					continue
+				}
+				if info.variant == "JoinTransform" && !entry.hasJoin {
+					issues = append(issues, generator.LintIssue{
+						Severity: generator.LintWarning,
+						File:     relPath,
+						Message:  fmt.Sprintf("action %q is registered with RegisterJoinTransform but this flow entry has no join configuration", entry.typeRef),
 					})
 				}
 			}
@@ -521,10 +636,21 @@ func lintDocGoPackages(pluginDir string) []generator.LintIssue {
 			continue
 		}
 		if m[1] != sub {
+			filePath := docPath
+			wrongPkg := m[1]
+			correctPkg := sub
 			issues = append(issues, generator.LintIssue{
 				Severity: generator.LintError,
 				File:     filepath.Join(sub, "doc.go"),
-				Message:  fmt.Sprintf("package %q does not match directory name %q - blank import from main.go will not wire init() registrations", m[1], sub),
+				Message:  fmt.Sprintf("package %q does not match directory name %q - blank import from main.go will not wire init() registrations", wrongPkg, correctPkg),
+				Fix: func() error {
+					data, err := os.ReadFile(filePath)
+					if err != nil {
+						return err
+					}
+					fixed := packageDeclRe.ReplaceAllString(string(data), "package "+correctPkg)
+					return os.WriteFile(filePath, []byte(fixed), 0644)
+				},
 			})
 		}
 	}
@@ -565,18 +691,147 @@ func lintActionsHaveTests(pluginDir string) []generator.LintIssue {
 	return nil
 }
 
+// lintIntegrationTests validates that integration/*.json files contain valid JSON.
+func lintIntegrationTests(pluginDir string) []generator.LintIssue {
+	var issues []generator.LintIssue
+	dir := filepath.Join(pluginDir, "integration")
+	entries, err := os.ReadDir(dir)
+	if err != nil {
+		return nil
+	}
+	for _, e := range entries {
+		if e.IsDir() || !strings.HasSuffix(e.Name(), ".json") {
+			continue
+		}
+		relPath := filepath.Join("integration", e.Name())
+		content, err := os.ReadFile(filepath.Join(dir, e.Name()))
+		if err != nil {
+			issues = append(issues, generator.LintIssue{
+				Severity: generator.LintError,
+				File:     relPath,
+				Message:  fmt.Sprintf("failed to read file: %v", err),
+			})
+			continue
+		}
+		if !json.Valid(content) {
+			issues = append(issues, generator.LintIssue{
+				Severity: generator.LintError,
+				File:     relPath,
+				Message:  "invalid JSON",
+			})
+		}
+	}
+	return issues
+}
+
+var (
+	goModVersionRe        = regexp.MustCompile(`(?m)^go\s+(\d+\.\d+)`)
+	dockerfileGolangImgRe = regexp.MustCompile(`(?m)^FROM\s+.*golang:(\d+\.\d+)`)
+)
+
+// lintDockerfileGoVersion checks that the Go version in the Dockerfile matches go.mod.
+func lintDockerfileGoVersion(pluginDir string) []generator.LintIssue {
+	modContent, err := os.ReadFile(filepath.Join(pluginDir, "go.mod"))
+	if err != nil {
+		return nil
+	}
+	modMatch := goModVersionRe.FindStringSubmatch(string(modContent))
+	if len(modMatch) < 2 {
+		return nil
+	}
+	modVersion := modMatch[1]
+
+	dockerContent, err := os.ReadFile(filepath.Join(pluginDir, "Dockerfile"))
+	if err != nil {
+		return nil
+	}
+
+	var issues []generator.LintIssue
+	for _, m := range dockerfileGolangImgRe.FindAllStringSubmatch(string(dockerContent), -1) {
+		imgVersion := m[1]
+		if imgVersion != modVersion {
+			dockerfilePath := filepath.Join(pluginDir, "Dockerfile")
+			staleVersion := imgVersion
+			correctVersion := modVersion
+			issues = append(issues, generator.LintIssue{
+				Severity: generator.LintWarning,
+				File:     "Dockerfile",
+				Message:  fmt.Sprintf("golang:%s image does not match go.mod version %s", staleVersion, correctVersion),
+				Fix: func() error {
+					data, err := os.ReadFile(dockerfilePath)
+					if err != nil {
+						return err
+					}
+					fixed := strings.ReplaceAll(string(data), "golang:"+staleVersion, "golang:"+correctVersion)
+					return os.WriteFile(dockerfilePath, []byte(fixed), 0644)
+				},
+			})
+		}
+	}
+	return issues
+}
+
+// lintGoWorkGitignore warns when go.work exists but is not in .gitignore.
+func lintGoWorkGitignore(pluginDir string) []generator.LintIssue {
+	if _, err := os.Stat(filepath.Join(pluginDir, "go.work")); err != nil {
+		return nil
+	}
+	gitignoreContent, err := os.ReadFile(filepath.Join(pluginDir, ".gitignore"))
+	if err != nil {
+		return []generator.LintIssue{{
+			Severity: generator.LintWarning,
+			File:     "go.work",
+			Message:  "go.work exists but .gitignore is missing - go.work should not be committed",
+		}}
+	}
+	for line := range strings.SplitSeq(string(gitignoreContent), "\n") {
+		if strings.TrimSpace(line) == "go.work" || strings.TrimSpace(line) == "go.work*" {
+			return nil
+		}
+	}
+	gitignorePath := filepath.Join(pluginDir, ".gitignore")
+	return []generator.LintIssue{{
+		Severity: generator.LintWarning,
+		File:     "go.work",
+		Message:  "go.work exists but is not listed in .gitignore - go.work should not be committed",
+		Fix: func() error {
+			f, err := os.OpenFile(gitignorePath, os.O_APPEND|os.O_WRONLY, 0644)
+			if err != nil {
+				return err
+			}
+			defer f.Close()
+			_, err = f.WriteString("\ngo.work\ngo.work.sum\n")
+			return err
+		},
+	}}
+}
+
 // licenseMarker is a distinctive phrase from the Apache 2.0 license block that
 // the plugin HEADER file contains. We use it to detect whether a .go file
 // already carries the license.
 const licenseMarker = "Licensed under the Apache License"
 
+// copyrightYearRe matches "Copyright YYYY-YYYY" or "Copyright YYYY" in a comment.
+var copyrightYearRe = regexp.MustCompile(`Copyright\s+(\d{4}(?:-\d{4})?)`)
+
 // lintLicenseHeaders walks the plugin's top-level Go sources and warns on any
-// file whose leading comment block does not include the Apache license text.
-// The check only runs when a HEADER file exists at the plugin root.
+// file whose leading comment block does not include the Apache license text
+// or has a stale copyright year range. The check only runs when a HEADER file
+// exists at the plugin root.
 func lintLicenseHeaders(pluginDir string) []generator.LintIssue {
-	if _, err := os.Stat(filepath.Join(pluginDir, "HEADER")); err != nil {
+	headerPath := filepath.Join(pluginDir, "HEADER")
+	headerContent, err := os.ReadFile(headerPath)
+	if err != nil {
 		return nil
 	}
+	headerComment := wrapGoComment(string(headerContent))
+
+	// Extract the canonical copyright year range from the HEADER file.
+	var headerYears string
+	if m := copyrightYearRe.FindStringSubmatch(string(headerContent)); len(m) >= 2 {
+		headerYears = m[1]
+	}
+
 	var issues []generator.LintIssue
 	dirs := []string{".", "actions", "suppliers"}
 	for _, sub := range dirs {
@@ -593,20 +848,44 @@ func lintLicenseHeaders(pluginDir string) []generator.LintIssue {
 			if sub != "." {
 				rel = filepath.Join(sub, e.Name())
 			}
-			content, err := os.ReadFile(filepath.Join(dir, e.Name()))
+			absPath := filepath.Join(dir, e.Name())
+			content, err := os.ReadFile(absPath)
 			if err != nil {
 				continue
 			}
-			// Scan only the leading comment block (everything up to the first
-			// non-comment, non-blank line). This avoids false positives when
-			// the license marker happens to appear in a string literal later.
-			head := leadingComments(string(content))
+			src := string(content)
+			head := leadingComments(src)
+			rest := src[len(head):]
+
 			if !strings.Contains(head, licenseMarker) {
+				// No license at all — fix by prepending.
+				filePath := absPath
 				issues = append(issues, generator.LintIssue{
 					Severity: generator.LintWarning,
 					File:     rel,
-					Message:  "missing Apache license header block (HEADER file exists but the file does not carry the license)",
+					Message:  "missing Apache license header block",
+					Fix: func() error {
+						return os.WriteFile(filePath, []byte(headerComment+rest), 0644)
+					},
 				})
+				continue
+			}
+
+			// License present — check for stale copyright years.
+			if headerYears != "" {
+				if m := copyrightYearRe.FindStringSubmatch(head); len(m) >= 2 && m[1] != headerYears {
+					filePath := absPath
+					staleYears := m[1]
+					issues = append(issues, generator.LintIssue{
+						Severity: generator.LintWarning,
+						File:     rel,
+						Message:  fmt.Sprintf("copyright years %s do not match HEADER (%s)", staleYears, headerYears),
+						Fix: func() error {
+							// Replace the existing license block with the canonical one.
+							return os.WriteFile(filePath, []byte(headerComment+rest), 0644)
+						},
+					})
+				}
 			}
 		}
 	}
@@ -645,22 +924,47 @@ func leadingComments(src string) string {
 	return b.String()
 }
 
-// extractActionTypeRefs walks an action-bearing field (an object or array of
-// objects) and returns the values of every "type" key it finds.
-func extractActionTypeRefs(node any) []string {
+// wrapGoComment wraps raw header text in a Go block comment: /* ... */
+// Each non-empty line is prefixed with " *    " to match the project convention.
+func wrapGoComment(raw string) string {
+	var b strings.Builder
+	b.WriteString("/*\n")
+	for line := range strings.SplitSeq(strings.TrimRight(raw, "\n"), "\n") {
+		if strings.TrimSpace(line) == "" {
+			b.WriteString(" *\n")
+		} else {
+			b.WriteString(" *")
+			b.WriteString(line)
+			b.WriteByte('\n')
+		}
+	}
+	b.WriteString(" */\n")
+	return b.String()
+}
+
+// flowActionEntry holds info about an action reference inside a flow JSON document.
+type flowActionEntry struct {
+	typeRef string
+	hasJoin bool
+}
+
+// extractActionEntries walks an action-bearing field (an object or array of
+// objects) and returns info about every action reference it finds.
+func extractActionEntries(node any) []flowActionEntry {
 	if node == nil {
 		return nil
 	}
-	var refs []string
+	var entries []flowActionEntry
 	switch v := node.(type) {
 	case map[string]any:
 		if t, ok := v["type"].(string); ok && t != "" {
-			refs = append(refs, t)
+			_, hasJoin := v["join"]
+			entries = append(entries, flowActionEntry{typeRef: t, hasJoin: hasJoin})
 		}
 	case []any:
 		for _, item := range v {
-			refs = append(refs, extractActionTypeRefs(item)...)
+			entries = append(entries, extractActionEntries(item)...)
 		}
 	}
-	return refs
+	return entries
 }

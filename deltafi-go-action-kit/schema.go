@@ -23,7 +23,10 @@ package actionkit
 import (
 	"encoding/json"
 	"maps"
+	"reflect"
+	"slices"
 	"strconv"
+	"strings"
 
 	"github.com/invopop/jsonschema"
 )
@@ -31,17 +34,13 @@ import (
 // GenerateSchema produces a JSON Schema map from a Go struct type.
 // Returns an empty map if paramType is nil.
 //
-// Struct fields can be annotated with jsonschema tags to control schema output:
+// Struct fields use dedicated tags for schema metadata:
 //
-//	Name   string `json:"name" jsonschema:"description=The name,default=unnamed"`
-//	Mode   string `json:"mode" jsonschema:"enum=fast,enum=slow,enum=auto"`
-//	Label  string `json:"label" jsonschema:"required"`
-//
-// Commas separate tag directives. Use \, to include a literal comma in a value:
-//
-//	Info   string `json:"info" jsonschema:"description=If TRUE\\, do X. If FALSE\\, do Y."`
-//	Count  int    `json:"count" jsonschema:"default=10,minimum=0,maximum=100"`
-//	Active bool   `json:"active" jsonschema:"default=true"`
+//	Name   string `json:"name" description:"The name to use" default:"unnamed"`
+//	Count  int    `json:"count" description:"How many items" default:"10"`
+//	Mode   string `json:"mode" description:"Processing mode" enum:"fast,slow,auto"`
+//	Label  string `json:"label" description:"A required label" required:"true"`
+//	Score  int    `json:"score" minimum:"0" maximum:"100"`
 func GenerateSchema(paramType any) map[string]any {
 	if paramType == nil {
 		return map[string]any{}
@@ -71,6 +70,9 @@ func GenerateSchema(paramType any) map[string]any {
 
 	// Recursively resolve nested $refs, add additionalProperties, coerce defaults
 	postProcessSchema(result, defs)
+
+	// Apply dedicated struct tags (description, default, enum, required, minimum, maximum)
+	applyDedicatedTags(result, paramType)
 
 	// Remove fields that DeltaFi core doesn't expect
 	delete(result, "$schema")
@@ -199,4 +201,95 @@ func deepCopyMap(m map[string]any) map[string]any {
 		return m
 	}
 	return result
+}
+
+// applyDedicatedTags reads description, default, enum, required, minimum, and
+// maximum struct tags and applies them to the schema. These dedicated tags are
+// simpler than the jsonschema tag and take precedence when both are present.
+func applyDedicatedTags(schema map[string]any, paramType any) {
+	t := reflect.TypeOf(paramType)
+	for t.Kind() == reflect.Pointer {
+		t = t.Elem()
+	}
+	if t.Kind() != reflect.Struct {
+		return
+	}
+
+	props, ok := schema["properties"].(map[string]any)
+	if !ok {
+		return
+	}
+
+	// Collect existing required fields
+	var requiredFields []string
+	if existing, ok := schema["required"].([]any); ok {
+		for _, r := range existing {
+			if s, ok := r.(string); ok {
+				requiredFields = append(requiredFields, s)
+			}
+		}
+	}
+
+	for i := 0; i < t.NumField(); i++ {
+		field := t.Field(i)
+		jsonName := field.Tag.Get("json")
+		if idx := strings.IndexByte(jsonName, ','); idx >= 0 {
+			jsonName = jsonName[:idx]
+		}
+		if jsonName == "" || jsonName == "-" {
+			continue
+		}
+
+		propMap, ok := props[jsonName].(map[string]any)
+		if !ok {
+			continue
+		}
+
+		if desc := field.Tag.Get("description"); desc != "" {
+			propMap["description"] = desc
+		}
+		if def := field.Tag.Get("default"); def != "" {
+			propMap["default"] = coerceDefault(def, propMap)
+		}
+		if enumStr := field.Tag.Get("enum"); enumStr != "" {
+			vals := strings.Split(enumStr, ",")
+			enumAny := make([]any, len(vals))
+			for j, v := range vals {
+				enumAny[j] = strings.TrimSpace(v)
+			}
+			propMap["enum"] = enumAny
+		}
+		if field.Tag.Get("required") == "true" {
+			if !slices.Contains(requiredFields, jsonName) {
+				requiredFields = append(requiredFields, jsonName)
+			}
+		}
+		if minStr := field.Tag.Get("minimum"); minStr != "" {
+			if n, err := strconv.ParseFloat(minStr, 64); err == nil {
+				propMap["minimum"] = n
+			}
+		}
+		if maxStr := field.Tag.Get("maximum"); maxStr != "" {
+			if n, err := strconv.ParseFloat(maxStr, 64); err == nil {
+				propMap["maximum"] = n
+			}
+		}
+
+		// Recurse for nested structs
+		ft := field.Type
+		if ft.Kind() == reflect.Pointer {
+			ft = ft.Elem()
+		}
+		if ft.Kind() == reflect.Struct {
+			applyDedicatedTags(propMap, reflect.New(ft).Interface())
+		}
+	}
+
+	if len(requiredFields) > 0 {
+		reqAny := make([]any, len(requiredFields))
+		for i, r := range requiredFields {
+			reqAny[i] = r
+		}
+		schema["required"] = reqAny
+	}
 }

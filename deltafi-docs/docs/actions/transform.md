@@ -125,25 +125,58 @@ class HelloWorldTransformAction(TransformAction):
 ### Interface
 
 A TransformAction must implement the `Transform` method which receives:
-* `context.Context` for cancellation and timeouts
-* `TransformInput` providing the content, metadata, and action context
+* `*Deltafile` providing the input content, metadata, and context fields
+* A typed params struct containing flow parameters specified for the action
 
-### Transform Input
+The action returns the same `*Deltafile`, which accumulates output content, metadata changes, and annotations.
+
+### Deltafile
+
+The `Deltafile` is the primary type action authors interact with. It carries context fields (DID, Name, FlowName, etc.),
+provides access to input content and metadata, and accumulates output content and metadata changes.
 
 ```go
-type TransformInput struct {
-    ActionContext *ActionContext
-    Content       []ActionContent
-    Metadata      map[string]string
-    Params        map[string]any
-}
+// Context fields (read-only)
+df.Did            // DeltaFile ID
+df.Name           // original filename
+df.DataSource     // data source name
+df.FlowName       // flow name
+df.ActionName     // action name
+
+// Input content
+df.FirstContent()           // *ActionContent, error
+df.ContentAt(index)         // *ActionContent, error
+df.ContentNamed(name)       // *ActionContent, error
+df.GetContentSlice()        // []ActionContent
+df.HasContent()             // bool
+
+// Output content
+df.SaveStringContent(data, name, mediaType)   // *ActionContent, error
+df.SaveBytesContent(data, name, mediaType)    // *ActionContent, error
+df.AddContent(content)                         // *Deltafile (chainable)
+df.PassthroughContent()                        // *Deltafile (chainable)
+
+// Metadata
+df.GetMetadata(key)                  // string, error
+df.GetMetadataOrDefault(key, def)    // string
+df.AddMetadata("key", "value")       // *Deltafile (chainable)
+df.DeleteMetadataKeys("key1")        // *Deltafile (chainable)
+
+// Annotations
+df.AddAnnotation("key", "value")     // *Deltafile (chainable)
+
+// Error/Filter signaling
+df.Errorf("format", args...)         // *Deltafile (chainable)
+df.Filterf("format", args...)        // *Deltafile (chainable)
 ```
 
 ### Return Types
 
-The `Transform` method must return a `Result` and an `error`. The `Result` is one of: `TransformResult`, `ErrorResult`, or `FilterResult`.
+The `Transform` method returns a `*Deltafile`. The kit inspects the Deltafile's state to determine the result:
 
-The `TransformResult` contains the content, metadata, and annotations created by the `TransformAction`.
+* **Transform result** — when content has been added via `SaveStringContent`, `AddContent`, `PassthroughContent`, etc.
+* **Error result** — when `Errorf` has been called on the Deltafile
+* **Filter result** — when `Filterf` has been called on the Deltafile
 
 ### Example
 
@@ -151,43 +184,45 @@ The `TransformResult` contains the content, metadata, and annotations created by
 package actions
 
 import (
-    "context"
     "strings"
 
-    actionkit "gitlab.com/deltafi/deltafi/deltafi-go-action-kit"
+    actionkit "gitlab.com/deltafi/deltafi/deltafi-go-action-kit/v2"
 )
 
 func init() {
-    actionkit.Register("HelloWorldGoTransformAction", &HelloWorldGoTransform{}).
+    actionkit.RegisterTransform("HelloWorldGoTransformAction", &HelloWorldGoTransform{}).
         Describe("Add some content noting that we did a really good job")
 }
 
 type HelloWorldGoTransform struct{}
 
-func (a *HelloWorldGoTransform) Transform(ctx context.Context, input actionkit.TransformInput) (actionkit.Result, error) {
-    if strings.HasPrefix(input.ActionContext.DID, "2") {
-        return actionkit.NewFilterResult(input.ActionContext, "We prefer dids that do not start with 2"), nil
+func (a *HelloWorldGoTransform) Transform(df *actionkit.Deltafile, params HelloWorldGoTransformParams) *actionkit.Deltafile {
+    if strings.HasPrefix(df.Did, "2") {
+        return df.Filterf("We prefer dids that do not start with 2")
     }
 
-    content := input.FirstContent()
-    data, err := content.LoadString(ctx, input.ActionContext.ContentService)
+    content, err := df.FirstContent()
     if err != nil {
-        return actionkit.NewErrorResult(input.ActionContext, "Failed to load content"), nil
+        return df.Errorf("Failed to load content").SetErrorContext(err.Error())
+    }
+
+    data, err := content.LoadString()
+    if err != nil {
+        return df.Errorf("Failed to load content").SetErrorContext(err.Error())
     }
 
     transformed := data + "\nHelloWorldGoTransformAction did a great job"
 
-    newContent, err := actionkit.SaveContentString(ctx, input.ActionContext.ContentService, input.ActionContext, transformed, "transform-named-me", "text/plain")
-    if err != nil {
-        return actionkit.NewErrorResult(input.ActionContext, "Failed to save content"), nil
+    if _, err := df.SaveStringContent(transformed, "transform-named-me", "text/plain"); err != nil {
+        return df.Errorf("Failed to save content").SetErrorContext(err.Error())
     }
 
-    result := actionkit.NewTransformResult(input.ActionContext)
-    result.AddContent(*newContent)
-    result.AddMetadata("transformKey", "transformValue")
-    result.AddAnnotation("transformAnnotation", "value")
-    return result, nil
+    df.AddMetadata("transformKey", "transformValue")
+    df.AddAnnotation("transformAnnotation", "value")
+    return df
 }
+
+type HelloWorldGoTransformParams struct{}
 ```
 
 ## C++

@@ -207,12 +207,12 @@ help:
 	@echo "  LOCAL_GO_ACTION_KIT_PATH=<path>   - Path to local action kit (default: $(LOCAL_GO_ACTION_KIT_PATH))"
 	@echo "  BUILDX_BUILDER=<name>             - buildx builder name used by publish (default: $(BUILDX_BUILDER))"
 
-build: check-env fmt
+build: tidy
 	@echo "Building $(BIN_DIR)/$(APP_NAME)"
 	@mkdir -p $(BIN_DIR)
 	@$(GOBUILD) -o $(BIN_DIR)/$(APP_NAME) .
 
-test: check-env
+test: tidy
 	@echo "Running all tests"
 	@$(GOTEST) -v ./...
 

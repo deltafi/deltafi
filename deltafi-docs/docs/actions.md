@@ -75,32 +75,24 @@ class Context(NamedTuple):
   logger: Logger = None
 ```
 
-Go actions receive an `ActionContext` through their input struct, which gives access to information
-about where the action is running and the DeltaFile(s) being processed.
+Go actions receive a `*Deltafile` which provides direct access to context fields
+about where the action is running and the DeltaFile being processed.
 
 ```go
 // the did is the DeltaFile's id
-did := actx.DID
+did := df.Did
 // the name of the DeltaFile, typically the original filename
-deltaFileName := actx.DeltaFileName
+deltaFileName := df.Name
 // the original dataSource of this DeltaFile
-dataSource := actx.DataSource
+dataSource := df.DataSource
 // the name of the flow in which the action is being invoked
-flowName := actx.FlowName
+flowName := df.FlowName
 // the id of the flow in which the action is being invoked
-flowID := actx.FlowID
+flowID := df.FlowID
 // name of the Action as configured in a flow
-actionName := actx.ActionName
-// hostname where the Action is running
-hostname := actx.Hostname
-// version of Core Actions or plugin containing the Action
-actionVersion := actx.ActionVersion
-// when the Action began execution
-startTime := actx.StartTime
-// system name from DeltaFi System Properties
-systemName := actx.SystemName
+actionName := df.ActionName
 // the optional memo field used to pass bookmarking info to timed ingress actions
-memo := actx.Memo
+memo := df.Memo
 ```
 
 C++ actions receive an `ActionContext` by reference, which gives access to information
@@ -175,7 +167,7 @@ class DecompressionTransformParameters(BaseModel):
 
 ```go
 type MyTransformParams struct {
-    MyParameter string `json:"myParameter" jsonschema:"description=Description goes here,required"`
+    MyParameter string `json:"myParameter" description:"Description goes here" required:"true"`
 }
 ```
 
@@ -213,9 +205,10 @@ To retrieve content as a string or byte array in a Python action execution:
 To retrieve content as a byte array or string in a Go action execution:
 
 ```go
-func (a *MyAction) Transform(ctx context.Context, input actionkit.TransformInput) (actionkit.Result, error) {
-    data, err := input.FirstContent().LoadString(ctx, input.ActionContext.ContentService)
-    bytes, err := input.FirstContent().LoadBytes(ctx, input.ActionContext.ContentService)
+func (a *MyAction) Transform(df *actionkit.Deltafile, params MyParams) *actionkit.Deltafile {
+    content, _ := df.FirstContent()
+    data, err := content.LoadString()
+    bytes, err := content.LoadBytes()
 }
 ```
 
@@ -255,18 +248,18 @@ Or in Python save content to a Result:
 result.save_content(data, content_name, media_type)
 ```
 
-Or in Go save content to a Result:
+Or in Go save content via the Deltafile:
 
 ```go
-newContent, err := actionkit.SaveContentString(ctx, input.ActionContext.ContentService, input.ActionContext, data, fileName, "text/plain")
-result.AddContent(*newContent)
+// Save content directly through the Deltafile (stores to MinIO and adds to output)
+df.SaveStringContent(data, fileName, "text/plain")
 
 // You can also manipulate existing content without saving to disk:
 copied := existingContent.Copy()
 copied.SetName("new-name.txt")
 partial := anotherContent.Subcontent(0, 50)
-copied = copied.Append(partial)
-result.AddContent(copied)
+copied.Append(partial)
+df.AddContent(copied)
 ```
 
 Or in C++ save content to a Result:
@@ -315,15 +308,14 @@ or
 return new FilterResult(context, "Common summary reason of why this DeltaFile was filtered", "Detailed reason");
 ```
 
-In Go, use the result constructors:
+In Go, use the Deltafile's error and filter methods:
 
 ```go
 // return an error
-return actionkit.NewErrorResult(input.ActionContext, "Description of failure").
-    SetContext("additional context"), nil
+return df.Errorf("Description of failure").SetErrorContext("additional context")
 
 // return a filter
-return actionkit.NewFilterResult(input.ActionContext, "Description of why filtered"), nil
+return df.Filterf("Description of why filtered")
 ```
 
 In C++, result types are returned as variants:
@@ -371,12 +363,12 @@ The `join` method may be overridden by an action to change the default behavior:
 ```
 
 ```go
-func (a *MyJoiningAction) Join(inputs []actionkit.TransformInput) actionkit.TransformInput {
-    var allContent []actionkit.ActionContent
+func (a *MyJoiningAction) Join(inputs []*actionkit.Deltafile, joined *actionkit.Deltafile, params MyParams) *actionkit.Deltafile {
     for _, input := range inputs {
-        allContent = append(allContent, input.Content...)
+        joined.AddContentSlice(input.GetContentSlice())
+        joined.AddMetadataMap(input.GetMetadataMap())
     }
-    return actionkit.TransformInput{Content: allContent}
+    return joined
 }
 ```
 

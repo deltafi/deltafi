@@ -230,6 +230,20 @@ func (g *GoGenerator) GenerateAction(pluginName string, actionName string, actio
 			return fmt.Errorf("failed to write action file: %w", err)
 		}
 		fmt.Printf("Wrote %s\n", actionPath)
+
+		// Generate the options YAML file alongside the action
+		optionsTemplate := getOptionsTemplate(actionType)
+		if optionsTemplate != "" {
+			optionsPath := filepath.Join(pluginDir, "actions", actionFileName+"_action.yaml")
+			optionsContent, err := RenderTemplate(optionsTemplate, data)
+			if err != nil {
+				return fmt.Errorf("failed to render options template: %w", err)
+			}
+			if err := os.WriteFile(optionsPath, optionsContent, 0644); err != nil {
+				return fmt.Errorf("failed to write options file: %w", err)
+			}
+			fmt.Printf("Wrote %s\n", optionsPath)
+		}
 	} else {
 		fmt.Printf("Action %s already exists; generating test only.\n", actionPath)
 	}
@@ -877,6 +891,24 @@ func getTestTemplate(actionType string) string {
 		return "actions/joining_transform_action_test.go.tmpl"
 	case "transformmanyaction", "transformmany", "split":
 		return "actions/split_transform_action_test.go.tmpl"
+	default:
+		return ""
+	}
+}
+
+// getOptionsTemplate returns the template path for an action options YAML file
+func getOptionsTemplate(actionType string) string {
+	switch strings.ToLower(actionType) {
+	case "transformaction", "transform":
+		return "actions/transform_action.yaml.tmpl"
+	case "egressaction", "egress":
+		return "actions/egress_action.yaml.tmpl"
+	case "ingressaction", "ingress", "timedingressaction", "timedingress":
+		return "actions/timed_ingress_action.yaml.tmpl"
+	case "joiningtransformaction", "joiningtransform":
+		return "actions/joining_transform_action.yaml.tmpl"
+	case "transformmanyaction", "transformmany", "split":
+		return "actions/split_transform_action.yaml.tmpl"
 	default:
 		return ""
 	}

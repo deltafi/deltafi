@@ -52,11 +52,11 @@ const (
 	SortDESC SortDirection = "DESC"
 )
 
-// LookupQuery is the resolved set of options for a single Lookup call.
-// Callers build a LookupQuery by passing LookupOption values to Lookup
+// lookupQueryParams is the resolved set of options for a single Lookup call.
+// Callers build a lookupQueryParams by passing LookupOption values to Lookup
 // (WithMatch, WithResultColumns, etc.); MockLookupClient exposes the resolved
-// LookupQuery on MockLookupCall for test assertions.
-type LookupQuery struct {
+// lookupQueryParams on MockLookupCall for test assertions.
+type lookupQueryParams struct {
 	MatchingColumnValues map[string][]string
 	ResultColumns        []string
 	SortColumn           string
@@ -65,15 +65,15 @@ type LookupQuery struct {
 	Limit                *int
 }
 
-// LookupOption configures a LookupQuery. Options are applied in order, so
+// LookupOption configures a lookupQueryParams. Options are applied in order, so
 // later options override earlier ones for single-valued fields.
-type LookupOption func(*LookupQuery)
+type LookupOption func(*lookupQueryParams)
 
 // WithMatch adds a match criterion: the named column must contain any of the
 // given values. Calling WithMatch multiple times with the same column appends
 // values; calling it with different columns adds additional match criteria.
 func WithMatch(column string, values ...string) LookupOption {
-	return func(q *LookupQuery) {
+	return func(q *lookupQueryParams) {
 		if q.MatchingColumnValues == nil {
 			q.MatchingColumnValues = map[string][]string{}
 		}
@@ -84,7 +84,7 @@ func WithMatch(column string, values ...string) LookupOption {
 // WithMatches merges a map of column → values into the query. Use when the
 // set of columns is built dynamically; prefer WithMatch for static queries.
 func WithMatches(columnValues map[string][]string) LookupOption {
-	return func(q *LookupQuery) {
+	return func(q *lookupQueryParams) {
 		if q.MatchingColumnValues == nil {
 			q.MatchingColumnValues = map[string][]string{}
 		}
@@ -97,14 +97,14 @@ func WithMatches(columnValues map[string][]string) LookupOption {
 // WithResultColumns restricts the query to return only the named columns.
 // Calling it multiple times appends to the list.
 func WithResultColumns(columns ...string) LookupOption {
-	return func(q *LookupQuery) {
+	return func(q *lookupQueryParams) {
 		q.ResultColumns = append(q.ResultColumns, columns...)
 	}
 }
 
 // WithSort orders results by the given column in the given direction.
 func WithSort(column string, direction SortDirection) LookupOption {
-	return func(q *LookupQuery) {
+	return func(q *lookupQueryParams) {
 		q.SortColumn = column
 		q.SortDirection = direction
 	}
@@ -112,19 +112,19 @@ func WithSort(column string, direction SortDirection) LookupOption {
 
 // WithOffset skips the first N results. The zero value is a valid offset.
 func WithOffset(offset int) LookupOption {
-	return func(q *LookupQuery) { q.Offset = &offset }
+	return func(q *lookupQueryParams) { q.Offset = &offset }
 }
 
 // WithLimit caps the number of returned rows. The zero value returns no rows.
 func WithLimit(limit int) LookupOption {
-	return func(q *LookupQuery) { q.Limit = &limit }
+	return func(q *lookupQueryParams) { q.Limit = &limit }
 }
 
-// buildLookupQuery resolves a variadic slice of LookupOptions into a single
-// LookupQuery. Returns the zero-valued LookupQuery when opts is empty. Nil
+// buildlookupQueryParams resolves a variadic slice of LookupOptions into a single
+// lookupQueryParams. Returns the zero-valued lookupQueryParams when opts is empty. Nil
 // entries in opts are skipped.
-func buildLookupQuery(opts []LookupOption) LookupQuery {
-	var q LookupQuery
+func buildlookupQueryParams(opts []LookupOption) lookupQueryParams {
+	var q lookupQueryParams
 	for _, opt := range opts {
 		if opt == nil {
 			continue
@@ -170,13 +170,13 @@ type LookupClientBase interface {
 	Lookup(ctx context.Context, tableName string, opts ...LookupOption) (*LookupResults, error)
 }
 
-// LookupClient queries and uploads lookup table data via core's API.
+// lookupClient queries and uploads lookup table data via core's API.
 //
 // cacheTTL and failureCacheTTL are stored as int64 nanoseconds via atomic ops
 // so SetCacheTTL is safe to call from any goroutine. The cache map itself is
 // protected by mu. The singleflight group collapses concurrent first-time
 // lookups for the same cache key into a single underlying request.
-type LookupClient struct {
+type lookupClient struct {
 	coreURL         string
 	httpClient      *http.Client
 	cacheTTL        atomic.Int64 // nanoseconds
@@ -195,14 +195,14 @@ type lookupCacheEntry struct {
 const defaultLookupCacheTTL = 30 * time.Second
 const defaultFailureCacheTTL = 1 * time.Second
 
-// NewLookupClient creates a client for lookup table operations.
+// newLookupClient creates a client for lookup table operations.
 // Cache TTL defaults to 30 seconds, overridable via TABLE_LOOKUP_CACHE_TTL.
 // Failure cache TTL defaults to 1 second, overridable via TABLE_LOOKUP_FAILURE_CACHE_TTL.
 // Both accept integer seconds or Go duration strings like "5s", "1m".
-func NewLookupClient(coreURL string) *LookupClient {
-	c := &LookupClient{
+func newLookupClient(coreURL string) *lookupClient {
+	c := &lookupClient{
 		coreURL:    coreURL,
-		httpClient: &http.Client{Timeout: 30 * time.Second},
+		httpClient: &http.Client{Transport: platformTransport.Clone(), Timeout: 30 * time.Second},
 		cache:      make(map[string]*lookupCacheEntry),
 	}
 	c.cacheTTL.Store(int64(parseCacheTTL(os.Getenv("TABLE_LOOKUP_CACHE_TTL"), defaultLookupCacheTTL)))
@@ -228,22 +228,50 @@ func parseCacheTTL(s string, fallback time.Duration) time.Duration {
 
 // SetCacheTTL configures how long lookup results are cached.
 // Set to 0 to disable caching. Safe to call concurrently with Lookup.
-func (lc *LookupClient) SetCacheTTL(ttl time.Duration) {
+func (lc *lookupClient) SetCacheTTL(ttl time.Duration) {
 	lc.cacheTTL.Store(int64(ttl))
 }
 
 // ClearCache evicts all cached lookup results.
-func (lc *LookupClient) ClearCache() {
+func (lc *lookupClient) ClearCache() {
 	lc.mu.Lock()
 	defer lc.mu.Unlock()
 	lc.cache = make(map[string]*lookupCacheEntry)
+}
+
+// startCacheEvictor runs a goroutine that periodically removes expired entries.
+func (lc *lookupClient) startCacheEvictor(ctx context.Context, wg *sync.WaitGroup) {
+	wg.Go(func() {
+		ticker := time.NewTicker(60 * time.Second)
+		defer ticker.Stop()
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case <-ticker.C:
+				lc.evictExpired()
+			}
+		}
+	})
+}
+
+// evictExpired removes all expired entries from the cache.
+func (lc *lookupClient) evictExpired() {
+	now := time.Now()
+	lc.mu.Lock()
+	defer lc.mu.Unlock()
+	for key, entry := range lc.cache {
+		if !now.Before(entry.expiresAt) {
+			delete(lc.cache, key)
+		}
+	}
 }
 
 // lookupCacheKey builds a deterministic in-process cache key for a lookup
 // call. Map iteration order is non-deterministic, so MatchingColumnValues is
 // canonicalized by sorting column names (and their value slices) before they
 // are written into the key.
-func lookupCacheKey(tableName string, query LookupQuery) string {
+func lookupCacheKey(tableName string, query lookupQueryParams) string {
 	var b strings.Builder
 	b.Grow(64 + len(tableName))
 	b.WriteString(tableName)
@@ -266,7 +294,10 @@ func lookupCacheKey(tableName string, query LookupQuery) string {
 	}
 	b.WriteByte('|')
 	if len(query.ResultColumns) > 0 {
-		b.WriteString(strings.Join(query.ResultColumns, ","))
+		sorted := make([]string, len(query.ResultColumns))
+		copy(sorted, query.ResultColumns)
+		sort.Strings(sorted)
+		b.WriteString(strings.Join(sorted, ","))
 	}
 	b.WriteByte('|')
 	b.WriteString(query.SortColumn)
@@ -284,7 +315,7 @@ func lookupCacheKey(tableName string, query LookupQuery) string {
 }
 
 // setAuthHeaders adds the standard DeltaFi auth headers to a request.
-func (lc *LookupClient) setAuthHeaders(req *http.Request) {
+func (lc *lookupClient) setAuthHeaders(req *http.Request) {
 	req.Header.Set("X-User-Permissions", "Admin")
 	req.Header.Set("X-User-Name", "go-plugin")
 }
@@ -294,8 +325,8 @@ func (lc *LookupClient) setAuthHeaders(req *http.Request) {
 // for the failure TTL (default 1s) to prevent flooding core during outages.
 // Concurrent first-time lookups for the same key are collapsed into a single
 // upstream request via singleflight.
-func (lc *LookupClient) Lookup(ctx context.Context, tableName string, opts ...LookupOption) (*LookupResults, error) {
-	query := buildLookupQuery(opts)
+func (lc *lookupClient) Lookup(ctx context.Context, tableName string, opts ...LookupOption) (*LookupResults, error) {
+	query := buildlookupQueryParams(opts)
 	cacheKey := lookupCacheKey(tableName, query)
 
 	if results, err, ok := lc.cacheGet(cacheKey); ok {
@@ -321,7 +352,7 @@ func (lc *LookupClient) Lookup(ctx context.Context, tableName string, opts ...Lo
 
 // cacheGet returns a cached entry if it is still valid. The third return is
 // true when the cache hit is fresh (and the caller should not refetch).
-func (lc *LookupClient) cacheGet(key string) (*LookupResults, error, bool) {
+func (lc *lookupClient) cacheGet(key string) (*LookupResults, error, bool) {
 	lc.mu.RLock()
 	defer lc.mu.RUnlock()
 	entry, ok := lc.cache[key]
@@ -333,7 +364,7 @@ func (lc *LookupClient) cacheGet(key string) (*LookupResults, error, bool) {
 
 // cachePut stores a result with the appropriate TTL (success vs failure).
 // Skipped entirely when the success TTL is zero (caching disabled).
-func (lc *LookupClient) cachePut(key string, results *LookupResults, fetchErr error) {
+func (lc *lookupClient) cachePut(key string, results *LookupResults, fetchErr error) {
 	ttl := time.Duration(lc.cacheTTL.Load())
 	if fetchErr != nil {
 		ttl = time.Duration(lc.failureCacheTTL.Load())
@@ -351,7 +382,7 @@ func (lc *LookupClient) cachePut(key string, results *LookupResults, fetchErr er
 }
 
 // fetchLookup performs the actual GraphQL query to core.
-func (lc *LookupClient) fetchLookup(ctx context.Context, tableName string, query LookupQuery) (*LookupResults, error) {
+func (lc *lookupClient) fetchLookup(ctx context.Context, tableName string, query lookupQueryParams) (*LookupResults, error) {
 	variables := map[string]any{
 		"lookupTableName": tableName,
 	}
@@ -428,7 +459,7 @@ func (lc *LookupClient) fetchLookup(ctx context.Context, tableName string, query
 
 // UploadTable uploads table data to a lookup table via REST.
 // ContentType should be "application/json" for JSON or "text/csv" for CSV.
-func (lc *LookupClient) UploadTable(ctx context.Context, tableName string, contentType string, data string) error {
+func (lc *lookupClient) UploadTable(ctx context.Context, tableName string, contentType string, data string) error {
 	url := lc.coreURL + lookupAPIPath + tableName
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewReader([]byte(data)))
@@ -550,7 +581,7 @@ func lookupTableEventKey(tableName string) string {
 
 // uploadSupplierData fetches rows from each supplier and uploads them to core.
 // Called once after registration so tables start with data.
-func uploadSupplierData(ctx context.Context, client *LookupClient, suppliers map[string]LookupTableSupplier) {
+func uploadSupplierData(ctx context.Context, client *lookupClient, suppliers map[string]LookupTableSupplier) {
 	for name, supplier := range suppliers {
 		rows, err := supplier.GetRows(ctx, nil, nil, nil)
 		if err != nil {
@@ -579,7 +610,7 @@ func uploadSupplierData(ctx context.Context, client *LookupClient, suppliers map
 
 // startLookupTableSupplierRunner launches a goroutine that listens for lookup table
 // events and dispatches them to the appropriate supplier.
-func startLookupTableSupplierRunner(ctx context.Context, wg *sync.WaitGroup, queue *ActionEventQueue, suppliers map[string]LookupTableSupplier) {
+func startLookupTableSupplierRunner(ctx context.Context, wg *sync.WaitGroup, queue *actionEventQueue, suppliers map[string]LookupTableSupplier) {
 	queueNames := make([]string, 0, len(suppliers))
 	for name := range suppliers {
 		queueNames = append(queueNames, lookupTableEventKey(name))

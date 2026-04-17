@@ -1038,7 +1038,7 @@ Manage plugins in DeltaFi.
   - Required scaffolding files are present (`main.go`, `go.mod`, `Makefile`, `Dockerfile`, `Dockerfile.local`, `.gitignore`, `.dockerignore`, `actions/doc.go`, `suppliers/doc.go`); `README.md`, `HEADER`, and `LICENSE` warn if missing
   - `go.mod` parses, declares the action-kit dependency, and any `replace` directives point at paths that actually exist
   - `main.go` carries blank imports for the actions and suppliers packages whenever those packages contain source files
-  - Every `actions/*.go` (excluding `doc.go` and `*_test.go`) calls `actionkit.Register(...)` from an `init()` function
+  - Every `actions/*.go` (excluding `doc.go` and `*_test.go`) calls a typed registration function (`actionkit.RegisterTransform(...)`, `actionkit.RegisterEgress(...)`, `actionkit.RegisterIngress(...)`, etc.) from an `init()` function
   - Every `suppliers/*.go` (excluding `doc.go`) calls `actionkit.RegisterSupplier(...)` from an `init()` function
   - Every `flows/*.json` (excluding `variables.json`) is valid JSON, and every action reference in `transformActions`, `egressAction`, `timedIngressAction`, etc. resolves to an action registered in this plugin (unresolved references emit a warning since they may be provided by an upstream plugin)
 

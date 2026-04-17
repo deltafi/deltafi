@@ -44,6 +44,7 @@ var pluginLintCmd = &cobra.Command{
 func init() {
 	pluginCmd.AddCommand(pluginLintCmd)
 	pluginLintCmd.Flags().String("in-repo", "", "Plugin name in the configured repos directory (default: use current directory)")
+	pluginLintCmd.Flags().Bool("fix", false, "Automatically fix issues that have automatic fixes available")
 }
 
 func runPluginLint(cmd *cobra.Command, args []string) error {
@@ -69,9 +70,11 @@ func runPluginLint(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("unsupported language: %s", language)
 	}
 
+	fix, _ := cmd.Flags().GetBool("fix")
+
 	fmt.Printf("Linting %s plugin at %s\n\n", language, pluginDir)
 
-	issues, err := gen.LintPlugin(pluginName, &generator.LintOptions{PluginDir: pluginDir})
+	issues, err := gen.LintPlugin(pluginName, &generator.LintOptions{PluginDir: pluginDir, Fix: fix})
 	if err != nil {
 		return fmt.Errorf("lint failed: %w", err)
 	}
@@ -79,7 +82,17 @@ func runPluginLint(cmd *cobra.Command, args []string) error {
 	errorCount := 0
 	warnCount := 0
 	infoCount := 0
+	fixedCount := 0
 	for _, issue := range issues {
+		if fix && issue.Fix != nil {
+			if err := issue.Fix(); err != nil {
+				fmt.Printf("%s %s: fix failed: %v\n", styles.ErrorStyle.Render("[fix-error]"), issue.File, err)
+			} else {
+				fmt.Printf("%s %s: %s\n", styles.SuccessStyle.Render("[fixed]"), issue.File, issue.Message)
+				fixedCount++
+				continue
+			}
+		}
 		printLintIssue(issue)
 		switch issue.Severity {
 		case generator.LintError:
@@ -92,9 +105,12 @@ func runPluginLint(cmd *cobra.Command, args []string) error {
 	}
 
 	fmt.Println()
-	if errorCount == 0 && warnCount == 0 && infoCount == 0 {
+	if errorCount == 0 && warnCount == 0 && infoCount == 0 && fixedCount == 0 {
 		fmt.Println(styles.SuccessStyle.Render("No issues found."))
 		return nil
+	}
+	if fixedCount > 0 {
+		fmt.Printf("%d issue(s) fixed, ", fixedCount)
 	}
 	fmt.Printf("%d error(s), %d warning(s), %d info\n", errorCount, warnCount, infoCount)
 
@@ -114,9 +130,13 @@ func printLintIssue(issue generator.LintIssue) {
 	case generator.LintInfo:
 		label = styles.InfoStyle.Render(label)
 	}
+	fixable := ""
+	if issue.Fix != nil {
+		fixable = " " + styles.InfoStyle.Render("[auto-fixable]")
+	}
 	if issue.File != "" {
-		fmt.Printf("%s %s: %s\n", label, issue.File, issue.Message)
+		fmt.Printf("%s %s: %s%s\n", label, issue.File, issue.Message, fixable)
 	} else {
-		fmt.Printf("%s %s\n", label, issue.Message)
+		fmt.Printf("%s %s%s\n", label, issue.Message, fixable)
 	}
 }

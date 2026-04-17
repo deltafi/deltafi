@@ -189,7 +189,7 @@ func TestEnvVar_Schema(t *testing.T) {
 func TestEnvVar_SchemaInStruct(t *testing.T) {
 	type params struct {
 		Name   string `json:"name"`
-		ApiKey EnvVar `json:"apiKey" jsonschema:"description=API key env var"`
+		ApiKey EnvVar `json:"apiKey" description:"API key env var"`
 	}
 	schema := GenerateSchema(params{})
 	props := schema["properties"].(map[string]any)

@@ -15,33 +15,26 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-// ABOUTME: Action registry for automatic discovery and registration.
+// ABOUTME: Action registry with type-safe generic registration.
 // ABOUTME: Actions self-register via init() functions; plugin main iterates All() to register.
 
 package actionkit
 
+import (
+	"reflect"
+
+	"gopkg.in/yaml.v3"
+)
+
 // Registration pairs an action with its name and optional metadata.
-// Use the builder methods to set description and parameter type.
+// Use the builder methods to set description and parameter defaults.
 type Registration struct {
 	Name        string
 	Action      any
 	description string
 	paramType   any
 	options     *ActionOptions
-}
-
-// Register adds an action to the global registry and returns a builder
-// for setting optional metadata. Called from init() in each action file.
-//
-//	func init() {
-//	    actionkit.Register("MyAction", &MyAction{}).
-//	        Describe("What this action does").
-//	        WithParams(MyParams{})
-//	}
-func Register(name string, action any) *Registration {
-	r := &Registration{Name: name, Action: action}
-	registered = append(registered, r)
-	return r
+	dispatcher  *actionDispatcher
 }
 
 // Describe sets the human-readable description for this action.
@@ -50,10 +43,11 @@ func (r *Registration) Describe(desc string) *Registration {
 	return r
 }
 
-// WithParams sets the parameter type used for JSON schema generation.
-// Pass a zero-value instance of the params struct.
-func (r *Registration) WithParams(paramType any) *Registration {
-	r.paramType = paramType
+// WithParams sets the parameter defaults for this action. The field values of
+// the provided instance are used as defaults when the flow does not specify a
+// value. The type must match the generic parameter P used at registration.
+func (r *Registration) WithParams(defaults any) *Registration {
+	r.paramType = defaults
 	return r
 }
 
@@ -68,11 +62,120 @@ func (r *Registration) WithOptions(options ActionOptions) *Registration {
 	return r
 }
 
+// WithOptionsYAML parses inline YAML into ActionOptions and sets them on the
+// registration. Panics if the YAML is invalid.
+func (r *Registration) WithOptionsYAML(yamlStr string) *Registration {
+	var options ActionOptions
+	if err := yaml.Unmarshal([]byte(yamlStr), &options); err != nil {
+		panic("WithOptionsYAML: " + err.Error())
+	}
+	return r.WithOptions(options)
+}
+
 var registered []*Registration
 
 // All returns all registered actions.
 func All() []*Registration {
 	return registered
+}
+
+// RegisterTransform registers a transform action. The action struct must have
+// a Transform method with signature: func(a *T) Transform(df *Deltafile, params P) *Deltafile.
+// Go infers P from the method signature.
+//
+//	func init() {
+//	    actionkit.RegisterTransform("MyAction", &MyAction{}).
+//	        Describe("What this action does").
+//	        WithParams(MyParams{DefaultField: "value"})
+//	}
+func RegisterTransform[P any](name string, action interface {
+	Transform(*Deltafile, P) *Deltafile
+}) *Registration {
+	var zero P
+	disp := &actionDispatcher{
+		method:    methodTransform,
+		paramType: reflect.TypeOf(zero),
+		transformFn: func(df *Deltafile, params any) *Deltafile {
+			return action.Transform(df, params.(P))
+		},
+	}
+	reg := &Registration{
+		Name:       name,
+		Action:     action,
+		dispatcher: disp,
+	}
+	registered = append(registered, reg)
+	return reg
+}
+
+// RegisterJoinTransform registers a transform action that supports joining
+// multiple DeltaFiles. The action struct must have both Transform and Join
+// methods with matching param types.
+func RegisterJoinTransform[P any](name string, action interface {
+	Transform(*Deltafile, P) *Deltafile
+	Join([]*Deltafile, *Deltafile, P) *Deltafile
+}) *Registration {
+	var zero P
+	disp := &actionDispatcher{
+		method:    methodTransform,
+		paramType: reflect.TypeOf(zero),
+		hasJoin:   true,
+		transformFn: func(df *Deltafile, params any) *Deltafile {
+			return action.Transform(df, params.(P))
+		},
+		joinFn: func(inputs []*Deltafile, joined *Deltafile, params any) *Deltafile {
+			return action.Join(inputs, joined, params.(P))
+		},
+	}
+	reg := &Registration{
+		Name:       name,
+		Action:     action,
+		dispatcher: disp,
+	}
+	registered = append(registered, reg)
+	return reg
+}
+
+// RegisterEgress registers an egress action that sends content externally.
+func RegisterEgress[P any](name string, action interface {
+	Egress(*Deltafile, P) *Deltafile
+}) *Registration {
+	var zero P
+	disp := &actionDispatcher{
+		method:    methodEgress,
+		paramType: reflect.TypeOf(zero),
+		egressFn: func(df *Deltafile, params any) *Deltafile {
+			return action.Egress(df, params.(P))
+		},
+	}
+	reg := &Registration{
+		Name:       name,
+		Action:     action,
+		dispatcher: disp,
+	}
+	registered = append(registered, reg)
+	return reg
+}
+
+// RegisterIngress registers a timed ingress action that produces new DeltaFiles.
+func RegisterIngress[P any](name string, action interface {
+	Ingress(*IngressInput, P) *IngressResult
+}) *Registration {
+	var zero P
+	disp := &actionDispatcher{
+		method:    methodIngress,
+		paramType: reflect.TypeOf(zero),
+		ingressFn: func(input *IngressInput, params any) *IngressResult {
+			return action.Ingress(input, params.(P))
+		},
+	}
+	reg := &Registration{
+		Name:       name,
+		Action:     action,
+		dispatcher: disp,
+	}
+	registered = append(registered, reg)
+	return reg
 }
 
 var registeredSuppliers []LookupTableSupplier

@@ -393,21 +393,21 @@ The Go action kit provides artifact access through the `ArtifactClient`, availab
 #### Fetching Artifacts
 
 ```go
-func (a *MyAction) Transform(ctx context.Context, input actionkit.TransformInput) (actionkit.Result, error) {
+func (a *MyAction) Transform(df *actionkit.Deltafile, params MyParams) *actionkit.Deltafile {
     // Fetch a plugin-scoped artifact (cached by default)
-    fetched, err := input.ActionContext.ArtifactClient.GetArtifact(ctx, "routing-rules.json", "active")
+    fetched, err := actionkit.GetArtifact("routing-rules.json", "active")
     if err != nil {
-        return actionkit.NewErrorResult(input.ActionContext, "Failed to load artifact"), nil
+        return df.Errorf("Failed to load artifact").SetErrorContext(err.Error())
     }
 
     var config RoutingConfig
     json.Unmarshal(fetched.Data, &config)
 
     // Fetch a shared artifact
-    shared, err := input.ActionContext.ArtifactClient.GetSharedArtifact(ctx, "geo-regions.csv", "active")
+    shared, err := actionkit.GetSharedArtifact("geo-regions.csv", "active")
 
     // Stream a large artifact without buffering
-    stream, err := input.ActionContext.ArtifactClient.StreamArtifact(ctx, "large-model.bin", "active")
+    stream, err := actionkit.StreamArtifact("large-model.bin", "active")
     if err == nil {
         defer stream.Reader.Close()
         // read from stream.Reader
@@ -530,10 +530,10 @@ resp = context.artifact_client->publish_shared_artifact("shared-data.csv", data,
 
 ```go
 data := bytes.NewReader(rulesJSON)
-resp, err := input.ActionContext.ArtifactClient.PublishArtifact(ctx, "output-rules.json", data, "application/json", nil)
+resp, err := actionkit.PublishArtifact("output-rules.json", data, "application/json", nil)
 
 // Publish to shared namespace
-resp, err = input.ActionContext.ArtifactClient.PublishSharedArtifact(ctx, "shared-data.csv", data, "text/csv", nil)
+resp, err = actionkit.PublishSharedArtifact("shared-data.csv", data, "text/csv", nil)
 ```
 
 ---

@@ -34,13 +34,13 @@ const (
 	longRunningTaskKey = "org.deltafi.action-queue.long-running-tasks"
 )
 
-// ActionEventQueue wraps a Redis client for DeltaFi queue operations.
-type ActionEventQueue struct {
+// actionEventQueue wraps a Redis client for DeltaFi queue operations.
+type actionEventQueue struct {
 	client *redis.Client
 }
 
-// NewActionEventQueue creates a queue client and verifies the connection.
-func NewActionEventQueue(url, password string) (*ActionEventQueue, error) {
+// newActionEventQueue creates a queue client and verifies the connection.
+func newActionEventQueue(url, password string) (*actionEventQueue, error) {
 	host, port := parseHostPort(url)
 	client := redis.NewClient(&redis.Options{
 		Addr:     host + ":" + port,
@@ -55,19 +55,19 @@ func NewActionEventQueue(url, password string) (*ActionEventQueue, error) {
 		return nil, fmt.Errorf("failed to connect to redis at %s: %w", url, err)
 	}
 
-	return &ActionEventQueue{client: client}, nil
+	return &actionEventQueue{client: client}, nil
 }
 
 // Take blocks until an item is available on the queue, returning the raw JSON
 // payload. Returns nil (not an error) on timeout. The returned slice is owned
 // by the caller and may be passed directly to json.Unmarshal.
-func (q *ActionEventQueue) Take(ctx context.Context, queueName string) ([]byte, error) {
+func (q *actionEventQueue) Take(ctx context.Context, queueName string) ([]byte, error) {
 	return q.TakeFromAny(ctx, queueName)
 }
 
 // Put publishes data to the named queue with the current timestamp as score.
 // The data is forwarded to redis without an intermediate string conversion.
-func (q *ActionEventQueue) Put(ctx context.Context, queueName string, data []byte) error {
+func (q *actionEventQueue) Put(ctx context.Context, queueName string, data []byte) error {
 	score := float64(time.Now().UnixMilli())
 	return q.client.ZAdd(ctx, queueName, redis.Z{
 		Score:  score,
@@ -76,23 +76,23 @@ func (q *ActionEventQueue) Put(ctx context.Context, queueName string, data []byt
 }
 
 // Heartbeat updates the heartbeat timestamp for an action.
-func (q *ActionEventQueue) Heartbeat(ctx context.Context, actionName string) error {
+func (q *actionEventQueue) Heartbeat(ctx context.Context, actionName string) error {
 	return q.client.HSet(ctx, heartbeatKey, actionName, formatTime(time.Now())).Err()
 }
 
 // SetLongRunningTask records a long-running task execution.
-func (q *ActionEventQueue) SetLongRunningTask(ctx context.Context, key, value string) error {
+func (q *actionEventQueue) SetLongRunningTask(ctx context.Context, key, value string) error {
 	return q.client.HSet(ctx, longRunningTaskKey, key, value).Err()
 }
 
 // RemoveLongRunningTask removes a long-running task entry.
-func (q *ActionEventQueue) RemoveLongRunningTask(ctx context.Context, key string) error {
+func (q *actionEventQueue) RemoveLongRunningTask(ctx context.Context, key string) error {
 	return q.client.HDel(ctx, longRunningTaskKey, key).Err()
 }
 
 // TakeFromAny blocks until an item is available on any of the given queues.
 // Returns the raw JSON payload, or nil on timeout.
-func (q *ActionEventQueue) TakeFromAny(ctx context.Context, queueNames ...string) ([]byte, error) {
+func (q *actionEventQueue) TakeFromAny(ctx context.Context, queueNames ...string) ([]byte, error) {
 	result, err := q.client.BZPopMin(ctx, 5*time.Second, queueNames...).Result()
 	if err != nil {
 		if err == redis.Nil {
@@ -112,12 +112,12 @@ func (q *ActionEventQueue) TakeFromAny(ctx context.Context, queueNames ...string
 
 // Subscribe returns a pub/sub subscription for the given channel.
 // The caller should range over the returned channel and call Close when done.
-func (q *ActionEventQueue) Subscribe(ctx context.Context, channel string) *redis.PubSub {
+func (q *actionEventQueue) Subscribe(ctx context.Context, channel string) *redis.PubSub {
 	return q.client.Subscribe(ctx, channel)
 }
 
 // Close shuts down the Redis connection.
-func (q *ActionEventQueue) Close() error {
+func (q *actionEventQueue) Close() error {
 	return q.client.Close()
 }
 

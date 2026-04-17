@@ -4,7 +4,6 @@
 package actions
 
 import (
-	"context"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -16,7 +15,8 @@ func Test{{.ActionClassName}}_FirstRun(t *testing.T) {
 	tc := actionkit.NewTestContext("ingress-did")
 	tc.FlowName = "{{.ActionName}}-data-source"
 
-	event := actionkit.RunIngress(t, &{{.ActionClassName}}{}, actionkit.NewIngressInput(tc))
+	input := tc.NewIngressInput()
+	event := actionkit.RunIngress(t, &{{.ActionClassName}}{}, input, {{.ActionClassName}}Params{})
 	ingress := event.RequireIngress(t)
 
 	require.Equal(t, "0", ingress.Memo)
@@ -28,7 +28,7 @@ func Test{{.ActionClassName}}_FirstRun(t *testing.T) {
 	assert.Equal(t, "0", item.Metadata["index"])
 
 	require.Len(t, item.Content, 1)
-	data, err := item.Content[0].LoadString(context.Background())
+	data, err := item.Content[0].LoadString()
 	require.NoError(t, err)
 	assert.Equal(t, "Ingress content, part 0", data)
 }
@@ -38,7 +38,8 @@ func Test{{.ActionClassName}}_IncrementsMemo(t *testing.T) {
 	tc.FlowName = "{{.ActionName}}-data-source"
 	tc.Memo = "4"
 
-	event := actionkit.RunIngress(t, &{{.ActionClassName}}{}, actionkit.NewIngressInput(tc))
+	input := tc.NewIngressInput()
+	event := actionkit.RunIngress(t, &{{.ActionClassName}}{}, input, {{.ActionClassName}}Params{})
 	ingress := event.RequireIngress(t)
 
 	assert.Equal(t, "5", ingress.Memo)

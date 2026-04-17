@@ -65,21 +65,22 @@ A lookup table supplier in Go implements the `LookupTableSupplier` interface, wh
 package suppliers
 
 import (
+    "context"
     "log"
-    "math/rand"
+    "math/rand/v2"
 
-    actionkit "gitlab.com/deltafi/deltafi/deltafi-go-action-kit"
+    actionkit "gitlab.com/deltafi/deltafi/deltafi-go-action-kit/v2"
 )
 
 var colors = []string{"red", "orange", "yellow", "green", "blue", "indigo", "violet"}
 
 func init() {
-    actionkit.RegisterLookupTableSupplier(&MyLookupTableSupplier{})
+    actionkit.RegisterSupplier(&MyLookupTableSupplier{})
 }
 
 type MyLookupTableSupplier struct{}
 
-func (s *MyLookupTableSupplier) TableDefinition() actionkit.LookupTableDefinition {
+func (s *MyLookupTableSupplier) Table() actionkit.LookupTableDefinition {
     return actionkit.LookupTableDefinition{
         Name:            "my_lookup_table",
         Columns:         []string{"column_a", "column_b", "color"},
@@ -88,14 +89,14 @@ func (s *MyLookupTableSupplier) TableDefinition() actionkit.LookupTableDefinitio
     }
 }
 
-func (s *MyLookupTableSupplier) GetRows(variables map[string]string,
-    matchingColumns map[string][]string, resultColumns []string) []map[string]string {
+func (s *MyLookupTableSupplier) GetRows(ctx context.Context, variables map[string]string,
+    matchingColumns map[string][]string, resultColumns []string) ([]map[string]string, error) {
     log.Println("Getting rows for my_lookup_table")
     return []map[string]string{
-        {"column_a": "A1", "column_b": "B1", "color": colors[rand.Intn(len(colors))]},
-        {"column_a": "A2", "column_b": "B2", "color": colors[rand.Intn(len(colors))]},
-        {"column_a": "A3", "column_b": "B3", "color": colors[rand.Intn(len(colors))]},
-    }
+        {"column_a": "A1", "column_b": "B1", "color": colors[rand.IntN(len(colors))]},
+        {"column_a": "A2", "column_b": "B2", "color": colors[rand.IntN(len(colors))]},
+        {"column_a": "A3", "column_b": "B3", "color": colors[rand.IntN(len(colors))]},
+    }, nil
 }
 ```
 
@@ -164,31 +165,29 @@ To return all (unsorted) rows with all result columns, pass LookupOptions.defaul
 
 ### Go
 
-The `LookupClient` is available on the `ActionContext` and provides a `Lookup` method for querying lookup tables:
+The package-level `Lookup` function queries lookup tables using a builder pattern:
 
 ```go
-func (a *MyAction) Transform(ctx context.Context, input actionkit.TransformInput) (actionkit.Result, error) {
-    lookupResults, err := input.ActionContext.LookupClient.Lookup(ctx, "my_lookup_table",
-        &actionkit.LookupOptions{
-            MatchingColumnValues: map[string][]string{"color": {"red", "green", "blue"}},
-            ResultColumns:        []string{"column_a", "color"},
-            SortColumn:           "column_a",
-            SortDirection:        "DESC",
-            Offset:               0,
-            Limit:                100,
-        })
+func (a *MyAction) Transform(df *actionkit.Deltafile, params MyParams) *actionkit.Deltafile {
+    lookupResults, err := actionkit.Lookup("my_lookup_table",
+        actionkit.LookupQuery().
+            WithMatch("color", "red", "green", "blue").
+            WithResultColumns("column_a", "color").
+            WithSort("column_a", actionkit.SortDESC).
+            WithOffset(0).
+            WithLimit(100))
     if err != nil {
-        return actionkit.NewErrorResult(input.ActionContext, "Unable to lookup rows").SetContext(err.Error()), nil
+        return df.Errorf("Unable to lookup rows").SetErrorContext(err.Error())
     }
 
-    result := actionkit.NewTransformResult(input.ActionContext)
-    result.AddMetadata("totalRows", fmt.Sprintf("%d", lookupResults.TotalCount))
+    df.PassthroughContent()
+    df.AddMetadata("totalRows", fmt.Sprintf("%d", lookupResults.TotalCount))
     // ... use lookupResults.Rows
-    return result, nil
+    return df
 }
 ```
 
-To return all (unsorted) rows with all result columns, pass `nil` as the options.
+To return all (unsorted) rows with all result columns, pass `nil` for the query builder.
 
 ### C++
 
