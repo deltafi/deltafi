@@ -452,7 +452,7 @@
       });
 
       it("opens menu when Menu button is clicked", () => {
-        cy.contains("Menu").click();
+        cy.get("[role='main']").contains("Menu").click();
         cy.get(".p-menu").should("be.visible");
       });
 
@@ -465,7 +465,7 @@
       });
 
       it("displays Export DeltaFile option in menu", () => {
-        cy.contains("Menu").click();
+        cy.get("[role='main']").contains("Menu").click();
         cy.get(".p-menu").contains("Export DeltaFile").should("exist");
       });
 

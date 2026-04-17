@@ -32,7 +32,7 @@
       it("search filter tab exists", () => { cy.contains("Search").should("exist"); });
       it("renders correctly at default viewport", () => { cy.get(".fleet-search-page").should("be.visible"); });
       it("renders correctly at smaller viewport", () => { cy.viewport(1024, 768); cy.get(".fleet-search-page").should("be.visible"); });
-      it("can interact with search filter", () => { cy.contains("Search").click(); });
+      it("can interact with search filter", () => { cy.get(".filter-sidebar-tab").contains("Search").click(); });
     });
   });
   describe("Fleet Dashboard Page", () => {

@@ -107,34 +107,14 @@
 
 <script setup lang="ts">
 import Drawer from "primevue/drawer";
-import { ref, watch, nextTick } from "vue";
+import { ref, watch } from "vue";
 import { useRoute } from "vue-router";
 import useMenuItems, { type MenuItem } from "@/composables/useMenuItems";
 
 const visible = defineModel<boolean>({ default: false });
-const emit = defineEmits<{
-  sidebarEnter: [];
-  sidebarLeave: [];
-}>();
-
-const attachSidebarHoverEvents = () => {
-  nextTick(() => {
-    const el = document.querySelector(".hamburger-menu-sidebar");
-    if (el) {
-      el.addEventListener("mouseenter", () => emit("sidebarEnter"));
-      el.addEventListener("mouseleave", () => emit("sidebarLeave"));
-    }
-  });
-};
-
-watch(visible, (val) => {
-  if (val) {
-    attachSidebarHoverEvents();
-  }
-});
 
 const route = useRoute();
-const { menuItems, getUrl, isVisible } = useMenuItems();
+const { menuItems, getUrl, isVisible, getGroupBadge } = useMenuItems();
 
 const activePage = ref(route.fullPath);
 const expandedGroups = ref<Set<string>>(new Set());
@@ -195,16 +175,6 @@ const hasVisibleChildren = (item: MenuItem): boolean => {
   return item.children.some((child) => isVisible(child));
 };
 
-const getGroupBadge = (item: MenuItem) => {
-  if (!item.children) return null;
-  for (const child of item.children) {
-    if (child.badge) {
-      const badge = child.badge();
-      if (badge.visible) return badge;
-    }
-  }
-  return null;
-};
 </script>
 
 <style scoped lang="scss">

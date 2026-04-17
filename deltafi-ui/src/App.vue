@@ -21,7 +21,7 @@
     <nav class="sticky-top">
       <HeaderBanner />
       <AppTopBar />
-      <ContextualNavBar />
+      <PrimaryNavBar />
     </nav>
     <div role="main" class="content-wrapper-full">
       <router-view />
@@ -44,7 +44,7 @@
 <script setup>
 import HeaderBanner from "@/components/header/HeaderBanner.vue";
 import AppTopBar from "@/components/header/AppTopBar.vue";
-import ContextualNavBar from "@/components/header/ContextualNavBar.vue";
+import PrimaryNavBar from "@/components/header/PrimaryNavBar.vue";
 import CommandPalette from "@/components/header/CommandPalette.vue";
 import FooterBanner from "@/components/footer/FooterBanner.vue";
 import CustomToast from "@/components/CustomToast.vue";

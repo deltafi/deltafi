@@ -36,25 +36,29 @@ export interface MenuItem {
   description?: string;
 }
 
+export interface MenuBadge {
+  visible: boolean;
+  class: string;
+  value: number;
+}
+
 export interface FlattenedPage {
   name: string;
   icon?: string;
   path?: string;
   url?: string;
   group?: string;
-  badge?: () => { visible: boolean; class: string; value: number };
+  badge?: () => MenuBadge;
   visible: boolean | ComputedRef<boolean>;
 }
 
 export default function useMenuItems(): {
   menuItems: ComputedRef<MenuItem[]>;
   flattenedPages: ComputedRef<FlattenedPage[]>;
-  pinnedPages: ComputedRef<FlattenedPage[]>;
-  getSiblings: (routePath: string) => FlattenedPage[] | null;
-  getSiblingMenuItems: (routePath: string) => MenuItem[] | null;
-  errorsBadge: ComputedRef<{ visible: boolean; class: string; value: number }>;
+  errorsBadge: ComputedRef<MenuBadge>;
   getUrl: (url: string | ComputedRef<string>) => string;
   isVisible: (item: { visible: boolean | ComputedRef<boolean> }) => boolean;
+  getGroupBadge: (item: MenuItem) => MenuBadge | null;
 } {
   const { errorCount } = useErrorCount();
   const { invalidDataSourceCount, invalidTransformCount, invalidDataSinkCount, startPolling } = useInvalidFlowCount();
@@ -369,6 +373,24 @@ export default function useMenuItems(): {
     return typeof item.visible === "boolean" ? item.visible : item.visible.value;
   };
 
+  const getGroupBadge = (item: MenuItem): MenuBadge | null => {
+    if (!item.children) return null;
+
+    const badges = item.children
+      .filter((child) => isVisible(child) && child.badge)
+      .map((child) => child.badge!())
+      .filter((badge) => badge.visible);
+
+    if (badges.length === 0) {
+      return null;
+    }
+
+    return {
+      ...badges[0],
+      value: badges.reduce((total, badge) => total + badge.value, 0),
+    };
+  };
+
   const flattenedPages = computed<FlattenedPage[]>(() => {
     const pages: FlattenedPage[] = [];
 
@@ -401,102 +423,12 @@ export default function useMenuItems(): {
     return pages;
   });
 
-  // Route path prefix to menu group name mapping
-  const routeGroupMap: Record<string, string> = {
-    "/system-map": "System Map",
-    "/pipeline": "System Map",
-    "/fleet/": "Fleet",
-    "/deltafile/": "DeltaFiles",
-    "/errors": "DeltaFiles",
-    "/metrics/": "Metrics",
-    "/config/": "Configuration",
-    "/admin/": "Administration",
-    "/versions": "Administration",
-  };
-
-  const getSiblings = (routePath: string): FlattenedPage[] | null => {
-    // Find which group this route belongs to
-    let groupName: string | null = null;
-
-    for (const [prefix, group] of Object.entries(routeGroupMap)) {
-      if (routePath === prefix || routePath.startsWith(prefix)) {
-        groupName = group;
-        break;
-      }
-    }
-
-    if (!groupName) {
-      return null;
-    }
-
-    // Return all visible pages in this group (flattened, for command palette)
-    return flattenedPages.value.filter(
-      (page) => page.group === groupName && isVisible(page)
-    );
-  };
-
-  const getSiblingMenuItems = (routePath: string): MenuItem[] | null => {
-    // Find which group this route belongs to
-    let groupName: string | null = null;
-
-    for (const [prefix, group] of Object.entries(routeGroupMap)) {
-      if (routePath === prefix || routePath.startsWith(prefix)) {
-        groupName = group;
-        break;
-      }
-    }
-
-    if (!groupName) {
-      return null;
-    }
-
-    // Find the menu group and return its children (with their own children intact)
-    const group = menuItems.value.find((item) => item.name === groupName);
-    if (!group || !group.children) {
-      return null;
-    }
-
-    return group.children.filter((child) => isVisible(child));
-  };
-
-  const pinnedPages = computed<FlattenedPage[]>(() => {
-    const pins: FlattenedPage[] = [];
-
-    // Dashboard
-    const dashboard = flattenedPages.value.find((p) => p.path === "/" && p.name === "Dashboard");
-    if (dashboard && isVisible(dashboard)) {
-      pins.push(dashboard);
-    }
-
-    // DeltaFile Search
-    const search = flattenedPages.value.find((p) => p.path === "/deltafile/search");
-    if (search && isVisible(search)) {
-      pins.push(search);
-    }
-
-    // Errors (with badge)
-    const errors = flattenedPages.value.find((p) => p.path === "/errors");
-    if (errors && isVisible(errors)) {
-      pins.push(errors);
-    }
-
-    // System Map (Full)
-    const systemMap = flattenedPages.value.find((p) => p.path === "/system-map");
-    if (systemMap && isVisible(systemMap)) {
-      pins.push({ ...systemMap, name: "System Map" });
-    }
-
-    return pins;
-  });
-
   return {
     menuItems,
     flattenedPages,
-    pinnedPages,
-    getSiblings,
-    getSiblingMenuItems,
     errorsBadge,
     getUrl,
     isVisible,
+    getGroupBadge,
   };
 }

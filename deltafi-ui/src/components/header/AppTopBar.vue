@@ -32,7 +32,6 @@
     <span class="d-flex align-items-center">
       <Clock class="mr-3" />
       <NotificationBadge v-if="$hasPermission('EventRead')" class="mr-3" />
-      <ErrorCountBadge v-if="$hasPermission('DeltaFileMetadataView')" class="mr-3" />
       <StatusBadge class="mr-3" />
       <UserBadge class="mr-3" />
     </span>
@@ -43,7 +42,6 @@
 import Clock from "@/components/Clock.vue";
 import StatusBadge from "@/components/StatusBadge.vue";
 import NotificationBadge from "@/components/NotificationBadge.vue";
-import ErrorCountBadge from "@/components/header/ErrorCountBadge.vue";
 import UserBadge from "@/components/UserBadge.vue";
 import Version from "@/components/Version.vue";
 import { computed, inject, ref } from "vue";
