@@ -129,6 +129,10 @@ class HelloWorldTimedIngressAction(TimedIngressAction):
 
 ## Go
 
+::: warning Beta
+The Go action kit is currently in beta. Interfaces may change in future releases.
+:::
+
 ### Interface
 
 A TimedIngressAction must implement the `Ingress` method which receives:
@@ -201,6 +205,10 @@ func (a *HelloWorldGoTimedIngress) Ingress(input *actionkit.IngressInput, params
 ```
 
 ## C++
+
+::: warning Beta
+The C++ action kit is currently in beta. Interfaces may change in future releases.
+:::
 
 ### Interface
 

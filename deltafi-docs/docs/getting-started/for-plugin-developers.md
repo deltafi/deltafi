@@ -125,6 +125,10 @@ my-plugin/
 
 ### Go Plugin
 
+::: warning Beta
+The Go action kit is currently in beta. Interfaces may change in future releases.
+:::
+
 ```
 my-plugin/
 ├── go.mod

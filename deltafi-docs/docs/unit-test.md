@@ -111,6 +111,10 @@ class HelloWorldTransformActionTest {
 
 ## Go Action Testing
 
+::: warning Beta
+The Go action kit is currently in beta. Interfaces may change in future releases.
+:::
+
 The `deltafi-go-action-kit/v2` package includes test helpers for unit testing actions without external services (Redis, MinIO). The package provides:
 
 - `NewTestContext(did)` — creates a `TestContext` with a pre-configured `ActionContext` wired to an in-memory content store
@@ -244,6 +248,10 @@ func TestWithLookup(t *testing.T) {
 ```
 
 ## C++ Action Testing
+
+::: warning Beta
+The C++ action kit is currently in beta. Interfaces may change in future releases.
+:::
 
 The `deltafi/testing.hpp` header provides test helpers for unit testing C++ actions without external services (Redis, MinIO). It includes:
 

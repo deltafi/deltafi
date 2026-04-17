@@ -122,6 +122,10 @@ class HelloWorldTransformAction(TransformAction):
 
 ## Go
 
+::: warning Beta
+The Go action kit is currently in beta. Interfaces may change in future releases.
+:::
+
 ### Interface
 
 A TransformAction must implement the `Transform` method which receives:
@@ -226,6 +230,10 @@ type HelloWorldGoTransformParams struct{}
 ```
 
 ## C++
+
+::: warning Beta
+The C++ action kit is currently in beta. Interfaces may change in future releases.
+:::
 
 ### Interface
 

@@ -267,6 +267,10 @@ Plugin([MyTransformAction],
 
 ## Go
 
+::: warning Beta
+The Go action kit is currently in beta. Interfaces may change in future releases.
+:::
+
 The Go action kit is published as a Go module. A project structure for a DeltaFi Go Plugin is shown below:
 
 ```
@@ -381,6 +385,10 @@ vet:
 ```
 
 ## C++
+
+::: warning Beta
+The C++ action kit is currently in beta. Interfaces may change in future releases.
+:::
 
 The C++ action kit is a header-only library. A project structure for a DeltaFi C++ Plugin is shown below:
 

@@ -109,6 +109,10 @@ class HelloWorldEgressAction(EgressAction):
 
 ## Go
 
+::: warning Beta
+The Go action kit is currently in beta. Interfaces may change in future releases.
+:::
+
 ### Interface
 
 An EgressAction must implement the `Egress` method which receives:
@@ -165,6 +169,10 @@ func (a *HelloWorldGoEgress) Egress(df *actionkit.Deltafile, params HelloWorldGo
 ```
 
 ## C++
+
+::: warning Beta
+The C++ action kit is currently in beta. Interfaces may change in future releases.
+:::
 
 ### Interface
 
