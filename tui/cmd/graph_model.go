@@ -112,17 +112,20 @@ func newGraphModel(client *api.MetricsClient, metric *api.MetricDefinition, cust
 }
 
 func (m graphModel) Init() tea.Cmd {
-	cmds := []tea.Cmd{
-		m.spinner.Tick,
-	}
+	var cmds []tea.Cmd
 	// Only fetch data if a metric or custom query is specified
 	if m.metric != nil || m.customQuery != "" {
-		cmds = append(cmds, m.fetchData())
+		cmds = append(cmds, m.startLoading())
 	}
 	if m.interval > 0 {
 		cmds = append(cmds, graphTick(m.interval))
 	}
 	return tea.Batch(cmds...)
+}
+
+func (m *graphModel) startLoading() tea.Cmd {
+	m.loading = true
+	return tea.Batch(m.fetchData(), m.spinner.Tick)
 }
 
 func graphTick(interval time.Duration) tea.Cmd {
@@ -174,8 +177,7 @@ func (m graphModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.legend.SetWidth(m.width)
 		m.updateChartSize()
 		// Refresh data with new maxDataPoints based on width
-		m.loading = true
-		return m, m.fetchData()
+		return m, m.startLoading()
 
 	case graphDataMsg:
 		m.series = m.filterSeries(msg)
@@ -206,12 +208,15 @@ func (m graphModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if m.timeOffset > 0 {
 			return m, graphTick(m.interval)
 		}
-		return m, tea.Batch(m.fetchData(), graphTick(m.interval))
+		return m, tea.Batch(m.startLoading(), graphTick(m.interval))
 
 	case spinner.TickMsg:
-		var cmd tea.Cmd
-		m.spinner, cmd = m.spinner.Update(msg)
-		return m, cmd
+		if m.loading {
+			var cmd tea.Cmd
+			m.spinner, cmd = m.spinner.Update(msg)
+			return m, cmd
+		}
+		return m, nil
 	}
 
 	return m, nil
@@ -264,43 +269,37 @@ func (m graphModel) handleKeyMsg(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		return m, nil
 
 	case "r", "R":
-		m.loading = true
-		return m, m.fetchData()
+		return m, m.startLoading()
 
 	case "+", "=":
 		// Zoom out (double time range)
 		m.from = min(m.from*2,
 			// Cap at 1 week
 			168*time.Hour)
-		m.loading = true
-		return m, m.fetchData()
+		return m, m.startLoading()
 
 	case "-", "_":
 		// Zoom in (halve time range)
 		m.from = max(m.from/2, time.Minute)
-		m.loading = true
-		return m, m.fetchData()
+		return m, m.startLoading()
 
 	case "left":
 		// Pan back in time (shift window by 1/4 of window size)
 		panAmount := max(m.from/4, time.Minute)
 		m.timeOffset = m.timeOffset + panAmount
-		m.loading = true
-		return m, m.fetchData()
+		return m, m.startLoading()
 
 	case "right":
 		// Pan forward in time (shift window by 1/4 of window size)
 		panAmount := max(m.from/4, time.Minute)
 		m.timeOffset = max(m.timeOffset-panAmount, 0)
-		m.loading = true
-		return m, m.fetchData()
+		return m, m.startLoading()
 
 	case "x", "X":
 		// Return to now (reset pan offset)
 		if m.timeOffset > 0 {
 			m.timeOffset = 0
-			m.loading = true
-			return m, m.fetchData()
+			return m, m.startLoading()
 		}
 		return m, nil
 
@@ -454,12 +453,11 @@ func (m graphModel) handleQueryModalKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 			m.metric = &metric
 			m.queryModalOpen = false
 			m.queryModalSearch = ""
-			m.loading = true
 			m.pendingRestore = true
 			m.series = nil
 			m.legend.ClearVisibility()
 			m.legend.UpdateSeries(nil)
-			return m, m.fetchData()
+			return m, m.startLoading()
 		}
 		return m, nil
 
@@ -565,12 +563,11 @@ func (m graphModel) cycleMetric(direction int) (tea.Model, tea.Cmd) {
 	newIndex := (currentIndex + direction + len(metrics)) % len(metrics)
 	metric := metrics[newIndex]
 	m.metric = &metric
-	m.loading = true
 	m.pendingRestore = true
 	m.series = nil
 	m.legend.ClearVisibility()
 	m.legend.UpdateSeries(nil)
-	return m, m.fetchData()
+	return m, m.startLoading()
 }
 
 // queryModalMaxVisible returns the max number of metrics visible in the modal
