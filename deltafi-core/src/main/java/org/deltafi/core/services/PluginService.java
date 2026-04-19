@@ -826,9 +826,15 @@ public class PluginService implements Snapshotter {
      */
     @Transactional
     public void createPendingPlugin(String image, String imagePullSecret, PluginCoordinates pluginCoordinates) {
+        if (image == null || image.isBlank()) {
+            throw new IllegalArgumentException("Plugin image is required");
+        }
         InstallDetails details = InstallDetails.from(image, imagePullSecret);
         String imageName = details.image();
         String appName = details.appName();
+        if (appName.isBlank()) {
+            throw new IllegalArgumentException("Plugin image is invalid: '" + image + "'");
+        }
 
         // Parse image tag from image string
         String imageTag = null;

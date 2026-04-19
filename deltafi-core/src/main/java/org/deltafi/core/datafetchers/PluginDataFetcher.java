@@ -49,7 +49,14 @@ public class PluginDataFetcher {
     @NeedsPermission.PluginInstall
     public Result installPlugin(@InputArgument String image, @InputArgument String imagePullSecret) {
         auditLogger.audit("queued plugin install {}", image);
-        pluginService.createPendingPlugin(image, imagePullSecret);
+        try {
+            pluginService.createPendingPlugin(image, imagePullSecret);
+        } catch (IllegalArgumentException e) {
+            return Result.builder()
+                    .success(false)
+                    .errors(List.of(e.getMessage()))
+                    .build();
+        }
         return Result.builder()
                 .success(true)
                 .info(List.of("Plugin queued for installation."))

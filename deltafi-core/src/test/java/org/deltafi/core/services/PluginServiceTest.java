@@ -49,6 +49,7 @@ import java.util.*;
 import java.util.function.Consumer;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.deltafi.core.services.PluginService.SYSTEM_PLUGIN_ID;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -791,6 +792,30 @@ class PluginServiceTest {
         assertThat(saved.getImageTag()).isEqualTo("1.0.0");
         assertThat(saved.getImagePullSecret()).isEqualTo("new-docker-secret");
         assertThat(saved.getInstallState()).isEqualTo(PluginState.INSTALLING);
+    }
+
+    @Test
+    void createPendingPlugin_nullImage_throws() {
+        assertThatThrownBy(() -> pluginService.createPendingPlugin(null, "docker-secret"))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("Plugin image is required");
+        Mockito.verify(pluginRepository, Mockito.never()).save(Mockito.any());
+    }
+
+    @Test
+    void createPendingPlugin_blankImage_throws() {
+        assertThatThrownBy(() -> pluginService.createPendingPlugin("   ", "docker-secret"))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("Plugin image is required");
+        Mockito.verify(pluginRepository, Mockito.never()).save(Mockito.any());
+    }
+
+    @Test
+    void createPendingPlugin_imageWithNoAppName_throws() {
+        assertThatThrownBy(() -> pluginService.createPendingPlugin(":1.0.0", "docker-secret"))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("Plugin image is invalid");
+        Mockito.verify(pluginRepository, Mockito.never()).save(Mockito.any());
     }
 
     // Tests for createPendingPlugin(String image, String imagePullSecret, PluginCoordinates coordinates)
