@@ -241,16 +241,16 @@ enum DeltaFileDirection {
 }
 
 input ErrorSummaryFilter {
-  modifiedAfter: DateTime
-  modifiedBefore: DateTime
+  modifiedAfter: DateTime @deprecated(reason: "Ignored; summary queries no longer honor time-range filters.")
+  modifiedBefore: DateTime @deprecated(reason: "Ignored; summary queries no longer honor time-range filters.")
   errorAcknowledged: Boolean
   flow: String
   errorCause: String
 }
 
 input FilteredSummaryFilter {
-  modifiedAfter: DateTime
-  modifiedBefore: DateTime
+  modifiedAfter: DateTime @deprecated(reason: "Ignored; summary queries no longer honor time-range filters.")
+  modifiedBefore: DateTime @deprecated(reason: "Ignored; summary queries no longer honor time-range filters.")
   flow: String
 }
 

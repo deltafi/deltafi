@@ -25,12 +25,7 @@ export default function useErrors() {
   const { response, queryGraphQL, loading, loaded, errors } = useGraphQL();
   const data = ref(null);
 
-  interface queryParams {
-    startTimeDateString: string;
-    endTimeDateString: string;
-  }
-
-  const fetchErrorSummaryByMessage = async (queryParams: queryParams, showAcknowledged: boolean, offSet: Number, perPage: Number, sortField: string, sortDirection: string, flow: string) => {
+  const fetchErrorSummaryByMessage = async (showAcknowledged: boolean, offSet: Number, perPage: Number, sortField: string, sortDirection: string, flow: string) => {
     const searchParams = {
       errorSummaryByMessage: {
         __args: {
@@ -39,8 +34,6 @@ export default function useErrors() {
           filter: {
             flow: flow,
             errorAcknowledged: showAcknowledged,
-            modifiedAfter: queryParams.startTimeDateString,
-            modifiedBefore: queryParams.endTimeDateString,
           },
           direction: new EnumType(sortDirection),
           sortField: new EnumType(sortField),
@@ -89,7 +82,7 @@ export default function useErrors() {
     return response.value.data.errorCauses;
   };
 
-  const fetchErrorSummaryByFlow = async (queryParams: queryParams, showAcknowledged: boolean, offSet: Number, perPage: Number, sortField: string, sortDirection: string, flow: string) => {
+  const fetchErrorSummaryByFlow = async (showAcknowledged: boolean, offSet: Number, perPage: Number, sortField: string, sortDirection: string, flow: string) => {
     const searchParamsFlow = {
       errorSummaryByFlow: {
         __args: {
@@ -98,8 +91,6 @@ export default function useErrors() {
           filter: {
             flow: flow,
             errorAcknowledged: showAcknowledged,
-            modifiedAfter: queryParams.startTimeDateString,
-            modifiedBefore: queryParams.endTimeDateString,
           },
           direction: new EnumType(sortDirection),
           sortField: new EnumType(sortField),

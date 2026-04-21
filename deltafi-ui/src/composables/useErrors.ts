@@ -24,12 +24,7 @@ export default function useErrors() {
   const { response, queryGraphQL, loading, loaded, errors } = useGraphQL();
   const data = ref(null);
 
-  interface queryParams {
-    startTimeDateString: string;
-    endTimeDateString: string;
-  }
-
-  const fetch = async (queryParams: queryParams, showAcknowledged: boolean, offSet: Number, perPage: Number, sortBy: string, sortDirection: string, flowName?: string, flowType?: string, errorCause?: string, filteredCause?: string) => {
+  const fetch = async (showAcknowledged: boolean, offSet: Number, perPage: Number, sortBy: string, sortDirection: string, flowName?: string, flowType?: string, errorCause?: string, filteredCause?: string) => {
     const flowFilters: Record<string, Array<string>> = {
       dataSources: [],
       dataSinks: [],
@@ -64,8 +59,6 @@ export default function useErrors() {
             stage: new EnumType("ERROR"),
             errorCause: errorCause,
             filteredCause: filteredCause,
-            modifiedAfter: queryParams.startTimeDateString,
-            modifiedBefore: queryParams.endTimeDateString,
           },
           orderBy: {
             direction: new EnumType(sortDirection),

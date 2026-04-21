@@ -193,14 +193,6 @@
         cy.get("h2").contains("Errors");
       });
 
-      it("displays timezone button", () => {
-        cy.get("button").contains(/[A-Z]{2,4}/).should("exist");
-      });
-
-      it("displays date picker", () => {
-        cy.get(".time-range").should("exist");
-      });
-
       it("displays Refresh button", () => {
         cy.contains("Refresh").should("exist");
       });
@@ -294,14 +286,6 @@
 
       it("loads the page with correct heading", () => {
         cy.get("h2").contains("Filtered");
-      });
-
-      it("displays timezone button", () => {
-        cy.get("button").contains(/[A-Z]{2,4}/).should("exist");
-      });
-
-      it("displays date picker", () => {
-        cy.get(".time-range").should("exist");
       });
 
       it("displays Refresh button", () => {

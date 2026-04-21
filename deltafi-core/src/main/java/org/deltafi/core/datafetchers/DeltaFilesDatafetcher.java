@@ -492,103 +492,64 @@ public class DeltaFilesDatafetcher {
       throw new IngressException(e.getMessage());
     }
 
-    // Use a local variable for batchSize after validation
-    int currentBatchSizeSetting = (batchSize == null || batchSize < 1) ? 1 : batchSize;
-
     if (numFiles == null || numFiles <= 0) {
       log.info("numFiles is {} (<=0), exiting stress test.", numFiles);
       return 0;
     }
 
-    int remainingFiles = numFiles;
-    int totalFilesProcessedOffset = 0;
+    // batchSize controls the maximum number of in-flight save+ingress tasks.
+    int maxInFlight = (batchSize == null || batchSize < 1) ? 16 : batchSize;
 
-    ExecutorService executorService = Executors.newFixedThreadPool(8);
+    ExecutorService executorService = Executors.newFixedThreadPool(maxInFlight);
+    Semaphore inFlight = new Semaphore(maxInFlight);
+    List<Future<?>> futures = new ArrayList<>(numFiles);
 
     try {
-      while (remainingFiles > 0) {
-        int actualBatchProcessingCount = Math.min(remainingFiles, currentBatchSizeSetting);
-        List<Content> savedContentForBatch = new ArrayList<>(actualBatchProcessingCount);
-
-        // Phase 1: Save content in parallel for the current batch
-        List<Callable<Content>> saveTasks = new ArrayList<>();
-        for (int i = 0; i < actualBatchProcessingCount; i++) {
-          final int fileIndexInTotal = totalFilesProcessedOffset + i; // 0-based global index
-          saveTasks.add(() -> {
-            ThreadLocalRandom currentThreadRandom = ThreadLocalRandom.current();
+      for (int i = 0; i < numFiles; i++) {
+        inFlight.acquire();
+        final int fileIndexInTotal = i;
+        futures.add(executorService.submit(() -> {
+          try {
+            Content content;
             if (contentSize > 0) {
-              UUID did = Generators.timeBasedEpochGenerator().generate();
-              log.debug("Saving content for {} ({}/{})", did, fileIndexInTotal + 1, numFiles);
+              UUID contentDid = Generators.timeBasedEpochGenerator().generate();
+              log.debug("Saving content for {} ({}/{})", contentDid, fileIndexInTotal + 1, numFiles);
               byte[] contentBytes = new byte[contentSize];
-              currentThreadRandom.nextBytes(contentBytes);
-              return contentStorageService.save(did, contentBytes, "stressTestData", "application/octet-stream");
+              ThreadLocalRandom.current().nextBytes(contentBytes);
+              content = contentStorageService.save(contentDid, contentBytes, "stressTestData", "application/octet-stream");
             } else {
-              // Create dummy content (no actual bytes) if contentSize is 0 or less
-              return new Content("stressTestData", "application/octet-stream", Collections.emptyList());
+              content = new Content("stressTestData", "application/octet-stream", Collections.emptyList());
             }
-          });
-        }
 
-        try {
-          List<Future<Content>> saveFutures = executorService.invokeAll(saveTasks);
-          for (Future<Content> future : saveFutures) {
-            savedContentForBatch.add(future.get());
-          }
-        } catch (InterruptedException e) {
-          Thread.currentThread().interrupt();
-          throw new IngressException("Stress test interrupted during content saving: " + e.getMessage(), e);
-        } catch (ExecutionException e) {
-          Throwable cause = e.getCause();
-          if (cause instanceof ObjectStorageException) throw (ObjectStorageException) cause;
-          if (cause instanceof IngressException) throw (IngressException) cause;
-          if (cause instanceof RuntimeException) throw (RuntimeException) cause;
-          if (cause instanceof Error) throw (Error) cause;
-          throw new ObjectStorageException("Error during parallel content saving: " + cause.getMessage(), cause);
-        }
-
-        // Phase 2: Ingress metadata in parallel for the current batch
-        List<Callable<Void>> ingressTasks = new ArrayList<>();
-        for (int i = 0; i < actualBatchProcessingCount; i++) {
-          final Content contentItem = savedContentForBatch.get(i);
-          final int fileIndexInTotal = totalFilesProcessedOffset + i;
-          ingressTasks.add(() -> {
-            // Use existing DID from content, or generate a new random one if segments are empty
-            UUID did = contentItem.getSegments().isEmpty() ? UUID.randomUUID() : contentItem.getSegments().getFirst().getDid();
-
-            // Create a new metadata map for each task to ensure thread-safety
+            UUID did = content.getSegments().isEmpty() ? UUID.randomUUID() : content.getSegments().getFirst().getDid();
             Map<String, String> taskSpecificMetadata = (metadata == null) ? new HashMap<>() : new HashMap<>(metadata);
-
             IngressEventItem ingressEventItem = new IngressEventItem(did, "stressTestData", flow,
-                    taskSpecificMetadata,
-                    List.of(contentItem),
-                    Map.of());
+                    taskSpecificMetadata, List.of(content), Map.of());
 
             log.debug("Ingressing metadata for {} ({}/{})", did, fileIndexInTotal + 1, numFiles);
             deltaFilesService.ingressRest(restDataSource, ingressEventItem, OffsetDateTime.now(), OffsetDateTime.now());
             return null;
-          });
-        }
-
-        try {
-          List<Future<Void>> ingressFutures = executorService.invokeAll(ingressTasks);
-          for (Future<Void> future : ingressFutures) {
-            future.get();
+          } finally {
+            inFlight.release();
           }
-        } catch (InterruptedException e) {
-          Thread.currentThread().interrupt();
-          throw new IngressException("Stress test interrupted during metadata ingesting: " + e.getMessage(), e);
+        }));
+      }
+
+      for (Future<?> future : futures) {
+        try {
+          future.get();
         } catch (ExecutionException e) {
           Throwable cause = e.getCause();
-          if (cause instanceof IngressException) throw (IngressException) cause;
           if (cause instanceof ObjectStorageException) throw (ObjectStorageException) cause;
+          if (cause instanceof IngressException) throw (IngressException) cause;
           if (cause instanceof RuntimeException) throw (RuntimeException) cause;
           if (cause instanceof Error) throw (Error) cause;
-          throw new IngressException("Error during parallel metadata ingesting: " + cause.getMessage(), cause);
+          throw new IngressException("Error during stress test: " + cause.getMessage(), cause);
         }
-
-        remainingFiles -= actualBatchProcessingCount;
-        totalFilesProcessedOffset += actualBatchProcessingCount;
       }
+    } catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
+      throw new IngressException("Stress test interrupted: " + e.getMessage(), e);
     } finally {
       log.debug("Shutting down executor service...");
       executorService.shutdown();

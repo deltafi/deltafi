@@ -41,11 +41,7 @@
 
     <div class="main-content">
       <PageHeader heading="Errors">
-        <div class="time-range btn-toolbar mb-2 mb-md-0">
-          <Button class="p-button-text p-button-sm p-button-secondary mr-0" disabled>
-            {{ shortTimezone() }}
-          </Button>
-          <CustomCalendar ref="customCalendarRef" :start-time-date="model.startTimeDate" :end-time-date="model.endTimeDate" :reset-default="resetDefaultTimeDate" class="ml-0 mr-1" @update:start-time-date:end-time-date="updateInputDateTime" />
+        <div class="btn-toolbar mb-2 mb-md-0">
           <Button v-tooltip.left="refreshButtonTooltip" :icon="refreshButtonIcon" label="Refresh" class="deltafi-input-field ml-1" :severity="refreshButtonSeverity" :variant="refreshButtonVariant" :badge="refreshButtonBadge" badge-class="p-badge-danger" @click="onRefresh" />
         </div>
       </PageHeader>
@@ -58,13 +54,13 @@
         </TabList>
         <TabPanels>
           <TabPanel :value="0">
-            <AllErrorsPanel ref="errorsSummaryPanel" :active="activeTab === 0" :acknowledged="acknowledged" :flow="flowSelected" :errors-message-selected="errorMessageSelected" :query-params="model" @refresh-errors="onRefresh()" />
+            <AllErrorsPanel ref="errorsSummaryPanel" :active="activeTab === 0" :acknowledged="acknowledged" :flow="flowSelected" :errors-message-selected="errorMessageSelected" @refresh-errors="onRefresh()" />
           </TabPanel>
           <TabPanel :value="1">
-            <ErrorsSummaryByFlowPanel ref="errorSummaryFlowPanel" :active="activeTab === 1" :acknowledged="acknowledged" :flow="flowSelected" :query-params="model" @refresh-errors="onRefresh()" @change-tab:show-errors="showErrors" />
+            <ErrorsSummaryByFlowPanel ref="errorSummaryFlowPanel" :active="activeTab === 1" :acknowledged="acknowledged" :flow="flowSelected" @refresh-errors="onRefresh()" @change-tab:show-errors="showErrors" />
           </TabPanel>
           <TabPanel :value="2">
-            <ErrorsSummaryByMessagePanel ref="errorSummaryMessagePanel" :active="activeTab === 2" :acknowledged="acknowledged" :flow="flowSelected" :query-params="model" @refresh-errors="onRefresh()" @change-tab:show-errors="showErrors" />
+            <ErrorsSummaryByMessagePanel ref="errorSummaryMessagePanel" :active="activeTab === 2" :acknowledged="acknowledged" :flow="flowSelected" @refresh-errors="onRefresh()" @change-tab:show-errors="showErrors" />
           </TabPanel>
         </TabPanels>
       </Tabs>
@@ -74,7 +70,6 @@
 
 <script setup>
 import AllErrorsPanel from "@/components/errors/AllPanel.vue";
-import CustomCalendar from "@/components/CustomCalendar.vue";
 import ErrorsSummaryByFlowPanel from "@/components/errors/SummaryByFlowPanel.vue";
 import ErrorsSummaryByMessagePanel from "@/components/errors/SummaryByMessagePanel.vue";
 import FilterSidebar from "@/components/FilterSidebar.vue";
@@ -89,8 +84,6 @@ import { StorageSerializers, useStorage, useUrlSearchParams } from "@vueuse/core
 import { useRoute, useRouter } from "vue-router";
 
 import _ from "lodash";
-import dayjs from "dayjs";
-import utc from "dayjs/plugin/utc";
 
 import Button from "primevue/button";
 import Select from "primevue/select";
@@ -100,17 +93,14 @@ import TabPanel from "primevue/tabpanel";
 import TabPanels from "primevue/tabpanels";
 import Tabs from "primevue/tabs";
 
-dayjs.extend(utc);
-
 const errorMessageSelected = ref(null);
 const refreshInterval = 5000; // 5 seconds
 const isIdle = inject("isIdle");
-const uiConfig = inject("uiConfig");
 const errorSummaryMessagePanel = ref();
 const errorSummaryFlowPanel = ref();
 const errorsSummaryPanel = ref();
 const { fetchAllFlowNames } = useFlows();
-const { pluralize, shortTimezone } = useUtilFunctions();
+const { pluralize } = useUtilFunctions();
 const { fetchErrorCountSince } = useErrorCount();
 const loading = ref(false);
 const newErrorsCount = ref(0);
@@ -128,57 +118,7 @@ const formattedFlows = ref([]);
 const allFlowNames = ref();
 const showTabs = ref(false);
 const uniqueErrorMessages = ref([]);
-const customCalendarRef = ref(null);
 const sidebarOpen = ref(false);
-
-const timestampFormat = "YYYY-MM-DD HH:mm:ss";
-const defaultStartTimeDate = computed(() => {
-  const date = dayjs().utc();
-  return (uiConfig.useUTC ? date : date.local()).startOf("day");
-});
-const defaultEndTimeDate = computed(() => {
-  const date = dayjs().utc();
-  return (uiConfig.useUTC ? date : date.local()).endOf("day");
-});
-
-const resetDefaultTimeDate = computed(() => {
-  return [new Date(defaultStartTimeDate.value.format(timestampFormat)), new Date(defaultEndTimeDate.value.format(timestampFormat))];
-});
-
-const updateInputDateTime = async (startDate, endDate) => {
-  model.value.startTimeDate = startDate;
-  model.value.endTimeDate = endDate;
-  model.value.startTimeDateString = dateToISOString(startDate);
-  model.value.endTimeDateString = dateToISOString(endDate);
-};
-
-const dateToISOString = (dateData) => {
-  return dayjs(dateData).utc(uiConfig.useUTC).toISOString();
-};
-
-const defaultQueryParamsTemplate = {
-  startTimeDate: new Date(defaultStartTimeDate.value.format(timestampFormat)),
-  endTimeDate: new Date(defaultEndTimeDate.value.format(timestampFormat)),
-};
-
-const queryParamsModel = ref({});
-
-const model = computed({
-  get() {
-    return new Proxy(queryParamsModel.value, {
-      set(obj, key, value) {
-        model.value = { ...obj, [key]: value ?? defaultQueryParamsTemplate[key] };
-        return true;
-      },
-    });
-  },
-  set(newValue) {
-    Object.assign(
-      queryParamsModel.value,
-      _.mapValues(newValue, (v) => (v === "" ? null : v))
-    );
-  },
-});
 
 const ackOptions = [
   { name: "Errors", value: 0 },
@@ -243,7 +183,6 @@ const clearOptions = () => {
   errorMessageSelected.value = null;
   flowSelected.value = null;
   selectedAckOption.value = 0;
-  customCalendarRef.value.resetDateTime();
   setPersistedParams();
 };
 
@@ -267,13 +206,6 @@ const setupWatchers = () => {
     }
     setPersistedParams();
   });
-
-  watch(
-    () => [model.value.startTimeDate, model.value.endTimeDate],
-    () => {
-      onRefresh();
-    }
-  );
 
   // Watch for tab changes from navigation links
   watch(
@@ -363,7 +295,6 @@ onBeforeMount(() => {
 });
 
 onMounted(async () => {
-  queryParamsModel.value = _.cloneDeep(defaultQueryParamsTemplate);
   allFlowNames.value = await fetchAllFlowNames();
   formatFlowNames();
   await getPersistedParams();

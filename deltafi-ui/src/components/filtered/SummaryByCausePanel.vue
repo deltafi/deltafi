@@ -20,7 +20,7 @@
   <Panel header="DeltaFiles by Cause" @contextmenu="onPanelRightClick">
     <ContextMenu ref="menu" :model="menuItems" />
     <template #icons>
-      <Paginator v-if="filteredCause.length > 0" :rows="perPage" :first="getPage" template="CurrentPageReport FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink RowsPerPageDropdown" current-page-report-template="{first} - {last} of {totalRecords}" :total-records="totalFilteredMessage" :rows-per-page-options="[10, 20, 50, 100, 1000]" @page="onPage($event)" />
+      <Paginator v-if="filteredCause.length > 0" :rows="perPage" :first="getPage" template="CurrentPageReport FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink RowsPerPageDropdown" :current-page-report-template="pageReportTemplate" :total-records="totalFilteredMessage" :rows-per-page-options="[10, 20, 50, 100, 1000]" @page="onPage($event)" />
       <Button severity="secondary" variant="text" class="p-panel-header-icon mr-2" @click="toggleMenu">
         <span class="fas fa-bars" />
       </Button>
@@ -86,6 +86,10 @@ const loading = ref(true);
 const menu = ref();
 const filteredCause = ref([]);
 const totalFilteredMessage = ref(0);
+const pageReportTemplate = computed(() => {
+  const total = totalFilteredMessage.value == 10000 ? "many" : "{totalRecords}";
+  return `{first} - {last} of ${total}`;
+});
 const offset = ref(0);
 const perPage = ref();
 const page = ref(null);
@@ -104,10 +108,6 @@ const props = defineProps({
     type: Object,
     required: false,
     default: undefined,
-  },
-  queryParams: {
-    type: Object,
-    required: true,
   },
 });
 
@@ -172,7 +172,7 @@ const filterSelectedDids = computed(() => {
 const fetchFilteredMessages = async () => {
   getPersistedParams();
   loading.value = true;
-  await fetchFilteredSummaryByMessage(props.queryParams, offset.value, perPage.value, sortField.value, sortDirection.value, props.flow?.name);
+  await fetchFilteredSummaryByMessage(offset.value, perPage.value, sortField.value, sortDirection.value, props.flow?.name);
   filteredCause.value = response.value.countPerMessage;
   totalFilteredMessage.value = response.value.totalCount;
 
@@ -181,7 +181,7 @@ const fetchFilteredMessages = async () => {
     offset.value = 0;
     page.value = 1;
     setPersistedParams();
-    await fetchFilteredSummaryByMessage(props.queryParams, offset.value, perPage.value, sortField.value, sortDirection.value, props.flow?.name);
+    await fetchFilteredSummaryByMessage(offset.value, perPage.value, sortField.value, sortDirection.value, props.flow?.name);
     filteredCause.value = response.value.countPerMessage;
     totalFilteredMessage.value = response.value.totalCount;
   }

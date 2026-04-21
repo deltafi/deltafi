@@ -20,7 +20,7 @@
   <Panel header="DeltaFiles by Flow" @contextmenu="onPanelRightClick">
     <ContextMenu ref="menu" :model="menuItems" />
     <template #icons>
-      <Paginator v-if="filteredFlow.length > 0" :rows="perPage" template="CurrentPageReport FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink RowsPerPageDropdown" current-page-report-template="{first} - {last} of {totalRecords}" :total-records="totalFilteredFlow" :rows-per-page-options="[10, 20, 50, 100, 1000]" @page="onPage($event)" />
+      <Paginator v-if="filteredFlow.length > 0" :rows="perPage" template="CurrentPageReport FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink RowsPerPageDropdown" :current-page-report-template="pageReportTemplate" :total-records="totalFilteredFlow" :rows-per-page-options="[10, 20, 50, 100, 1000]" @page="onPage($event)" />
       <Button severity="secondary" variant="text" class="p-panel-header-icon mr-2" @click="toggleMenu">
         <span class="fas fa-bars" />
       </Button>
@@ -67,6 +67,10 @@ const loading = ref(true);
 const menu = ref();
 const filteredFlow = ref([]);
 const totalFilteredFlow = ref(0);
+const pageReportTemplate = computed(() => {
+  const total = totalFilteredFlow.value == 10000 ? "many" : "{totalRecords}";
+  return `{first} - {last} of ${total}`;
+});
 const offset = ref(0);
 const perPage = ref();
 const sortField = ref("NAME");
@@ -82,10 +86,6 @@ const props = defineProps({
     type: Object,
     required: false,
     default: undefined,
-  },
-  queryParams: {
-    type: Object,
-    required: true,
   },
 });
 
@@ -130,7 +130,7 @@ onMounted(async () => {
 const fetchFilteredFlow = async () => {
   getPersistedParams();
   loading.value = true;
-  await fetchFilteredSummaryByFlow(props.queryParams, offset.value, perPage.value, sortField.value, sortDirection.value, props.flow?.name);
+  await fetchFilteredSummaryByFlow(offset.value, perPage.value, sortField.value, sortDirection.value, props.flow?.name);
   filteredFlow.value = response.value.countPerFlow;
   totalFilteredFlow.value = response.value.totalCount;
   loading.value = false;

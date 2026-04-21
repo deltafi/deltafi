@@ -29,7 +29,11 @@ import java.time.OffsetDateTime;
 @AllArgsConstructor
 @Builder
 public class ErrorSummaryFilter implements SummaryFilter {
+    /** @deprecated Ignored. Summary queries no longer honor time-range filters. */
+    @Deprecated
     private OffsetDateTime modifiedAfter;
+    /** @deprecated Ignored. Summary queries no longer honor time-range filters. */
+    @Deprecated
     private OffsetDateTime modifiedBefore;
     private Boolean errorAcknowledged;
     private String flow;

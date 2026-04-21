@@ -703,18 +703,86 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
         if (deltaFileList.size() < limit) {
             deltaFiles.setTotalCount(intOffset + deltaFileList.size());
         } else {
-            StringBuilder countQuerySql = new StringBuilder("SELECT COUNT(*) FROM (SELECT 1 FROM delta_files df ");
-            countQuerySql.append(buildAnnotationJoins(filter));
-            countQuerySql.append("WHERE TRUE\n").append(criteria).append("LIMIT ").append(MANY_RESULTS).append(") as sub");
-            Query countQuery = entityManager.createNativeQuery(countQuerySql.toString(), Integer.class);
-            for (Map.Entry<String, Object> entry : parameters.entrySet()) {
-                countQuery.setParameter(entry.getKey(), entry.getValue());
-            }
+            Integer summaryCount = countFromFlowSummary(filter);
+            if (summaryCount != null) {
+                deltaFiles.setTotalCount(summaryCount);
+            } else {
+                StringBuilder countQuerySql = new StringBuilder("SELECT COUNT(*) FROM (SELECT 1 FROM delta_files df ");
+                countQuerySql.append(buildAnnotationJoins(filter));
+                countQuerySql.append("WHERE TRUE\n").append(criteria).append("LIMIT ").append(MANY_RESULTS).append(") as sub");
+                Query countQuery = entityManager.createNativeQuery(countQuerySql.toString(), Integer.class);
+                for (Map.Entry<String, Object> entry : parameters.entrySet()) {
+                    countQuery.setParameter(entry.getKey(), entry.getValue());
+                }
 
-            deltaFiles.setTotalCount((Integer) countQuery.getSingleResult());
+                deltaFiles.setTotalCount((Integer) countQuery.getSingleResult());
+            }
         }
 
         return deltaFiles;
+    }
+
+    /**
+     * Serve the total count from flow_summary_counts when the filter shape is one the summary table supports
+     * (ERROR stage with optional errorAcknowledged/errorCause, or filtered=true with optional filteredCause).
+     * Returns null for any other filter shape, falling the caller back to the exact count query.
+     *
+     * The returned value is SUM(error_count) capped at MANY_RESULTS, matching the behavior of the exact count
+     * query. Capping lets the UI display "of many" instead of offering pagination past the real end of the
+     * result set (summed flow rows can exceed distinct-DeltaFile count).
+     */
+    private Integer countFromFlowSummary(DeltaFilesFilter filter) {
+        if (filter == null) return null;
+
+        // Build a stripped filter containing only the fields flow_summary_counts can answer.
+        // If it still equals the input, no other restrictive fields are set and the shortcut is valid.
+        // New fields added to DeltaFilesFilter later will cause the equality check to fail, forcing the
+        // slow path — safe fallback rather than silently wrong counts.
+        DeltaFilesFilter allowed = new DeltaFilesFilter();
+        allowed.setStage(filter.getStage());
+        allowed.setErrorAcknowledged(filter.getErrorAcknowledged());
+        allowed.setErrorCause(filter.getErrorCause());
+        allowed.setFiltered(filter.getFiltered());
+        allowed.setFilteredCause(filter.getFilteredCause());
+        if (!allowed.equals(filter)) return null;
+
+        String state;
+        Boolean acknowledged;
+        String cause;
+        if (filter.getStage() == DeltaFileStage.ERROR) {
+            state = "ERROR";
+            acknowledged = filter.getErrorAcknowledged();
+            cause = filter.getErrorCause();
+        } else if (Boolean.TRUE.equals(filter.getFiltered())) {
+            state = "FILTERED";
+            acknowledged = false;
+            cause = filter.getFilteredCause();
+        } else {
+            return null;
+        }
+
+        StringBuilder sql = new StringBuilder("""
+                SELECT COALESCE(SUM(error_count), 0)
+                FROM flow_summary_counts
+                WHERE state = CAST(:state AS dff_state_enum)""");
+        if (acknowledged != null) {
+            sql.append(" AND acknowledged = :acknowledged");
+        }
+        if (cause != null) {
+            sql.append(" AND error_or_filter_cause ILIKE :cause");
+        }
+
+        Query query = entityManager.createNativeQuery(sql.toString())
+                .setParameter("state", state);
+        if (acknowledged != null) {
+            query.setParameter("acknowledged", acknowledged);
+        }
+        if (cause != null) {
+            query.setParameter("cause", "%" + cause + "%");
+        }
+
+        long count = ((Number) query.getSingleResult()).longValue();
+        return (int) Math.min(count, MANY_RESULTS);
     }
 
     @Override

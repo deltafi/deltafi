@@ -20,7 +20,7 @@
   <Panel header="DeltaFiles by Message" @contextmenu="onPanelRightClick">
     <ContextMenu ref="menu" :model="menuItems" />
     <template #icons>
-      <Paginator v-if="errorsMessage.length > 0" :rows="perPage" :first="getPage" template="CurrentPageReport FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink RowsPerPageDropdown" current-page-report-template="{first} - {last} of {totalRecords}" :total-records="totalErrorsMessage" :rows-per-page-options="[10, 20, 50, 100, 1000]" @page="onPage($event)" />
+      <Paginator v-if="errorsMessage.length > 0" :rows="perPage" :first="getPage" template="CurrentPageReport FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink RowsPerPageDropdown" :current-page-report-template="pageReportTemplate" :total-records="totalErrorsMessage" :rows-per-page-options="[10, 20, 50, 100, 1000]" @page="onPage($event)" />
       <Button severity="secondary" variant="text" class="p-panel-header-icon mr-2" @click="toggleMenu">
         <span class="fas fa-bars" />
       </Button>
@@ -98,6 +98,10 @@ const loading = ref(true);
 const menu = ref();
 const errorsMessage = ref([]);
 const totalErrorsMessage = ref(0);
+const pageReportTemplate = computed(() => {
+  const total = totalErrorsMessage.value == 10000 ? "many" : "{totalRecords}";
+  return `{first} - {last} of ${total}`;
+});
 const offset = ref(0);
 const perPage = ref();
 const page = ref(null);
@@ -130,10 +134,6 @@ const props = defineProps({
   },
   acknowledged: {
     type: [Boolean, null],
-    required: true,
-  },
-  queryParams: {
-    type: Object,
     required: true,
   },
 });
@@ -242,7 +242,7 @@ const fetchErrorsMessages = async () => {
   getPersistedParams();
   const flowName = props.flow?.name != null ? props.flow?.name : null;
   loading.value = true;
-  await fetchErrorSummaryByMessage(props.queryParams, props.acknowledged, offset.value, perPage.value, sortField.value, sortDirection.value, flowName);
+  await fetchErrorSummaryByMessage(props.acknowledged, offset.value, perPage.value, sortField.value, sortDirection.value, flowName);
   errorsMessage.value = response.value.countPerMessage;
   totalErrorsMessage.value = response.value.totalCount;
 
@@ -251,7 +251,7 @@ const fetchErrorsMessages = async () => {
     offset.value = 0;
     page.value = 1;
     setPersistedParams();
-    await fetchErrorSummaryByMessage(props.queryParams, props.acknowledged, offset.value, perPage.value, sortField.value, sortDirection.value, flowName);
+    await fetchErrorSummaryByMessage(props.acknowledged, offset.value, perPage.value, sortField.value, sortDirection.value, flowName);
     errorsMessage.value = response.value.countPerMessage;
     totalErrorsMessage.value = response.value.totalCount;
   }

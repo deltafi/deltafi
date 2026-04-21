@@ -21,7 +21,7 @@
     <Panel header="DeltaFiles" @contextmenu="onPanelRightClick">
       <ContextMenu ref="menu" :model="menuItems" />
       <template #icons>
-        <Paginator v-if="filtered.length > 0" :rows="perPage" template="CurrentPageReport FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink RowsPerPageDropdown" current-page-report-template="{first} - {last} of {totalRecords}" :total-records="totalFiltered" :rows-per-page-options="[10, 20, 50, 100, 1000]" @page="onPage($event)" />
+        <Paginator v-if="filtered.length > 0" :rows="perPage" template="CurrentPageReport FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink RowsPerPageDropdown" :current-page-report-template="pageReportTemplate" :total-records="totalFiltered" :rows-per-page-options="[10, 20, 50, 100, 1000]" @page="onPage($event)" />
         <Button severity="secondary" variant="text" class="p-panel-header-icon mr-2" @click="toggleMenu">
           <span class="fas fa-bars" />
         </Button>
@@ -139,6 +139,10 @@ const replayDialog = ref();
 const expandedRows = ref([]);
 
 const totalFiltered = ref(0);
+const pageReportTemplate = computed(() => {
+  const total = totalFiltered.value == 10000 ? "many" : "{totalRecords}";
+  return `{first} - {last} of ${total}`;
+});
 const offset = ref(0);
 const perPage = ref();
 const sortField = ref("modified");
@@ -159,10 +163,6 @@ const props = defineProps({
     type: String,
     required: false,
     default: undefined,
-  },
-  queryParams: {
-    type: Object,
-    required: true,
   },
 });
 
@@ -215,7 +215,7 @@ const fetchFiltered = async () => {
   const flowName = props.flow?.name != null ? props.flow?.name : null;
   const flowType = props.flow?.type != null ? props.flow?.type : null;
   loading.value = true;
-  await getFiltered(props.queryParams, offset.value, perPage.value, sortField.value, sortDirection.value, flowName, flowType, props.cause);
+  await getFiltered(offset.value, perPage.value, sortField.value, sortDirection.value, flowName, flowType, props.cause);
   filtered.value = response.value.deltaFiles.deltaFiles;
   totalFiltered.value = response.value.deltaFiles.totalCount;
   loading.value = false;

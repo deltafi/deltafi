@@ -21,7 +21,7 @@
     <Panel header="DeltaFiles" @contextmenu="onPanelRightClick">
       <ContextMenu ref="menu" :model="menuItems" />
       <template #icons>
-        <Paginator v-if="errors.length > 0" :rows="perPage" :first="getPage" template="CurrentPageReport FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink RowsPerPageDropdown" current-page-report-template="{first} - {last} of {totalRecords}" :total-records="totalErrors" :rows-per-page-options="[10, 20, 50, 100, 1000]" @page="onPage($event)" />
+        <Paginator v-if="errors.length > 0" :rows="perPage" :first="getPage" template="CurrentPageReport FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink RowsPerPageDropdown" :current-page-report-template="pageReportTemplate" :total-records="totalErrors" :rows-per-page-options="[10, 20, 50, 100, 1000]" @page="onPage($event)" />
         <Button severity="secondary" variant="text" class="p-panel-header-icon mr-2" @click="toggleMenu">
           <span class="fas fa-bars" />
         </Button>
@@ -160,6 +160,10 @@ const menu = ref();
 const errors = ref([]);
 const expandedRows = ref([]);
 const totalErrors = ref(0);
+const pageReportTemplate = computed(() => {
+  const total = totalErrors.value == 10000 ? "many" : "{totalRecords}";
+  return `{first} - {last} of ${total}`;
+});
 const offset = ref(0);
 const perPage = ref();
 const page = ref(null);
@@ -189,10 +193,6 @@ const props = defineProps({
     type: String,
     required: false,
     default: undefined,
-  },
-  queryParams: {
-    type: Object,
-    required: true,
   },
 });
 const errorViewer = ref({
@@ -283,7 +283,7 @@ const fetchErrors = async () => {
   const flowType = props.flow?.type != null ? props.flow?.type : null;
   const errorMessage = filters.value.last_error_cause.value != null ? filters.value.last_error_cause.value.message : null;
   loading.value = true;
-  await getErrors(props.queryParams, props.acknowledged, offset.value, perPage.value, sortField.value, sortDirection.value, flowName, flowType, errorMessage);
+  await getErrors(props.acknowledged, offset.value, perPage.value, sortField.value, sortDirection.value, flowName, flowType, errorMessage);
   errors.value = response.value.deltaFiles.deltaFiles;
   totalErrors.value = response.value.deltaFiles.totalCount;
   loading.value = false;

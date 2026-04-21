@@ -79,27 +79,22 @@ public class DeltaFileFlowRepoImpl implements DeltaFileFlowRepoCustom {
     }
 
     private SummaryByFlow getSummaryByFlow(Integer offset, int limit, SummaryFilter filter, DeltaFileDirection direction, SummaryByFlowSort sortField, DeltaFileFlowState deltaFileFlowState) {
-        StringBuilder sql = new StringBuilder(String.format("""
-                SELECT fd.name, fd.type, sub.count
-                FROM (
-                    SELECT dff.flow_definition_id, COUNT(DISTINCT dff.delta_file_id) AS count
-                    FROM delta_file_flows dff
-                    WHERE dff.state = '%s'::dff_state_enum\s""", deltaFileFlowState.name()));
+        StringBuilder sql = new StringBuilder("""
+                SELECT fd.name, fd.type, SUM(fsc.error_count) AS count
+                FROM flow_summary_counts fsc
+                JOIN flow_definitions fd ON fd.id = fsc.flow_definition_id
+                WHERE fsc.state = CAST(:state AS dff_state_enum)\s""");
 
-        addFilterClauses(sql, filter, false);
+        appendSummaryFilterClauses(sql, filter, deltaFileFlowState);
 
-        sql.append("""
-                    GROUP BY dff.flow_definition_id
-                ) sub
-                JOIN flow_definitions fd ON fd.id = sub.flow_definition_id\s""");
-
-        addFooterClauses(sql, sortField.toString().toLowerCase(), direction, false);
+        sql.append("GROUP BY fd.name, fd.type ");
+        appendOrderAndPagination(sql, sortField.toString().toLowerCase(), direction);
 
         Query query = entityManager.createNativeQuery(sql.toString())
+                .setParameter("state", deltaFileFlowState.name())
                 .setParameter("limit", limit)
                 .setParameter("offset", offset != null ? offset : 0);
-
-        addSummaryFilterParameters(query, filter);
+        bindSummaryFilterParameters(query, filter, deltaFileFlowState);
 
         @SuppressWarnings("unchecked")
         List<Object[]> resultList = query.getResultList();
@@ -114,26 +109,25 @@ public class DeltaFileFlowRepoImpl implements DeltaFileFlowRepoCustom {
 
     private SummaryByFlowAndMessage getSummaryByFlowAndMessage(Integer offset, int limit, SummaryFilter filter, DeltaFileDirection direction, SummaryByMessageSort sortField, DeltaFileFlowState flowState) {
         // Step 1: Get distinct messages with counts (paginated)
-        StringBuilder sql = new StringBuilder(String.format("""
-            SELECT dff.error_or_filter_cause, COUNT(DISTINCT dff.delta_file_id) AS count
-            FROM delta_file_flows dff
-            WHERE dff.state = '%s'::dff_state_enum
-            AND dff.error_or_filter_cause IS NOT NULL\s""", flowState.name()));
+        StringBuilder sql = new StringBuilder("""
+            SELECT fsc.error_or_filter_cause, SUM(fsc.error_count) AS count
+            FROM flow_summary_counts fsc
+            WHERE fsc.state = CAST(:state AS dff_state_enum)
+            AND fsc.error_or_filter_cause IS NOT NULL\s""");
 
-        addFilterClauses(sql, filter, false);
+        appendSummaryFilterClauses(sql, filter, flowState);
 
-        sql.append("GROUP BY dff.error_or_filter_cause ");
-
-        sql.append("ORDER BY ");
-        sql.append(sortField == SummaryByMessageSort.MESSAGE ? "error_or_filter_cause" : "count");
-        sql.append(direction == null || direction == DeltaFileDirection.ASC ? " ASC " : " DESC ");
-        sql.append("LIMIT :limit OFFSET :offset");
+        sql.append("GROUP BY fsc.error_or_filter_cause ")
+           .append("ORDER BY ")
+           .append(sortField == SummaryByMessageSort.MESSAGE ? "error_or_filter_cause" : "count")
+           .append(direction == null || direction == DeltaFileDirection.ASC ? " ASC " : " DESC ")
+           .append("LIMIT :limit OFFSET :offset");
 
         Query query = entityManager.createNativeQuery(sql.toString())
+                .setParameter("state", flowState.name())
                 .setParameter("limit", limit)
                 .setParameter("offset", offset != null ? offset : 0);
-
-        addSummaryFilterParameters(query, filter);
+        bindSummaryFilterParameters(query, filter, flowState);
 
         @SuppressWarnings("unchecked")
         List<Object[]> resultList = query.getResultList();
@@ -164,26 +158,22 @@ public class DeltaFileFlowRepoImpl implements DeltaFileFlowRepoCustom {
             return Map.of();
         }
 
-        StringBuilder sql = new StringBuilder(String.format("""
-            SELECT sub.error_or_filter_cause, fd.name, fd.type, sub.count
-            FROM (
-                SELECT dff.error_or_filter_cause, dff.flow_definition_id, COUNT(DISTINCT dff.delta_file_id) AS count
-                FROM delta_file_flows dff
-                WHERE dff.state = '%s'::dff_state_enum
-                AND dff.error_or_filter_cause IN (:messages)\s""", flowState.name()));
+        StringBuilder sql = new StringBuilder("""
+            SELECT fsc.error_or_filter_cause, fd.name, fd.type, SUM(fsc.error_count) AS count
+            FROM flow_summary_counts fsc
+            JOIN flow_definitions fd ON fd.id = fsc.flow_definition_id
+            WHERE fsc.state = CAST(:state AS dff_state_enum)
+            AND fsc.error_or_filter_cause IN (:messages)\s""");
 
-        addFilterClauses(sql, filter, false);
+        appendSummaryFilterClauses(sql, filter, flowState);
 
-        sql.append("""
-                GROUP BY dff.error_or_filter_cause, dff.flow_definition_id
-            ) sub
-            JOIN flow_definitions fd ON fd.id = sub.flow_definition_id
-            ORDER BY sub.error_or_filter_cause, fd.name""");
+        sql.append("GROUP BY fsc.error_or_filter_cause, fd.name, fd.type ")
+           .append("ORDER BY fsc.error_or_filter_cause, fd.name");
 
         Query query = entityManager.createNativeQuery(sql.toString())
+                .setParameter("state", flowState.name())
                 .setParameter("messages", messages);
-
-        addSummaryFilterParameters(query, filter);
+        bindSummaryFilterParameters(query, filter, flowState);
 
         @SuppressWarnings("unchecked")
         List<Object[]> resultList = query.getResultList();
@@ -200,106 +190,81 @@ public class DeltaFileFlowRepoImpl implements DeltaFileFlowRepoCustom {
                                 Collectors.toList())));
     }
 
-    private void addFilterClauses(StringBuilder sql, SummaryFilter filter, boolean hasFlowJoin) {
-        if (filter != null) {
-            if (filter.getModifiedAfter() != null) {
-                sql.append("AND dff.modified > :modifiedAfter ");
-            }
-            if (filter.getModifiedBefore() != null) {
-                sql.append("AND dff.modified < :modifiedBefore ");
-            }
-            if (filter.getFlow() != null) {
-                if (hasFlowJoin) {
-                    sql.append("AND fd.name = :flow ");
-                } else {
-                    sql.append("AND dff.flow_definition_id IN (SELECT id FROM flow_definitions WHERE name = :flow) ");
-                }
-            }
-
-            if (filter instanceof ErrorSummaryFilter errorFilter) {
-                if (errorFilter.getErrorAcknowledged() != null) {
-                    if (errorFilter.getErrorAcknowledged()) {
-                        sql.append("AND dff.error_acknowledged IS NOT NULL ");
-                    } else {
-                        sql.append("AND dff.error_acknowledged IS NULL ");
-                    }
-                }
-                if (errorFilter.getErrorCause() != null) {
-                    sql.append("AND dff.error_or_filter_cause ILIKE :errorCause ");
-                }
-            }
+    // Summary queries are served from flow_summary_counts. modifiedAfter/modifiedBefore are
+    // intentionally ignored here — callers that still supply them get unfiltered-by-time results.
+    private void appendSummaryFilterClauses(StringBuilder sql, SummaryFilter filter, DeltaFileFlowState flowState) {
+        if (acknowledgedFilterValue(filter, flowState) != null) {
+            sql.append(" AND fsc.acknowledged = :acknowledged ");
+        }
+        if (filter != null && filter.getFlow() != null) {
+            sql.append(" AND fsc.flow_definition_id IN (SELECT id FROM flow_definitions WHERE name = :flow) ");
+        }
+        if (filter instanceof ErrorSummaryFilter errorFilter && errorFilter.getErrorCause() != null) {
+            sql.append(" AND fsc.error_or_filter_cause ILIKE :errorCause ");
         }
     }
 
-    private void addFooterClauses(StringBuilder sql, String orderBy, DeltaFileDirection direction, boolean includeCause) {
-        sql.append("ORDER BY ");
-        sql.append(orderBy);
-        if (direction == null || direction == DeltaFileDirection.ASC) {
-            sql.append(" ASC ");
-        } else {
-            sql.append(" DESC ");
+    private void bindSummaryFilterParameters(Query query, SummaryFilter filter, DeltaFileFlowState flowState) {
+        if (filter == null) {
+            return;
         }
-
-        if (includeCause) {
-            String secondary = orderBy.equals("name") ? "error_or_filter_cause" : "name";
-            sql.append(", ");
-            sql.append(secondary);
-            if (direction == null || direction == DeltaFileDirection.ASC) {
-                sql.append(" ASC ");
-            } else {
-                sql.append(" DESC ");
-            }
+        Boolean acknowledged = acknowledgedFilterValue(filter, flowState);
+        if (acknowledged != null) {
+            query.setParameter("acknowledged", acknowledged);
         }
+        if (filter.getFlow() != null) {
+            query.setParameter("flow", filter.getFlow());
+        }
+        if (filter instanceof ErrorSummaryFilter errorFilter && errorFilter.getErrorCause() != null) {
+            query.setParameter("errorCause", "%" + errorFilter.getErrorCause() + "%");
+        }
+    }
 
-        sql.append("LIMIT :limit OFFSET :offset");
+    private Boolean acknowledgedFilterValue(SummaryFilter filter, DeltaFileFlowState flowState) {
+        if (flowState == DeltaFileFlowState.FILTERED) {
+            return null;
+        }
+        if (filter instanceof ErrorSummaryFilter errorFilter) {
+            return errorFilter.getErrorAcknowledged();
+        }
+        return null;
+    }
+
+    private void appendOrderAndPagination(StringBuilder sql, String orderBy, DeltaFileDirection direction) {
+        sql.append("ORDER BY ").append(orderBy)
+           .append(direction == null || direction == DeltaFileDirection.ASC ? " ASC " : " DESC ")
+           .append("LIMIT :limit OFFSET :offset");
     }
 
     private Long totalCountByFlow(SummaryFilter filter, DeltaFileFlowState flowState) {
-        StringBuilder sql = new StringBuilder(String.format("""
-            SELECT COUNT(DISTINCT dff.flow_definition_id)
-            FROM delta_file_flows dff
-            WHERE dff.state = '%s'::dff_state_enum\s""", flowState.name()));
+        StringBuilder sql = new StringBuilder("""
+            SELECT COUNT(DISTINCT fsc.flow_definition_id)
+            FROM flow_summary_counts fsc
+            WHERE fsc.state = CAST(:state AS dff_state_enum)\s""");
 
-        addFilterClauses(sql, filter, false);
+        appendSummaryFilterClauses(sql, filter, flowState);
 
-        Query query = entityManager.createNativeQuery(sql.toString());
-
-        addSummaryFilterParameters(query, filter);
+        Query query = entityManager.createNativeQuery(sql.toString())
+                .setParameter("state", flowState.name());
+        bindSummaryFilterParameters(query, filter, flowState);
 
         return ((Number) query.getSingleResult()).longValue();
     }
 
     private Long totalCountByFlowAndMessage(SummaryFilter filter, DeltaFileFlowState flowState) {
-        StringBuilder sql = new StringBuilder(String.format("""
-            SELECT COUNT(DISTINCT dff.error_or_filter_cause)
-            FROM delta_file_flows dff
-            WHERE dff.error_or_filter_cause IS NOT NULL
-            AND dff.state = '%s'::dff_state_enum\s""", flowState.name()));
+        StringBuilder sql = new StringBuilder("""
+            SELECT COUNT(DISTINCT fsc.error_or_filter_cause)
+            FROM flow_summary_counts fsc
+            WHERE fsc.error_or_filter_cause IS NOT NULL
+            AND fsc.state = CAST(:state AS dff_state_enum)\s""");
 
-        addFilterClauses(sql, filter, false);
+        appendSummaryFilterClauses(sql, filter, flowState);
 
-        Query query = entityManager.createNativeQuery(sql.toString());
-
-        addSummaryFilterParameters(query, filter);
+        Query query = entityManager.createNativeQuery(sql.toString())
+                .setParameter("state", flowState.name());
+        bindSummaryFilterParameters(query, filter, flowState);
 
         return ((Number) query.getSingleResult()).longValue();
-    }
-
-    void addSummaryFilterParameters(Query query, SummaryFilter filter) {
-        if (filter != null) {
-            if (filter.getModifiedAfter() != null) {
-                query.setParameter("modifiedAfter", filter.getModifiedAfter());
-            }
-            if (filter.getModifiedBefore() != null) {
-                query.setParameter("modifiedBefore", filter.getModifiedBefore());
-            }
-            if (filter.getFlow() != null) {
-                query.setParameter("flow", filter.getFlow());
-            }
-            if (filter instanceof ErrorSummaryFilter errorFilter && errorFilter.getErrorCause() != null) {
-                query.setParameter("errorCause", "%" + errorFilter.getErrorCause() + "%");
-            }
-        }
     }
 
     @Override
@@ -313,19 +278,19 @@ public class DeltaFileFlowRepoImpl implements DeltaFileFlowRepoCustom {
     }
 
     private List<String> getDistinctCauses(SummaryFilter filter, DeltaFileFlowState flowState) {
-        StringBuilder sql = new StringBuilder(String.format("""
-            SELECT DISTINCT dff.error_or_filter_cause
-            FROM delta_file_flows dff
-            WHERE dff.state = '%s'::dff_state_enum
-            AND dff.error_or_filter_cause IS NOT NULL\s""", flowState.name()));
+        StringBuilder sql = new StringBuilder("""
+            SELECT DISTINCT fsc.error_or_filter_cause
+            FROM flow_summary_counts fsc
+            WHERE fsc.state = CAST(:state AS dff_state_enum)
+            AND fsc.error_or_filter_cause IS NOT NULL\s""");
 
-        addFilterClauses(sql, filter, false);
+        appendSummaryFilterClauses(sql, filter, flowState);
 
-        sql.append("ORDER BY dff.error_or_filter_cause");
+        sql.append("ORDER BY fsc.error_or_filter_cause");
 
-        Query query = entityManager.createNativeQuery(sql.toString());
-
-        addSummaryFilterParameters(query, filter);
+        Query query = entityManager.createNativeQuery(sql.toString())
+                .setParameter("state", flowState.name());
+        bindSummaryFilterParameters(query, filter, flowState);
 
         @SuppressWarnings("unchecked")
         List<String> results = query.getResultList();

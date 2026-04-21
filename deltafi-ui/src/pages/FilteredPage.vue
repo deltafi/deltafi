@@ -38,11 +38,7 @@
 
     <div class="main-content">
       <PageHeader heading="Filtered">
-        <div class="time-range btn-toolbar mb-2 mb-md-0">
-          <Button class="p-button-text p-button-sm p-button-secondary mr-0" disabled>
-            {{ shortTimezone() }}
-          </Button>
-          <CustomCalendar ref="customCalendarRef" :start-time-date="model.startTimeDate" :end-time-date="model.endTimeDate" :reset-default="resetDefaultTimeDate" class="ml-0 mr-1" @update:start-time-date:end-time-date="updateInputDateTime" />
+        <div class="btn-toolbar mb-2 mb-md-0">
           <Button :icon="refreshButtonIcon" label="Refresh" class="p-button deltafi-input-field ml-1 p-button-outlined" @click="onRefresh" />
         </div>
       </PageHeader>
@@ -55,13 +51,13 @@
         </TabList>
         <TabPanels>
           <TabPanel :value="0">
-            <AllFilteredPanel ref="filterSummaryPanel" :active="activeTab === 0" :flow="flowSelected" :cause="causeSelected" :query-params="model" @refresh-filters="onRefresh()" />
+            <AllFilteredPanel ref="filterSummaryPanel" :active="activeTab === 0" :flow="flowSelected" :cause="causeSelected" @refresh-filters="onRefresh()" />
           </TabPanel>
           <TabPanel :value="1">
-            <SummaryByFlowPanel ref="filterSummaryFlowPanel" :active="activeTab === 1" :flow="flowSelected" :query-params="model" @refresh-filters="onRefresh()" @show-all-tab="showAllTab" />
+            <SummaryByFlowPanel ref="filterSummaryFlowPanel" :active="activeTab === 1" :flow="flowSelected" @refresh-filters="onRefresh()" @show-all-tab="showAllTab" />
           </TabPanel>
           <TabPanel :value="2">
-            <SummaryByCausePanel ref="filterSummaryMessagePanel" :active="activeTab === 2" :flow="flowSelected" :query-params="model" @refresh-filters="onRefresh()" @show-all-tab="showAllTab" />
+            <SummaryByCausePanel ref="filterSummaryMessagePanel" :active="activeTab === 2" :flow="flowSelected" @refresh-filters="onRefresh()" @show-all-tab="showAllTab" />
           </TabPanel>
         </TabPanels>
       </Tabs>
@@ -71,7 +67,6 @@
 
 <script setup>
 import AllFilteredPanel from "@/components/filtered/AllPanel.vue";
-import CustomCalendar from "@/components/CustomCalendar.vue";
 import FilterSidebar from "@/components/FilterSidebar.vue";
 import SummaryByCausePanel from "@/components/filtered/SummaryByCausePanel.vue";
 import SummaryByFlowPanel from "@/components/filtered/SummaryByFlowPanel.vue";
@@ -79,13 +74,10 @@ import PageHeader from "@/components/PageHeader.vue";
 import ProgressBar from "primevue/progressbar";
 import useFiltered from "@/composables/useFiltered";
 import useFlows from "@/composables/useFlows";
-import useUtilFunctions from "@/composables/useUtilFunctions";
-import { computed, inject, nextTick, onBeforeMount, onMounted, ref, watch } from "vue";
+import { computed, nextTick, onBeforeMount, onMounted, ref, watch } from "vue";
 import { useStorage, StorageSerializers, useUrlSearchParams } from "@vueuse/core";
 
 import _ from "lodash";
-import dayjs from "dayjs";
-import utc from "dayjs/plugin/utc";
 
 import Button from "primevue/button";
 import Select from "primevue/select";
@@ -96,11 +88,6 @@ import TabPanels from "primevue/tabpanels";
 import TabPanel from "primevue/tabpanel";
 import { useRoute, useRouter } from "vue-router";
 
-dayjs.extend(utc);
-
-const uiConfig = inject("uiConfig");
-
-const { shortTimezone } = useUtilFunctions();
 const filterSummaryMessagePanel = ref();
 const filterSummaryFlowPanel = ref();
 const filterSummaryPanel = ref();
@@ -128,59 +115,6 @@ const flowTypeMap = {
   ON_ERROR_DATA_SOURCE: "onErrorDataSource",
   DATA_SINK: "dataSink",
 };
-
-const customCalendarRef = ref(null);
-
-const timestampFormat = "YYYY-MM-DD HH:mm:ss";
-const defaultStartTimeDate = computed(() => {
-  const date = dayjs().utc();
-  return (uiConfig.useUTC ? date : date.local()).startOf("day");
-});
-const defaultEndTimeDate = computed(() => {
-  const date = dayjs().utc();
-  return (uiConfig.useUTC ? date : date.local()).endOf("day");
-});
-
-const resetDefaultTimeDate = computed(() => {
-  return [new Date(defaultStartTimeDate.value.format(timestampFormat)), new Date(defaultEndTimeDate.value.format(timestampFormat))];
-});
-
-const updateInputDateTime = async (startDate, endDate) => {
-  model.value.startTimeDate = startDate;
-  model.value.endTimeDate = endDate;
-  model.value.startTimeDateString = dateToISOString(startDate);
-  model.value.endTimeDateString = dateToISOString(endDate);
-};
-
-const dateToISOString = (dateData) => {
-  return dayjs(dateData).utc(uiConfig.useUTC).toISOString();
-};
-
-const defaultQueryParamsTemplate = {
-  startTimeDate: new Date(defaultStartTimeDate.value.format(timestampFormat)),
-  endTimeDate: new Date(defaultEndTimeDate.value.format(timestampFormat)),
-  startTimeDateString: dateToISOString(defaultStartTimeDate.value.format(timestampFormat)),
-  endTimeDateString: dateToISOString(defaultEndTimeDate.value.format(timestampFormat)),
-};
-
-const queryParamsModel = ref({});
-
-const model = computed({
-  get() {
-    return new Proxy(queryParamsModel.value, {
-      set(obj, key, value) {
-        model.value = { ...obj, [key]: value ?? defaultQueryParamsTemplate[key] };
-        return true;
-      },
-    });
-  },
-  set(newValue) {
-    Object.assign(
-      queryParamsModel.value,
-      _.mapValues(newValue, (v) => (v === "" ? null : v))
-    );
-  },
-});
 
 const setPersistedParams = () => {
   // Session Storage
@@ -221,7 +155,6 @@ const formatFlowNames = () => {
 const clearOptions = () => {
   causeSelected.value = null;
   flowSelected.value = null;
-  customCalendarRef.value.resetDateTime();
   setPersistedParams();
 };
 
@@ -255,13 +188,6 @@ const setupWatchers = () => {
     }
     setPersistedParams();
   });
-
-  watch(
-    () => [model.value.startTimeDate, model.value.endTimeDate],
-    () => {
-      onRefresh();
-    }
-  );
 
   // Watch for tab changes from navigation links
   watch(
@@ -313,7 +239,6 @@ const refreshActiveTab = () => {
 
 const onRefresh = async () => {
   loading.value = true;
-  await customCalendarRef.value.refreshUpdateDateTime();
   refreshActiveTab();
   loading.value = false;
 };
@@ -323,10 +248,9 @@ onBeforeMount(() => {
 });
 
 onMounted(async () => {
-  queryParamsModel.value = _.cloneDeep(defaultQueryParamsTemplate);
   allFlowNames.value = await fetchAllFlowNames();
   formatFlowNames();
-  uniqueMessages.value = await fetchUniqueMessages(model.value);
+  uniqueMessages.value = await fetchUniqueMessages();
   await getPersistedParams();
   await nextTick();
   showTabs.value = true;

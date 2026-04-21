@@ -52,16 +52,7 @@
     </FilterSidebar>
     <div class="main-content">
       <PageHeader heading="Fleet Errors">
-        <SearchDateToolbar
-          v-model:date-type="queryDateType"
-          :date-type-options="['Modified']"
-          :start-time-date="startTimeDate"
-          :end-time-date="endTimeDate"
-          :reset-default="resetDefaultTimeDate"
-          :loading="loading || summaryLoading"
-          @date-change="onDateChange"
-          @refresh="refreshAll"
-        />
+        <Button :icon="refreshIcon" label="Refresh" class="deltafi-input-field" :disabled="loading || summaryLoading" @click="refreshAll" />
       </PageHeader>
 
     <!-- Summary Stats Bar -->
@@ -377,15 +368,11 @@
 import FilterSidebar from "@/components/FilterSidebar.vue";
 import FleetErrorActionDialog from "@/components/FleetErrorActionDialog.vue";
 import PageHeader from "@/components/PageHeader.vue";
-import SearchDateToolbar from "@/components/SearchDateToolbar.vue";
 import useFederatedErrors from "@/composables/useFederatedErrors";
 import useFederatedSearch from "@/composables/useFederatedSearch";
-import { computed, inject, nextTick, onBeforeMount, onMounted, ref, watch } from "vue";
+import { computed, nextTick, onBeforeMount, onMounted, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { useUrlSearchParams } from "@vueuse/core";
-
-import dayjs from "dayjs";
-import utc from "dayjs/plugin/utc";
 
 import Button from "primevue/button";
 import Column from "primevue/column";
@@ -402,9 +389,6 @@ import Tabs from "primevue/tabs";
 import Skeleton from "primevue/skeleton";
 import Tag from "primevue/tag";
 
-dayjs.extend(utc);
-
-const uiConfig = inject("uiConfig");
 const route = useRoute();
 const router = useRouter();
 
@@ -422,7 +406,6 @@ const { fetchOptions, options: searchOptions } = useFederatedSearch();
 // URL persistence
 const urlParams = useUrlSearchParams("history");
 const initialized = ref(false);
-const timeExplicitlySet = ref(false);
 const initialSearchDone = ref(false);
 
 // Sidebar state
@@ -442,27 +425,6 @@ const allMembers = ref([]);
 const dataSourceSummary = ref(null);
 const messageSummary = ref(null);
 
-// Date handling
-const queryDateType = ref("Modified");
-const timestampFormat = "YYYY-MM-DD HH:mm:ss";
-
-const defaultStartTimeDate = computed(() => {
-  const date = dayjs().utc();
-  return (uiConfig.useUTC ? date : date.local()).startOf("day");
-});
-
-const defaultEndTimeDate = computed(() => {
-  const date = dayjs().utc();
-  return (uiConfig.useUTC ? date : date.local()).endOf("day");
-});
-
-const startTimeDate = ref(new Date(defaultStartTimeDate.value.format(timestampFormat)));
-const endTimeDate = ref(new Date(defaultEndTimeDate.value.format(timestampFormat)));
-
-const resetDefaultTimeDate = computed(() => {
-  return [new Date(defaultStartTimeDate.value.format(timestampFormat)), new Date(defaultEndTimeDate.value.format(timestampFormat))];
-});
-
 // Filters
 const acknowledgedFilter = ref(false);
 const dataSourcesFilter = ref([]);
@@ -476,14 +438,11 @@ const ackOptions = [
   { name: "Acknowledged", value: true },
 ];
 
-// Persistence functions
-const dateToISOString = (dateData) => {
-  return dayjs(dateData).utc(uiConfig.useUTC).toISOString();
-};
-
-const isoStringToDate = (isoStringData) => {
-  return uiConfig.useUTC ? dayjs(isoStringData).add(new Date().getTimezoneOffset(), "minute").toDate() : dayjs(isoStringData).toDate();
-};
+const refreshIcon = computed(() => {
+  const classes = ["fa", "fa-sync-alt"];
+  if (loading.value || summaryLoading.value) classes.push("fa-spin");
+  return classes.join(" ");
+});
 
 const loadPersistedParams = () => {
   // Load from URL params only
@@ -510,15 +469,6 @@ const loadPersistedParams = () => {
   }
   if (persistedState.acknowledged !== undefined && persistedState.acknowledged !== "") {
     acknowledgedFilter.value = persistedState.acknowledged === "true" ? true : persistedState.acknowledged === "false" ? false : null;
-  }
-  if (persistedState.startTime || persistedState.endTime) {
-    timeExplicitlySet.value = true;
-    if (persistedState.startTime) {
-      startTimeDate.value = isoStringToDate(persistedState.startTime);
-    }
-    if (persistedState.endTime) {
-      endTimeDate.value = isoStringToDate(persistedState.endTime);
-    }
   }
   if (persistedState.tab !== undefined) {
     activeTab.value = Number(persistedState.tab);
@@ -553,15 +503,6 @@ const savePersistedParams = () => {
   }
   if (acknowledgedFilter.value !== false) {
     state.acknowledged = acknowledgedFilter.value === null ? "" : String(acknowledgedFilter.value);
-  }
-  // Only save time if explicitly changed from default preset
-  if (timeExplicitlySet.value) {
-    if (startTimeDate.value) {
-      state.startTime = dateToISOString(startTimeDate.value);
-    }
-    if (endTimeDate.value) {
-      state.endTime = dateToISOString(endTimeDate.value);
-    }
   }
   state.tab = String(activeTab.value);
   if (sortField.value !== "count") {
@@ -757,9 +698,6 @@ const clearFilters = () => {
   memberNamesFilter.value = [];
   memberTagsFilter.value = [];
 
-  // Reset time
-  timeExplicitlySet.value = false;
-
   // Reset sort to default
   sortField.value = "count";
   sortOrder.value = -1;
@@ -769,12 +707,6 @@ const clearFilters = () => {
 
   // Clear URL params
   Object.keys(urlParams).forEach((k) => (urlParams[k] = null));
-};
-
-const onDateChange = (start, end) => {
-  startTimeDate.value = start;
-  endTimeDate.value = end;
-  timeExplicitlySet.value = true;
 };
 
 const buildFilter = () => {
@@ -794,15 +726,6 @@ const buildFilter = () => {
   }
   if (memberTagsFilter.value.length > 0) {
     filter.memberTags = memberTagsFilter.value;
-  }
-  if (startTimeDate.value) {
-    filter.modifiedAfter = dayjs(startTimeDate.value).utc(uiConfig.useUTC).toISOString();
-  }
-  if (endTimeDate.value) {
-    // Cap end time to now if it's in the future (can't have errors modified in the future)
-    const endTime = dayjs(endTimeDate.value).utc(uiConfig.useUTC);
-    const now = dayjs().utc();
-    filter.modifiedBefore = (endTime.isAfter(now) ? now : endTime).toISOString();
   }
 
   return filter;
@@ -997,7 +920,7 @@ const getFlowTypeInfo = (flowType) => {
 };
 
 // Watchers
-watch([dataSourcesFilter, errorCauseFilter, acknowledgedFilter, memberNamesFilter, memberTagsFilter, startTimeDate, endTimeDate], () => {
+watch([dataSourcesFilter, errorCauseFilter, acknowledgedFilter, memberNamesFilter, memberTagsFilter], () => {
   // Skip during initialization to avoid triggering searches with partial filter state
   if (!initialized.value) return;
 

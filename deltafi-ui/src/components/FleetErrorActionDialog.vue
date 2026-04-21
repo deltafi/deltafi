@@ -270,12 +270,6 @@ const activeFilters = computed(() => {
   if (props.filter.errorAcknowledged !== undefined) {
     filters.push({ label: "Acknowledged", value: props.filter.errorAcknowledged ? "Yes" : "No" });
   }
-  if (props.filter.modifiedAfter) {
-    filters.push({ label: "Modified After", value: props.filter.modifiedAfter });
-  }
-  if (props.filter.modifiedBefore) {
-    filters.push({ label: "Modified Before", value: props.filter.modifiedBefore });
-  }
   return filters;
 });
 

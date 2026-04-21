@@ -27,8 +27,6 @@ export interface FederatedErrorFilter {
   dataSinks?: string[];
   errorCause?: string;
   errorAcknowledged?: boolean;
-  modifiedAfter?: string;
-  modifiedBefore?: string;
   memberNames?: string[];
   memberTags?: string[];
 }
@@ -296,8 +294,6 @@ export default function useFederatedErrors() {
   const buildMemberErrorsUrl = (memberUrl: string, filter: FederatedErrorFilter): string => {
     const params = new URLSearchParams();
 
-    if (filter.modifiedAfter) params.set("startTimeDate", filter.modifiedAfter);
-    if (filter.modifiedBefore) params.set("endTimeDate", filter.modifiedBefore);
     if (filter.dataSources?.length) params.set("dataSources", filter.dataSources.join(","));
     if (filter.errorCause) params.set("errorCause", filter.errorCause);
     if (filter.errorAcknowledged !== undefined) params.set("acknowledged", String(filter.errorAcknowledged));
