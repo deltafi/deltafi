@@ -61,7 +61,7 @@
       :disabled="!schemaData.control.enabled"
     />
     <template #footer>
-      <Button label="Cancel" class="p-button-text" @click="spelDialogVisible = false" />
+      <Button label="Cancel" text @click="spelDialogVisible = false" />
       <Button label="Apply" @click="applySpelValue" />
     </template>
   </Dialog>

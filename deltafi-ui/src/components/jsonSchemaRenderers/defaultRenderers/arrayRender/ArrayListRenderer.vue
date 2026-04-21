@@ -26,7 +26,7 @@
 
       <div v-if="noData" class="array-list-empty">
         <span>No items</span>
-        <Button icon="pi pi-plus" aria-label="Add item" class="p-button-text p-button-sm p-button-rounded" @click="addButtonClick" />
+        <Button icon="pi pi-plus" aria-label="Add item" text size="small" rounded @click="addButtonClick" />
       </div>
 
       <div v-else class="array-list-items">
@@ -36,9 +36,9 @@
               <InputText :model-value="element" class="value-input" :disabled="!schemaData.control.enabled" @update:model-value="updateItem(Number(index), $event)" />
             </div>
             <div class="array-list-actions">
-              <Button icon="pi pi-angle-up" aria-label="Move item up" class="p-button-text p-button-sm p-button-rounded" :disabled="index === 0" @click="schemaData.moveUp?.(schemaData.control.path, Number(index))()" />
-              <Button icon="pi pi-angle-down" aria-label="Move item down" class="p-button-text p-button-sm p-button-rounded" :disabled="Number(index) >= schemaData.control.data.length - 1" @click="schemaData.moveDown?.(schemaData.control.path, Number(index))()" />
-              <Button icon="pi pi-times" aria-label="Delete item" class="p-button-text p-button-sm p-button-rounded p-button-danger" @click="schemaData.removeItems?.(schemaData.control.path, [Number(index)])()" />
+              <Button icon="pi pi-angle-up" aria-label="Move item up" text size="small" rounded :disabled="index === 0" @click="schemaData.moveUp?.(schemaData.control.path, Number(index))()" />
+              <Button icon="pi pi-angle-down" aria-label="Move item down" text size="small" rounded :disabled="Number(index) >= schemaData.control.data.length - 1" @click="schemaData.moveDown?.(schemaData.control.path, Number(index))()" />
+              <Button icon="pi pi-times" aria-label="Delete item" text size="small" rounded severity="danger" @click="schemaData.removeItems?.(schemaData.control.path, [Number(index)])()" />
             </div>
           </div>
         </template>
@@ -50,7 +50,7 @@
           </div>
         </template>
         <div class="array-list-add">
-          <Button icon="pi pi-plus" label="Add" class="p-button-text p-button-sm" @click="addButtonClick" />
+          <Button icon="pi pi-plus" label="Add" text size="small" @click="addButtonClick" />
         </div>
       </div>
     </div>

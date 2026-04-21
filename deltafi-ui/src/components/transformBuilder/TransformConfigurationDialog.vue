@@ -49,7 +49,7 @@
     </div>
     <teleport v-if="isMounted" to="#dialogTemplate">
       <div class="p-dialog-footer">
-        <Button label="Cancel" class="p-button-text" @click="cancel()" />
+        <Button label="Cancel" text @click="cancel()" />
         <Button label="Submit" @click="submit()" />
       </div>
     </teleport>

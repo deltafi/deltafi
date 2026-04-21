@@ -38,7 +38,6 @@
     "highlight.js": "^11.11.1",
     "jquery": "^3.7.1",
     "json-to-graphql-query": "^2.3.0",
-    "jsplumb": "^2.15.6",
     "lodash": "^4.17.21",
     "markdown-it": "^14.1.0",
     "moment": "^2.30.1",

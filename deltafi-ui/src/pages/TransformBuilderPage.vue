@@ -16,156 +16,216 @@
    limitations under the License.
 -->
 
+<!-- ABOUTME: Transform builder page for creating and editing transform flow plans. -->
+<!-- ABOUTME: Provides a visual graph editor for subscribe topics, actions, and publish rules. -->
+
 <template>
   <div ref="transformBuilderPage" class="transform-builder-page">
     <PageHeader>
       <template #header>
-        <div class="align-items-center btn-group">
-          <h2 class="mb-0">
-            {{ transformBuilderHeader }}
-          </h2>
-          <div v-if="model.active" class="btn-group">
-            <DialogTemplate component-name="transformBuilder/TransformConfigurationDialog" :header="`Edit ${model.name}`" dialog-width="25vw" model-position="center" :data-prop="model" :edit-transform="editExistingTransform" @create-transform="setTransformValues">
-              <Button v-tooltip.top="`Edit Description`" icon="pi pi-pencil" class="p-button-text p-button-sm p-button-rounded p-button-secondary ml-2" />
-            </DialogTemplate>
-          </div>
-        </div>
+        <h2 class="mb-0">Transform Builder</h2>
       </template>
     </PageHeader>
     <div v-if="model.active">
+      <!-- Transform Flow Graph -->
       <div class="row p-2">
         <div class="col pl-2 pr-1">
-          <Panel header="Subscribe" :pt="{ content: { class: 'p-1' } }">
-            <template #icons>
-              <Badge v-if="!_.isEmpty(validateSubscribe)" v-tooltip.left="{ value: `${validateSubscribe}`, class: 'tooltip-width', showDelay: 300 }" value=" " :class="'pi pi-exclamation-triangle validation-badge'" severity="danger" />
-            </template>
-            <div class="px-0">
-              <dd>
-                <div class="deltafi-fieldset">
-                  <div class="px-2">
-                    <JsonForms :data="model['subscribe']" :renderers="subscribeRenderers" :uischema="subscribeUISchema" :schema="subscribeSchema" :config="formsConfig" :ajv="handleDefaultsAjv" @change="onSubscribeChange" />
-                  </div>
-                </div>
-              </dd>
-            </div>
-          </Panel>
-        </div>
-      </div>
-      <div class="row p-2">
-        <div class="col pl-2 pr-1">
-          <div>
-            <Panel header="Transform Actions" class="table-panel">
-              <template #icons>
-                <Button severity="secondary" variant="text" class="p-panel-header-icon" @click="viewTransformActionsPicker($event)">
-                  <span class="pi pi-plus-circle" />
-                </Button>
-              </template>
-              <div class="action-panel-content p-2">
-                <template v-if="transformActions.length == 0">
-                  <div class="empty-action pt-2 mb-n3">No Transform Actions</div>
-                </template>
-                <draggable id="transformActions" v-model="transformActions" item-key="id" :sort="true" group="transformActions" ghost-class="action-transition-layout" drag-class="action-transition-layout" class="dragArea panel-horizontal-wrap pb-2 pt-3" @change="validateNewAction" @move="actionOrderChanged">
-                  <template #item="{ element, index }">
-                    <div :id="element.id" class="action-layout border border-dark rounded mx-2 my-4 p-overlay-badge">
-                      <Badge v-if="!_.isEmpty(validateAction(element))" v-tooltip.left="{ value: `${validateAction(element)}`, class: 'tooltip-width', showDelay: 300 }" value=" " :class="'pi pi-exclamation-triangle validation-badge'" severity="danger" />
-                      <div class="d-flex align-items-center justify-content-between">
-                        <span class="one-line">
-                          <InputText v-model="element.name" :class="'inputtext-border-remove pl-0 text-truncate'" placeholder="Action Name Required" />
-                        </span>
-                        <div class="pl-2 btn-group">
-                          <DialogTemplate component-name="transformBuilder/ActionConfigurationDialog" :header="`Edit ${displayActionName(element)}`" :subheader="element.type" :row-data-prop="element" :action-index-prop="index" dialog-width="50vw" @update-action="updateAction">
-                            <Button v-tooltip.top="{ value: `Edit ${displayActionName(element)}`, class: 'tooltip-width', showDelay: 300 }" icon="pi pi-pencil" class="p-button-text p-button-sm p-button-rounded p-button-secondary" />
-                          </DialogTemplate>
-                          <Button v-tooltip.top="{ value: `Remove ${displayActionName(element)}`, class: 'tooltip-width', showDelay: 300 }" icon="pi pi-trash" class="p-button-text p-button-sm p-button-rounded p-button-danger" @click="removeAction(index)" />
-                        </div>
-                      </div>
-                      <Divider class="my-0" />
-                      <dd>
-                        <span v-tooltip.bottom="{ value: `${element.type}`, class: 'tooltip-width', showDelay: 300 }">{{ element.displayName }}</span>
-                      </dd>
-                    </div>
-                  </template>
-                </draggable>
+          <Panel class="table-panel transform-graph-panel">
+            <template #header>
+              <div class="transform-panel-header">
+                <span class="transform-name">{{ model.name }}</span>
+                <span v-if="model.description" class="transform-description">{{ model.description }}</span>
+                <DialogTemplate component-name="transformBuilder/TransformConfigurationDialog" :header="`Edit ${model.name}`" dialog-width="25vw" model-position="center" :data-prop="model" :edit-transform="editExistingTransform" @create-transform="setTransformValues">
+                  <Button v-tooltip.top="`Edit`" icon="pi pi-pencil" severity="secondary" text size="small" rounded />
+                </DialogTemplate>
               </div>
-            </Panel>
-          </div>
-        </div>
-      </div>
-      <div class="row p-2">
-        <div class="col pl-2 pr-1">
-          <Panel header="Publish" :pt="{ content: { class: 'p-1' } }">
-            <template #icons>
-              <Badge v-if="!_.isEmpty(validatePublish)" v-tooltip.left="{ value: `${validatePublish}`, class: 'tooltip-width', showDelay: 300 }" value=" " :class="'pi pi-exclamation-triangle validation-badge'" severity="danger" />
             </template>
-            <div class="px-0">
-              <dd>
-                <div class="deltafi-fieldset">
-                  <div class="px-2">
-                    <JsonForms ref="schemaForm" :data="model['publish']" :renderers="publishRenderers" :uischema="publishUISchema" :schema="publishSchema" :ajv="handleDefaultsAjv" :config="formsConfig" @change="onPublishChange" />
-                  </div>
-                </div>
-              </dd>
-            </div>
+            <TransformFlowGraph
+              :subscribe-topics="model['subscribe'] || []"
+              :actions="transformActions"
+              :publish-rules="model['publish']?.rules || []"
+              :publish-settings="model['publish']"
+              :selected-node-id="selectedNodeId"
+              :action-errors="actionErrorsMap"
+              :subscribe-error="validateSubscribe"
+              :publish-error="validatePublish"
+              @node-click="handleNodeClick"
+              @add-action="handleAddAction"
+              @add-subscribe="handleAddSubscribe"
+              @add-publish="handleAddPublish"
+              @reorder-action="reorderAction"
+              @reorder-subscribe="reorderSubscribe"
+              @reorder-publish="reorderPublish"
+              @delete-action="deleteActionByIndex"
+              @delete-subscribe="deleteSubscribeByIndex"
+              @delete-publish="deletePublishByIndex"
+              @open-publish-settings="publishSettingsVisible = true"
+              @update:selected-node-id="selectedNodeId = $event"
+            />
           </Panel>
         </div>
       </div>
     </div>
     <HoverSaveButton v-if="model.active" target="window" :model="items" />
-    <Dialog ref="actionsOverlayPanel" v-model:visible="actionPickerVisible" header="Available Actions" class="transform-builder-page-overlay" :dismissable-mask="false" style="width: 50%" position="right">
-      <Splitter style="height: 80vh" layout="vertical" :gutter-size="10" @resizeend="customSpitterSize">
-        <SplitterPanel id="splitterPanelId" :size="startingPanelOneSize" class="flex align-items-center justify-content-center" :style="`overflow-y: auto; ${panelOneSize}`">
-          <DataTable id="dataTableId" ref="dataTableIdRef" aria-label="Transform actions" v-model:selection="selectedTransformAction" v-model:filters="filters" :value="actionsDataTable" selection-mode="single" striped-rows class="p-datatable-sm p-datatable-gridlines plugin-table" sort-field="displayName" :sort-order="1" :row-hover="true" :meta-key-selection="false" :global-filter-fields="['displayName', 'pluginCoordinate.groupId', 'pluginCoordinate.version']" data-key="id">
-            <template #header>
-              <div class="flex justify-content-end">
-                <IconField iconPosition="left">
-                  <InputIcon class="pi pi-search"> </InputIcon>
-                  <InputText v-model="filters['global'].value" class="deltafi-input-field" placeholder="Keyword Search" />
-                </IconField>
-              </div>
-            </template>
-            <template #empty> No Actions found. </template>
-            <template #loading><span class="datatable-loading-text">Loading Actions. Please wait.</span></template>
-            <Column header-style="width: 3em">
-              <template #body="{ data }">
-                <draggable ref="draggableRef" class="dragArea list-group align-items-center justify-content-center w-100 h-100" :list="[data]" :group="{ name: 'transformActions', pull: 'clone', put: false }" item-key="displayName" :clone="cloneAction" ghost-class="tree-action" drag-class="tree-action">
-                  <template #item="{ element }">
-                    <span class="d-flex align-items-center justify-content-center w-100 h-100">
-                      <i v-tooltip.bottom="`Grabbing ${element.displayName}`" :class="['p-datatable-reorderablerow-handle', 'pi pi-bars', 'd-flex', 'align-items-center', 'justify-content-center', 'w-100', 'h-100']" />
+    <!-- Action Picker Dialog -->
+    <Dialog v-model:visible="actionPickerVisible" header="Add Action" :modal="true" :style="{ width: '1200px', maxWidth: '95vw' }" :dismissable-mask="true">
+      <div class="action-picker-content">
+        <div class="action-picker-search mb-3">
+          <IconField iconPosition="left" class="w-full">
+            <InputIcon class="pi pi-search" />
+            <InputText v-model="actionSearchQuery" class="w-full" placeholder="Search actions..." autofocus />
+          </IconField>
+        </div>
+        <table class="action-picker-table">
+          <thead>
+            <tr>
+              <th class="col-action">Action</th>
+              <th class="col-plugin">Plugin</th>
+              <th class="col-description">Description</th>
+            </tr>
+          </thead>
+          <tbody>
+            <template v-for="action in filteredActions" :key="action.id">
+              <tr
+                class="action-picker-row"
+                :class="{ selected: selectedPickerAction?.id === action.id }"
+                @click="selectPickerAction(action)"
+                @dblclick="confirmAddAction(action)"
+              >
+                <td class="col-action">{{ action.displayName }}</td>
+                <td class="col-plugin">{{ action.pluginCoordinate?.artifactId }}</td>
+                <td class="col-description">
+                  <div
+                    v-if="action.description"
+                    class="action-description-preview"
+                    :class="{ expanded: selectedPickerAction?.id === action.id && shouldExpandActionDescription(action.description) }"
+                  >
+                    <span
+                      v-if="shouldExpandActionDescription(action.description) && selectedPickerAction?.id === action.id"
+                      class="action-description-more"
+                    >
+                      &lt;click for less&gt;
                     </span>
-                  </template>
-                </draggable>
-              </template>
-            </Column>
-            <Column field="displayName" header="Name" />
-            <Column field="pluginCoordinate.groupId" header="Group Id" :sortable="true" class="truncate-column">
-              <template #body="{ data }">
-                <div v-if="data.pluginCoordinate.groupId > 16" v-tooltip.top="data.pluginCoordinate.groupId" class="truncate">
-                  {{ data.pluginCoordinate.groupId }}
-                </div>
-                <div v-else>
-                  {{ data.pluginCoordinate.groupId }}
-                </div>
-              </template>
-            </Column>
-            <Column field="pluginCoordinate.version" header="Version" :sortable="true" class="truncate-column">
-              <template #body="{ data }">
-                <div v-if="data.pluginCoordinate.version > 16" v-tooltip.top="data.pluginCoordinate.version" class="truncate">
-                  {{ data.pluginCoordinate.version }}
-                </div>
-                <div v-else>
-                  {{ data.pluginCoordinate.version }}
-                </div>
-              </template>
-            </Column>
-          </DataTable>
-        </SplitterPanel>
-        <SplitterPanel :size="startingPanelTwoSize" :style="`overflow-y: auto; ${panelTwoSize}`">
-          <div v-if="helpVisible" class="help-dialog">
-            <div class="p-3" v-html="markdownIt.render(helpMarkdown)" />
-          </div>
-          <ScrollTop id="actionsScrollTopId" ref="actionsScrollTopRef" target="parent" :threshold="10" icon="pi pi-arrow-up" />
-        </SplitterPanel>
-      </Splitter>
+                    <span
+                      v-if="selectedPickerAction?.id !== action.id || !shouldExpandActionDescription(action.description)"
+                      class="action-description-text"
+                    >
+                      {{ action.description }}
+                    </span>
+                    <div
+                      v-else
+                      class="action-description-expanded markdown-content"
+                      v-html="renderActionDescription(action.description)"
+                    />
+                    <span
+                      v-if="shouldExpandActionDescription(action.description) && selectedPickerAction?.id !== action.id"
+                      class="action-description-more"
+                    >
+                      &lt;click for more&gt;
+                    </span>
+                  </div>
+                  <span v-else class="no-description">—</span>
+                </td>
+              </tr>
+            </template>
+            <tr v-if="filteredActions.length === 0">
+              <td colspan="3" class="action-picker-empty">No actions match your search</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <template #footer>
+        <Button label="Cancel" severity="secondary" @click="actionPickerVisible = false" />
+        <Button label="Add" :disabled="!selectedPickerAction" @click="confirmAddAction(selectedPickerAction)" />
+      </template>
+    </Dialog>
+
+    <!-- Action Editor Dialog -->
+    <Dialog v-model:visible="actionEditorVisible" :header="`Edit Action: ${editingAction?.name || editingAction?.displayName || ''}`" :modal="true" :style="{ width: '600px' }" :dismissable-mask="true">
+      <div v-if="editingAction" class="action-editor-content">
+        <div class="field">
+          <label>Name</label>
+          <InputText v-model="editingAction.name" class="w-full" placeholder="Action Name Required" />
+        </div>
+        <div class="field">
+          <label>Type</label>
+          <div class="action-type-display">{{ editingAction.type }}</div>
+        </div>
+        <div v-if="editingAction.schema && !_.isEmpty(editingAction.schema.properties)" class="field">
+          <label>Parameters</label>
+          <JsonForms
+            :data="editingAction.parameters || {}"
+            :renderers="renderers"
+            :schema="editingAction.schema"
+            :config="formsConfig"
+            :ajv="handleDefaultsAjv"
+            @change="onEditingActionParamsChange"
+          />
+        </div>
+      </div>
+      <template #footer>
+        <Button label="Delete" severity="danger" @click="deleteEditingAction" />
+        <Button label="Save" @click="actionEditorVisible = false" />
+      </template>
+    </Dialog>
+
+    <!-- Subscribe Topic Editor Dialog -->
+    <Dialog v-model:visible="subscribeEditorVisible" :header="isAddingSubscribe ? 'Add Subscribe Topic' : 'Edit Subscribe Topic'" :modal="true" :style="{ width: '500px' }" :dismissable-mask="true" @hide="cancelSubscribeEdit">
+      <div v-if="editingSubscribeTopic" class="topic-editor-content">
+        <div class="field">
+          <label>Topic</label>
+          <Dropdown v-model="editingSubscribeTopic.topic" :options="allTopics" placeholder="Select a topic or type a new name" class="w-full" editable />
+        </div>
+        <div class="field">
+          <label>Condition (Optional)</label>
+          <SpelEditorDialog v-model="editingSubscribeTopic.condition" mode="CONDITION" empty-placeholder="No condition" />
+        </div>
+      </div>
+      <template #footer>
+        <Button v-if="!isAddingSubscribe" label="Delete" severity="danger" @click="deleteEditingSubscribe" />
+        <Button label="Cancel" severity="secondary" @click="cancelSubscribeEdit" />
+        <Button :label="isAddingSubscribe ? 'Add' : 'Done'" :disabled="!editingSubscribeTopic?.topic" @click="submitSubscribeTopic" />
+      </template>
+    </Dialog>
+
+    <!-- Publish Topic Editor Dialog -->
+    <Dialog v-model:visible="publishEditorVisible" :header="isAddingPublish ? 'Add Publish Topic' : 'Edit Publish Topic'" :modal="true" :style="{ width: '500px' }" :dismissable-mask="true" @hide="cancelPublishEdit">
+      <div v-if="editingPublishTopic" class="topic-editor-content">
+        <div class="field">
+          <label>Topic</label>
+          <Dropdown v-model="editingPublishTopic.topic" :options="allTopics" placeholder="Select a topic or type a new name" class="w-full" editable />
+        </div>
+        <div class="field">
+          <label>Condition (Optional)</label>
+          <SpelEditorDialog v-model="editingPublishTopic.condition" mode="CONDITION" empty-placeholder="No condition" />
+        </div>
+      </div>
+      <template #footer>
+        <Button v-if="!isAddingPublish" label="Delete" severity="danger" @click="deleteEditingPublish" />
+        <Button label="Cancel" severity="secondary" @click="cancelPublishEdit" />
+        <Button :label="isAddingPublish ? 'Add' : 'Done'" :disabled="!editingPublishTopic?.topic" @click="submitPublishTopic" />
+      </template>
+    </Dialog>
+
+    <!-- Publish Settings Dialog -->
+    <Dialog v-model:visible="publishSettingsVisible" header="Publish Settings" :modal="true" :style="{ width: '500px' }" :dismissable-mask="true">
+      <div v-if="model['publish']" class="publish-settings-content">
+        <div class="field">
+          <label>If multiple topics would receive data:</label>
+          <Dropdown v-model="model['publish'].matchingPolicy" :options="matchingPolicyOptions" option-label="label" option-value="value" class="w-full" />
+        </div>
+        <div class="field">
+          <label>If no topics would receive data:</label>
+          <Dropdown v-model="model['publish'].defaultRule.defaultBehavior" :options="defaultBehaviorOptions" option-label="label" option-value="value" class="w-full" />
+        </div>
+        <div v-if="model['publish']?.defaultRule?.defaultBehavior === 'PUBLISH'" class="field">
+          <label>Default publish topic:</label>
+          <Dropdown v-model="model['publish'].defaultRule.topic" :options="allTopics" placeholder="Select a topic" class="w-full" editable />
+        </div>
+      </div>
+      <template #footer>
+        <Button label="Close" @click="publishSettingsVisible = false" />
+      </template>
     </Dialog>
     <DialogTemplate component-name="transformBuilder/TransformConfigurationDialog" header="Create New Transform" dialog-width="25vw" model-position="center" :closable="false" :disable-model="true" :data-prop="model" @create-transform="createFlowPlan">
       <span id="CreateFlowPlan" />
@@ -192,50 +252,39 @@ import DialogTemplate from "@/components/DialogTemplate.vue";
 import HoverSaveButton from "@/components/transformBuilder/HoverSaveButton.vue";
 import LeavePageConfirmationDialog from "@/components/LeavePageConfirmationDialog.vue";
 import PageHeader from "@/components/PageHeader.vue";
+import TransformFlowGraph from "@/components/transformBuilder/TransformFlowGraph.vue";
 import useFlowActions from "@/composables/useFlowActions";
 import useFlowPlanQueryBuilder from "@/composables/useFlowPlanQueryBuilder";
 import useFlowQueryBuilder from "@/composables/useFlowQueryBuilder";
 import useNotifications from "@/composables/useNotifications";
 import useTopics from "@/composables/useTopics";
-import { computed, nextTick, onBeforeMount, provide, ref, watch } from "vue";
-import { FilterMatchMode } from "@primevue/core/api";
+import { computed, nextTick, onBeforeMount, onMounted, onBeforeUnmount, provide, ref, watch } from "vue";
 import { StorageSerializers, useClipboard, useMagicKeys, useResizeObserver, useStorage } from "@vueuse/core";
 import { useRouter } from "vue-router";
 
 import usePrimeVueJsonSchemaUIRenderers from "@/composables/usePrimeVueJsonSchemaUIRenderers";
 import { JsonForms } from "@jsonforms/vue";
 import { createAjv } from "@jsonforms/core";
+import MarkdownIt from "markdown-it";
 
-import Badge from "primevue/badge";
 import Button from "primevue/button";
-import Column from "primevue/column";
-import DataTable from "primevue/datatable";
 import Dialog from "primevue/dialog";
-import Divider from "primevue/divider";
+import Dropdown from "primevue/dropdown";
 import IconField from "primevue/iconfield";
 import InputIcon from "primevue/inputicon";
 import InputText from "primevue/inputtext";
 import Panel from "primevue/panel";
-import ScrollTop from "primevue/scrolltop";
-import Splitter from "primevue/splitter";
-import SplitterPanel from "primevue/splitterpanel";
-
-import draggable from "vuedraggable";
-
-import { jsPlumb } from "jsplumb";
+import SpelEditorDialog from "@/components/spel/SpelEditorDialog.vue";
 
 import _ from "lodash";
 
-import MarkdownIt from "markdown-it";
-
 const markdownIt = new MarkdownIt({
-  html: true,
+  html: false,
+  linkify: true,
+  breaks: true,
 });
-const actionsScrollTopRef = ref(null);
-const helpMarkdown = ref("");
-const helpVisible = ref(false);
+
 const actionPickerVisible = ref(false);
-const helpHeader = ref("Action Help");
 const handleDefaultsAjv = createAjv({ useDefaults: true });
 const { getAllTopicNames } = useTopics();
 const { getAllFlows } = useFlowQueryBuilder();
@@ -247,14 +296,21 @@ const { copy } = useClipboard();
 const notify = useNotifications();
 const router = useRouter();
 const allTopics = ref(["default"]);
-const { myStyles, publishRenderList, subscribeRenderList } = usePrimeVueJsonSchemaUIRenderers();
-provide("style", myStyles);
-const publishRenderers = ref(Object.freeze(publishRenderList));
-const subscribeRenderers = ref(Object.freeze(subscribeRenderList));
-const subscribeUISchema = ref(undefined);
 
-const schemaForm = ref(null);
-const draggableRef = ref(null);
+const matchingPolicyOptions = [
+  { value: 'ALL_MATCHING', label: 'Publish to all matching topics' },
+  { value: 'FIRST_MATCHING', label: 'Publish to only the first matching topic' },
+];
+
+const defaultBehaviorOptions = [
+  { value: 'ERROR', label: 'Raise an error' },
+  { value: 'FILTER', label: 'Filter (discard the data)' },
+  { value: 'PUBLISH', label: 'Publish to a default topic' },
+];
+
+const { myStyles, rendererList } = usePrimeVueJsonSchemaUIRenderers();
+provide("style", myStyles);
+const renderers = ref(Object.freeze(rendererList));
 
 const allActionsData = ref({});
 
@@ -270,53 +326,31 @@ const allFlowPlanData = ref({});
 
 const formsConfig = ref({ defaultLabels: true });
 
-const selectedTransformAction = ref(null);
-const startingPanelOneSize = ref(99);
-const startingPanelTwoSize = ref(1);
-const panelOneSize = ref(null);
-const panelTwoSize = ref(null);
-const userResized = ref(false);
+// Graph selection state
+const selectedNodeId = ref(null);
 
-watch(selectedTransformAction, async (newItem) => {
-  if (newItem === null || newItem === undefined) {
-    panelOneSize.value = !userResized.value ? splitterSize(99) : panelOneSize.value;
-    panelTwoSize.value = !userResized.value ? splitterSize(1) : panelTwoSize.value;
-  } else {
-    showHelp(newItem);
-    panelOneSize.value = !userResized.value ? splitterSize(50) : panelOneSize.value;
-    panelTwoSize.value = !userResized.value ? splitterSize(50) : panelTwoSize.value;
-  }
-});
+// Dialog visibility state
+const publishSettingsVisible = ref(false);
+const actionEditorVisible = ref(false);
+const subscribeEditorVisible = ref(false);
+const publishEditorVisible = ref(false);
 
-const splitterSize = (slitSize) => {
-  return `flex-basis: calc(${slitSize}% - 10px);`;
-};
+// Editing state for dialogs
+const editingAction = ref(null);
+const editingSubscribeTopic = ref(null);
+const editingPublishTopic = ref(null);
+const editingSubscribeIndex = ref(-1);
+const editingPublishIndex = ref(-1);
 
-const customSpitterSize = async (event) => {
-  userResized.value = true;
-  await nextTick();
-  panelOneSize.value = splitterSize(event.sizes[0]);
-  panelTwoSize.value = splitterSize(event.sizes[1]);
-};
-
-const filters = ref({
-  global: { value: null, matchMode: FilterMatchMode.CONTAINS },
-});
+// Track if we're adding (vs editing)
+const isAddingSubscribe = ref(false);
+const isAddingPublish = ref(false);
 
 // The useResizeObserver determines if the sidebar has been collapsed or expanded.
 // If either has occurred we redo the connections between all actions.
 useResizeObserver(transformBuilderPage, (entries) => {
   const [entry] = entries;
   const { width } = entry.contentRect;
-  if (!pageWidthResizeObserver.value) {
-    pageWidthResizeObserver.value = width;
-  } else {
-    if (!_.isEqual(pageWidthResizeObserver.value, width)) {
-      if (model.value.type) {
-        connectActions();
-      }
-    }
-  }
   pageWidthResizeObserver.value = width;
 });
 
@@ -331,21 +365,6 @@ watch(devKey, (v) => {
 
 const linkedTransform = useStorage("linked-transform-persisted-params", {}, sessionStorage, { serializer: StorageSerializers.object });
 
-// The viewTransformActionsPicker function is triggered by clicking on the add button on the Transform panel.
-const viewTransformActionsPicker = () => {
-  actionsDataTable.value = flattenedActions.value;
-  actionPickerVisible.value = true;
-};
-
-const showHelp = (action) => {
-  helpMarkdown.value = action.docsMarkdown || "# No Docs Available";
-  helpHeader.value = `${action.displayName} Action Help`;
-  helpVisible.value = true;
-  const actionsScrollTopId = document.getElementById("actionsScrollTopId");
-  if (actionsScrollTopId) {
-    actionsScrollTopId.click();
-  }
-};
 
 const defaultTopicTemplate = [{ condition: null, topic: null }];
 
@@ -357,6 +376,10 @@ const transformTemplate = {
   subscribe: defaultTopicTemplate,
   publish: {
     rules: defaultTopicTemplate,
+    matchingPolicy: "ALL_MATCHING",
+    defaultRule: {
+      defaultBehavior: "ERROR",
+    },
   },
 };
 
@@ -379,7 +402,34 @@ const transformBlueprint = ref(JSON.parse(JSON.stringify(transformTemplate)));
 
 const transformActions = ref([]);
 
+// Check for refresh restoration before mount
+const STORAGE_KEY = 'transformBuilderState';
+const restoredFromRefresh = ref(false);
+
 onBeforeMount(async () => {
+  // Check if this is a refresh with saved state - do this first
+  const navEntry = performance.getEntriesByType('navigation')[0];
+  const isRefresh = navEntry?.type === 'reload';
+  if (isRefresh) {
+    const saved = sessionStorage.getItem(STORAGE_KEY);
+    if (saved) {
+      try {
+        const state = JSON.parse(saved);
+        if (state.blueprint) {
+          transformBlueprint.value = state.blueprint;
+        }
+        if (state.actions) {
+          transformActions.value = state.actions;
+        }
+        restoredFromRefresh.value = true;
+        sessionStorage.removeItem(STORAGE_KEY);
+      } catch (e) {
+        console.warn('Failed to restore transform builder state:', e);
+        sessionStorage.removeItem(STORAGE_KEY);
+      }
+    }
+  }
+
   const topics = await getAllTopicNames();
   allTopics.value.length = 0;
   topics.forEach((topic) => allTopics.value.push(topic));
@@ -391,6 +441,11 @@ onBeforeMount(async () => {
 
   const response = await getAllFlows();
   allFlowPlanData.value = response.data.getAllFlows;
+
+  // Skip dialog if we restored from refresh
+  if (restoredFromRefresh.value) {
+    return;
+  }
 
   if (!_.isEmpty(_.get(linkedTransform.value, "transformParams", null))) {
     if (linkedTransform.value.transformParams.editExistingTransform) {
@@ -417,6 +472,31 @@ onBeforeMount(async () => {
   } else {
     document.getElementById("CreateFlowPlan").click();
   }
+});
+
+// Save state for F5 refresh
+const saveStateForRefresh = () => {
+  const state = {
+    blueprint: transformBlueprint.value,
+    actions: transformActions.value,
+  };
+  sessionStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+};
+
+const handleBeforeUnload = () => {
+  // Only save if there's actual work in progress
+  if (transformBlueprint.value?.name || transformActions.value.length > 0) {
+    saveStateForRefresh();
+  }
+};
+
+onMounted(() => {
+  window.addEventListener('beforeunload', handleBeforeUnload);
+});
+
+onBeforeUnmount(() => {
+  window.removeEventListener('beforeunload', handleBeforeUnload);
+  sessionStorage.removeItem(STORAGE_KEY);
 });
 
 const model = computed({
@@ -447,13 +527,6 @@ watch(
   }
 );
 
-const actionsDataTable = ref([]);
-const transformJsPlumbInstance = ref({});
-
-const transformBuilderHeader = computed(() => {
-  const header = model.value.name ? `Transform Builder - ${model.value.name}` : "Transform Builder";
-  return header;
-});
 
 const createFlowPlan = async (newFlowPlan) => {
   removeFlow();
@@ -562,74 +635,21 @@ const save = async (rawTransform) => {
 const removeFlow = () => {
   model.value = JSON.parse(JSON.stringify(transformTemplate));
   transformActions.value = [];
-  transformJsPlumbInstance.value = {};
-};
-
-const connectActions = async () => {
-  await nextTick();
-
-  // An instance of jsPlumb and stored if one has not already been created.
-  // This allows for resetting of that specific jsPlumb instance every time we
-  // need to redraw the connection.
-  if (_.isEmpty(transformJsPlumbInstance.value)) {
-    transformJsPlumbInstance.value = jsPlumb.getInstance();
-  }
-
-  const plumbIns = transformJsPlumbInstance.value;
-
-  plumbIns.ready(function () {
-    // Reset the action connects so we can redraw them.
-    plumbIns.deleteEveryConnection();
-    plumbIns.deleteEveryEndpoint();
-    plumbIns.reset();
-  });
-
-  // Get all the actions in the panel that have an id.
-  const actionsInPanel = Array.from(document.querySelectorAll("#transformActions div")).filter((el) => el.id);
-
-  // Connect all the actions in the panel
-  for (let i = 0; i < actionsInPanel.length - 1; i++) {
-    const current = actionsInPanel[i];
-    const next = actionsInPanel[i + 1];
-
-    let anchorType = [];
-    // If the offsetTop of both the current and next are the same that the action hasn't wrapped to a new
-    // line. Make the arrow come from the left of the first action to the right of the next action. If it has
-    // wrapped make the arrow come from the bottom of the first action to the top of the next action.
-    if (_.isEqual(current.offsetTop, next.offsetTop)) {
-      anchorType = ["Left", "Right"];
-      //anchorType = _.merge(anchorType, ["Left", "Right", "Top", "Bottom", [0.3, 0, 0, -1], [0.7, 0, 0, -1], [0.3, 1, 0, 1], [0.7, 1, 0, 1]]);
-    } else {
-      anchorType = ["Bottom", "Top"];
-    }
-    plumbIns.ready(function () {
-      const defaultConnectionValues = {
-        connector: ["Flowchart", { stub: 5 }],
-        endpoint: "Blank",
-        overlays: [["Arrow", { width: 8, length: 8, location: 1 }]], // overlay
-        paintStyle: { stroke: "#909399", strokeWidth: 2 }, // connector
-      };
-      plumbIns.connect({
-        id: `${current.id}-${next.id}`,
-        source: `${current.id}`,
-        target: `${next.id}`,
-        deleteEndpointsOnDetach: true,
-        ...defaultConnectionValues,
-        anchor: anchorType,
-        scope: "transformActions",
-      });
-
-      plumbIns.repaintEverything();
-    });
-  }
 };
 
 const addAction = async (action) => {
   const addNewAction = JSON.parse(JSON.stringify(action));
   addNewAction["id"] = _.uniqueId("transformActions");
 
-  transformActions.value.push(addNewAction);
-  connectActions();
+  // Insert at pending index if set, otherwise append
+  if (pendingInsertIndex.value !== null) {
+    transformActions.value.splice(pendingInsertIndex.value, 0, addNewAction);
+    pendingInsertIndex.value = null;
+  } else {
+    transformActions.value.push(addNewAction);
+  }
+
+  return addNewAction;
 };
 
 const transformActionsChanged = () => {
@@ -682,7 +702,7 @@ const isValidTransform = computed(() => {
 
   // If there are missing required fields disable the save
   const allTransformMissingFields = [];
-  for (const action of _.flatten(transformActions.value)) {
+  for (const action of transformActions.value) {
     const actionMissingRequiredFields = validateAction(action);
     if (!_.isEmpty(actionMissingRequiredFields)) {
       allTransformMissingFields.push(actionMissingRequiredFields);
@@ -701,11 +721,32 @@ const transformInProgress = () => {
   return model.value.active;
 };
 
+const saveDisabledReason = computed(() => {
+  const reasons = [];
+  if (!_.isEmpty(validateSubscribe.value)) {
+    reasons.push(validateSubscribe.value);
+  }
+  if (!_.isEmpty(validatePublish.value)) {
+    reasons.push(validatePublish.value);
+  }
+  for (const action of transformActions.value) {
+    const error = validateAction(action);
+    if (error) {
+      reasons.push(`${displayActionName(action)}: ${error}`);
+    }
+  }
+  if (reasons.length === 0 && !isValidTransform.value) {
+    reasons.push("No changes to save");
+  }
+  return reasons.join('\n');
+});
+
 const items = ref([
   {
     label: "Save",
     icon: "fa-solid fa-hard-drive",
     isEnabled: isValidTransform,
+    disabledLabel: saveDisabledReason,
     visible: true,
     command: () => {
       save(rawOutput.value);
@@ -714,9 +755,8 @@ const items = ref([
 ]);
 
 const validateSubscribe = computed(() => {
-  // If the subscribe field is empty return "Not Subscribing to any Topic."
   if (_.isEmpty(model.value["subscribe"])) {
-    return "Not Subscribing to any Topic.";
+    return "Subscribe to at least one topic";
   }
 
   const checkIfSubscribeHasTopic = (key) =>
@@ -729,9 +769,8 @@ const validateSubscribe = computed(() => {
     );
 
   const isKeyPresent = checkIfSubscribeHasTopic("topic");
-  // If the subscribe field isn't empty but there isn't a topic return "Not Subscribing to any Topic Name."
   if (!isKeyPresent) {
-    return "Not Subscribing to any Topic Name.";
+    return "Subscribe to at least one topic";
   }
 
   return null;
@@ -739,12 +778,11 @@ const validateSubscribe = computed(() => {
 
 const validatePublish = computed(() => {
   if (_.isEqual(model.value["publish"]?.defaultRule?.defaultBehavior, "PUBLISH") && _.isEmpty(model.value["publish"]?.defaultRule?.topic)) {
-    return "Default Behavior of Publish requires a Topic.";
+    return "Default behavior requires a topic";
   }
 
-  // If the Publish Rules field is empty return "Missing publish rules."
   if (_.isEmpty(model.value["publish"].rules)) {
-    return "Missing publish rules.";
+    return "Publish to at least one topic";
   }
 
   const checkIfPublishRulesHasTopic = (key) =>
@@ -756,11 +794,10 @@ const validatePublish = computed(() => {
         })
     );
 
-  // If the Publish Rules field isn't empty but there isn't a topic return "Not Publishing to any Topic Name."
   const isKeyPresent = checkIfPublishRulesHasTopic("topic");
 
   if (!isKeyPresent) {
-    return "Not Publishing to any Topic Name.";
+    return "Publish to at least one topic";
   }
 
   return null;
@@ -809,14 +846,274 @@ const displayActionName = (action) => {
   return action.name;
 };
 
-const updateAction = (newActionValue) => {
-  transformActions.value.splice(newActionValue["actionIndex"], 1, newActionValue["updatedAction"]);
-  connectActions();
+const actionErrorsMap = computed(() => {
+  const errors = new Map();
+  transformActions.value.forEach(action => {
+    const error = validateAction(action);
+    if (error) {
+      errors.set(action.id, error);
+    }
+  });
+  return errors;
+});
+
+// Graph event handlers
+const handleNodeClick = (node) => {
+  selectedNodeId.value = node.id;
+
+  // Open the appropriate edit dialog based on node type
+  if (node.nodeType === 'action') {
+    const actionId = node.id.replace('action:', '');
+    const action = transformActions.value.find(a => a.id === actionId);
+    if (action) {
+      editingAction.value = action;
+      actionEditorVisible.value = true;
+    }
+  } else if (node.nodeType === 'subscribe') {
+    const index = parseInt(node.id.replace('subscribe:', ''), 10);
+    if (model.value['subscribe'] && index >= 0 && index < model.value['subscribe'].length) {
+      isAddingSubscribe.value = false;
+      editingSubscribeIndex.value = index;
+      editingSubscribeTopic.value = { ...model.value['subscribe'][index] };
+      subscribeEditorVisible.value = true;
+    }
+  } else if (node.nodeType === 'publish') {
+    const index = parseInt(node.id.replace('publish:', ''), 10);
+    if (model.value['publish']?.rules && index >= 0 && index < model.value['publish'].rules.length) {
+      isAddingPublish.value = false;
+      editingPublishIndex.value = index;
+      editingPublishTopic.value = { ...model.value['publish'].rules[index] };
+      publishEditorVisible.value = true;
+    }
+  }
 };
 
-const removeAction = (index) => {
+const handleAddAction = (insertIndex) => {
+  pendingInsertIndex.value = insertIndex;
+  actionSearchQuery.value = '';
+  selectedPickerAction.value = null;
+  actionPickerVisible.value = true;
+};
+
+const handleAddSubscribe = () => {
+  // Open add dialog with empty topic (don't add until confirmed)
+  isAddingSubscribe.value = true;
+  editingSubscribeTopic.value = { topic: null, condition: null };
+  editingSubscribeIndex.value = -1;
+  subscribeEditorVisible.value = true;
+};
+
+const handleAddPublish = () => {
+  // Open add dialog with empty topic (don't add until confirmed)
+  isAddingPublish.value = true;
+  editingPublishTopic.value = { topic: null, condition: null };
+  editingPublishIndex.value = -1;
+  publishEditorVisible.value = true;
+};
+
+const pendingInsertIndex = ref(null);
+
+// Action picker state
+const actionSearchQuery = ref('');
+const selectedPickerAction = ref(null);
+const flattenedActions = ref([]);
+
+const filteredActions = computed(() => {
+  const query = actionSearchQuery.value.toLowerCase();
+  const matchingActions = !query
+    ? flattenedActions.value
+    : flattenedActions.value.filter(action => {
+        return action.displayName?.toLowerCase().includes(query) ||
+               action.type?.toLowerCase().includes(query) ||
+               action.pluginCoordinate?.groupId?.toLowerCase().includes(query) ||
+               action.description?.toLowerCase().includes(query);
+      });
+
+  return [...matchingActions].sort((left, right) =>
+    (left.displayName || "").localeCompare(right.displayName || "")
+  );
+});
+
+const renderActionDescription = (description) => markdownIt.render(description || "");
+
+const shouldExpandActionDescription = (description) => {
+  if (!description) {
+    return false;
+  }
+
+  return description.length > 140 || /(^|\n)\s*(#{1,6}\s|[-*+]\s|\d+\.\s|> )|`{1,3}|\[.+?\]\(.+?\)|\n/.test(description);
+};
+
+const selectPickerAction = (action) => {
+  if (selectedPickerAction.value?.id === action.id) {
+    selectedPickerAction.value = null;
+    return;
+  }
+
+  selectedPickerAction.value = action;
+};
+
+const confirmAddAction = async (action) => {
+  if (!action) return;
+  const clonedAction = cloneAction(action);
+  const addedAction = await addAction(clonedAction);
+  actionPickerVisible.value = false;
+  selectedNodeId.value = `action:${addedAction.id}`;
+  nextTick(() => {
+    editingAction.value = transformActions.value.find(a => a.id === addedAction.id);
+    actionEditorVisible.value = true;
+  });
+};
+
+const reorderAction = (fromIndex, toIndex) => {
+  if (fromIndex < 0 || fromIndex >= transformActions.value.length) return;
+  if (toIndex < 0 || toIndex >= transformActions.value.length) return;
+  if (fromIndex === toIndex) return;
+
+  const action = transformActions.value.splice(fromIndex, 1)[0];
+  transformActions.value.splice(toIndex, 0, action);
+};
+
+const deleteActionByIndex = (index) => {
+  if (index < 0 || index >= transformActions.value.length) return;
+
+  // Clear selection if we're deleting the selected action
+  const action = transformActions.value[index];
+  if (selectedNodeId.value === `action:${action.id}`) {
+    selectedNodeId.value = null;
+  }
+
   transformActions.value.splice(index, 1);
-  connectActions();
+};
+
+const reorderSubscribe = (fromIndex, toIndex) => {
+  const subs = model.value['subscribe'];
+  if (!subs || fromIndex < 0 || fromIndex >= subs.length) return;
+  if (toIndex < 0 || toIndex >= subs.length) return;
+  if (fromIndex === toIndex) return;
+
+  const item = subs.splice(fromIndex, 1)[0];
+  subs.splice(toIndex, 0, item);
+};
+
+const deleteSubscribeByIndex = (index) => {
+  const subs = model.value['subscribe'];
+  if (!subs || index < 0 || index >= subs.length) return;
+
+  if (selectedNodeId.value === `subscribe:${index}`) {
+    selectedNodeId.value = null;
+  }
+
+  subs.splice(index, 1);
+};
+
+const reorderPublish = (fromIndex, toIndex) => {
+  const rules = model.value['publish']?.rules;
+  if (!rules || fromIndex < 0 || fromIndex >= rules.length) return;
+  if (toIndex < 0 || toIndex >= rules.length) return;
+  if (fromIndex === toIndex) return;
+
+  const item = rules.splice(fromIndex, 1)[0];
+  rules.splice(toIndex, 0, item);
+};
+
+const deletePublishByIndex = (index) => {
+  const rules = model.value['publish']?.rules;
+  if (!rules || index < 0 || index >= rules.length) return;
+
+  if (selectedNodeId.value === `publish:${index}`) {
+    selectedNodeId.value = null;
+  }
+
+  rules.splice(index, 1);
+};
+
+// Dialog handler functions
+const onEditingActionParamsChange = (event) => {
+  if (editingAction.value) {
+    editingAction.value.parameters = event.data;
+  }
+};
+
+const deleteEditingAction = () => {
+  if (editingAction.value) {
+    const index = transformActions.value.findIndex(a => a.id === editingAction.value.id);
+    if (index >= 0) {
+      transformActions.value.splice(index, 1);
+    }
+    editingAction.value = null;
+    actionEditorVisible.value = false;
+    selectedNodeId.value = null;
+  }
+};
+
+const deleteEditingSubscribe = () => {
+  if (editingSubscribeIndex.value >= 0 && model.value['subscribe']) {
+    model.value['subscribe'].splice(editingSubscribeIndex.value, 1);
+    editingSubscribeTopic.value = null;
+    editingSubscribeIndex.value = -1;
+    subscribeEditorVisible.value = false;
+    selectedNodeId.value = null;
+  }
+};
+
+const deleteEditingPublish = () => {
+  if (editingPublishIndex.value >= 0 && model.value['publish']?.rules) {
+    model.value['publish'].rules.splice(editingPublishIndex.value, 1);
+    editingPublishTopic.value = null;
+    editingPublishIndex.value = -1;
+    publishEditorVisible.value = false;
+    selectedNodeId.value = null;
+  }
+};
+
+const submitSubscribeTopic = () => {
+  if (!editingSubscribeTopic.value?.topic) return;
+  if (isAddingSubscribe.value) {
+    if (!model.value['subscribe']) {
+      model.value['subscribe'] = [];
+    }
+    model.value['subscribe'].push({ ...editingSubscribeTopic.value });
+  } else if (editingSubscribeIndex.value >= 0 && model.value['subscribe']) {
+    Object.assign(model.value['subscribe'][editingSubscribeIndex.value], editingSubscribeTopic.value);
+  }
+  subscribeEditorVisible.value = false;
+  isAddingSubscribe.value = false;
+  editingSubscribeTopic.value = null;
+  editingSubscribeIndex.value = -1;
+};
+
+const submitPublishTopic = () => {
+  if (!editingPublishTopic.value?.topic) return;
+  if (isAddingPublish.value) {
+    if (!model.value['publish']) {
+      model.value['publish'] = { rules: [], matchingPolicy: 'ALL_MATCHING', defaultRule: { defaultBehavior: 'ERROR' } };
+    }
+    if (!model.value['publish'].rules) {
+      model.value['publish'].rules = [];
+    }
+    model.value['publish'].rules.push({ ...editingPublishTopic.value });
+  } else if (editingPublishIndex.value >= 0 && model.value['publish']?.rules) {
+    Object.assign(model.value['publish'].rules[editingPublishIndex.value], editingPublishTopic.value);
+  }
+  publishEditorVisible.value = false;
+  isAddingPublish.value = false;
+  editingPublishTopic.value = null;
+  editingPublishIndex.value = -1;
+};
+
+const cancelSubscribeEdit = () => {
+  subscribeEditorVisible.value = false;
+  isAddingSubscribe.value = false;
+  editingSubscribeTopic.value = null;
+  editingSubscribeIndex.value = -1;
+};
+
+const cancelPublishEdit = () => {
+  publishEditorVisible.value = false;
+  isAddingPublish.value = false;
+  editingPublishTopic.value = null;
+  editingPublishIndex.value = -1;
 };
 
 const cloneAction = (clonedAction) => {
@@ -838,18 +1135,6 @@ const generateUniqueActionName = (baseName) => {
   return `${baseName}${suffix}`;
 };
 
-const validateNewAction = async () => {
-  connectActions();
-};
-
-// When there are multiple actions of a certain Action Type the order of the actions can be changed.
-// If this happens we need to update the connections between each action. This
-const actionOrderChanged = () => {
-  connectActions();
-};
-
-const flattenedActions = ref([]);
-
 const getLoadedActions = () => {
   for (const plugin of allActionsData.value) {
     for (const action of plugin["actions"]) {
@@ -866,6 +1151,9 @@ const getLoadedActions = () => {
       action["coordinateGrouping"] = coordinateGrouping;
       action["pluginCoordinate"] = plugin.pluginCoordinates;
       action["name"] = "";
+
+      // Copy description from actionOptions if available
+      action["description"] = action.actionOptions?.description || action.docsMarkdown || null;
 
       action["parameters"] = {};
       if (!_.isEmpty(action.schema.properties)) {
@@ -1092,6 +1380,83 @@ const publishUISchema = {
     height: 44px !important;
   }
 
+  /* Selected action editor styles */
+  .selected-action-panel {
+    border: 2px solid var(--primary-color);
+  }
+
+  .action-editor-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+  }
+
+  .action-editor-field {
+    label {
+      display: block;
+      font-weight: 600;
+      font-size: 0.9rem;
+      color: #495057;
+      margin-bottom: 0.25rem;
+    }
+  }
+
+  .action-type-display {
+    font-family: monospace;
+    font-size: 0.85rem;
+    color: var(--text-color-secondary);
+    padding: 0.5rem;
+    background: var(--surface-100);
+    border-radius: 4px;
+  }
+
+  .action-parameters {
+    h4 {
+      font-size: 1rem;
+      font-weight: 600;
+      margin-bottom: 0.75rem;
+      color: #495057;
+    }
+  }
+
+  /* Topic editor styles */
+  .selected-topic-panel {
+    border: 2px solid var(--primary-color);
+  }
+
+  .topic-editor-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+  }
+
+  .topic-editor-field {
+    label {
+      display: block;
+      font-weight: 600;
+      font-size: 0.9rem;
+      color: #495057;
+      margin-bottom: 0.25rem;
+    }
+  }
+
+  /* Publish settings */
+  .publish-settings-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+  }
+
+  .publish-setting {
+    label {
+      display: block;
+      font-weight: 500;
+      font-size: 0.85rem;
+      color: var(--text-color-secondary);
+      margin-bottom: 0.25rem;
+    }
+  }
+
   .panel-horizontal-wrap {
     display: flex;
     flex-wrap: wrap;
@@ -1168,67 +1533,207 @@ const publishUISchema = {
   }
 }
 
-.transform-builder-page-overlay {
-  .p-datatable.p-datatable-sm .p-datatable-tbody>tr>td:first-child {
-    padding: 0 !important;
+/* Action picker dialog */
+.action-picker-content {
+  min-height: 300px;
+}
 
-    .dragArea {
-      height: 33.594px !important;
-      width: 41px !important;
+.action-picker-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.action-picker-table thead {
+  position: sticky;
+  top: 0;
+  background: var(--surface-card);
+  z-index: 1;
+}
+
+.action-picker-table th {
+  text-align: left;
+  padding: 0.75rem 1rem;
+  border-bottom: 2px solid var(--surface-border);
+  font-weight: 600;
+  color: var(--text-color-secondary);
+  font-size: 0.8rem;
+  text-transform: uppercase;
+}
+
+.action-picker-table tbody {
+  display: block;
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.action-picker-table thead,
+.action-picker-table tbody tr {
+  display: table;
+  width: 100%;
+  table-layout: fixed;
+}
+
+.action-picker-table .col-action {
+  width: 26%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.action-picker-table .col-plugin {
+  width: 24%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.action-picker-table .col-description {
+  width: 50%;
+}
+
+.action-picker-row {
+  cursor: pointer;
+  transition: background-color 0.15s;
+}
+
+.action-picker-row td {
+  padding: 0.65rem 1rem;
+  border-bottom: 1px solid var(--surface-border);
+  vertical-align: top;
+}
+
+.action-picker-row:hover {
+  background-color: var(--surface-100);
+}
+
+.action-picker-row.selected {
+  background-color: var(--primary-100);
+}
+
+.action-picker-row.selected td:first-child {
+  border-left: 3px solid var(--primary-color);
+  padding-left: calc(1rem - 3px);
+}
+
+.action-picker-row .col-action {
+  font-weight: 600;
+  color: var(--text-color);
+}
+
+.action-picker-row .col-plugin {
+  color: var(--text-color-secondary);
+}
+
+.action-picker-row .col-description {
+  color: var(--text-color-secondary);
+  font-size: 0.85rem;
+}
+
+.action-description-preview {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.action-description-preview.expanded {
+  gap: 0.5rem;
+}
+
+.action-description-text {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  overflow: hidden;
+  white-space: normal;
+  word-break: break-word;
+}
+
+.action-description-more {
+  color: var(--primary-color);
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.action-description-expanded {
+  color: var(--text-color-secondary);
+  line-height: 1.45;
+  white-space: normal;
+}
+
+.action-description-expanded :deep(p),
+.action-description-expanded :deep(ul),
+.action-description-expanded :deep(ol),
+.action-description-expanded :deep(pre),
+.action-description-expanded :deep(blockquote) {
+  margin: 0 0 0.75rem;
+}
+
+.action-description-expanded :deep(*:last-child) {
+  margin-bottom: 0;
+}
+
+.action-description-expanded :deep(code) {
+  padding: 0.1rem 0.3rem;
+  border-radius: 0.25rem;
+  background: var(--surface-200);
+  font-size: 0.85em;
+}
+
+.action-description-expanded :deep(pre) {
+  padding: 0.75rem;
+  border-radius: 0.375rem;
+  background: var(--surface-100);
+  overflow-x: auto;
+}
+
+.action-picker-row .no-description {
+  color: var(--surface-400);
+}
+
+.action-picker-empty {
+  padding: 2rem;
+  text-align: center;
+  color: var(--text-color-secondary);
+}
+
+/* Transform panel header */
+.transform-panel-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.transform-name {
+  font-weight: 600;
+  font-size: 1.1rem;
+}
+
+.transform-description {
+  color: var(--text-color-secondary);
+  font-size: 0.9rem;
+}
+
+/* Editor dialog content */
+.action-editor-content,
+.topic-editor-content,
+.publish-settings-content {
+  .field {
+    margin-bottom: 1rem;
+
+    label {
+      display: block;
+      font-weight: 600;
+      font-size: 0.9rem;
+      color: var(--text-color);
+      margin-bottom: 0.5rem;
     }
   }
+}
 
-  .p-popover-close.p-link {
-    z-index: 2100 !important;
-  }
-
-  .tree-action {
-    opacity: 0.5;
-    background: #c8ebfb;
-  }
-
-  .p-tree {
-    padding: none !important;
-    border: none !important;
-  }
-
-  /* Clears the blue box shadow around tree actions */
-  .p-tree .p-tree-container .p-treenode:focus>.p-treenode-content {
-    box-shadow: none !important;
-  }
-
-  /* Left aligns child actions within tree by adding a display none to the button class that is hidden */
-  .p-treenode-leaf>.p-treenode-content .p-tree-toggler {
-    visibility: hidden !important;
-    display: none !important;
-  }
-
-  /* Removes extra border around the action tree in the overlay panel */
-  .p-popover-content {
-    padding: 0 !important;
-  }
-
-  .p-treenode-children {
-    .p-treenode.p-treenode-leaf {
-      padding-top: 0 !important;
-      padding-bottom: 0 !important;
-
-      .p-treenode-content {
-        padding-top: 0 !important;
-        padding-bottom: 0 !important;
-      }
-    }
-  }
-
-  .action-item-width {
-    width: 17vw !important;
-  }
-
-  .tree-panel-content-height {
-    max-height: 30rem;
-    overflow: auto;
-    display: block;
-  }
+.topic-editor-content .p-dropdown {
+  width: 100% !important;
 }
 
 .transform-raw-json-dialog {

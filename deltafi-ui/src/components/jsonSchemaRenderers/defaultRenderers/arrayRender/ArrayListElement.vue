@@ -22,9 +22,9 @@
       <slot></slot>
     </div>
     <div class="array-list-element-actions">
-      <Button v-if="!isObjectType" icon="pi pi-angle-up" aria-label="Move item up" class="p-button-text p-button-sm p-button-rounded" :disabled="!moveUpEnabled" @click="moveUpClicked" />
-      <Button v-if="!isObjectType" icon="pi pi-angle-down" aria-label="Move item down" class="p-button-text p-button-sm p-button-rounded" :disabled="!moveDownEnabled" @click="moveDownClicked" />
-      <Button icon="pi pi-times" aria-label="Delete item" class="p-button-text p-button-sm p-button-rounded p-button-danger" @click="deleteClicked" />
+      <Button v-if="!isObjectType" icon="pi pi-angle-up" aria-label="Move item up" text size="small" rounded :disabled="!moveUpEnabled" @click="moveUpClicked" />
+      <Button v-if="!isObjectType" icon="pi pi-angle-down" aria-label="Move item down" text size="small" rounded :disabled="!moveDownEnabled" @click="moveDownClicked" />
+      <Button icon="pi pi-times" aria-label="Delete item" text size="small" rounded severity="danger" @click="deleteClicked" />
     </div>
   </div>
 </template>
@@ -125,11 +125,9 @@ defineExpose({ expandClicked, moveUpClicked, moveDownClicked, deleteClicked });
   margin: 0;
 }
 
-
 .array-list-element-content :deep(dd) {
   margin: 0;
 }
-
 
 .array-list-element-actions {
   display: flex;

@@ -19,18 +19,15 @@
 <template>
   <span :class="containerClass">
     <template v-for="(item, i) of model" :key="i.toString()">
-      <div v-show="isVisible(item)">
+      <div v-show="isVisible(item)" class="button-wrapper">
         <!-- Disabled Button -->
-        <span v-if="!item.isEnabled" v-tooltip.top="disabledLabel(item)" class="button-padding">
-          <!-- Disabled Single Icon Button -->
-          <span class="button-padding">
-            <Button type="button" :icon="item.icon" :label="item.label" class="p-button p-button-outlined p-button-secondary" :disabled="!item.isEnabled" />
-          </span>
+        <span v-if="!item.isEnabled" v-tooltip.left="disabledLabel(item)" class="button-padding">
+          <Button type="button" :icon="item.icon" :label="item.label" severity="secondary" outlined :disabled="!item.isEnabled" />
         </span>
 
         <!-- Single Icon Button -->
         <span v-else class="button-padding">
-          <Button v-tooltip.top="item.label" :label="item.label" type="button" :icon="item.icon" class="p-button p-button-primary" @click="itemClick(item)" />
+          <Button v-tooltip.top="item.label" :label="item.label" type="button" :icon="item.icon" @click="itemClick(item)" />
         </span>
       </div>
     </template>
@@ -39,7 +36,7 @@
 
 <script setup>
 import Button from "primevue/button";
-import { computed, toRefs } from "vue";
+import { computed, toRefs, unref } from "vue";
 import _ from "lodash";
 
 const props = defineProps({
@@ -63,8 +60,16 @@ const isVisible = (item) => {
   return item.visible;
 };
 
+const escapeHtml = (text) => {
+  return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+};
+
 const disabledLabel = (item) => {
-  return !_.isEmpty(item.disabledLabel) ? item.disabledLabel : "Disabled " + item.label;
+  const label = unref(item.disabledLabel);
+  if (!_.isEmpty(label)) {
+    return { value: escapeHtml(label).replace(/\n/g, '<br>'), escape: false };
+  }
+  return "Disabled " + item.label;
 };
 
 const itemClick = (event) => {
@@ -94,6 +99,11 @@ const itemClick = (event) => {
 
 .hover-save-button-sticky.p-link {
   margin-left: auto;
+}
+
+.button-wrapper {
+  display: inline-flex;
+  align-items: center;
 }
 
 .button-padding {
