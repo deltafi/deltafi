@@ -216,11 +216,13 @@ public interface DeltaFileRepoCustom {
      * Find the ids of the DeltaFiles with the given errorCause that can be resumed
      * @param errorCause error cause to search for using an exact match
      * @param includeAcknowledged include dids of DeltaFiles with acknowledged errors when true
+     * @param modifiedBefore if non-null only include DeltaFiles modified at or before this time
      * @param limit max number of DeltaFile dids to return
      * @param skipLocked when true, skip rows locked by other transactions (FOR UPDATE SKIP LOCKED)
      * @return the list of dids who can be resumed
      */
-    List<DeltaFile> findForResumeByErrorCause(String errorCause, boolean includeAcknowledged, int limit, boolean skipLocked);
+    List<DeltaFile> findForResumeByErrorCause(String errorCause, boolean includeAcknowledged,
+            OffsetDateTime modifiedBefore, int limit, boolean skipLocked);
 
     /** Return a list of DeltaFiles matching the given criteria, skipping rows locked by other transactions.
      *

@@ -19,16 +19,38 @@ package org.deltafi.core.schedulers.trigger;
 
 import org.deltafi.core.configuration.DeltaFiProperties;
 import org.deltafi.core.services.DeltaFiPropertiesService;
+import org.springframework.scheduling.TriggerContext;
 import org.springframework.stereotype.Service;
 
+import java.time.Duration;
+import java.time.Instant;
+import java.util.concurrent.atomic.AtomicBoolean;
+
 /**
- * Calculates the next execution time based on the autoResumeCheckFrequency in the DeltaFiProperties.
+ * Calculates the next execution time for auto-resume based on the configured
+ * autoResumeCheckFrequency, while also supporting a short backlog-driven recheck
+ * when {@link #signalBacklog()} indicates there is more work ready immediately.
  */
 @Service
 public class ResumeTrigger extends ConfigurableFixedDelayTrigger {
+    public static final Duration BACKLOG_RECHECK_DELAY = Duration.ofSeconds(5);
+    private final AtomicBoolean hasBacklog = new AtomicBoolean(false);
 
     public ResumeTrigger(DeltaFiPropertiesService deltaFiPropertiesService) {
         super(deltaFiPropertiesService, DeltaFiProperties::getAutoResumeCheckFrequency, 15_000L);
     }
 
+    public void signalBacklog() {
+        hasBacklog.set(true);
+    }
+
+    @Override
+    public Instant nextExecution(TriggerContext triggerContext) {
+        Instant lastCompletion = triggerContext.lastCompletion();
+        if (lastCompletion != null && hasBacklog.getAndSet(false)) {
+            return lastCompletion.plus(BACKLOG_RECHECK_DELAY);
+        }
+
+        return super.nextExecution(triggerContext);
+    }
 }

@@ -536,7 +536,7 @@ type Mutation {
   taskTimedDataSource(name: String!, memo: String) : Boolean!
   resume(dids: [UUID!]!, resumeMetadata: [ResumeMetadata!]) : [RetryResult!]!
   resumeByFlow(flowType: FlowType!, name: String!, resumeMetadata: [ResumeMetadata], includeAcknowledged: Boolean, modifiedAfter: DateTime, modifiedBefore: DateTime, limit: Int): [RetryResult]!
-  resumeByErrorCause(errorCause: String!, resumeMetadata: [ResumeMetadata], includeAcknowledged: Boolean, limit: Int): [RetryResult]!
+  resumeByErrorCause(errorCause: String!, resumeMetadata: [ResumeMetadata], includeAcknowledged: Boolean, modifiedBefore: DateTime, limit: Int): [RetryResult]!
   resumeMatching(filter: DeltaFilesFilter!, resumeMetadata: [ResumeMetadata!], limit: Int) : [RetryResult]!
   replay(dids: [UUID!]!, removeSourceMetadata: [String!], replaceSourceMetadata: [KeyValueInput!]) : [RetryResult!]!
   replayMatching(filter: DeltaFilesFilter!, removeSourceMetadata: [String], replaceSourceMetadata: [KeyValueInput], limit: Int) : [RetryResult!]!

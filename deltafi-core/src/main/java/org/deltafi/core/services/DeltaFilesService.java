@@ -42,6 +42,7 @@ import org.deltafi.core.generated.types.*;
 import org.deltafi.core.metrics.MetricService;
 import org.deltafi.core.metrics.MetricsUtil;
 import org.deltafi.core.repo.*;
+import org.deltafi.core.schedulers.trigger.ResumeTrigger;
 import org.deltafi.core.services.analytics.AnalyticEventService;
 import org.deltafi.core.types.Flow;
 import org.deltafi.core.types.*;
@@ -79,6 +80,7 @@ public class DeltaFilesService {
             .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
     public static final String REPLAY_ACTION_NAME = "Replay";
     public static final int REQUEUE_BATCH_SIZE = 5000;
+    public static final int AUTO_RESUME_BATCH_SIZE = 5000;
     private static final int UNPAUSE_BATCH_SIZE = 500;
 
     static {
@@ -126,6 +128,7 @@ public class DeltaFilesService {
     private final TransactionTemplate transactionTemplate;
     private final org.deltafi.common.queue.valkey.ValkeyKeyedBlockingQueue valkeyQueue;
     private final ErrorCountService errorCountService;
+    private final ResumeTrigger resumeTrigger;
 
     private ExecutorService executor;
     private Semaphore semaphore;
@@ -1057,7 +1060,7 @@ public class DeltaFilesService {
 
         // If limit provided, process only that many
         if (limit != null && limit > 0) {
-            List<DeltaFile> toResume = deltaFileRepo.deltaFiles(filter, limit);
+            List<DeltaFile> toResume = deltaFileRepo.deltaFiles(filter, limit, true);
             return resumeDeltaFiles(toResume, resumeMetadata);
         }
 
@@ -1065,7 +1068,7 @@ public class DeltaFilesService {
 
         int numFound = REQUEUE_BATCH_SIZE;
         while (numFound == REQUEUE_BATCH_SIZE) {
-            List<DeltaFile> toResume = deltaFileRepo.deltaFiles(filter, REQUEUE_BATCH_SIZE);
+            List<DeltaFile> toResume = deltaFileRepo.deltaFiles(filter, REQUEUE_BATCH_SIZE, true);
             retryResults.addAll(resumeDeltaFiles(toResume, resumeMetadata));
             numFound = toResume.size();
         }
@@ -1084,13 +1087,15 @@ public class DeltaFilesService {
     public List<RetryResult> resumeByFlowTypeAndName(FlowType flowType, String name, List<ResumeMetadata> resumeMetadata,
             boolean includeAcknowledged, OffsetDateTime modifiedAfter, OffsetDateTime modifiedBefore, int limit) {
         List<DeltaFile> deltaFiles = deltaFileRepo.findForResumeByFlowTypeAndName(flowType, name, includeAcknowledged,
-                modifiedAfter, modifiedBefore, limit, false);
+                modifiedAfter, capModifiedBefore(modifiedBefore), limit, true);
         return this.resumeDeltaFiles(deltaFiles, resumeMetadata);
     }
 
     @Transactional
-    public List<RetryResult> resumeByErrorCause(String errorCause, List<ResumeMetadata> resumeMetadata, boolean includeAcknowledged, int limit) {
-        List<DeltaFile> deltaFiles = deltaFileRepo.findForResumeByErrorCause(errorCause, includeAcknowledged, limit, false);
+    public List<RetryResult> resumeByErrorCause(String errorCause, List<ResumeMetadata> resumeMetadata,
+            boolean includeAcknowledged, OffsetDateTime modifiedBefore, int limit) {
+        List<DeltaFile> deltaFiles = deltaFileRepo.findForResumeByErrorCause(errorCause, includeAcknowledged,
+                capModifiedBefore(modifiedBefore), limit, true);
         return this.resumeDeltaFiles(deltaFiles, resumeMetadata);
     }
 
@@ -1516,7 +1521,7 @@ public class DeltaFilesService {
 
     @Transactional
     public List<AcknowledgeResult> acknowledgeByMessage(String errorCause, String reason, int limit) {
-        List<DeltaFile> deltaFiles = deltaFileRepo.findForResumeByErrorCause(errorCause, false, limit, true);
+        List<DeltaFile> deltaFiles = deltaFileRepo.findForResumeByErrorCause(errorCause, false, null, limit, true);
         Map<UUID, DeltaFile> toAck = deltaFiles.stream().collect(Collectors.toMap(DeltaFile::getDid, d -> d));
         return acknowledge(toAck, reason);
     }
@@ -1533,7 +1538,7 @@ public class DeltaFilesService {
     @Transactional
     public List<RetryResult> replayErrorsByMessage(String errorCause,
             List<String> removeSourceMetadata, List<KeyValue> replaceSourceMetadata, int limit) {
-        List<DeltaFile> deltaFiles = deltaFileRepo.findForResumeByErrorCause(errorCause, false, limit, false);
+        List<DeltaFile> deltaFiles = deltaFileRepo.findForResumeByErrorCause(errorCause, false, null, limit, false);
         return replay(deltaFiles.stream().collect(Collectors.toMap(DeltaFile::getDid, d -> d)), removeSourceMetadata, replaceSourceMetadata);
     }
 
@@ -1554,7 +1559,7 @@ public class DeltaFilesService {
 
     public List<ReplayAndAcknowledgeResult> replayAndAcknowledgeByMessage(String errorCause, String reason,
             List<String> removeSourceMetadata, List<KeyValue> replaceSourceMetadata, int limit) {
-        List<DeltaFile> deltaFiles = deltaFileRepo.findForResumeByErrorCause(errorCause, false, limit, false);
+        List<DeltaFile> deltaFiles = deltaFileRepo.findForResumeByErrorCause(errorCause, false, null, limit, false);
         Map<UUID, DeltaFile> deltaFileMap = deltaFiles.stream().collect(Collectors.toMap(DeltaFile::getDid, d -> d));
         return replayAndAcknowledge(deltaFileMap, reason, removeSourceMetadata, replaceSourceMetadata);
     }
@@ -1676,7 +1681,7 @@ public class DeltaFilesService {
     }
 
     public int annotateByMessage(String errorCause, Map<String, String> annotations, boolean allowOverwrites, int limit) {
-        List<DeltaFile> deltaFiles = deltaFileRepo.findForResumeByErrorCause(errorCause, true, limit, false);
+        List<DeltaFile> deltaFiles = deltaFileRepo.findForResumeByErrorCause(errorCause, true, null, limit, false);
         annotateMatching(deltaFiles, annotations, allowOverwrites);
         return deltaFiles.size();
     }
@@ -2348,47 +2353,47 @@ public class DeltaFilesService {
     }
 
     public void autoResume() {
-        autoResume(OffsetDateTime.now(clock), REQUEUE_BATCH_SIZE);
+        autoResume(OffsetDateTime.now(clock), AUTO_RESUME_BATCH_SIZE);
     }
 
     public int autoResume(OffsetDateTime timestamp, int batchSize) {
-        int queued = 0;
-        int currentBatchSize = batchSize;
-        while (currentBatchSize == batchSize) {
-            // Run each batch in a transaction so the FOR UPDATE SKIP LOCKED row locks acquired
-            // by findReadyForAutoResume are held through resumeDeltaFiles, preventing concurrent
-            // core instances from processing the same DeltaFiles.
-            AutoResumeBatchResult batchResult = transactionTemplate.execute(status -> {
-                List<DeltaFile> autoResumeDeltaFiles = deltaFileRepo.findReadyForAutoResume(timestamp, isEgressDisabled(), batchSize);
-                if (autoResumeDeltaFiles.isEmpty()) {
-                    return new AutoResumeBatchResult(0, Collections.emptyList(), Collections.emptyMap());
-                }
-                Map<UUID, String> flowByDid = autoResumeDeltaFiles.stream()
-                        .collect(Collectors.toMap(DeltaFile::getDid, DeltaFile::getDataSource));
-                List<RetryResult> results = resumeDeltaFiles(autoResumeDeltaFiles, Collections.emptyList());
-                return new AutoResumeBatchResult(autoResumeDeltaFiles.size(), results, flowByDid);
-            });
-
-            currentBatchSize = batchResult == null ? 0 : batchResult.size;
-            if (currentBatchSize > 0) {
-                Map<String, Integer> countByFlow = new HashMap<>();
-                for (RetryResult result : batchResult.results) {
-                    if (result.getSuccess()) {
-                        ++queued;
-                        String flow = batchResult.flowByDid.get(result.getDid());
-                        Integer count = 1;
-                        if (countByFlow.containsKey(flow)) {
-                            count += countByFlow.get(flow);
-                        }
-                        countByFlow.put(flow, count);
-                    } else {
-                        log.error("Auto-resume: {}", result.getError());
-                    }
-                }
-
-                log.info("Queued batch of {} DeltaFiles for auto-resume", currentBatchSize);
-                generateMetricsByName(FILES_AUTO_RESUMED, countByFlow);
+        // Run each scheduled pass in a single transaction so the FOR UPDATE SKIP LOCKED row locks acquired
+        // by findReadyForAutoResume are held through resumeDeltaFiles, preventing concurrent core instances
+        // from processing the same DeltaFiles while also keeping each pass bounded.
+        AutoResumeBatchResult batchResult = transactionTemplate.execute(status -> {
+            List<DeltaFile> autoResumeDeltaFiles = deltaFileRepo.findReadyForAutoResume(timestamp, isEgressDisabled(), batchSize);
+            if (autoResumeDeltaFiles.isEmpty()) {
+                return new AutoResumeBatchResult(0, Collections.emptyList(), Collections.emptyMap());
             }
+            Map<UUID, String> flowByDid = autoResumeDeltaFiles.stream()
+                    .collect(Collectors.toMap(DeltaFile::getDid, DeltaFile::getDataSource));
+            List<RetryResult> results = resumeDeltaFiles(autoResumeDeltaFiles, Collections.emptyList());
+            return new AutoResumeBatchResult(autoResumeDeltaFiles.size(), results, flowByDid);
+        });
+
+        int queued = 0;
+        int currentBatchSize = batchResult == null ? 0 : batchResult.size;
+        if (currentBatchSize > 0) {
+            Map<String, Integer> countByFlow = new HashMap<>();
+            for (RetryResult result : batchResult.results) {
+                if (result.getSuccess()) {
+                    ++queued;
+                    String flow = batchResult.flowByDid.get(result.getDid());
+                    Integer count = 1;
+                    if (countByFlow.containsKey(flow)) {
+                        count += countByFlow.get(flow);
+                    }
+                    countByFlow.put(flow, count);
+                } else {
+                    log.error("Auto-resume: {}", result.getError());
+                }
+            }
+
+            log.info("Queued batch of {} DeltaFiles for auto-resume", currentBatchSize);
+            generateMetricsByName(FILES_AUTO_RESUMED, countByFlow);
+        }
+        if (currentBatchSize == batchSize && batchSize > 0) {
+            resumeTrigger.signalBacklog();
         }
         if (queued > 0) {
             log.info("Queued total of {} DeltaFiles for auto-resume", queued);
@@ -2962,10 +2967,12 @@ public class DeltaFilesService {
     }
 
     void ensureModifiedBeforeNow(DeltaFilesFilter filter) {
+        filter.setModifiedBefore(capModifiedBefore(filter.getModifiedBefore()));
+    }
+
+    OffsetDateTime capModifiedBefore(OffsetDateTime modifiedBefore) {
         OffsetDateTime now = OffsetDateTime.now(clock);
-        if (filter.getModifiedBefore() == null || filter.getModifiedBefore().isAfter(now)) {
-            filter.setModifiedBefore(now);
-        }
+        return (modifiedBefore == null || modifiedBefore.isAfter(now)) ? now : modifiedBefore;
     }
 
     public int completeParents() {

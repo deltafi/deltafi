@@ -450,9 +450,9 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
     }
 
     @Override
-    public List<DeltaFile> findForResumeByErrorCause(String errorCause, boolean includeAcknowledged, int limit, boolean skipLocked) {
-        String skipLockedClause = skipLocked ? " FOR UPDATE OF df SKIP LOCKED" : "";
-        String queryBuilder = """
+    public List<DeltaFile> findForResumeByErrorCause(String errorCause, boolean includeAcknowledged,
+            OffsetDateTime modifiedBefore, int limit, boolean skipLocked) {
+        StringBuilder queryBuilder = new StringBuilder("""
                     SELECT df.did
                     FROM delta_files df
                     WHERE df.stage = 'ERROR'
@@ -465,14 +465,22 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
                         AND flow.error_or_filter_cause = :errorCause
                         AND (:includeAcknowledged OR flow.error_acknowledged IS NULL)
                     )
-                """ + skipLockedClause + """
+                """);
+        if (modifiedBefore != null) {
+            queryBuilder.append(" AND df.modified <= :modifiedBefore");
+        }
+        if (skipLocked) {
+            queryBuilder.append(" FOR UPDATE OF df SKIP LOCKED");
+        }
+        queryBuilder.append(" LIMIT :limit");
 
-                    LIMIT :limit
-                """;
-        Query query = entityManager.createNativeQuery(queryBuilder, UUID.class)
+        Query query = entityManager.createNativeQuery(queryBuilder.toString(), UUID.class)
                 .setParameter("errorCause", errorCause)
                 .setParameter("includeAcknowledged", includeAcknowledged)
                 .setParameter(LIMIT, limit);
+        if (modifiedBefore != null) {
+            query.setParameter("modifiedBefore", modifiedBefore);
+        }
 
         @SuppressWarnings("unchecked")
         List<UUID> dids = query.getResultList();

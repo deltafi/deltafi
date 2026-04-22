@@ -454,8 +454,10 @@ public class DeltaFilesDatafetcher {
 
   @DgsMutation
   @NeedsPermission.DeltaFileResume
-  public List<RetryResult> resumeByErrorCause(@InputArgument String errorCause, @InputArgument List<ResumeMetadata> resumeMetadata, @InputArgument Boolean includeAcknowledged, @InputArgument Integer limit) {
-    return deltaFilesService.resumeByErrorCause(errorCause, resumeMetadata, Boolean.TRUE.equals(includeAcknowledged), limit != null ? limit : 1000);
+  public List<RetryResult> resumeByErrorCause(@InputArgument String errorCause, @InputArgument List<ResumeMetadata> resumeMetadata,
+          @InputArgument Boolean includeAcknowledged, @InputArgument OffsetDateTime modifiedBefore, @InputArgument Integer limit) {
+    return deltaFilesService.resumeByErrorCause(errorCause, resumeMetadata, Boolean.TRUE.equals(includeAcknowledged),
+            modifiedBefore, limit != null ? limit : 1000);
   }
 
   @DgsMutation

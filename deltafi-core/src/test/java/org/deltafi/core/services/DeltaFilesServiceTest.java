@@ -36,6 +36,7 @@ import org.deltafi.core.generated.types.ReplayAndAcknowledgeResult;
 import org.deltafi.core.generated.types.RetryResult;
 import org.deltafi.core.metrics.MetricService;
 import org.deltafi.core.repo.*;
+import org.deltafi.core.schedulers.trigger.ResumeTrigger;
 import org.deltafi.core.services.analytics.AnalyticEventService;
 import org.deltafi.core.types.*;
 import org.deltafi.core.util.*;
@@ -90,6 +91,7 @@ class DeltaFilesServiceTest {
     private final FullFlowExemplarService fullFlowExemplarService;
     private final PluginService pluginService;
     private final FlowCacheService flowCacheService;
+    private final ResumeTrigger resumeTrigger;
 
     @Captor
     ArgumentCaptor<DeltaFile> deltaFileCaptor;
@@ -119,7 +121,8 @@ class DeltaFilesServiceTest {
                           @Mock Environment environment, @Mock IdentityService identityService,
                           @Mock ParameterResolver parameterResolver, @Mock PluginService pluginService,
                           @Mock FlowCacheService flowCacheService, @Mock ValkeyKeyedBlockingQueue valkeyQueue,
-                          @Mock ErrorCountService errorCountService) {
+                          @Mock ErrorCountService errorCountService,
+                          @Mock ResumeTrigger resumeTrigger) {
         this.timedDataSourceService = timedDataSourceService;
         this.transformFlowService = transformFlowService;
         this.dataSinkService = dataSinkService;
@@ -141,6 +144,7 @@ class DeltaFilesServiceTest {
         this.fullFlowExemplarService = new FullFlowExemplarService(flowDefinitionService, utilService);
         this.pluginService = pluginService;
         this.flowCacheService = flowCacheService;
+        this.resumeTrigger = resumeTrigger;
         PlatformTransactionManager mockTxManager = mock(PlatformTransactionManager.class);
         Mockito.lenient().when(mockTxManager.getTransaction(Mockito.any())).thenReturn(mock(TransactionStatus.class));
         TransactionTemplate transactionTemplate = new TransactionTemplate(mockTxManager);
@@ -149,7 +153,8 @@ class DeltaFilesServiceTest {
                 stateMachine, annotationRepo, deltaFileRepo, deltaFileFlowRepo, coreEventQueue, contentStorageService, resumePolicyService,
                 metricService, analyticEventService, new DidMutexService(), deltaFileCacheService, restDataSourceService, timedDataSourceService,
                 onErrorDataSourceService, queueManagementService, queuedAnnotationRepo, environment, new TestUUIDGenerator(), identityService,
-                flowDefinitionService, parameterResolver, Optional.empty(), pluginService, flowCacheService, transactionTemplate, valkeyQueue, errorCountService);
+                flowDefinitionService, parameterResolver, Optional.empty(), pluginService, flowCacheService, transactionTemplate, valkeyQueue,
+                errorCountService, resumeTrigger);
 
         // Default: assume all plugins are ready unless explicitly mocked otherwise
         Mockito.lenient().when(pluginService.isPluginReady(Mockito.any())).thenReturn(true);
@@ -1230,7 +1235,7 @@ class DeltaFilesServiceTest {
         DeltaFilesFilter filter = new DeltaFilesFilter();
         deltaFilesService.resume(filter, List.of());
 
-        Mockito.verify(deltaFileRepo).deltaFiles(filter, 5000);
+        Mockito.verify(deltaFileRepo).deltaFiles(filter, 5000, true);
         assertThat(filter.getStage()).isEqualTo(DeltaFileStage.ERROR);
         assertThat(filter.getContentDeleted()).isFalse();
         assertThat(filter.getModifiedBefore()).isNotNull();
@@ -1626,12 +1631,12 @@ class DeltaFilesServiceTest {
     @Test
     void replayErrorsByMessage() {
         DeltaFile deltaFile = utilService.buildDeltaFile(UUID.randomUUID());
-        Mockito.when(deltaFileRepo.findForResumeByErrorCause("test error", false, 100, false))
+        Mockito.when(deltaFileRepo.findForResumeByErrorCause("test error", false, null, 100, false))
                 .thenReturn(List.of(deltaFile));
 
         deltaFilesService.replayErrorsByMessage("test error", null, null, 100);
 
-        Mockito.verify(deltaFileRepo).findForResumeByErrorCause("test error", false, 100, false);
+        Mockito.verify(deltaFileRepo).findForResumeByErrorCause("test error", false, null, 100, false);
     }
 
     @Test
@@ -1666,12 +1671,12 @@ class DeltaFilesServiceTest {
     @Test
     void replayAndAcknowledgeByMessage() {
         DeltaFile deltaFile = utilService.buildDeltaFile(UUID.randomUUID());
-        Mockito.when(deltaFileRepo.findForResumeByErrorCause("test error", false, 100, false))
+        Mockito.when(deltaFileRepo.findForResumeByErrorCause("test error", false, null, 100, false))
                 .thenReturn(List.of(deltaFile));
 
         deltaFilesService.replayAndAcknowledgeByMessage("test error", "reason", null, null, 100);
 
-        Mockito.verify(deltaFileRepo).findForResumeByErrorCause("test error", false, 100, false);
+        Mockito.verify(deltaFileRepo).findForResumeByErrorCause("test error", false, null, 100, false);
     }
 
     @Test
@@ -1724,7 +1729,7 @@ class DeltaFilesServiceTest {
         deltaFilesService.resume(filter, List.of(), limit);
 
         // Should use provided limit instead of REQUEUE_BATCH_SIZE
-        Mockito.verify(deltaFileRepo).deltaFiles(filter, limit);
+        Mockito.verify(deltaFileRepo).deltaFiles(filter, limit, true);
         assertThat(filter.getStage()).isEqualTo(DeltaFileStage.ERROR);
         assertThat(filter.getContentDeleted()).isFalse();
     }
@@ -1735,7 +1740,7 @@ class DeltaFilesServiceTest {
         deltaFilesService.resume(filter, List.of(), null);
 
         // Should use REQUEUE_BATCH_SIZE when limit is null
-        Mockito.verify(deltaFileRepo).deltaFiles(filter, 5000);
+        Mockito.verify(deltaFileRepo).deltaFiles(filter, 5000, true);
     }
 
     @Test
@@ -1744,7 +1749,7 @@ class DeltaFilesServiceTest {
         deltaFilesService.resume(filter, List.of(), 0);
 
         // Should use REQUEUE_BATCH_SIZE when limit is 0
-        Mockito.verify(deltaFileRepo).deltaFiles(filter, 5000);
+        Mockito.verify(deltaFileRepo).deltaFiles(filter, 5000, true);
     }
 
     @Test
@@ -1753,7 +1758,7 @@ class DeltaFilesServiceTest {
         deltaFilesService.resume(filter, List.of(), -1);
 
         // Should use REQUEUE_BATCH_SIZE when limit is negative
-        Mockito.verify(deltaFileRepo).deltaFiles(filter, 5000);
+        Mockito.verify(deltaFileRepo).deltaFiles(filter, 5000, true);
     }
 
     @Test
@@ -1813,6 +1818,76 @@ class DeltaFilesServiceTest {
 
         // Should use REQUEUE_BATCH_SIZE when limit is 0
         Mockito.verify(deltaFileRepo).deltaFiles(filter, 5000, true);
+    }
+
+    @Test
+    void resumeMatching_withLimit_skipsLockedRows() {
+        DeltaFilesFilter filter = new DeltaFilesFilter();
+        int limit = 200;
+
+        deltaFilesService.resume(filter, List.of(), limit);
+
+        Mockito.verify(deltaFileRepo).deltaFiles(filter, limit, true);
+        assertThat(filter.getStage()).isEqualTo(DeltaFileStage.ERROR);
+        assertThat(filter.getContentDeleted()).isFalse();
+    }
+
+    @Test
+    void resumeByFlow_skipsLockedRows() {
+        deltaFilesService.resumeByFlowTypeAndName(FlowType.TRANSFORM, "flow", List.of(), false, null, null, 100);
+
+        Mockito.verify(deltaFileRepo).findForResumeByFlowTypeAndName(FlowType.TRANSFORM, "flow", false,
+                null, OffsetDateTime.now(testClock), 100, true);
+    }
+
+    @Test
+    void resumeByErrorCause_skipsLockedRows() {
+        deltaFilesService.resumeByErrorCause("failed", List.of(), false, null, 100);
+
+        Mockito.verify(deltaFileRepo).findForResumeByErrorCause(Mockito.eq("failed"), Mockito.eq(false),
+                Mockito.any(OffsetDateTime.class), Mockito.eq(100), Mockito.eq(true));
+    }
+
+    @Test
+    void resumeByErrorCause_capsFutureModifiedBefore() {
+        OffsetDateTime future = OffsetDateTime.now(testClock).plusDays(1);
+        deltaFilesService.resumeByErrorCause("failed", List.of(), false, future, 100);
+
+        ArgumentCaptor<OffsetDateTime> captor = ArgumentCaptor.forClass(OffsetDateTime.class);
+        Mockito.verify(deltaFileRepo).findForResumeByErrorCause(Mockito.eq("failed"), Mockito.eq(false),
+                captor.capture(), Mockito.eq(100), Mockito.eq(true));
+        assertThat(captor.getValue()).isEqualTo(OffsetDateTime.now(testClock));
+    }
+
+    @Test
+    void resumeByFlow_capsFutureModifiedBefore() {
+        OffsetDateTime future = OffsetDateTime.now(testClock).plusDays(1);
+        deltaFilesService.resumeByFlowTypeAndName(FlowType.TRANSFORM, "flow", List.of(), false, null, future, 100);
+
+        ArgumentCaptor<OffsetDateTime> captor = ArgumentCaptor.forClass(OffsetDateTime.class);
+        Mockito.verify(deltaFileRepo).findForResumeByFlowTypeAndName(Mockito.eq(FlowType.TRANSFORM), Mockito.eq("flow"),
+                Mockito.eq(false), Mockito.isNull(), captor.capture(), Mockito.eq(100), Mockito.eq(true));
+        assertThat(captor.getValue()).isEqualTo(OffsetDateTime.now(testClock));
+    }
+
+    @Test
+    void autoResume_doesNotRequestFastFollowUpWhenBatchIsNotFull() {
+        when(deltaFileRepo.findReadyForAutoResume(any(), anyBoolean(), anyInt())).thenReturn(List.of());
+
+        assertThat(deltaFilesService.autoResume(OffsetDateTime.now(testClock), 100)).isZero();
+        verify(deltaFileRepo).findReadyForAutoResume(any(), anyBoolean(), eq(100));
+        verify(resumeTrigger, never()).signalBacklog();
+    }
+
+    @Test
+    void autoResume_requestsFastFollowUpWhenBatchFills() {
+        DeltaFile deltaFile = utilService.buildDeltaFile(UUID.randomUUID(), "flow", DeltaFileStage.ERROR, OffsetDateTime.now(testClock), OffsetDateTime.now(testClock));
+        when(deltaFileRepo.findReadyForAutoResume(any(), anyBoolean(), eq(1))).thenReturn(List.of(deltaFile));
+
+        deltaFilesService.autoResume(OffsetDateTime.now(testClock), 1);
+
+        verify(resumeTrigger).signalBacklog();
+        verify(metricService).increment(any());
     }
 
     @Test
