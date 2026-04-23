@@ -96,36 +96,42 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
     }
 
     private String buildRequeueSql(Set<String> skipActions, Set<UUID> skipDids, boolean excludeEgressActions) {
-        StringBuilder sqlQuery = new StringBuilder("""
-            SELECT delta_file_id
+        StringBuilder inner = new StringBuilder("""
+            SELECT dff.delta_file_id
             FROM delta_file_flows dff
             """);
 
         if (excludeEgressActions) {
-            sqlQuery.append("JOIN flow_definitions fd ON fd.id = dff.flow_definition_id\n");
+            inner.append("JOIN flow_definitions fd ON fd.id = dff.flow_definition_id\n");
         }
 
-        sqlQuery.append("""
+        inner.append("""
             WHERE dff.modified < :requeueThreshold
             AND dff.state = 'IN_FLIGHT'
             AND dff.cold_queued = false
             AND (dff.actions->(jsonb_array_length(dff.actions) - 1))->>'s' <> 'JOINING'""");
 
         if (skipActions != null && !skipActions.isEmpty()) {
-            sqlQuery.append("\nAND (dff.actions->(jsonb_array_length(dff.actions) - 1))->>'n' NOT IN (:skipActions)");
+            inner.append("\nAND (dff.actions->(jsonb_array_length(dff.actions) - 1))->>'n' NOT IN (:skipActions)");
         }
 
         if (skipDids != null && !skipDids.isEmpty()) {
-            sqlQuery.append("\nAND dff.delta_file_id NOT IN (:skipDids)");
+            inner.append("\nAND dff.delta_file_id NOT IN (:skipDids)");
         }
 
         if (excludeEgressActions) {
-            sqlQuery.append("\nAND fd.type <> 'DATA_SINK'");
+            inner.append("\nAND fd.type <> 'DATA_SINK'");
         }
 
-        sqlQuery.append("\nGROUP BY delta_file_id LIMIT :limit");
+        // ORDER BY dff.modified drives the planner to the partial index
+        // idx_delta_file_flows_requeue (modified, delta_file_id) WHERE state='IN_FLIGHT' AND cold_queued=false.
+        // Without an ORDER BY, the planner picks the generic delta_file_id index so the outer GROUP BY
+        // can stream-stop early — which forces a filter over 1M+ rows when IN_FLIGHT backlog is large.
+        // Over-fetching by 5× covers the case of a DeltaFile with multiple stalled flows; the outer
+        // SELECT DISTINCT dedupes before the final LIMIT.
+        inner.append("\nORDER BY dff.modified LIMIT (:limit * 5)");
 
-        return sqlQuery.toString();
+        return "SELECT DISTINCT delta_file_id FROM (\n" + inner + "\n) sub LIMIT :limit";
     }
 
     @Override
