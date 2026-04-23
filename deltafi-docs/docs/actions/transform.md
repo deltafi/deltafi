@@ -17,19 +17,19 @@ A TransformAction must implement the `transform` method which receives:
 
 ```java
 public class TransformInput {
-    List<ActionContent> contentList;
+    List<ActionContent> content;
     Map<String, String> metadata;
 }
 ```
 
 ### Return Types
 
-The `transform` method must return a `TransformResultType`, which is implemented by `TransformResult`, `ReinjectResult`,
+The `transform` method must return a `TransformResultType`, which is implemented by `TransformResult`, `TransformResults`,
 `ErrorResult`, and `FilterResult`.
 
 The `TransformResult` contains the content, metadata, and annotations created by the `TransformAction`.
-The `ReinjectResult` contains a list of `ReinjectEvent`. Each `ReinjectEvent` will create a new DeltaFile that will be
-ingressed to a specified flow.
+The `TransformResults` contains a list of `ChildTransformResult`. Each `ChildTransformResult` creates a new child
+DeltaFile that continues through the same flow.
 
 ### Example
 
@@ -56,7 +56,7 @@ public class HelloWorldTransformAction extends TransformAction<Parameters> {
             return new FilterResult(context, "We prefer dids that do not start with 2");
         }
         
-        String data = input.getContentList().get(0).loadString() + "\nHelloWorldTransformAction did a great job";
+        String data = input.content(0).loadString() + "\nHelloWorldTransformAction did a great job";
 
         TransformResult result = new TransformResult(context);
         result.addMetadata("transformKey", "transformValue");
@@ -87,11 +87,11 @@ class TransformInput(NamedTuple):
 
 ### Return Types
 
-The `transform()` method must return one of: `TransformResult`, `ReinjectResult`, `ErrorResult`, or `FilterResult`.
+The `transform()` method must return one of: `TransformResult`, `TransformResults`, `ErrorResult`, or `FilterResult`.
 
 The `TransformResult` contains the content, metadata, and annotations created by the `TransformAction`.
-The `ReinjectResult` contains a list of `ReinjectEvent`. Each `ReinjectEvent` will create a new DeltaFile that will be
-ingressed to a specified flow.
+The `TransformResults` contains a list of `ChildTransformResult`. Each `ChildTransformResult` creates a new child
+DeltaFile that continues through the same flow.
 
 ### Example
 
@@ -115,9 +115,9 @@ class HelloWorldTransformAction(TransformAction):
         data = f"{transform_input.content[0].load_str()}\nHelloWorldTransformAction did a great job"
 
         return TransformResult(context)
-            .save_string_content(data, 'transform-named-me', 'text/plain')
-            .add_metadata('transformKey', 'transformValue')
-            .annotate('transformAnnotation', 'value')
+                .save_string_content(data, 'transform-named-me', 'text/plain')
+                .add_metadata('transformKey', 'transformValue')
+                .annotate('transformAnnotation', 'value')
 ```
 
 ## Go
@@ -160,6 +160,9 @@ df.SaveBytesContent(data, name, mediaType)    // *ActionContent, error
 df.AddContent(content)                         // *Deltafile (chainable)
 df.PassthroughContent()                        // *Deltafile (chainable)
 
+// Child DeltaFiles
+df.NewChild(childName)        // *Deltafile (chainable)
+
 // Metadata
 df.GetMetadata(key)                  // string, error
 df.GetMetadataOrDefault(key, def)    // string
@@ -174,13 +177,14 @@ df.Errorf("format", args...)         // *Deltafile (chainable)
 df.Filterf("format", args...)        // *Deltafile (chainable)
 ```
 
-### Return Types
+### Return Value
 
-The `Transform` method returns a `*Deltafile`. The kit inspects the Deltafile's state to determine the result:
+The `Transform` method always returns a `*Deltafile`. The kit inspects the returned Deltafile to determine the outcome:
 
-* **Transform result** — when content has been added via `SaveStringContent`, `AddContent`, `PassthroughContent`, etc.
-* **Error result** — when `Errorf` has been called on the Deltafile
-* **Filter result** — when `Filterf` has been called on the Deltafile
+* `Errorf` was called — the DeltaFile is errored.
+* `Filterf` was called — the DeltaFile is filtered.
+* One or more children were added via `NewChild` — each child becomes a new DeltaFile that continues through the flow.
+* Otherwise, the action succeeds, and any saved content, metadata changes, and annotations are applied to the DeltaFile.
 
 ### Example
 

@@ -129,7 +129,7 @@ Each `Action` has a specific `Input` class passed to its execution method. For e
 `TransformInput` in the `transform()` method. Each `Input` class is unique for each Action type, typically containing:
 
 ```java
-List<ActionContent> contentList;
+List<ActionContent> content;
 Map<String, String> metadata;
 ```
 
@@ -229,7 +229,7 @@ transformResult.saveContent(byteArray, fileName, MediaType.APPLICATION_JSON);
 transformResult.saveContent(inputStream, fileName, MediaType.APPLICATION_JSON);
 
 // you can modify existing content and add it to the Result without having to save new Content to disk:
-List<ActionContent> existingContentList = input.getContentList();
+List<ActionContent> existingContentList = input.content();
 transformResult.addContent(existingContentList);
 
 // you can also manipulate existing content to store new content on disk

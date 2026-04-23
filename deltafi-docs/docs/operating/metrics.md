@@ -48,7 +48,7 @@ The following metrics are generated to VictoriaMetrics by default:
 ## Custom Metrics in Action Kits
 
 Each action kit has a custom metric interface built in to the Result class for the action.  To add a new custom
-metric from the load action, simply use the add interface to create custom metrics with custom tags.  Note that
+metric from an action, simply use the add interface to create custom metrics with custom tags.  Note that
 the actual metric name in VictoriaMetrics will be prepended with `stats_counts.` and custom metrics will
 automatically be tagged with `action`, `ingressFlow`, and `source`.
 
