@@ -1,6 +1,6 @@
 <!--
    ABOUTME: Primary top navigation bar for major DeltaFi sections.
-   ABOUTME: Uses click-open dropdowns on desktop and a popup menu fallback on narrow screens.
+   ABOUTME: Uses hover-open dropdowns on desktop and a popup menu fallback on narrow screens.
 -->
 <!--
    DeltaFi - Data transformation and enrichment platform
@@ -55,11 +55,10 @@
 
       <div class="desktop-nav">
         <template v-for="item in visibleMenuItems" :key="item.path || item.name">
-          <div v-if="item.children && hasVisibleChildren(item)" class="nav-item-wrapper">
+          <div v-if="item.children && hasVisibleChildren(item)" class="nav-item-wrapper" @mouseenter="openDropdown = item.name" @mouseleave="closeDropdown">
             <button
               class="nav-item nav-item-button"
               :class="{ active: isActive(item), open: openDropdown === item.name }"
-              @click="toggleDropdown(item.name)"
             >
               <i v-if="item.icon" :class="item.icon" class="mr-2" />
               <span>{{ item.name }}</span>
@@ -135,7 +134,7 @@
 
 <script setup lang="ts">
 import TieredMenu from "primevue/tieredmenu";
-import { computed, onMounted, onUnmounted, ref, watch } from "vue";
+import { computed, ref, watch } from "vue";
 import { useRoute } from "vue-router";
 import type { MenuItem as PrimeMenuItem } from "primevue/menuitem";
 import useMenuItems, { type MenuItem } from "@/composables/useMenuItems";
@@ -231,10 +230,6 @@ const isActive = (item: MenuItem): boolean => {
   return false;
 };
 
-const toggleDropdown = (name: string) => {
-  openDropdown.value = openDropdown.value === name ? null : name;
-};
-
 const closeDropdown = () => {
   openDropdown.value = null;
 };
@@ -248,21 +243,6 @@ const onMobileRouteClick = (event: Event, navigate: (event?: Event) => void) => 
   mobileMenu.value?.hide?.();
   navigate(event);
 };
-
-const handleClickOutside = (event: MouseEvent) => {
-  const target = event.target as HTMLElement;
-  if (!target.closest(".nav-item-wrapper")) {
-    closeDropdown();
-  }
-};
-
-onMounted(() => {
-  document.addEventListener("click", handleClickOutside);
-});
-
-onUnmounted(() => {
-  document.removeEventListener("click", handleClickOutside);
-});
 </script>
 
 <style scoped lang="scss">
