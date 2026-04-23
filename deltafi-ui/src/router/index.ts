@@ -17,40 +17,41 @@
 */
 
 import { createRouter, createWebHistory, RouteRecordRaw } from "vue-router";
-import AutoResumePage from "@/pages/AutoResumePage.vue";
-import DashboardPage from "@/pages/DashboardPage.vue";
-import DataSinkPage from "@/pages/DataSinkPage.vue";
-import FleetErrorsPage from "@/pages/FleetErrorsPage.vue";
-import FleetSearchPage from "@/pages/FleetSearchPage.vue";
-import LeaderConfigPage from "@/pages/LeaderConfigPage.vue";
-import LeaderDashboardPage from "@/pages/LeaderDashboardPage.vue";
-import DataSourcePage from "@/pages/DataSourcePage.vue";
-import DeletePoliciesPage from "@/pages/DeletePoliciesPage.vue";
-import DeltaFileSearchPage from "@/pages/DeltaFileSearchPage.vue";
-import DeltaFileUploadPage from "@/pages/DeltaFileUploadPage.vue";
-import DeltaFileImportPage from "@/pages/DeltaFileImportPage.vue";
-import DeltaFileViewerPage from "@/pages/DeltaFileViewerPage.vue";
-import ErrorsPage from "@/pages/ErrorsPage.vue";
-import EventsPage from "@/pages/EventsPage.vue";
-import ExternalLinksPage from "@/pages/ExternalLinksPage.vue";
-import FilteredPage from "@/pages/FilteredPage.vue";
-import TransformBuilderPage from "@/pages/TransformBuilderPage.vue";
-import TransformsPage from "@/pages/TransformsPage.vue";
-import PageNotFound from "@/pages/PageNotFound.vue";
-import PluginsPage from "@/pages/PluginsPage.vue";
-import RolesPage from "@/pages/RolesPage.vue";
-import PipelineVisualizationPage from "@/pages/PipelineVisualizationPage.vue";
-import SystemMapPage from "@/pages/SystemMapPage.vue";
-import SystemMetricsPage from "@/pages/SystemMetricsPage.vue";
-import QueueMetricsPage from "@/pages/QueueMetricsPage.vue";
-import SystemPropertiesPage from "@/pages/SystemPropertiesPage.vue";
-import SystemSnapshotsPage from "@/pages/SystemSnapshotsPage.vue";
-import LookupTablePage from "@/pages/LookupTablePage.vue";
-import LookupTableResultPage from "@/pages/LookupTableResultPage.vue";
-import TopicsPage from "@/pages/TopicsPage.vue";
-import UnauthorizedPage from "@/pages/UnauthorizedPage.vue";
-import UsersPage from "@/pages/UsersPage.vue";
-import VersionsPage from "@/pages/VersionsPage.vue";
+
+const AutoResumePage = () => import("@/pages/AutoResumePage.vue");
+const DashboardPage = () => import("@/pages/DashboardPage.vue");
+const DataSinkPage = () => import("@/pages/DataSinkPage.vue");
+const FleetErrorsPage = () => import("@/pages/FleetErrorsPage.vue");
+const FleetSearchPage = () => import("@/pages/FleetSearchPage.vue");
+const LeaderConfigPage = () => import("@/pages/LeaderConfigPage.vue");
+const LeaderDashboardPage = () => import("@/pages/LeaderDashboardPage.vue");
+const DataSourcePage = () => import("@/pages/DataSourcePage.vue");
+const DeletePoliciesPage = () => import("@/pages/DeletePoliciesPage.vue");
+const DeltaFileSearchPage = () => import("@/pages/DeltaFileSearchPage.vue");
+const DeltaFileUploadPage = () => import("@/pages/DeltaFileUploadPage.vue");
+const DeltaFileImportPage = () => import("@/pages/DeltaFileImportPage.vue");
+const DeltaFileViewerPage = () => import("@/pages/DeltaFileViewerPage.vue");
+const ErrorsPage = () => import("@/pages/ErrorsPage.vue");
+const EventsPage = () => import("@/pages/EventsPage.vue");
+const ExternalLinksPage = () => import("@/pages/ExternalLinksPage.vue");
+const FilteredPage = () => import("@/pages/FilteredPage.vue");
+const TransformBuilderPage = () => import("@/pages/TransformBuilderPage.vue");
+const TransformsPage = () => import("@/pages/TransformsPage.vue");
+const PageNotFound = () => import("@/pages/PageNotFound.vue");
+const PluginsPage = () => import("@/pages/PluginsPage.vue");
+const RolesPage = () => import("@/pages/RolesPage.vue");
+const PipelineVisualizationPage = () => import("@/pages/PipelineVisualizationPage.vue");
+const SystemMapPage = () => import("@/pages/SystemMapPage.vue");
+const SystemMetricsPage = () => import("@/pages/SystemMetricsPage.vue");
+const QueueMetricsPage = () => import("@/pages/QueueMetricsPage.vue");
+const SystemPropertiesPage = () => import("@/pages/SystemPropertiesPage.vue");
+const SystemSnapshotsPage = () => import("@/pages/SystemSnapshotsPage.vue");
+const LookupTablePage = () => import("@/pages/LookupTablePage.vue");
+const LookupTableResultPage = () => import("@/pages/LookupTableResultPage.vue");
+const TopicsPage = () => import("@/pages/TopicsPage.vue");
+const UnauthorizedPage = () => import("@/pages/UnauthorizedPage.vue");
+const UsersPage = () => import("@/pages/UsersPage.vue");
+const VersionsPage = () => import("@/pages/VersionsPage.vue");
 
 const routes: Array<RouteRecordRaw> = [
   {
