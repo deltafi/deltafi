@@ -140,7 +140,7 @@ import static org.mockito.Mockito.times;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @Testcontainers
-@Sql(statements = "TRUNCATE TABLE annotations, delta_file_flows, delta_files, delete_policies, flows, plugins, properties, resume_policies, analytics, event_annotations, flow_definitions CASCADE",
+@Sql(statements = "TRUNCATE TABLE annotations, delta_file_flows, delta_files, delete_policies, flows, flow_summary_counts, flow_summary_deltas, plugins, properties, resume_policies, analytics, event_annotations, flow_definitions CASCADE",
 		executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD)
 class DeltaFiCoreApplicationTests {
 	@Container
@@ -620,6 +620,15 @@ class DeltaFiCoreApplicationTests {
 						.deleteMetadata(false)
 						.build());
 		checkUpdateResult(goodUpdate, null, idToUpdate, "newTypesAndName", false);
+	}
+
+	/**
+	 * Drain pending flow_summary_deltas into flow_summary_counts. In production a background scheduler
+	 * runs this every ~1 s, so reads tolerate brief staleness; tests that assert on summary counts
+	 * right after seeding need to drain explicitly since the scheduler doesn't run fast enough in-test.
+	 */
+	private void drainFlowSummaryDeltas() {
+		jdbcTemplate.execute("SELECT consume_flow_summary_deltas()");
 	}
 
 	private void checkUpdateResult(Result result, String error, UUID id, String name, boolean enabled) {
@@ -3705,6 +3714,7 @@ class DeltaFiCoreApplicationTests {
 				UUID.randomUUID(), "flow", "causeX", "ctx", NOW, NOW, "causeY"));
 		deltaFileRepo.save(utilService.buildErrorDeltaFile(
 				UUID.randomUUID(), "flow", "causeX", "ctx", NOW, NOW, "causeY"));
+		drainFlowSummaryDeltas();
 
 		DeltaFilesFilter filter = new DeltaFilesFilter();
 		filter.setStage(DeltaFileStage.ERROR);
@@ -4534,6 +4544,7 @@ class DeltaFiCoreApplicationTests {
 		OffsetDateTime now = OffsetDateTime.now();
 		OffsetDateTime plusTwo = OffsetDateTime.now().plusMinutes(2);
 		loadDeltaFilesWithActionErrors(now, plusTwo);
+		drainFlowSummaryDeltas();
 
 		GraphQLQueryRequest graphQLQueryRequest = new GraphQLQueryRequest(
 				new ErrorSummaryByFlowGraphQLQuery.Builder()
@@ -4576,6 +4587,7 @@ class DeltaFiCoreApplicationTests {
 
 		DeltaFile deltaFile5 = utilService.buildDeltaFile(UUID.randomUUID(), "flow3", DeltaFileStage.ERROR, now, now);
 		deltaFileRepo.save(deltaFile5);
+		drainFlowSummaryDeltas();
 
 		SummaryByFlow firstPage = deltaFilesService.getErrorSummaryByFlow(
 				0, 2, null, null, null);
@@ -4607,6 +4619,7 @@ class DeltaFiCoreApplicationTests {
 
 		DeltaFile deltaFile7 = utilService.buildDeltaFile(UUID.randomUUID(), "flow3", DeltaFileStage.ERROR, now, minusTwo);
 		deltaFileRepo.save(deltaFile7);
+		drainFlowSummaryDeltas();
 
 		SummaryByFlow descSort = deltaFilesService.getErrorSummaryByFlow(
 				0, 99, null, DeltaFileDirection.DESC, null);
@@ -4689,6 +4702,7 @@ class DeltaFiCoreApplicationTests {
 		OffsetDateTime now = OffsetDateTime.now();
 		OffsetDateTime plusTwo = OffsetDateTime.now().plusMinutes(2);
 		loadDeltaFilesWithActionErrors(now, plusTwo);
+		drainFlowSummaryDeltas();
 
 		ErrorSummaryFilter filterAck = ErrorSummaryFilter.builder()
 				.errorAcknowledged(true)
@@ -4735,6 +4749,7 @@ class DeltaFiCoreApplicationTests {
 		OffsetDateTime plusOne = OffsetDateTime.now().plusMinutes(1);
 		OffsetDateTime plusTwo = OffsetDateTime.now().plusMinutes(2);
 		loadDeltaFilesWithActionErrors(now, plusOne);
+		drainFlowSummaryDeltas();
 
 		GraphQLQueryRequest graphQLQueryRequest = new GraphQLQueryRequest(
 				new ErrorSummaryByMessageGraphQLQuery.Builder()
@@ -4763,6 +4778,7 @@ class DeltaFiCoreApplicationTests {
 		clearForFlowTests();
 		OffsetDateTime plusTwo = OffsetDateTime.now().plusMinutes(2);
 		List<UUID> dids = loadFilteredDeltaFiles(plusTwo);
+		drainFlowSummaryDeltas();
 
 		GraphQLQueryRequest graphQLQueryRequest = new GraphQLQueryRequest(
 				new FilteredSummaryByFlowGraphQLQuery.Builder()
@@ -4796,6 +4812,7 @@ class DeltaFiCoreApplicationTests {
 		clearForFlowTests();
 		OffsetDateTime plusTwo = OffsetDateTime.now().plusMinutes(2);
 		loadFilteredDeltaFiles(plusTwo);
+		drainFlowSummaryDeltas();
 
 		GraphQLQueryRequest graphQLQueryRequest = new GraphQLQueryRequest(
 				new FilteredSummaryByMessageGraphQLQuery.Builder()
@@ -4826,6 +4843,7 @@ class DeltaFiCoreApplicationTests {
 		clearForFlowTests();
 		OffsetDateTime plusTwo = OffsetDateTime.now().plusMinutes(2);
 		loadFilteredDeltaFiles(plusTwo);
+		drainFlowSummaryDeltas();
 
 		List<String> causes = deltaFilesService.getFilteredCauses(
 				FilteredSummaryFilter.builder().build());
@@ -4838,6 +4856,7 @@ class DeltaFiCoreApplicationTests {
 		clearForFlowTests();
 		OffsetDateTime plusTwo = OffsetDateTime.now().plusMinutes(2);
 		loadFilteredDeltaFiles(plusTwo);
+		drainFlowSummaryDeltas();
 
 		GraphQLQueryRequest graphQLQueryRequest = new GraphQLQueryRequest(
 				ErrorCausesGraphQLQuery.newRequest().build());
@@ -4856,6 +4875,7 @@ class DeltaFiCoreApplicationTests {
 		OffsetDateTime now = OffsetDateTime.now();
 		OffsetDateTime plusTwo = OffsetDateTime.now().plusMinutes(2);
 		loadDeltaFilesWithActionErrors(now, plusTwo);
+		drainFlowSummaryDeltas();
 
 		List<String> causes = deltaFilesService.getErrorCauses(
 				ErrorSummaryFilter.builder().build());
@@ -4868,6 +4888,7 @@ class DeltaFiCoreApplicationTests {
 		OffsetDateTime now = OffsetDateTime.now();
 		OffsetDateTime plusTwo = OffsetDateTime.now().plusMinutes(2);
 		loadDeltaFilesWithActionErrors(now, plusTwo);
+		drainFlowSummaryDeltas();
 
 		List<String> unacknowledgedCauses = deltaFilesService.getErrorCauses(
 				ErrorSummaryFilter.builder().errorAcknowledged(false).build());
@@ -4881,6 +4902,7 @@ class DeltaFiCoreApplicationTests {
 		OffsetDateTime now = OffsetDateTime.now();
 		OffsetDateTime plusTwo = OffsetDateTime.now().plusMinutes(2);
 		loadDeltaFilesWithActionErrors(now, plusTwo);
+		drainFlowSummaryDeltas();
 
 		String query = "{ errorCauses(filter: {errorAcknowledged: false}) }";
 
@@ -4940,6 +4962,7 @@ class DeltaFiCoreApplicationTests {
 		OffsetDateTime plusTwo = OffsetDateTime.now().plusMinutes(2);
 
 		loadDeltaFilesWithActionErrors(now, plusTwo);
+		drainFlowSummaryDeltas();
 
 		SummaryByFlowAndMessage fullSummary = deltaFilesService.getErrorSummaryByMessage(
 				0, 99, null, null, null);
@@ -4962,6 +4985,7 @@ class DeltaFiCoreApplicationTests {
 		OffsetDateTime plusTwo = OffsetDateTime.now().plusMinutes(2);
 
 		loadDeltaFilesWithActionErrors(now, plusTwo);
+		drainFlowSummaryDeltas();
 
 		// sortField=null defaults to COUNT, direction=ASC
 		SummaryByFlowAndMessage orderByCountAsc = deltaFilesService.getErrorSummaryByMessage(
@@ -4999,6 +5023,7 @@ class DeltaFiCoreApplicationTests {
 		OffsetDateTime plusTwo = OffsetDateTime.now().plusMinutes(2);
 
 		loadDeltaFilesWithActionErrors(now, plusTwo);
+		drainFlowSummaryDeltas();
 
 		ErrorSummaryFilter filter = ErrorSummaryFilter.builder()
 				.errorAcknowledged(false)
@@ -5046,6 +5071,7 @@ class DeltaFiCoreApplicationTests {
 		OffsetDateTime plusTwo = OffsetDateTime.now().plusMinutes(2);
 
 		loadDeltaFilesWithActionErrors(now, plusTwo);
+		drainFlowSummaryDeltas();
 
 		SummaryByFlowAndMessage noneFound = deltaFilesService.getErrorSummaryByMessage(
 				0, 99, ErrorSummaryFilter.builder()
@@ -5412,6 +5438,7 @@ class DeltaFiCoreApplicationTests {
 		unacknowledgedAction.setErrorCause(reason);
 		unacknowledgedError.firstFlow().updateState();
 		deltaFileRepo.saveAll(List.of(unacknowledgedError, acknowledgedError));
+		drainFlowSummaryDeltas();
 
 		assertThat(deltaFileFlowRepo.countUnacknowledgedErrors()).isEqualTo(1);
 	}
@@ -6158,6 +6185,7 @@ class DeltaFiCoreApplicationTests {
 			deltaFiles.add(deltaFile);
 		}
 		deltaFileRepo.insertBatch(deltaFiles, 1000);
+		drainFlowSummaryDeltas();
 
 		assertEquals(505, deltaFileRepo.count());
 		errorCountService.populateErrorCounts(Set.of());
