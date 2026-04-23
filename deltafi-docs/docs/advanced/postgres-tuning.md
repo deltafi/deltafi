@@ -24,6 +24,7 @@ The lookup instance is only deployed when `deltafi.lookup.enabled` is set to `tr
 | `log_autovacuum_min_duration` | 0 | 0 | Log all autovacuum runs. Essential for visibility at scale. |
 | `random_page_cost` | 1.1 | 1.1 | Query planner cost estimate for random page access. 1.1 is correct for SSD storage. |
 | `effective_io_concurrency` | 200 | 200 | Number of concurrent I/O operations for bitmap heap scans. 200 is appropriate for SSD. |
+| `wal_compression` | lz4 | lz4 | Compression codec for WAL full-page images. `lz4` is significantly cheaper on CPU than `pglz` and relieves WALWrite contention under high write throughput. |
 
 ### Helm-Only Parameters
 

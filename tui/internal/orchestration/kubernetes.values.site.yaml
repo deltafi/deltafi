@@ -102,6 +102,7 @@ postgres:
     max_replication_slots: "1"
     random_page_cost: "1.1"
     effective_io_concurrency: "200"
+    wal_compression: "lz4"
   lookup:
     parameters:
       shared_buffers: "32MB"
@@ -119,6 +120,7 @@ postgres:
       max_replication_slots: "1"
       random_page_cost: "1.1"
       effective_io_concurrency: "200"
+      wal_compression: "lz4"
 
 # S3 Proxy Configuration
 s3proxy:

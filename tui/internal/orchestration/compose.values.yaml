@@ -109,6 +109,7 @@ postgres:
     log_autovacuum_min_duration: 0
     random_page_cost: 1.1
     effective_io_concurrency: 200
+    wal_compression: lz4
   lookup:
     parameters:
       max_connections: 100
@@ -118,6 +119,7 @@ postgres:
       log_autovacuum_min_duration: 0
       random_page_cost: 1.1
       effective_io_concurrency: 200
+      wal_compression: lz4
 
 dependencies:
   grafana: {{.GrafanaContainer}}
