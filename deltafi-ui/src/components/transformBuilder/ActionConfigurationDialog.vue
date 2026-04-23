@@ -136,6 +136,23 @@ const { actionIndexProp: actionIndex } = reactive(props);
 
 const rowData = reactive(JSON.parse(JSON.stringify(props.rowDataProp)));
 
+const extractSchemaDefaults = (schema) => {
+  const defaults = {};
+  if (schema && schema.properties) {
+    for (const [key, propSchema] of Object.entries(schema.properties)) {
+      if (propSchema.default !== undefined) {
+        defaults[key] = propSchema.default;
+      } else if (propSchema.properties) {
+        const nested = extractSchemaDefaults(propSchema);
+        if (Object.keys(nested).length > 0) {
+          defaults[key] = nested;
+        }
+      }
+    }
+  }
+  return defaults;
+};
+
 // Extract defaults from schema and merge with existing parameters
 const getInitialData = () => {
   const existingParams = _.get(rowData, "parameters", {}) || {};
@@ -145,13 +162,7 @@ const getInitialData = () => {
     return existingParams;
   }
 
-  // Build defaults from schema
-  const defaults = {};
-  for (const [key, propSchema] of Object.entries(schema.properties)) {
-    if (propSchema.default !== undefined) {
-      defaults[key] = propSchema.default;
-    }
-  }
+  const defaults = extractSchemaDefaults(schema);
 
   // Merge: existing values take precedence over defaults
   return { ...defaults, ...existingParams };
