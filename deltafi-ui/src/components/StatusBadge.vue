@@ -170,8 +170,8 @@ const icon = (code) => {
   }
 
   .message pre {
-    background-color: #333333;
-    color: #dddddd;
+    background-color: #1e293b;
+    color: #e2e8f0;
     padding: 1em;
     border-radius: 4px;
   }

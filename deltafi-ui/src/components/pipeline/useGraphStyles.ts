@@ -25,12 +25,12 @@ export interface NodeColors {
 }
 
 export const nodeColorsByType: Record<string, NodeColors> = {
-  REST_DATA_SOURCE: { fill: "var(--orange-100)", stroke: "var(--orange-500)" },
-  TIMED_DATA_SOURCE: { fill: "var(--orange-100)", stroke: "var(--orange-500)" },
-  ON_ERROR_DATA_SOURCE: { fill: "var(--orange-100)", stroke: "var(--orange-500)" },
-  TRANSFORM: { fill: "var(--blue-100)", stroke: "var(--blue-500)" },
-  DATA_SINK: { fill: "var(--green-100)", stroke: "var(--green-500)" },
-  TOPIC: { fill: "var(--surface-200)", stroke: "var(--surface-500)" },
+  REST_DATA_SOURCE: { fill: "var(--df-node-datasource-fill)", stroke: "var(--df-node-datasource-stroke)" },
+  TIMED_DATA_SOURCE: { fill: "var(--df-node-datasource-fill)", stroke: "var(--df-node-datasource-stroke)" },
+  ON_ERROR_DATA_SOURCE: { fill: "var(--df-node-datasource-fill)", stroke: "var(--df-node-datasource-stroke)" },
+  TRANSFORM: { fill: "var(--df-node-transform-fill)", stroke: "var(--df-node-transform-stroke)" },
+  DATA_SINK: { fill: "var(--df-node-datasink-fill)", stroke: "var(--df-node-datasink-stroke)" },
+  TOPIC: { fill: "var(--df-node-topic-fill)", stroke: "var(--df-node-topic-stroke)" },
 };
 
 export const typeLabels: Record<string, string> = {
@@ -63,9 +63,9 @@ export const flowStateColors: Record<string, NodeColors | null> = {
   IN_FLIGHT: null,
   PENDING: null,
   RESUMED: null,
-  ERROR: { fill: "var(--red-100)", stroke: "var(--red-500)" },
-  FILTERED: { fill: "var(--yellow-100)", stroke: "var(--yellow-500)" },
-  CANCELLED: { fill: "var(--surface-200)", stroke: "var(--surface-500)" },
+  ERROR: { fill: "var(--df-state-error-fill)", stroke: "var(--df-state-error-stroke)" },
+  FILTERED: { fill: "var(--df-state-filtered-fill)", stroke: "var(--df-state-filtered-stroke)" },
+  CANCELLED: { fill: "var(--df-state-cancelled-fill)", stroke: "var(--df-state-cancelled-stroke)" },
 };
 
 // Get node colors based on flow state, falling back to type-based colors
@@ -74,7 +74,7 @@ export function getFlowNodeColors(type: string, state: string): NodeColors {
   if (stateColor) {
     return stateColor;
   }
-  return nodeColorsByType[type] || { fill: "var(--surface-200)", stroke: "var(--surface-500)" };
+  return nodeColorsByType[type] || { fill: "var(--df-node-topic-fill)", stroke: "var(--df-node-topic-stroke)" };
 }
 
 export function formatType(type: string): string {

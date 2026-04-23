@@ -1028,18 +1028,18 @@ onUnmounted(() => {
 }
 
 .panel-state-badge.state-running {
-  background: var(--green-100);
-  color: var(--green-700);
+  background: var(--df-status-running-bg);
+  color: var(--df-state-text-complete);
 }
 
 .panel-state-badge.state-paused {
-  background: var(--yellow-100);
-  color: var(--yellow-700);
+  background: var(--df-status-paused-bg);
+  color: var(--df-state-text-filtered);
 }
 
 .panel-state-badge.state-stopped {
-  background: var(--red-100);
-  color: var(--red-700);
+  background: var(--df-status-stopped-bg);
+  color: var(--df-state-text-error);
 }
 
 .panel-status-badge {
@@ -1054,13 +1054,13 @@ onUnmounted(() => {
 }
 
 .panel-status-badge.invalid {
-  background: var(--red-100);
-  color: var(--red-700);
+  background: var(--df-status-stopped-bg);
+  color: var(--df-state-text-error);
 }
 
 .panel-status-badge.plugin {
-  background: var(--yellow-100);
-  color: var(--yellow-700);
+  background: var(--df-status-paused-bg);
+  color: var(--df-state-text-filtered);
 }
 
 .panel-plugin {
@@ -1127,7 +1127,7 @@ onUnmounted(() => {
 }
 
 .connection-chip:hover {
-  background: var(--primary-100);
+  background: var(--df-status-selected-bg);
   border-color: var(--primary-color);
   color: var(--primary-color);
 }
@@ -1234,8 +1234,8 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   gap: 0.25rem;
-  background: var(--blue-100);
-  color: var(--blue-700);
+  background: var(--df-status-info-bg);
+  color: var(--df-state-text-inflight);
   padding: 0.25rem 0.5rem;
   border-radius: 4px;
   font-size: 0.8rem;

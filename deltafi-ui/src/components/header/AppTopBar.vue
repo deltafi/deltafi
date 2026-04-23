@@ -33,6 +33,8 @@
       <Clock class="mr-3" />
       <NotificationBadge v-if="$hasPermission('EventRead')" class="mr-3" />
       <StatusBadge class="mr-3" />
+      <!-- <ColorPalettePicker class="mr-3" /> -->
+      <DarkModeToggle class="mr-3" />
       <UserBadge class="mr-3" />
     </span>
   </nav>
@@ -43,6 +45,8 @@ import Clock from "@/components/Clock.vue";
 import StatusBadge from "@/components/StatusBadge.vue";
 import NotificationBadge from "@/components/NotificationBadge.vue";
 import UserBadge from "@/components/UserBadge.vue";
+import ColorPalettePicker from "@/components/ColorPalettePicker.vue";
+import DarkModeToggle from "@/components/DarkModeToggle.vue";
 import Version from "@/components/Version.vue";
 import { computed, inject, ref } from "vue";
 

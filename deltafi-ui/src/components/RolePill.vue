@@ -48,7 +48,7 @@ const classes = computed(() => {
 
 <style>
 .badge-disabled {
-  background-color: #919ca6;
+  background-color: var(--df-secondary-bg, #919ca6);
   color: #ffffff;
 }
 </style>

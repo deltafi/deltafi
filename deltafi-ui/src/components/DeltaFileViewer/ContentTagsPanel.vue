@@ -105,11 +105,11 @@ const isEmpty = computed(() => contentTags.value.length === 0);
       cursor: pointer !important;
       padding: 0.1rem 0.4rem;
       margin: 0;
-      color: #333333;
+      color: var(--df-body-color, #333333);
     }
 
     .content-button:hover {
-      color: #666666 !important;
+      color: var(--df-navbar-icon-color, #666666) !important;
 
       .p-button-label {
         text-decoration: none !important;

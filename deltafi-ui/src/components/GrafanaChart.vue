@@ -23,8 +23,10 @@
 <script setup>
 import { computed } from "vue";
 import useUiConfig from "@/composables/useUiConfig";
+import useTheme from "@/composables/useTheme";
 
 const { uiConfig } = useUiConfig();
+const { isDark } = useTheme();
 
 const props = defineProps({
   panelId: {
@@ -85,6 +87,7 @@ const src = computed(() => {
   const params = {
     ...props,
     ...props.keyPairs,
+    theme: isDark.value ? "dark" : "light",
   };
   if (uiConfig.useUTC) params.timezone = "utc";
   delete params.keyPairs;

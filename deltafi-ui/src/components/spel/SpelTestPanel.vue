@@ -539,7 +539,7 @@ watch(testData, () => {
 .result-value code {
   font-family: 'Fira Code', 'Monaco', 'Menlo', monospace;
   font-size: 0.9rem;
-  background: rgba(255, 255, 255, 0.5);
+  background: rgba(128, 128, 128, 0.15);
   padding: 0.25rem 0.5rem;
   border-radius: 3px;
 }

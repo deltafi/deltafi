@@ -46,7 +46,7 @@
         <Column field="name" header="Name" :sortable="true" :style="{ width: '15%' }">
           <template #body="{ data }">
             <DialogTemplate component-name="autoResume/AutoResumeConfigurationDialog" header="View Auto Resume Rule" dialog-width="75vw" :row-data-prop="data" view-auto-resume-rule @refresh-page="fetchAutoResumeRules()">
-              <a class="cursor-pointer" style="color: black">{{ data.name }}</a>
+              <a class="cursor-pointer" style="color: var(--df-body-color)">{{ data.name }}</a>
             </DialogTemplate>
           </template>
         </Column>

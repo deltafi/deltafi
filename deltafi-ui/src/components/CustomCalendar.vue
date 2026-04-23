@@ -305,13 +305,13 @@ const helperButtons = ref([
 
   .input-area-width {
     width: 335px;
-    border: 1px solid #ced4da;
+    border: 1px solid var(--df-input-border, #ced4da);
     border-radius: var(--p-inputtext-border-radius, 6px);
     padding: 0.5rem 0.75rem;
     cursor: pointer;
 
     &:hover {
-      border-color: #3b82f6;
+      border-color: var(--primary-color);
     }
   }
 }

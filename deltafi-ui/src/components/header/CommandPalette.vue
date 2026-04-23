@@ -598,27 +598,27 @@ watch(selectedIndex, (newIndex) => {
 .command-palette {
   display: flex;
   flex-direction: column;
-  background: white;
+  background: var(--df-dropdown-bg, white);
   position: relative;
 }
 
 .search-section {
   padding: 1rem;
-  border-bottom: 1px solid #e9ecef;
+  border-bottom: 1px solid var(--df-border-color, #e9ecef);
 }
 
 .search-input-wrapper {
   display: flex;
   align-items: center;
-  background: #f8f9fa;
-  border: 1px solid #dee2e6;
+  background: var(--df-navbar-bg, #f8f9fa);
+  border: 1px solid var(--df-border-color, #dee2e6);
   border-radius: 6px;
   padding: 0.5rem 0.75rem;
   margin-bottom: 0.75rem;
 }
 
 .search-prefix {
-  color: #6c757d;
+  color: var(--df-muted-color, #6c757d);
   font-weight: 500;
   margin-right: 0.5rem;
 }
@@ -629,17 +629,18 @@ watch(selectedIndex, (newIndex) => {
   background: transparent;
   outline: none;
   font-size: 1rem;
+  color: var(--df-body-color, #212529);
 
   &::placeholder {
-    color: #adb5bd;
+    color: var(--df-muted-color, #adb5bd);
   }
 }
 
 .search-hint {
-  color: #adb5bd;
+  color: var(--df-muted-color, #adb5bd);
   font-size: 0.75rem;
   padding: 0.125rem 0.375rem;
-  background: #e9ecef;
+  background: var(--df-navbar-hover, #e9ecef);
   border-radius: 3px;
 }
 
@@ -653,22 +654,22 @@ watch(selectedIndex, (newIndex) => {
   align-items: center;
   gap: 0.375rem;
   padding: 0.375rem 0.75rem;
-  border: 1px solid #dee2e6;
+  border: 1px solid var(--df-border-color, #dee2e6);
   border-radius: 16px;
-  background: white;
-  color: #495057;
+  background: var(--df-dropdown-bg, white);
+  color: var(--df-list-item-color, #495057);
   font-size: 0.875rem;
   cursor: pointer;
   transition: all 0.15s;
 
   &:hover {
-    background: #f8f9fa;
-    border-color: #adb5bd;
+    background: var(--df-navbar-bg, #f8f9fa);
+    border-color: var(--df-muted-color, #adb5bd);
   }
 
   &.active {
-    background: #007bff;
-    border-color: #007bff;
+    background: var(--primary-color);
+    border-color: var(--primary-color);
     color: white;
 
     kbd {
@@ -680,27 +681,27 @@ watch(selectedIndex, (newIndex) => {
   kbd {
     font-size: 0.7rem;
     padding: 0.1rem 0.3rem;
-    background: #e9ecef;
+    background: var(--df-navbar-hover, #e9ecef);
     border-radius: 3px;
     font-family: system-ui, -apple-system, sans-serif;
-    color: #495057;
+    color: var(--df-list-item-color, #495057);
   }
 }
 
 .filtered-search-section {
-  border-bottom: 1px solid #e9ecef;
+  border-bottom: 1px solid var(--df-border-color, #e9ecef);
   padding: 0.5rem 0;
 }
 
 .filtered-search-item {
-  background: #f0f7ff;
+  background: var(--df-palette-filtered-bg);
 
   &.selected {
-    background: #e3f2fd;
+    background: var(--df-palette-selected-bg);
   }
 
   .command-name {
-    color: #007bff;
+    color: var(--df-palette-filtered-name-color);
     font-weight: 500;
   }
 }
@@ -719,7 +720,7 @@ watch(selectedIndex, (newIndex) => {
   padding: 0.5rem 1rem;
   font-size: 0.75rem;
   font-weight: 600;
-  color: #6c757d;
+  color: var(--df-muted-color, #6c757d);
   text-transform: uppercase;
   letter-spacing: 0.05em;
 }
@@ -734,11 +735,11 @@ watch(selectedIndex, (newIndex) => {
 
   &:hover,
   &.selected {
-    background: #f8f9fa;
+    background: var(--df-navbar-bg, #f8f9fa);
   }
 
   &.selected {
-    background: #e3f2fd;
+    background: var(--df-palette-selected-bg);
   }
 }
 
@@ -750,12 +751,12 @@ watch(selectedIndex, (newIndex) => {
 
 .command-icon {
   width: 1.25rem;
-  color: #6c757d;
+  color: var(--df-muted-color, #6c757d);
   text-align: center;
 }
 
 .command-name {
-  color: #212529;
+  color: var(--df-body-color, #212529);
 }
 
 .command-right {
@@ -766,16 +767,16 @@ watch(selectedIndex, (newIndex) => {
 
 .command-hotkey {
   font-size: 0.75rem;
-  color: #6c757d;
+  color: var(--df-muted-color, #6c757d);
   padding: 0.125rem 0.375rem;
-  background: #e9ecef;
+  background: var(--df-navbar-hover, #e9ecef);
   border-radius: 3px;
   font-family: system-ui, -apple-system, sans-serif;
 }
 
 .external-icon {
   font-size: 0.75rem;
-  color: #adb5bd;
+  color: var(--df-muted-color, #adb5bd);
 }
 
 .badge {
@@ -788,7 +789,7 @@ watch(selectedIndex, (newIndex) => {
 }
 
 .deltafile-results-section {
-  border-bottom: 1px solid #e9ecef;
+  border-bottom: 1px solid var(--df-border-color, #e9ecef);
 }
 
 .search-loading {
@@ -797,16 +798,16 @@ watch(selectedIndex, (newIndex) => {
   justify-content: center;
   gap: 0.5rem;
   padding: 1rem;
-  color: #6c757d;
+  color: var(--df-muted-color, #6c757d);
 
   i {
-    color: #007bff;
+    color: var(--primary-color);
   }
 }
 
 .search-empty-inline {
   padding: 0.75rem 1rem;
-  color: #6c757d;
+  color: var(--df-muted-color, #6c757d);
   font-size: 0.875rem;
   font-style: italic;
 }
@@ -816,12 +817,12 @@ watch(selectedIndex, (newIndex) => {
   align-items: center;
   gap: 0.5rem;
   padding: 0.75rem 1rem;
-  color: #856404;
-  background: #fff3cd;
+  color: var(--df-palette-validation-color);
+  background: var(--df-palette-validation-bg);
   font-size: 0.875rem;
 
   i {
-    color: #856404;
+    color: var(--df-palette-validation-color);
   }
 }
 
@@ -835,7 +836,7 @@ watch(selectedIndex, (newIndex) => {
 
   &:hover,
   &.selected {
-    background: #f8f9fa;
+    background: var(--df-navbar-bg, #f8f9fa);
   }
 
   &.selected {
@@ -852,12 +853,12 @@ watch(selectedIndex, (newIndex) => {
 .result-icon {
   width: 1.25rem;
   flex-shrink: 0;
-  color: #6c757d;
+  color: var(--df-muted-color, #6c757d);
   text-align: center;
 }
 
 .result-name {
-  color: #212529;
+  color: var(--df-body-color, #212529);
   font-weight: 500;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -867,7 +868,7 @@ watch(selectedIndex, (newIndex) => {
 .result-did {
   margin-left: auto;
   font-size: 0.7rem;
-  color: #adb5bd;
+  color: var(--df-muted-color, #adb5bd);
   font-family: monospace;
   flex-shrink: 0;
 }
@@ -877,15 +878,15 @@ watch(selectedIndex, (newIndex) => {
   gap: 1rem;
   padding-left: 2rem;
   font-size: 0.8rem;
-  color: #6c757d;
+  color: var(--df-muted-color, #6c757d);
 }
 
 .result-datasource {
-  color: #007bff;
+  color: var(--df-link-color, #007bff);
 }
 
 .result-date {
-  color: #adb5bd;
+  color: var(--df-muted-color, #adb5bd);
 }
 
 .result-annotations {
@@ -898,21 +899,21 @@ watch(selectedIndex, (newIndex) => {
 
 .result-annotation {
   font-size: 0.75rem;
-  background: #e9ecef;
+  background: var(--df-navbar-hover, #e9ecef);
   padding: 0.125rem 0.375rem;
   border-radius: 3px;
 }
 
 .anno-key {
-  color: #6c757d;
+  color: var(--df-muted-color, #6c757d);
 }
 
 .anno-sep {
-  color: #adb5bd;
+  color: var(--df-muted-color, #adb5bd);
 }
 
 .anno-value {
-  color: #212529;
+  color: var(--df-body-color, #212529);
 }
 
 .search-empty {
@@ -920,7 +921,7 @@ watch(selectedIndex, (newIndex) => {
   align-items: center;
   justify-content: center;
   padding: 1.5rem 1rem;
-  color: #6c757d;
+  color: var(--df-muted-color, #6c757d);
   font-size: 0.9rem;
 }
 
@@ -929,8 +930,8 @@ watch(selectedIndex, (newIndex) => {
   justify-content: center;
   gap: 1.5rem;
   padding: 0.75rem 1rem;
-  background: #f8f9fa;
-  border-top: 1px solid #e9ecef;
+  background: var(--df-navbar-bg, #f8f9fa);
+  border-top: 1px solid var(--df-border-color, #e9ecef);
 }
 
 .footer-hint {
@@ -938,11 +939,11 @@ watch(selectedIndex, (newIndex) => {
   align-items: center;
   gap: 0.25rem;
   font-size: 0.75rem;
-  color: #6c757d;
+  color: var(--df-muted-color, #6c757d);
 
   kbd {
     padding: 0.125rem 0.25rem;
-    background: #e9ecef;
+    background: var(--df-navbar-hover, #e9ecef);
     border-radius: 2px;
     font-family: system-ui, -apple-system, sans-serif;
   }
@@ -951,7 +952,7 @@ watch(selectedIndex, (newIndex) => {
 .confirmation-overlay {
   position: absolute;
   inset: 0;
-  background: rgba(255, 255, 255, 0.97);
+  background: var(--df-palette-confirm-overlay-bg);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -974,18 +975,18 @@ watch(selectedIndex, (newIndex) => {
 .confirmation-title {
   font-size: 1.25rem;
   font-weight: 600;
-  color: #212529;
+  color: var(--df-body-color, #212529);
   margin: 0 0 0.75rem 0;
 }
 
 .confirmation-message {
-  color: #6c757d;
+  color: var(--df-muted-color, #6c757d);
   margin: 0 0 0.5rem 0;
   line-height: 1.5;
 }
 
 .confirmation-question {
-  color: #495057;
+  color: var(--df-list-item-color, #495057);
   font-weight: 500;
   margin: 0 0 1.5rem 0;
 }
@@ -1005,13 +1006,13 @@ watch(selectedIndex, (newIndex) => {
   transition: all 0.15s;
 
   &.cancel {
-    background: white;
-    border: 1px solid #dee2e6;
-    color: #495057;
+    background: var(--df-dropdown-bg, white);
+    border: 1px solid var(--df-border-color, #dee2e6);
+    color: var(--df-list-item-color, #495057);
 
     &:hover {
-      background: #f8f9fa;
-      border-color: #adb5bd;
+      background: var(--df-navbar-bg, #f8f9fa);
+      border-color: var(--df-muted-color, #adb5bd);
     }
 
     &:focus {

@@ -337,7 +337,7 @@ const formatFlowNames = () => {
 
   .time-range .form-control:disabled,
   .time-range .form-control[readonly] {
-    background-color: #ffffff;
+    background-color: var(--surface-card, #ffffff);
   }
 
   .show-acknowledged-toggle {

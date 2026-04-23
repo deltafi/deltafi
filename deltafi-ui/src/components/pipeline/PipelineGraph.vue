@@ -495,7 +495,7 @@ svg {
 }
 
 .edge-group:hover .edge-path {
-  stroke: var(--blue-500);
+  stroke: var(--primary-color);
   stroke-width: 4;
   opacity: 1;
 }

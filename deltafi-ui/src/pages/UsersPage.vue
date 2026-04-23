@@ -345,7 +345,7 @@ watch(
 
     td.domains-col {
       .badge {
-        background-color: #dee2e6;
+        background-color: var(--df-navbar-hover, #dee2e6);
         font-size: 90%;
         font-weight: normal;
       }
@@ -379,10 +379,10 @@ watch(
     padding-block-end: 0.625em;
     min-inline-size: min-content;
     border-radius: 4px;
-    border: 1px solid #ced4da;
+    border: 1px solid var(--df-input-border, #ced4da);
     border-width: 1px;
     border-style: groove;
-    border-color: rgb(225, 225, 225);
+    border-color: var(--df-border-color, rgb(225, 225, 225));
     border-image: initial;
   }
 

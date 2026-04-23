@@ -157,13 +157,13 @@ watch(selectedItem, (newItem, oldValue) => {
   }
 
   .p-listbox-option.p-listbox-option-selected .tag-badge.badge-primary {
-    background-color: white !important;
+    background-color: var(--surface-card, white) !important;
     color: var(--primary-color, #007bff) !important;
   }
 
   .p-listbox-option.p-listbox-option-selected .tag-badge.badge-secondary {
-    background-color: white !important;
-    color: #6c757d !important;
+    background-color: var(--surface-card, white) !important;
+    color: var(--df-muted-color, #6c757d) !important;
   }
 }
 </style>

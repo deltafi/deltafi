@@ -68,7 +68,7 @@
                                 <dd v-else class="d-flex">
                                   <div>{{ _.isArray(value) ? Array.from(value).join(", ") : value }}</div>
                                   <template v-if="_.isEqual(actionInfoKey, 'name')">
-                                    <a v-tooltip.top="`View logs`" :class="grafanaLogLink" style="color: black" :href="actionLogLink(value)" target="_blank" rel="noopener noreferrer">
+                                    <a v-tooltip.top="`View logs`" :class="grafanaLogLink" style="color: var(--df-body-color)" :href="actionLogLink(value)" target="_blank" rel="noopener noreferrer">
                                       <i class="ml-1 text-muted fa-regular fa-chart-bar" />
                                     </a>
                                   </template>
@@ -98,7 +98,7 @@
                               <dd v-else class="d-flex">
                                 <div>{{ _.isArray(value) ? Array.from(value).join(", ") : value }}</div>
                                 <template v-if="_.isEqual(actionInfoKey, 'name')">
-                                  <a v-tooltip.top="`View logs`" :class="grafanaLogLink" style="color: black" :href="actionLogLink(value)" target="_blank" rel="noopener noreferrer">
+                                  <a v-tooltip.top="`View logs`" :class="grafanaLogLink" style="color: var(--df-body-color)" :href="actionLogLink(value)" target="_blank" rel="noopener noreferrer">
                                     <i class="ml-1 text-muted fa-regular fa-chart-bar" />
                                   </a>
                                 </template>

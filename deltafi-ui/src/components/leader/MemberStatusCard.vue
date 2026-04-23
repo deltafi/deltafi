@@ -392,10 +392,10 @@ const formatBytes = (bytes: number | undefined): string => {
   align-items: flex-start;
   gap: 0.5rem;
   padding: 0.75rem;
-  background: var(--red-50);
-  border: 1px solid var(--red-200);
+  background: var(--df-status-stopped-bg);
+  border: 1px solid var(--df-state-error-stroke);
   border-radius: 4px;
-  color: var(--red-700);
+  color: var(--df-state-text-error);
 }
 
 .error-icon {
@@ -448,14 +448,14 @@ const formatBytes = (bytes: number | undefined): string => {
 
 .total-metric {
   grid-column: 1 / -1;
-  background: var(--surface-100) !important;
+  background: var(--df-subtle-bg-alt) !important;
 }
 
 .metric {
   text-align: center;
   padding: 1rem;
-  background: var(--surface-50);
-  border: 1px solid var(--surface-200);
+  background: var(--df-subtle-bg);
+  border: 1px solid var(--df-subtle-border);
   border-radius: 4px;
 }
 
@@ -534,8 +534,8 @@ const formatBytes = (bytes: number | undefined): string => {
   gap: 0.25rem;
   max-height: 80px;
   overflow-y: auto;
-  background: var(--surface-50);
-  border: 1px solid var(--surface-200);
+  background: var(--df-subtle-bg);
+  border: 1px solid var(--df-subtle-border);
   border-radius: 4px;
   padding: 0.5rem;
 }

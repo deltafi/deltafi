@@ -169,11 +169,11 @@ const rowClick = (event) => {
       cursor: pointer !important;
       padding: 0.1rem 0.4rem;
       margin: 0;
-      color: #333333;
+      color: var(--df-body-color, #333333);
     }
 
     .content-button:hover {
-      color: #666666 !important;
+      color: var(--df-navbar-icon-color, #666666) !important;
 
       .p-button-label {
         text-decoration: none !important;
@@ -205,7 +205,7 @@ const rowClick = (event) => {
     .branch {
       font-family: "Courier New", Courier, monospace;
       font-size: 1.5rem;
-      color: #6c757d;
+      color: var(--df-muted-color, #6c757d);
       margin-right: 0.25rem;
     }
   }

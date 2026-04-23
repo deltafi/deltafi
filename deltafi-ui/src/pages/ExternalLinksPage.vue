@@ -36,7 +36,7 @@
         <Column field="name" header="Name" :sortable="true" :style="{ width: '15rem' }">
           <template #body="{ data }">
             <DialogTemplate component-name="externalLink/ExternalLinkConfigurationDialog" header="View External Link" dialog-width="25vw" :row-data-prop="data" row-link-type="External Link" view-link @refresh-page="reloadUIConfigs()">
-              <a class="cursor-pointer" style="color: black">{{ data.name }}</a>
+              <a class="cursor-pointer" style="color: var(--df-body-color)">{{ data.name }}</a>
             </DialogTemplate>
           </template>
         </Column>
@@ -61,7 +61,7 @@
         <Column field="name" header="Name" :sortable="true" :style="{ width: '15rem' }">
           <template #body="{ data }">
             <DialogTemplate component-name="externalLink/ExternalLinkConfigurationDialog" header="View DeltaFile Link" dialog-width="25vw" :row-data-prop="data" row-link-type="DeltaFile Link" view-link @refresh-page="reloadUIConfigs()">
-              <a class="cursor-pointer" style="color: black">{{ data.name }}</a>
+              <a class="cursor-pointer" style="color: var(--df-body-color)">{{ data.name }}</a>
             </DialogTemplate>
           </template>
         </Column>

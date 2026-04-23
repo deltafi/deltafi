@@ -86,7 +86,7 @@
         <Column field="stage" header="Stage" :sortable="true">
           <template #body="{ data }">
             {{ data.stage }}
-            <i v-if="data.paused" v-tooltip="'Paused'" style="color: #888888" class="fa-solid fa-circle-pause" />
+            <i v-if="data.paused" v-tooltip="'Paused'" class="fa-solid fa-circle-pause paused-icon" />
           </template>
         </Column>
         <Column field="created" header="Created" :sortable="true">
@@ -548,6 +548,10 @@ const onAcknowledged = (dids, reason) => {
 
   .vdpr-datepicker {
     position: relative;
+  }
+
+  .paused-icon {
+    color: var(--df-muted-color, #888888);
   }
 
   td.filename-column {

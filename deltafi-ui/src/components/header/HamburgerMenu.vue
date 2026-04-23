@@ -204,31 +204,31 @@ const hasVisibleChildren = (item: MenuItem): boolean => {
   display: flex;
   align-items: center;
   padding: 0.4rem 1rem;
-  color: #333;
+  color: var(--df-navbar-color);
   text-decoration: none;
   border-radius: 4px;
   transition: background-color 0.15s;
 
   &:hover {
-    background-color: #e9ecef;
+    background-color: var(--df-navbar-hover);
     text-decoration: none;
-    color: #333;
+    color: var(--df-navbar-color);
   }
 
   &.active {
-    background-color: #e3f2fd;
-    color: #1976d2;
+    background-color: var(--df-menu-active-bg);
+    color: var(--df-menu-active-color);
     font-weight: 500;
 
     .menu-icon {
-      color: #1976d2;
+      color: var(--df-menu-active-color);
     }
   }
 }
 
 .menu-icon {
   width: 1.5rem;
-  color: #666;
+  color: var(--df-navbar-icon-color);
   text-align: center;
   margin-right: 0.75rem;
 }
@@ -239,7 +239,7 @@ const hasVisibleChildren = (item: MenuItem): boolean => {
 
 .external-icon {
   font-size: 0.75rem;
-  color: #999;
+  color: var(--df-muted-color);
   margin-left: auto;
 }
 
@@ -252,7 +252,7 @@ const hasVisibleChildren = (item: MenuItem): boolean => {
     padding: 0.35rem 1rem;
     font-size: 0.85rem;
     font-weight: 600;
-    color: #666;
+    color: var(--df-navbar-icon-color);
     text-transform: uppercase;
     letter-spacing: 0.025em;
     cursor: pointer;
@@ -260,7 +260,7 @@ const hasVisibleChildren = (item: MenuItem): boolean => {
     transition: background-color 0.15s;
 
     &:hover {
-      background-color: #f5f5f5;
+      background-color: var(--df-navbar-hover);
     }
   }
 
@@ -314,7 +314,7 @@ const hasVisibleChildren = (item: MenuItem): boolean => {
 
 .hamburger-menu-sidebar .p-drawer-header {
   padding: 1rem !important;
-  border-bottom: 1px solid #dee2e6;
+  border-bottom: 1px solid var(--df-border-color);
 }
 
 .hamburger-menu-sidebar .p-drawer-content {

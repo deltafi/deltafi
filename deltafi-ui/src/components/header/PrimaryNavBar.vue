@@ -272,9 +272,9 @@ onUnmounted(() => {
   justify-content: space-between;
   gap: 0.75rem;
   padding: 0.3rem 0.75rem;
-  background: linear-gradient(180deg, #f8fafc 0%, #eef3f7 100%);
-  border-bottom: 1px solid #d7dee6;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.75);
+  background: linear-gradient(180deg, var(--df-topnav-gradient-start) 0%, var(--df-topnav-gradient-end) 100%);
+  border-bottom: 1px solid var(--df-topnav-border);
+  box-shadow: inset 0 1px 0 var(--df-topnav-shadow);
 }
 
 .nav-main {
@@ -306,18 +306,18 @@ onUnmounted(() => {
   align-items: center;
   justify-content: center;
   padding: 0.45rem 0.7rem;
-  border: 1px solid #cfd6dd;
+  border: 1px solid var(--df-topnav-hamburger-border);
   border-radius: 8px;
-  background: #fff;
-  color: #334155;
+  background: var(--df-topnav-hamburger-bg);
+  color: var(--df-topnav-hamburger-color);
   font-weight: 600;
   font-size: 0.9rem;
   line-height: 1;
   transition: background-color 0.2s, border-color 0.2s, box-shadow 0.2s;
 
   &:hover {
-    background-color: #f8fafc;
-    border-color: #b9c3cf;
+    background-color: var(--df-topnav-item-hover-bg);
+    border-color: var(--df-topnav-item-hover-border);
     box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06);
   }
 }
@@ -335,7 +335,7 @@ onUnmounted(() => {
   gap: 0.1rem;
   min-height: 2.7rem;
   padding: 0.52rem 0.7rem;
-  color: #334155;
+  color: var(--df-topnav-item-color);
   text-decoration: none;
   border: 1px solid transparent;
   border-radius: 8px;
@@ -347,25 +347,25 @@ onUnmounted(() => {
   transition: background-color 0.2s, border-color 0.2s, color 0.2s, box-shadow 0.2s;
 
   &:hover {
-    background-color: rgba(255, 255, 255, 0.72);
-    border-color: #d6dbe1;
-    color: #0f172a;
+    background-color: var(--df-topnav-item-hover-bg);
+    border-color: var(--df-topnav-item-hover-border);
+    color: var(--df-topnav-item-hover-color);
     text-decoration: none;
   }
 
   &.active {
-    background-color: #ffffff;
-    border-color: #d6dbe1;
-    border-top-color: #1473e6;
-    color: #0f172a;
+    background-color: var(--df-topnav-item-active-bg);
+    border-color: var(--df-topnav-item-active-border);
+    border-top-color: var(--primary-color);
+    color: var(--df-topnav-item-active-color);
     box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05);
   }
 
   &.open:not(.active) {
-    background-color: rgba(255, 255, 255, 0.9);
-    border-color: #d6dbe1;
-    border-top-color: #d6dbe1;
-    color: #0f172a;
+    background-color: var(--df-topnav-item-hover-bg);
+    border-color: var(--df-topnav-item-hover-border);
+    border-top-color: var(--df-topnav-item-hover-border);
+    color: var(--df-topnav-item-hover-color);
     box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05);
   }
 
@@ -382,14 +382,14 @@ onUnmounted(() => {
       right: -1px;
       bottom: -1px;
       height: 2px;
-      background: #fff;
-      border-left: 1px solid #d6dbe1;
-      border-right: 1px solid #d6dbe1;
+      background: var(--df-topnav-item-active-bg);
+      border-left: 1px solid var(--df-topnav-item-hover-border);
+      border-right: 1px solid var(--df-topnav-item-hover-border);
     }
   }
 
   i {
-    color: #64748b;
+    color: var(--df-topnav-item-icon-color);
     flex-shrink: 0;
   }
 
@@ -408,7 +408,7 @@ onUnmounted(() => {
 
 .dropdown-icon {
   font-size: 0.62rem;
-  color: #64748b;
+  color: var(--df-topnav-item-icon-color);
 }
 
 .nav-dropdown {
@@ -418,10 +418,10 @@ onUnmounted(() => {
   min-width: 235px;
   max-width: 320px;
   padding: 0.35rem;
-  background: #fff;
-  border: 1px solid #d6dbe1;
+  background: var(--df-topnav-dropdown-bg);
+  border: 1px solid var(--df-topnav-dropdown-border);
   border-radius: 0 8px 12px 12px;
-  box-shadow: 0 14px 32px rgba(15, 23, 42, 0.14);
+  box-shadow: 0 14px 32px var(--df-topnav-dropdown-shadow);
   z-index: 100;
 }
 
@@ -430,21 +430,21 @@ onUnmounted(() => {
   align-items: center;
   gap: 0.3rem;
   padding: 0.62rem 0.75rem;
-  color: #334155;
+  color: var(--df-topnav-dropdown-item-color);
   text-decoration: none;
   border-radius: 9px;
   font-size: 0.84rem;
   line-height: 1.2;
 
   &:hover {
-    background-color: #f8fafc;
-    color: #0f172a;
+    background-color: var(--df-topnav-dropdown-item-hover-bg);
+    color: var(--df-topnav-item-hover-color);
     text-decoration: none;
   }
 
   &.active {
-    background-color: #eff6ff;
-    color: #0b63ce;
+    background-color: var(--df-topnav-dropdown-active-bg);
+    color: var(--df-topnav-dropdown-active-color);
     font-weight: 600;
   }
 
@@ -493,6 +493,7 @@ onUnmounted(() => {
     justify-content: flex-end;
   }
 }
+
 </style>
 
 <style lang="scss">
@@ -510,14 +511,14 @@ onUnmounted(() => {
   width: 100%;
   gap: 0.15rem;
   padding: 0.65rem 0.8rem;
-  color: #334155;
+  color: var(--df-topnav-mobile-item-color);
   text-decoration: none;
   font-size: 0.88rem;
   font-weight: 600;
 }
 
 #primary-nav-mobile-menu .mobile-tiered-menu-item:hover {
-  color: #0f172a;
+  color: var(--df-topnav-item-hover-color);
   text-decoration: none;
 }
 

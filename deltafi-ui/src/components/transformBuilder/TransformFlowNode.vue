@@ -175,16 +175,16 @@ const truncateCondition = (condition: string): string => {
   pointer-events: none;
 }
 
-/* Action nodes - blue */
+/* Action nodes */
 .node-type-action .node-rect {
-  fill: var(--blue-100);
-  stroke: var(--blue-500);
+  fill: var(--df-node-transform-fill);
+  stroke: var(--df-node-transform-stroke);
 }
 
-/* Topic nodes - gray/surface */
+/* Topic nodes */
 .node-type-topic .node-rect {
-  fill: var(--surface-200);
-  stroke: var(--surface-500);
+  fill: var(--df-node-topic-fill);
+  stroke: var(--df-node-topic-stroke);
 }
 
 /* Error badge */

@@ -601,7 +601,7 @@ onUnmounted(() => {
 }
 
 .settings-button:hover .settings-button-bg {
-  fill: var(--surface-200);
+  fill: var(--surface-hover);
 }
 
 .settings-button-icon {
@@ -698,7 +698,7 @@ onUnmounted(() => {
 }
 
 .drop-zone.active .drop-zone-rect {
-  fill: var(--primary-100);
+  fill: var(--df-status-selected-bg);
   stroke: var(--primary-color);
   stroke-width: 2;
 }
@@ -711,7 +711,7 @@ onUnmounted(() => {
 
 /* Delete zone */
 .delete-zone-rect {
-  fill: var(--surface-100);
+  fill: var(--df-subtle-bg-alt);
   transition: all 0.2s;
 }
 
@@ -733,7 +733,7 @@ onUnmounted(() => {
 }
 
 .delete-zone.dragging .delete-zone-rect {
-  fill: var(--surface-200);
+  fill: var(--df-subtle-border);
 }
 
 .delete-zone.dragging .delete-zone-text {
@@ -745,7 +745,7 @@ onUnmounted(() => {
 }
 
 .delete-zone.active .delete-zone-rect {
-  fill: var(--red-100);
+  fill: var(--df-status-stopped-bg);
 }
 
 .delete-zone.active .delete-zone-text {

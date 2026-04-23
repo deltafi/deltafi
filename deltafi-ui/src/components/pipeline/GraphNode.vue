@@ -243,7 +243,6 @@ import {
   formatErrorCount,
   formatQueueCount,
 } from "./useGraphStyles";
-
 const props = defineProps({
   node: {
     type: Object,
@@ -393,14 +392,10 @@ const compact = computed(() => props.compact);
 // Background color for metrics areas based on node type (slightly darker than main node)
 const metricsBackgroundColor = computed(() => {
   const type = props.node.type;
-  if (isDataSourceType(type)) {
-    return "var(--orange-200)";
-  } else if (type === "TRANSFORM") {
-    return "var(--blue-200)";
-  } else if (type === "DATA_SINK") {
-    return "var(--green-200)";
-  }
-  return "var(--surface-300)";
+  if (isDataSourceType(type)) return "var(--df-node-datasource-metrics-bg)";
+  if (type === "TRANSFORM") return "var(--df-node-transform-metrics-bg)";
+  if (type === "DATA_SINK") return "var(--df-node-datasink-metrics-bg)";
+  return "var(--df-node-topic-metrics-bg)";
 });
 
 // Status badge for INVALID or PLUGIN states (matches FlowStatusBadge logic)
@@ -511,23 +506,23 @@ const typeIcon = computed(() => {
 .node-type-rest-data-source .node-rect,
 .node-type-timed-data-source .node-rect,
 .node-type-on-error-data-source .node-rect {
-  fill: var(--orange-100);
-  stroke: var(--orange-500);
+  fill: var(--df-node-datasource-fill);
+  stroke: var(--df-node-datasource-stroke);
 }
 
 .node-type-transform .node-rect {
-  fill: var(--blue-100);
-  stroke: var(--blue-500);
+  fill: var(--df-node-transform-fill);
+  stroke: var(--df-node-transform-stroke);
 }
 
 .node-type-data-sink .node-rect {
-  fill: var(--green-100);
-  stroke: var(--green-500);
+  fill: var(--df-node-datasink-fill);
+  stroke: var(--df-node-datasink-stroke);
 }
 
 .node-type-topic .node-rect {
-  fill: var(--surface-200);
-  stroke: var(--surface-500);
+  fill: var(--df-node-topic-fill);
+  stroke: var(--df-node-topic-stroke);
 }
 
 /* Error badge */
@@ -562,14 +557,14 @@ const typeIcon = computed(() => {
 }
 
 .control-button rect {
-  fill: var(--surface-200);
-  stroke: var(--surface-400);
+  fill: var(--df-control-bg);
+  stroke: var(--df-control-border);
   stroke-width: 1;
   transition: all 0.15s ease;
 }
 
 .control-button:hover rect {
-  fill: var(--surface-300);
+  fill: var(--df-control-hover-bg);
 }
 
 .control-button .control-icon {
@@ -579,47 +574,32 @@ const typeIcon = computed(() => {
 
 /* Start button */
 .control-button.start-button.active rect {
-  fill: var(--green-100);
-  stroke: var(--green-500);
+  fill: var(--df-control-start-bg);
+  stroke: var(--df-control-start-border);
 }
 
 .control-button.start-button.active .control-icon {
-  fill: var(--green-600);
-}
-
-.control-button.start-button:hover rect {
-  fill: var(--green-200);
-  stroke: var(--green-500);
+  fill: var(--df-control-start-icon);
 }
 
 /* Pause button */
 .control-button.pause-button.active rect {
-  fill: var(--yellow-100);
-  stroke: var(--yellow-500);
+  fill: var(--df-control-pause-bg);
+  stroke: var(--df-control-pause-border);
 }
 
 .control-button.pause-button.active .control-icon {
-  fill: var(--yellow-700);
-}
-
-.control-button.pause-button:hover rect {
-  fill: var(--yellow-200);
-  stroke: var(--yellow-500);
+  fill: var(--df-control-pause-icon);
 }
 
 /* Stop button */
 .control-button.stop-button.active rect {
-  fill: var(--red-100);
-  stroke: var(--red-400);
+  fill: var(--df-control-stop-bg);
+  stroke: var(--df-control-stop-border);
 }
 
 .control-button.stop-button.active .control-icon {
-  fill: var(--red-500);
-}
-
-.control-button.stop-button:hover rect {
-  fill: var(--red-200);
-  stroke: var(--red-400);
+  fill: var(--df-control-stop-icon);
 }
 
 /* Expand buttons */
@@ -727,23 +707,23 @@ const typeIcon = computed(() => {
 }
 
 .status-badge.invalid .status-badge-bg {
-  fill: var(--red-100);
-  stroke: var(--red-500);
+  fill: var(--df-badge-invalid-bg);
+  stroke: var(--df-badge-invalid-border);
 }
 
 .status-badge.invalid .status-badge-icon,
 .status-badge.invalid .status-badge-text {
-  fill: var(--red-600);
+  fill: var(--df-badge-invalid-text);
 }
 
 .status-badge.plugin .status-badge-bg {
-  fill: var(--yellow-100);
-  stroke: var(--yellow-500);
+  fill: var(--df-badge-plugin-bg);
+  stroke: var(--df-badge-plugin-border);
 }
 
 .status-badge.plugin .status-badge-icon,
 .status-badge.plugin .status-badge-text {
-  fill: var(--yellow-700);
+  fill: var(--df-badge-plugin-text);
 }
 
 </style>

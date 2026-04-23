@@ -1396,7 +1396,7 @@ const publishUISchema = {
       display: block;
       font-weight: 600;
       font-size: 0.9rem;
-      color: #495057;
+      color: var(--df-body-color);
       margin-bottom: 0.25rem;
     }
   }
@@ -1406,7 +1406,7 @@ const publishUISchema = {
     font-size: 0.85rem;
     color: var(--text-color-secondary);
     padding: 0.5rem;
-    background: var(--surface-100);
+    background: var(--df-subtle-bg-alt);
     border-radius: 4px;
   }
 
@@ -1415,7 +1415,7 @@ const publishUISchema = {
       font-size: 1rem;
       font-weight: 600;
       margin-bottom: 0.75rem;
-      color: #495057;
+      color: var(--df-body-color);
     }
   }
 
@@ -1435,7 +1435,7 @@ const publishUISchema = {
       display: block;
       font-weight: 600;
       font-size: 0.9rem;
-      color: #495057;
+      color: var(--df-body-color);
       margin-bottom: 0.25rem;
     }
   }
@@ -1526,8 +1526,8 @@ const publishUISchema = {
     position: relative;
     display: block;
     padding: none;
-    background-color: #fff;
-    border: 1px solid rgba(0, 0, 0, 0.125);
+    background-color: var(--surface-card, #fff);
+    border: 1px solid var(--df-border-color, rgba(0, 0, 0, 0.125));
     border-bottom-right-radius: 0.25rem !important;
     border-bottom-left-radius: 0.25rem !important;
   }
@@ -1604,11 +1604,11 @@ const publishUISchema = {
 }
 
 .action-picker-row:hover {
-  background-color: var(--surface-100);
+  background-color: var(--surface-hover);
 }
 
 .action-picker-row.selected {
-  background-color: var(--primary-100);
+  background-color: var(--df-palette-selected-bg);
 }
 
 .action-picker-row.selected td:first-child {
@@ -1677,14 +1677,14 @@ const publishUISchema = {
 .action-description-expanded :deep(code) {
   padding: 0.1rem 0.3rem;
   border-radius: 0.25rem;
-  background: var(--surface-200);
+  background: var(--df-subtle-border);
   font-size: 0.85em;
 }
 
 .action-description-expanded :deep(pre) {
   padding: 0.75rem;
   border-radius: 0.375rem;
-  background: var(--surface-100);
+  background: var(--df-subtle-bg-alt);
   overflow-x: auto;
 }
 
@@ -1773,7 +1773,7 @@ const publishUISchema = {
     font-size: 2rem;
     font-weight: 300;
     line-height: 1.2;
-    border-bottom: 1px solid gray;
+    border-bottom: 1px solid var(--df-border-color);
     padding-bottom: 5px;
   }
 
@@ -1792,7 +1792,7 @@ const publishUISchema = {
   th,
   td {
     border-collapse: collapse;
-    border: 1px solid black;
+    border: 1px solid var(--df-border-color);
   }
 
   th,

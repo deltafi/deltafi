@@ -389,16 +389,16 @@ const getPluginVersion = (plugin) => {
 
   .plugin-table {
     .docker-icon {
-      color: #98a0a8;
+      color: var(--df-muted-color, #98a0a8);
     }
 
     tr:hover .docker-icon {
-      color: #98a0a8;
+      color: var(--df-muted-color, #98a0a8);
       text-shadow: none;
     }
 
     tr.p-highlight .docker-icon {
-      color: #cbd6e1;
+      color: #e2e8f0;
     }
 
     table tr th {

@@ -451,19 +451,15 @@ const viewBoxString = computed(() => {
 
 // Node styling based on stage
 function getNodeFill(node) {
-  if (node.overflowCount > 0) {
-    return "var(--surface-50)";
-  }
-  if (node.did === props.rootDid) {
-    return "var(--primary-100)";
-  }
+  if (node.overflowCount > 0) return "var(--df-lineage-overflow-fill)";
+  if (node.did === props.rootDid) return "var(--df-lineage-root-fill)";
   switch (node.stage) {
     case "ERROR":
-      return "var(--red-100)";
+      return "var(--df-lineage-error-fill)";
     case "CANCELLED":
-      return "var(--surface-200)";
+      return "var(--df-lineage-cancelled-fill)";
     default:
-      return "var(--surface-100)";
+      return "var(--df-lineage-default-fill)";
   }
 }
 
@@ -472,7 +468,7 @@ function getNodeStroke(node) {
     return "var(--surface-400)";
   }
   if (node.did === props.rootDid) {
-    return "var(--primary-500)";
+    return "var(--primary-color)";
   }
   switch (node.stage) {
     case "ERROR":
@@ -483,7 +479,7 @@ function getNodeStroke(node) {
       return "var(--green-500)";
     case "IN_FLIGHT":
     case "PENDING":
-      return "var(--blue-500)";
+      return "var(--primary-color)";
     default:
       return "var(--surface-400)";
   }
@@ -492,16 +488,16 @@ function getNodeStroke(node) {
 function getStageBadgeColor(stage) {
   switch (stage) {
     case "COMPLETE":
-      return "var(--green-200)";
+      return "var(--df-lineage-badge-complete)";
     case "ERROR":
-      return "var(--red-200)";
+      return "var(--df-lineage-badge-error)";
     case "IN_FLIGHT":
     case "PENDING":
-      return "var(--blue-200)";
+      return "var(--df-lineage-badge-inflight)";
     case "CANCELLED":
-      return "var(--surface-300)";
+      return "var(--df-lineage-badge-cancelled)";
     default:
-      return "var(--surface-200)";
+      return "var(--df-lineage-badge-default)";
   }
 }
 
@@ -723,15 +719,15 @@ watch(
 }
 
 .expand-button-bg {
-  fill: var(--surface-200);
+  fill: var(--df-subtle-border);
   stroke: var(--surface-400);
   stroke-width: 1;
   transition: fill 0.15s ease;
 }
 
 .expand-button:hover .expand-button-bg {
-  fill: var(--primary-100);
-  stroke: var(--primary-500);
+  fill: var(--df-status-selected-bg);
+  stroke: var(--primary-color);
 }
 
 .expand-button-icon {
@@ -804,23 +800,23 @@ watch(
 }
 
 .legend-badge.complete {
-  background: var(--green-200);
-  color: var(--green-900);
+  background: var(--df-lineage-badge-complete);
+  color: var(--df-lineage-legend-complete-text);
 }
 
 .legend-badge.in-flight {
-  background: var(--blue-200);
-  color: var(--blue-900);
+  background: var(--df-lineage-badge-inflight);
+  color: var(--df-lineage-legend-inflight-text);
 }
 
 .legend-badge.error {
-  background: var(--red-200);
-  color: var(--red-900);
+  background: var(--df-lineage-badge-error);
+  color: var(--df-lineage-legend-error-text);
 }
 
 .legend-badge.cancelled {
-  background: var(--surface-300);
-  color: var(--surface-700);
+  background: var(--df-lineage-badge-cancelled);
+  color: var(--df-lineage-legend-cancelled-text);
 }
 
 .legend-hint {

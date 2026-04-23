@@ -56,7 +56,7 @@
         <Column field="summary" header="Summary" sortable class="summary-col">
           <template #body="{ data }">
             <span @click="showEvent(data)">
-              <a class="cursor-pointer" style="color: black">{{ data.summary }}</a>
+              <a class="cursor-pointer" style="color: var(--df-body-color)">{{ data.summary }}</a>
             </span>
           </template>
         </Column>

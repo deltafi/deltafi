@@ -151,23 +151,23 @@ onUnmounted(() => {
 
   .p-tag {
     font-size: 12px;
-    color: #333333;
+    color: var(--df-body-color, #333333);
   }
 
   .p-tag.running {
-    background-color: #c7def0;
+    background-color: var(--df-node-transform-fill);
   }
 
   .p-tag.paused {
-    background-color: #ffc107;
+    background-color: var(--df-state-filtered-fill);
   }
 
   .p-tag.stopped {
-    background-color: #d4d4d4;
+    background-color: var(--df-secondary-bg, #d4d4d4);
   }
 
   .p-tag.invalid {
-    background-color: #f5c5c6;
+    background-color: var(--df-state-error-fill);
   }
 
   .p-tag.topic {

@@ -121,14 +121,14 @@ const setOverlayPanelPosition = (event) => {
   .delete-policy-file-uploader {
     .p-fileupload-choose:not(.p-disabled):hover {
       background: rgba(108, 117, 125, 0.04) !important;
-      color: #6c757d !important;
-      border-color: #6c757d !important;
+      color: var(--df-muted-color, #6c757d) !important;
+      border-color: var(--df-muted-color, #6c757d) !important;
     }
 
     .p-fileupload-choose:not(.p-disabled):active {
       background: transparent !important;
-      color: #6c757d !important;
-      border-color: #6c757d !important;
+      color: var(--df-muted-color, #6c757d) !important;
+      border-color: var(--df-muted-color, #6c757d) !important;
     }
   }
 }

@@ -27,7 +27,7 @@
             <Button type="button" class="p-button-text p-button-secondary stacked-icons" :disabled="!item.isEnabled">
               <span class="fa-stack">
                 <i :class="item.icon" />
-                <i :class="item.alternateIcon + ' fa-stack-2x'" style="color: #ed969e" />
+                <i :class="item.alternateIcon + ' fa-stack-2x'" class="text-danger-light" />
               </span>
             </Button>
           </span>
@@ -45,7 +45,7 @@
           <Button v-tooltip.top="item.label" type="button" class="p-button-text p-button-secondary stacked-icons" :disabled="!item.isEnabled" @click="itemClick(item)">
             <span class="fa-stack">
               <i :class="item.icon" />
-              <i :class="item.alternateIcon + ' fa-stack-2x'" style="color: #ed969e" />
+              <i :class="item.alternateIcon + ' fa-stack-2x'" class="text-danger-light" />
             </span>
           </Button>
         </span>
@@ -109,6 +109,10 @@ const itemClick = (event) => {
 
   .transparent-icon {
     background-color: transparent;
+  }
+
+  .text-danger-light {
+    color: #ed969e;
   }
 }
 </style>

@@ -158,9 +158,9 @@ const actionRowClass = (data) => {
 
   .parent-child-table {
     .p-paginator-bottom {
-      border-left: 1px solid #dee2e6;
-      border-right: 1px solid #dee2e6;
-      border-bottom: 1px solid #dee2e6;
+      border-left: 1px solid var(--df-border-color, #dee2e6);
+      border-right: 1px solid var(--df-border-color, #dee2e6);
+      border-bottom: 1px solid var(--df-border-color, #dee2e6);
       border-top: none;
       border-bottom-right-radius: 4px;
       border-bottom-left-radius: 4px;

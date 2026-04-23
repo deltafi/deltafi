@@ -16,7 +16,7 @@
    limitations under the License.
 */
 
-/* Force light mode for PrimeVue 4 components */
+/* ── Light mode (default) ─────────────────────────────────────────────── */
 :root {
   --p-surface-0: #ffffff;
   --p-surface-50: #f8fafc;
@@ -43,7 +43,7 @@
   --surface-hover: #e2e8f0;
   --text-color: #334155;
   --text-color-secondary: #64748b;
-  --primary-color: var(--blue-500, #3b82f6);
+  --primary-color: var(--p-primary-color, #3b82f6);
   --primary-color-text: #ffffff;
 
   /* Color palette variables (for backwards compatibility with PrimeVue 3 styles) */
@@ -182,17 +182,368 @@
   --teal-800: #115e59;
   --teal-900: #134e4a;
 
-  /* Primary (alias for blue) */
-  --primary-50: var(--blue-50);
-  --primary-100: var(--blue-100);
-  --primary-200: var(--blue-200);
-  --primary-300: var(--blue-300);
-  --primary-400: var(--blue-400);
-  --primary-500: var(--blue-500);
-  --primary-600: var(--blue-600);
-  --primary-700: var(--blue-700);
-  --primary-800: var(--blue-800);
-  --primary-900: var(--blue-900);
+  /* Primary (tracks PrimeVue's active primary palette) */
+  --primary-50: var(--p-primary-50, var(--blue-50));
+  --primary-100: var(--p-primary-100, var(--blue-100));
+  --primary-200: var(--p-primary-200, var(--blue-200));
+  --primary-300: var(--p-primary-300, var(--blue-300));
+  --primary-400: var(--p-primary-400, var(--blue-400));
+  --primary-500: var(--p-primary-500, var(--blue-500));
+  --primary-600: var(--p-primary-600, var(--blue-600));
+  --primary-700: var(--p-primary-700, var(--blue-700));
+  --primary-800: var(--p-primary-800, var(--blue-800));
+  --primary-900: var(--p-primary-900, var(--blue-900));
+
+  /* DeltaFi app-level semantic tokens (used by custom styles) */
+  --df-body-bg: #ffffff;
+  --df-body-color: #212529;
+  --df-link-color: #0057b3;
+  --df-border-color: #dee2e6;
+  --df-navbar-bg: #f8f9fa;
+  --df-navbar-hover: #e9ecef;
+  --df-navbar-color: #333;
+  --df-navbar-icon-color: #666;
+  --df-dropdown-bg: #ffffff;
+  --df-dropdown-hover: #f8f9fa;
+  --df-tab-color: #6c757d;
+  --df-tab-active-color: #495057;
+  --df-muted-color: #6c757d;
+  --df-paginator-color: #212529;
+  --df-input-border: #ced4da;
+  --df-input-bg: #ffffff;
+  --df-list-item-color: #495057;
+  --df-hover-shadow-color: black;
+  --df-progressbar-label-color: #212529;
+  --df-secondary-bg: #6c757d;
+
+  /* Graph node colors (by type) */
+  --df-node-datasource-fill: var(--orange-100);
+  --df-node-datasource-stroke: var(--orange-500);
+  --df-node-datasource-metrics-bg: var(--orange-200);
+  --df-node-transform-fill: var(--blue-100);
+  --df-node-transform-stroke: var(--blue-500);
+  --df-node-transform-metrics-bg: var(--blue-200);
+  --df-node-datasink-fill: var(--green-100);
+  --df-node-datasink-stroke: var(--green-500);
+  --df-node-datasink-metrics-bg: var(--green-200);
+  --df-node-topic-fill: var(--surface-200);
+  --df-node-topic-stroke: var(--surface-500);
+  --df-node-topic-metrics-bg: var(--surface-300);
+
+  /* Flow state colors (error/filtered/cancelled nodes) */
+  --df-state-error-fill: var(--red-100);
+  --df-state-error-stroke: var(--red-500);
+  --df-state-filtered-fill: var(--yellow-100);
+  --df-state-filtered-stroke: var(--yellow-500);
+  --df-state-cancelled-fill: var(--surface-200);
+  --df-state-cancelled-stroke: var(--surface-500);
+
+  /* State text colors (flow graph labels) */
+  --df-state-text-complete: var(--green-700);
+  --df-state-text-error: var(--red-700);
+  --df-state-text-filtered: var(--yellow-700);
+  --df-state-text-inflight: var(--blue-700);
+  --df-state-text-cancelled: var(--surface-600);
+
+  /* Output panel colors */
+  --df-output-error-bg: var(--red-200);
+  --df-output-filtered-bg: var(--yellow-200);
+  --df-output-cancelled-bg: var(--surface-300);
+  --df-output-default-bg: var(--surface-300);
+
+  /* Control button colors (GraphNode start/pause/stop) */
+  --df-control-bg: var(--surface-200);
+  --df-control-border: var(--surface-400);
+  --df-control-hover-bg: var(--surface-300);
+  --df-control-start-bg: var(--green-100);
+  --df-control-start-border: var(--green-500);
+  --df-control-start-icon: var(--green-600);
+  --df-control-pause-bg: var(--yellow-100);
+  --df-control-pause-border: var(--yellow-500);
+  --df-control-pause-icon: var(--yellow-700);
+  --df-control-stop-bg: var(--red-100);
+  --df-control-stop-border: var(--red-400);
+  --df-control-stop-icon: var(--red-500);
+
+  /* Status badge colors (GraphNode INVALID/PLUGIN) */
+  --df-badge-invalid-bg: var(--red-100);
+  --df-badge-invalid-border: var(--red-500);
+  --df-badge-invalid-text: var(--red-600);
+  --df-badge-plugin-bg: var(--yellow-100);
+  --df-badge-plugin-border: var(--yellow-500);
+  --df-badge-plugin-text: var(--yellow-700);
+
+  /* Lineage tree colors */
+  --df-lineage-default-fill: var(--surface-100);
+  --df-lineage-error-fill: var(--red-100);
+  --df-lineage-cancelled-fill: var(--surface-200);
+  --df-lineage-overflow-fill: var(--surface-50);
+  --df-lineage-root-fill: var(--primary-100);
+  --df-lineage-badge-complete: var(--green-200);
+  --df-lineage-badge-error: var(--red-200);
+  --df-lineage-badge-inflight: var(--blue-200);
+  --df-lineage-badge-cancelled: var(--surface-300);
+  --df-lineage-badge-default: var(--surface-200);
+  --df-lineage-legend-complete-text: var(--green-900);
+  --df-lineage-legend-error-text: var(--red-900);
+  --df-lineage-legend-inflight-text: var(--blue-900);
+  --df-lineage-legend-cancelled-text: var(--surface-700);
+
+  /* Trace chart bar colors */
+  --df-trace-bar-normal: #b8daff;
+  --df-trace-bar-warning: #ffeeba;
+  --df-trace-bar-error: #f5c6cb;
+  --df-trace-bar-startstop: #fff;
+
+  /* Top nav bar colors (PrimaryNavBar) */
+  --df-topnav-gradient-start: #f8fafc;
+  --df-topnav-gradient-end: #eef3f7;
+  --df-topnav-border: #d7dee6;
+  --df-topnav-shadow: rgba(255, 255, 255, 0.75);
+  --df-topnav-item-color: #334155;
+  --df-topnav-item-hover-bg: rgba(255, 255, 255, 0.72);
+  --df-topnav-item-hover-border: #d6dbe1;
+  --df-topnav-item-hover-color: #0f172a;
+  --df-topnav-item-active-bg: #ffffff;
+  --df-topnav-item-active-border: #d6dbe1;
+  --df-topnav-item-active-color: #0f172a;
+  --df-topnav-item-icon-color: #64748b;
+  --df-topnav-dropdown-bg: #fff;
+  --df-topnav-dropdown-border: #d6dbe1;
+  --df-topnav-dropdown-shadow: rgba(15, 23, 42, 0.14);
+  --df-topnav-dropdown-item-color: #334155;
+  --df-topnav-dropdown-item-hover-bg: #f8fafc;
+  --df-topnav-dropdown-active-bg: #eff6ff;
+  --df-topnav-dropdown-active-color: var(--primary-700);
+  --df-topnav-hamburger-bg: #fff;
+  --df-topnav-hamburger-color: #334155;
+  --df-topnav-hamburger-border: #cfd6dd;
+  --df-topnav-mobile-item-color: #334155;
+
+  /* UI selection colors (CommandPalette, HamburgerMenu) */
+  --df-palette-selected-bg: #e3f2fd;
+  --df-palette-filtered-bg: #f0f7ff;
+  --df-palette-filtered-name-color: var(--primary-color);
+  --df-palette-confirm-overlay-bg: rgba(255, 255, 255, 0.97);
+  --df-palette-validation-bg: #fff3cd;
+  --df-palette-validation-color: #856404;
+  --df-menu-active-bg: #e3f2fd;
+  --df-menu-active-color: #1976d2;
+
+  /* Clock */
+  --df-clock-bg: var(--gray-700);
+  --df-clock-color: var(--gray-300);
+
+  /* DataTable loading overlay */
+  --df-loading-bg: #f1f5f9;
+  --df-loading-color: #334155;
+  --df-loading-border: #dee2e6;
+  --df-loading-spinner-track: #cbd5e1;
+  --df-loading-spinner-color: var(--primary-color);
+
+  /* General-purpose subtle backgrounds and status tints */
+  --df-subtle-bg: var(--surface-50);
+  --df-subtle-bg-alt: var(--surface-100);
+  --df-subtle-border: var(--surface-200);
+  --df-status-running-bg: var(--green-100);
+  --df-status-paused-bg: var(--yellow-100);
+  --df-status-stopped-bg: var(--red-100);
+  --df-status-info-bg: var(--blue-100);
+  --df-status-selected-bg: var(--primary-100);
+  --df-diff-added-bg: var(--green-100);
+  --df-diff-removed-bg: var(--red-100);
+  --df-diff-modified-bg: var(--yellow-100);
+}
+
+/* ── Dark mode ────────────────────────────────────────────────────────── */
+html.dark-mode {
+  color-scheme: dark;
+
+  --surface-card: #1e293b;
+  --surface-ground: #0f172a;
+  --surface-hover: #334155;
+  --text-color: #e2e8f0;
+  --text-color-secondary: #94a3b8;
+  --primary-color-text: #ffffff;
+  --surface-border: #334155;
+
+  --df-body-bg: #0f172a;
+  --df-body-color: #e2e8f0;
+  --df-link-color: #60a5fa;
+  --df-border-color: #334155;
+  --df-navbar-bg: #1e293b;
+  --df-navbar-hover: #334155;
+  --df-navbar-color: #e2e8f0;
+  --df-navbar-icon-color: #94a3b8;
+  --df-dropdown-bg: #1e293b;
+  --df-dropdown-hover: #334155;
+  --df-tab-color: #94a3b8;
+  --df-tab-active-color: #e2e8f0;
+  --df-muted-color: #94a3b8;
+  --df-paginator-color: #e2e8f0;
+  --df-input-border: #475569;
+  --df-input-bg: #1e293b;
+  --df-list-item-color: #cbd5e1;
+  --df-hover-shadow-color: transparent;
+  --df-progressbar-label-color: #e2e8f0;
+  --df-secondary-bg: #475569;
+
+  /* Graph node colors (by type) */
+  --df-node-datasource-fill: var(--orange-800);
+  --df-node-datasource-stroke: var(--orange-400);
+  --df-node-datasource-metrics-bg: var(--orange-900);
+  --df-node-transform-fill: var(--blue-800);
+  --df-node-transform-stroke: var(--blue-400);
+  --df-node-transform-metrics-bg: var(--blue-900);
+  --df-node-datasink-fill: var(--green-800);
+  --df-node-datasink-stroke: var(--green-400);
+  --df-node-datasink-metrics-bg: var(--green-900);
+  --df-node-topic-fill: var(--surface-700);
+  --df-node-topic-stroke: var(--surface-400);
+  --df-node-topic-metrics-bg: var(--surface-800);
+
+  /* Flow state colors */
+  --df-state-error-fill: var(--red-800);
+  --df-state-error-stroke: var(--red-400);
+  --df-state-filtered-fill: var(--yellow-800);
+  --df-state-filtered-stroke: var(--yellow-400);
+  --df-state-cancelled-fill: var(--surface-700);
+  --df-state-cancelled-stroke: var(--surface-400);
+
+  /* State text colors */
+  --df-state-text-complete: var(--green-300);
+  --df-state-text-error: var(--red-300);
+  --df-state-text-filtered: var(--yellow-300);
+  --df-state-text-inflight: var(--blue-300);
+  --df-state-text-cancelled: var(--surface-400);
+
+  /* Output panel colors */
+  --df-output-error-bg: var(--red-900);
+  --df-output-filtered-bg: var(--yellow-900);
+  --df-output-cancelled-bg: var(--surface-800);
+  --df-output-default-bg: var(--surface-800);
+
+  /* Control button colors */
+  --df-control-bg: var(--surface-600);
+  --df-control-border: var(--surface-400);
+  --df-control-hover-bg: var(--surface-500);
+  --df-control-start-bg: var(--green-800);
+  --df-control-start-border: var(--green-400);
+  --df-control-start-icon: var(--green-300);
+  --df-control-pause-bg: var(--yellow-800);
+  --df-control-pause-border: var(--yellow-400);
+  --df-control-pause-icon: var(--yellow-300);
+  --df-control-stop-bg: var(--red-800);
+  --df-control-stop-border: var(--red-400);
+  --df-control-stop-icon: var(--red-300);
+
+  /* Status badge colors */
+  --df-badge-invalid-bg: var(--red-800);
+  --df-badge-invalid-border: var(--red-400);
+  --df-badge-invalid-text: var(--red-300);
+  --df-badge-plugin-bg: var(--yellow-800);
+  --df-badge-plugin-border: var(--yellow-400);
+  --df-badge-plugin-text: var(--yellow-300);
+
+  /* Lineage tree colors */
+  --df-lineage-default-fill: var(--surface-700);
+  --df-lineage-error-fill: var(--red-800);
+  --df-lineage-cancelled-fill: var(--surface-700);
+  --df-lineage-overflow-fill: var(--surface-800);
+  --df-lineage-root-fill: var(--primary-800);
+  --df-lineage-badge-complete: var(--green-800);
+  --df-lineage-badge-error: var(--red-800);
+  --df-lineage-badge-inflight: var(--blue-800);
+  --df-lineage-badge-cancelled: var(--surface-600);
+  --df-lineage-badge-default: var(--surface-700);
+  --df-lineage-legend-complete-text: var(--green-100);
+  --df-lineage-legend-error-text: var(--red-100);
+  --df-lineage-legend-inflight-text: var(--blue-100);
+  --df-lineage-legend-cancelled-text: var(--surface-300);
+
+  /* Trace chart bar colors */
+  --df-trace-bar-normal: var(--blue-700);
+  --df-trace-bar-warning: var(--yellow-700);
+  --df-trace-bar-error: var(--red-700);
+  --df-trace-bar-startstop: rgba(255, 255, 255, 0.3);
+
+  /* Top nav bar colors */
+  --df-topnav-gradient-start: #1e293b;
+  --df-topnav-gradient-end: #172033;
+  --df-topnav-border: var(--df-border-color);
+  --df-topnav-shadow: rgba(255, 255, 255, 0.05);
+  --df-topnav-item-color: var(--df-body-color);
+  --df-topnav-item-hover-bg: rgba(255, 255, 255, 0.06);
+  --df-topnav-item-hover-border: var(--df-border-color);
+  --df-topnav-item-hover-color: #f1f5f9;
+  --df-topnav-item-active-bg: var(--surface-card);
+  --df-topnav-item-active-border: var(--df-border-color);
+  --df-topnav-item-active-color: #f1f5f9;
+  --df-topnav-item-icon-color: var(--df-navbar-icon-color);
+  --df-topnav-dropdown-bg: var(--surface-card);
+  --df-topnav-dropdown-border: var(--df-border-color);
+  --df-topnav-dropdown-shadow: rgba(0, 0, 0, 0.35);
+  --df-topnav-dropdown-item-color: var(--df-body-color);
+  --df-topnav-dropdown-item-hover-bg: var(--surface-hover);
+  --df-topnav-dropdown-active-bg: rgba(20, 115, 230, 0.15);
+  --df-topnav-dropdown-active-color: #60a5fa;
+  --df-topnav-hamburger-bg: var(--surface-card);
+  --df-topnav-hamburger-color: var(--df-body-color);
+  --df-topnav-hamburger-border: var(--df-border-color);
+  --df-topnav-mobile-item-color: var(--df-body-color);
+
+  /* UI selection colors */
+  --df-palette-selected-bg: rgba(0, 123, 255, 0.2);
+  --df-palette-filtered-bg: rgba(0, 123, 255, 0.1);
+  --df-palette-filtered-name-color: #60a5fa;
+  --df-palette-confirm-overlay-bg: rgba(15, 23, 42, 0.97);
+  --df-palette-validation-bg: rgba(234, 179, 8, 0.15);
+  --df-palette-validation-color: #fde047;
+  --df-menu-active-bg: rgba(25, 118, 210, 0.2);
+  --df-menu-active-color: #64b5f6;
+
+  /* Clock */
+  --df-clock-bg: var(--surface-600);
+  --df-clock-color: var(--df-body-color);
+
+  /* DataTable loading overlay */
+  --df-loading-bg: var(--surface-card);
+  --df-loading-color: var(--df-body-color);
+  --df-loading-border: var(--df-border-color);
+  --df-loading-spinner-track: var(--surface-500);
+  --df-loading-spinner-color: #60a5fa;
+
+  /* General-purpose subtle backgrounds and status tints */
+  --df-subtle-bg: var(--surface-800);
+  --df-subtle-bg-alt: var(--surface-700);
+  --df-subtle-border: var(--surface-600);
+  --df-status-running-bg: var(--green-800);
+  --df-status-paused-bg: var(--yellow-800);
+  --df-status-stopped-bg: var(--red-800);
+  --df-status-info-bg: var(--blue-800);
+  --df-status-selected-bg: var(--primary-800);
+  --df-diff-added-bg: var(--green-800);
+  --df-diff-removed-bg: var(--red-800);
+  --df-diff-modified-bg: var(--yellow-800);
+
+  --p-panel-header-background: #1e293b;
+  --p-panel-header-color: #e2e8f0;
+  --p-content-background: #0f172a;
+  --p-panel-content-background: #0f172a;
+
+  .p-panel-header {
+    background: #1e293b !important;
+    color: #e2e8f0;
+  }
+
+  .p-panel-content {
+    background: var(--surface-ground);
+  }
+
+  .p-datatable .p-datatable-thead > tr > th {
+    background: #1e293b !important;
+    color: #e2e8f0;
+  }
 }
 
 html {
@@ -202,10 +553,13 @@ html {
 body {
   line-height: 1.4;
   overscroll-behavior: none;
+  background-color: var(--df-body-bg);
+  color: var(--df-body-color);
+  transition: background-color 0.2s, color 0.2s;
 }
 
 a {
-  color: #0057b3;
+  color: var(--df-link-color);
 }
 
 .monospace {
@@ -237,9 +591,9 @@ a {
     div.p-datatable-sm:not(.p-datatable-gridlines) {
       .p-datatable-wrapper,
       .p-paginator-bottom {
-        border-left: 1px solid #dee2e6;
-        border-right: 1px solid #dee2e6;
-        border-bottom: 1px solid #dee2e6;
+        border-left: 1px solid var(--df-border-color);
+        border-right: 1px solid var(--df-border-color);
+        border-bottom: 1px solid var(--df-border-color);
         border-top: none;
       }
     }
@@ -280,11 +634,11 @@ a {
 }
 
 .p-tabs .p-tablist .p-tab[data-p-active="true"] {
-  color: #495057;
+  color: var(--df-tab-active-color);
 }
 
 .p-tabs .p-tablist .p-tab {
-  color: #6c757d;
+  color: var(--df-tab-color);
 }
 
 /* PrimeVue 3 .p-link utility class (removed in PrimeVue 4) */
@@ -314,27 +668,27 @@ td.did-column {
 
 .p-button-secondary-upload:not(.p-disabled):hover {
   background: rgba(108, 117, 125, 0.04) !important;
-  color: #6c757d !important;
-  border-color: #6c757d !important;
+  color: var(--df-muted-color) !important;
+  border-color: var(--df-muted-color) !important;
 }
 
 .p-button-secondary-upload:not(.p-disabled):active {
   background: transparent !important;
-  color: #6c757d !important;
-  border-color: #6c757d !important;
+  color: var(--df-muted-color) !important;
+  border-color: var(--df-muted-color) !important;
 }
 
 .p-datatable.p-datatable-hoverable .p-datatable-tbody > tr:not(.p-datatable-row-selected):hover {
-  text-shadow: 0.02rem 0px black;
+  text-shadow: 0.02rem 0px var(--df-hover-shadow-color);
 }
 
 .p-tag-secondary {
-  background-color: #6c757d;
+  background-color: var(--df-secondary-bg);
 }
 
 /* PrimeVue 3 Bootstrap4-Light-Blue selected row styling */
 .p-datatable .p-datatable-tbody > tr.p-datatable-row-selected {
-  background: #007bff !important;
+  background: var(--primary-color) !important;
   color: #ffffff !important;
 }
 
@@ -358,7 +712,7 @@ td.did-column {
 
 .p-paginator {
   background: none !important;
-  color: #212529 !important;
+  color: var(--df-paginator-color) !important;
 
   /* Match PrimeVue 3 paginator nav button styling */
   .p-paginator-nav-button {
@@ -376,8 +730,8 @@ td.did-column {
 
   /* Compact rows-per-page dropdown to match PrimeVue 3 Dropdown look */
   .p-paginator-rpp-dropdown.p-select {
-    border: 1px solid #ced4da;
-    background: #ffffff;
+    border: 1px solid var(--df-input-border);
+    background: var(--df-input-bg);
     border-radius: 4px;
     height: 2rem;
 
@@ -392,13 +746,13 @@ td.did-column {
     }
 
     &:hover {
-      border-color: #3b82f6;
+      border-color: var(--primary-color);
     }
   }
 }
 
 .p-progressbar .p-progressbar-label {
-  color: #212529 !important;
+  color: var(--df-progressbar-label-color) !important;
 }
 
 /* PrimeIcons have no built-in width like FontAwesome's fa-fw, so add spacing between icon and label */
@@ -415,7 +769,7 @@ td.did-column {
 
 .list-group-item-action {
   width: 100%;
-  color: #495057;
+  color: var(--df-list-item-color);
   text-align: inherit;
 }
 
@@ -441,18 +795,18 @@ td.did-column {
 
 /* PrimeVue 3 panel header background (Bootstrap4-Light-Blue was #efefef) */
 .p-panel-header {
-  background: #efefef !important;
+  background: var(--p-panel-header-background, #efefef) !important;
 }
 
 /* Match PrimeVue 3 Bootstrap4-Light-Blue DataTable header background */
 .p-datatable .p-datatable-thead > tr > th {
-  background: #ffffff !important;
+  background: var(--p-panel-header-background, #ffffff) !important;
 }
 
 /* ── PrimeVue 3 Dialog look ────────────────────────────────────────────── */
 .p-dialog-header {
   padding: 0.5rem 1.5rem !important;
-  border-bottom: 1px solid #dee2e6;
+  border-bottom: 1px solid var(--df-border-color);
 }
 
 .p-dialog-title {
@@ -466,7 +820,7 @@ td.did-column {
 
 .p-dialog-footer {
   padding: 0.5rem 1.5rem 0.5rem 1.5rem !important;
-  border-top: 1px solid #dee2e6;
+  border-top: 1px solid var(--df-border-color);
   align-items: center;
 }
 
@@ -489,6 +843,180 @@ td.did-column {
   white-space: nowrap;
 }
 
+/* ── Bootstrap dark mode overrides ────────────────────────────────────── */
+html.dark-mode {
+  .card {
+    background-color: var(--surface-card);
+    border-color: var(--df-border-color);
+    color: var(--df-body-color);
+  }
+
+  .card-header {
+    background-color: var(--surface-ground);
+    border-bottom-color: var(--df-border-color);
+    color: var(--df-body-color);
+  }
+
+  .card-footer {
+    background-color: var(--surface-ground);
+    border-top-color: var(--df-border-color);
+  }
+
+  .list-group-item {
+    background-color: var(--surface-card);
+    border-color: var(--df-border-color);
+    color: var(--df-body-color);
+  }
+
+  .list-group-item-action:hover,
+  .list-group-item-action:focus {
+    background-color: var(--surface-hover);
+    color: var(--df-body-color);
+  }
+
+  .table {
+    color: var(--df-body-color);
+    border-color: var(--df-border-color);
+  }
+
+  .table-striped tbody tr:nth-of-type(odd) {
+    background-color: rgba(255, 255, 255, 0.03);
+  }
+
+  .table-hover tbody tr:hover {
+    background-color: rgba(255, 255, 255, 0.05);
+    color: var(--df-body-color);
+  }
+
+  .table thead th {
+    border-bottom-color: var(--df-border-color);
+  }
+
+  .table td,
+  .table th {
+    border-top-color: var(--df-border-color);
+  }
+
+  .modal-content {
+    background-color: var(--surface-card);
+    border-color: var(--df-border-color);
+    color: var(--df-body-color);
+  }
+
+  .modal-header {
+    border-bottom-color: var(--df-border-color);
+  }
+
+  .modal-footer {
+    border-top-color: var(--df-border-color);
+  }
+
+  .form-control {
+    background-color: var(--df-input-bg);
+    border-color: var(--df-input-border);
+    color: var(--df-body-color);
+  }
+
+  .input-group-text {
+    background-color: var(--surface-hover);
+    border-color: var(--df-input-border);
+    color: var(--df-body-color);
+  }
+
+  .custom-select {
+    background-color: var(--df-input-bg);
+    border-color: var(--df-input-border);
+    color: var(--df-body-color);
+  }
+
+  .dropdown-menu {
+    background-color: var(--df-dropdown-bg);
+    border-color: var(--df-border-color);
+    color: var(--df-body-color);
+  }
+
+  .dropdown-item {
+    color: var(--df-body-color);
+
+    &:hover,
+    &:focus {
+      background-color: var(--df-dropdown-hover);
+      color: var(--df-body-color);
+    }
+  }
+
+  .badge-secondary {
+    background-color: var(--df-secondary-bg);
+  }
+
+  .bg-light {
+    background-color: var(--surface-card) !important;
+  }
+
+  .text-dark {
+    color: var(--df-body-color) !important;
+  }
+
+  .text-muted {
+    color: var(--df-muted-color) !important;
+  }
+
+  .border {
+    border-color: var(--df-border-color) !important;
+  }
+
+  .border-bottom {
+    border-bottom-color: var(--df-border-color) !important;
+  }
+
+  .border-top {
+    border-top-color: var(--df-border-color) !important;
+  }
+
+  hr {
+    border-top-color: var(--df-border-color);
+  }
+
+  pre,
+  code {
+    color: #e2e8f0;
+  }
+
+  pre {
+    background-color: #1a1a2e;
+    border-color: var(--df-border-color);
+  }
+
+  .close {
+    color: #e2e8f0;
+    text-shadow: none;
+  }
+
+  .alert-info {
+    background-color: rgba(59, 130, 246, 0.15);
+    border-color: rgba(59, 130, 246, 0.3);
+    color: #93c5fd;
+  }
+
+  .alert-warning {
+    background-color: rgba(234, 179, 8, 0.15);
+    border-color: rgba(234, 179, 8, 0.3);
+    color: #fde047;
+  }
+
+  .alert-danger {
+    background-color: rgba(239, 68, 68, 0.15);
+    border-color: rgba(239, 68, 68, 0.3);
+    color: #fca5a5;
+  }
+
+  .alert-success {
+    background-color: rgba(34, 197, 94, 0.15);
+    border-color: rgba(34, 197, 94, 0.3);
+    color: #86efac;
+  }
+}
+
 /* Style DataTable loading overlay text in a light grey box for readability */
 .p-datatable-mask {
   background: rgba(0, 0, 0, 0.4) !important;
@@ -500,9 +1028,9 @@ td.did-column {
     display: inline-flex;
     align-items: center;
     gap: 0.5rem;
-    background: #f1f5f9;
-    color: #334155;
-    border: 1px solid #dee2e6;
+    background: var(--df-loading-bg);
+    color: var(--df-loading-color);
+    border: 1px solid var(--df-loading-border);
     padding: 0.75rem 1.75rem;
     border-radius: 8px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
@@ -514,8 +1042,8 @@ td.did-column {
       display: inline-block;
       width: 1.1rem;
       height: 1.1rem;
-      border: 2px solid #cbd5e1;
-      border-top-color: #3b82f6;
+      border: 2px solid var(--df-loading-spinner-track);
+      border-top-color: var(--df-loading-spinner-color);
       border-radius: 50%;
       animation: datatable-spin 0.8s linear infinite;
     }

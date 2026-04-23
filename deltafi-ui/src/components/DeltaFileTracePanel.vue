@@ -195,7 +195,7 @@ const HorizontalWaterfallChart = (attachTo, data) => {
         .tickValues([...Array(data.length).keys()])
     )
     .selectAll(".tick line")
-    .attr("stroke", "#dddddd"); // Changes x-axis color line color to gray
+    .attr("stroke", getComputedStyle(document.documentElement).getPropertyValue("--df-border-color").trim() || "#dddddd"); // Changes x-axis color line color to gray
 
   chart
     .append("g")
@@ -211,7 +211,7 @@ const HorizontalWaterfallChart = (attachTo, data) => {
     .transition()
     .duration(1000)
     .attr("y2", lineHeight - 10)
-    .style("stroke", "#dddddd");
+    .style("stroke", getComputedStyle(document.documentElement).getPropertyValue("--df-border-color").trim() || "#dddddd");
 
   chart
     .append("g")
@@ -325,30 +325,30 @@ const HorizontalWaterfallChart = (attachTo, data) => {
     font: 0.3rem sans-serif;
 
     rect {
-      stroke: #888;
+      stroke: var(--df-muted-color, #888);
       stroke-width: 0.2;
       stroke-linejoin: round;
     }
 
     rect.normal-bar {
-      fill: #b8daff;
+      fill: var(--df-trace-bar-normal);
     }
 
     rect.warning-bar {
-      fill: #ffeeba;
+      fill: var(--df-trace-bar-warning);
     }
 
     rect.error-bar {
-      fill: #f5c6cb;
+      fill: var(--df-trace-bar-error);
     }
 
     rect.start-stop-bar {
-      fill: #fff;
+      fill: var(--df-trace-bar-startstop);
       opacity: 0.45;
     }
 
     text {
-      fill: #333333;
+      fill: var(--df-body-color, #333333);
     }
   }
 
@@ -358,7 +358,7 @@ const HorizontalWaterfallChart = (attachTo, data) => {
     padding: 8px;
     margin-top: -20px;
     font: 1rem sans-serif;
-    background: #333333;
+    background: #1e293b;
     pointer-events: none;
     color: white;
     border-radius: 5px;

@@ -411,18 +411,18 @@ defineExpose({
 }
 
 .diff-added {
-  background-color: var(--green-100);
-  color: var(--green-900);
+  background-color: var(--df-diff-added-bg);
+  color: var(--df-state-text-complete);
 }
 
 .diff-removed {
-  background-color: var(--red-100);
-  color: var(--red-900);
+  background-color: var(--df-diff-removed-bg);
+  color: var(--df-state-text-error);
   text-decoration: line-through;
 }
 
 .diff-modified-row {
-  background-color: var(--yellow-100);
+  background-color: var(--df-diff-modified-bg);
 }
 
 .diff-modified {

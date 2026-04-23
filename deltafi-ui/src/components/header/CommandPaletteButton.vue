@@ -44,8 +44,8 @@ const shortcutLabel = computed(() => {
 <style scoped lang="scss">
 .command-palette-button {
   cursor: pointer;
-  background-color: #efefef;
-  border: 1px solid #c9cdd1;
-  color: #495057;
+  background-color: var(--df-navbar-hover, #efefef);
+  border: 1px solid var(--df-border-color, #c9cdd1);
+  color: var(--df-list-item-color, #495057);
 }
 </style>

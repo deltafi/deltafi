@@ -497,7 +497,7 @@ const onRemoveFile = (removeFileCallback, index) => {
     }
 
     .p-inputtext:disabled {
-      background: #eeeeee !important;
+      background: var(--df-navbar-bg, #eeeeee) !important;
     }
 
     .p-panel-content {
@@ -576,14 +576,14 @@ const onRemoveFile = (removeFileCallback, index) => {
 
   .p-fileupload-choose.metadata-upload:not(.p-disabled):hover {
     background: rgba(108, 117, 125, 0.04) !important;
-    color: #6c757d !important;
-    border-color: #6c757d !important;
+    color: var(--df-muted-color, #6c757d) !important;
+    border-color: var(--df-muted-color, #6c757d) !important;
   }
 
   .p-fileupload-choose.metadata-upload:not(.p-disabled):active {
     background: transparent !important;
-    color: #6c757d !important;
-    border-color: #6c757d !important;
+    color: var(--df-muted-color, #6c757d) !important;
+    border-color: var(--df-muted-color, #6c757d) !important;
   }
 
   .deltafiles {
@@ -610,11 +610,11 @@ const onRemoveFile = (removeFileCallback, index) => {
         cursor: pointer !important;
         padding: 0.1rem 0.4rem;
         margin: 0;
-        color: #333333;
+        color: var(--df-body-color, #333333);
       }
 
       .content-button:hover {
-        color: #666666 !important;
+        color: var(--df-navbar-icon-color, #666666) !important;
 
         .p-button-label {
           text-decoration: none !important;

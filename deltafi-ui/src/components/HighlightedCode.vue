@@ -222,9 +222,9 @@ if (highlight.value && result.value.code == null) {
   min-width: 2em;
   padding-right: 0.5em;
   text-align: right;
-  color: #999;
+  color: var(--df-muted-color, #999);
   user-select: none;
-  border-right: 1px solid #ddd;
+  border-right: 1px solid var(--df-border-color, #ddd);
   margin-right: 1em;
 }
 
@@ -243,7 +243,7 @@ if (highlight.value && result.value.code == null) {
   cursor: pointer;
   user-select: none;
   text-align: center;
-  color: #999;
+  color: var(--df-muted-color, #999);
   flex-shrink: 0;
 }
 
@@ -256,7 +256,7 @@ if (highlight.value && result.value.code == null) {
 }
 
 .fold-toggle:hover {
-  color: #fff;
+  color: var(--df-body-color, #fff);
 }
 
 .fold-toggle-spacer {
@@ -265,7 +265,7 @@ if (highlight.value && result.value.code == null) {
 }
 
 .fold-placeholder {
-  color: #888;
+  color: var(--df-muted-color, #888);
   background-color: rgba(255, 255, 255, 0.07);
   border-radius: 3px;
   padding: 0 0.3em;

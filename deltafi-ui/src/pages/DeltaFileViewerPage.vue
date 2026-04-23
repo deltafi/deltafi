@@ -572,27 +572,27 @@ const filterLogsBySeverity = (logSeverity) => {
   }
 
   .p-tabs .p-tablist {
-    background: rgb(239, 239, 239);
-    border: 1px solid #e5e7eb;
+    background: var(--df-navbar-bg, rgb(239, 239, 239));
+    border: 1px solid var(--df-border-color, #e5e7eb);
     border-bottom: none;
     border-top-left-radius: 6px;
     border-top-right-radius: 6px;
   }
 
   .p-tabs .p-tablist .p-tab:not([data-p-active="true"]) {
-    background: #e9e9e9;
-    border-bottom: 1px solid #e5e7eb;
+    background: var(--df-navbar-bg, #e9e9e9);
+    border-bottom: 1px solid var(--df-border-color, #e5e7eb);
   }
 
   .p-tabs .p-tablist .p-tab[data-p-active="true"] {
-    background: #ffffff;
-    border: 1px solid #e5e7eb;
+    background: var(--surface-card, #ffffff);
+    border: 1px solid var(--df-border-color, #e5e7eb);
     border-bottom: none;
     margin-bottom: -1px;
   }
 
   .p-tabs .p-tabpanels {
-    border: 1px solid #e5e7eb;
+    border: 1px solid var(--df-border-color, #e5e7eb);
     border-top: none;
     border-bottom-left-radius: 6px;
     border-bottom-right-radius: 6px;

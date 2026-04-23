@@ -913,7 +913,7 @@ const refresh = () => {
       }
 
       &.has-rate-limited {
-        color: var(--blue-500);
+        color: var(--primary-color);
       }
 
       &.has-paused {
@@ -1033,14 +1033,14 @@ const refresh = () => {
     font-size: 0.875rem;
 
     .total-row {
-      background-color: var(--surface-100) !important;
+      background-color: var(--df-subtle-bg-alt) !important;
       font-weight: 600;
 
       td {
         position: sticky;
         top: 0;
         z-index: 1;
-        background-color: var(--surface-100);
+        background-color: var(--df-subtle-bg-alt);
       }
     }
 
@@ -1085,7 +1085,7 @@ const refresh = () => {
     }
 
     .has-rate-limited {
-      color: var(--blue-500);
+      color: var(--primary-color);
     }
 
     .has-paused {
@@ -1201,7 +1201,7 @@ const refresh = () => {
       &.unhealthy { color: var(--red-500); }
       &.error { color: var(--red-500); }
       &.has-cold-queue { color: var(--orange-500); }
-      &.has-rate-limited { color: var(--blue-500); }
+      &.has-rate-limited { color: var(--primary-color); }
       &.has-paused { color: var(--yellow-500); }
       &.large { font-size: 3rem; }
       &.summary-value-small { font-size: 1.25rem; }

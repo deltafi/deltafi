@@ -545,16 +545,16 @@ function getNodeColors(node) {
 function getStateTextColor(state) {
   switch (state) {
     case "COMPLETE":
-      return "var(--green-700)";
+      return "var(--df-state-text-complete)";
     case "ERROR":
-      return "var(--red-700)";
+      return "var(--df-state-text-error)";
     case "FILTERED":
-      return "var(--yellow-700)";
+      return "var(--df-state-text-filtered)";
     case "IN_FLIGHT":
     case "PENDING":
-      return "var(--blue-700)";
+      return "var(--df-state-text-inflight)";
     case "CANCELLED":
-      return "var(--surface-600)";
+      return "var(--df-state-text-cancelled)";
     default:
       return "var(--text-color-secondary)";
   }
@@ -563,27 +563,25 @@ function getStateTextColor(state) {
 // Background color for output panel (slightly darker than main node)
 // Uses state color for special states, type color otherwise
 function getOutputPanelColor(type, state) {
-  // Special states get their own colors
   switch (state) {
     case "ERROR":
-      return "var(--red-200)";
+      return "var(--df-output-error-bg)";
     case "FILTERED":
-      return "var(--yellow-200)";
+      return "var(--df-output-filtered-bg)";
     case "CANCELLED":
-      return "var(--surface-300)";
+      return "var(--df-output-cancelled-bg)";
   }
-  // Type-based colors for normal states (COMPLETE, IN_FLIGHT, PENDING, RESUMED)
   switch (type) {
     case "REST_DATA_SOURCE":
     case "TIMED_DATA_SOURCE":
     case "ON_ERROR_DATA_SOURCE":
-      return "var(--orange-200)";
+      return "var(--df-node-datasource-metrics-bg)";
     case "TRANSFORM":
-      return "var(--blue-200)";
+      return "var(--df-node-transform-metrics-bg)";
     case "DATA_SINK":
-      return "var(--green-200)";
+      return "var(--df-node-datasink-metrics-bg)";
     default:
-      return "var(--surface-300)";
+      return "var(--df-output-default-bg)";
   }
 }
 
@@ -901,7 +899,7 @@ watch(
 }
 
 .edge-group:hover .edge-path {
-  stroke: var(--blue-500);
+  stroke: var(--primary-color);
   stroke-width: 2.5;
 }
 

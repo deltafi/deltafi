@@ -77,7 +77,8 @@ setInterval(() => {
 
   .p-tag {
     cursor: pointer;
-    background-color: var(--gray-700);
+    background-color: var(--df-clock-bg);
+    color: var(--df-clock-color);
     font-weight: 700;
   }
 

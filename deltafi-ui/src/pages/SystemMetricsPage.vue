@@ -108,11 +108,11 @@ const calculatePercent = (numerator, denominator) => {
 <style>
 .system-metrics-page {
   .p-progressbar {
-    background: #dadada;
+    background: var(--df-navbar-hover, #dadada);
 
     .p-progressbar-label {
       font-weight: inherit;
-      color: #212529 !important;
+      color: var(--df-body-color, #212529) !important;
       display: block !important;
     }
   }
