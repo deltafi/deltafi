@@ -55,7 +55,8 @@
 
       <div class="desktop-nav">
         <template v-for="item in visibleMenuItems" :key="item.path || item.name">
-          <div v-if="item.children && hasVisibleChildren(item)" class="nav-item-wrapper" @mouseenter="openDropdown = item.name" @mouseleave="closeDropdown">
+          <!-- eslint-disable-next-line vuejs-accessibility/no-static-element-interactions -- navigation dropdown wrapper with mouse/focus event delegation -->
+          <div v-if="item.children && hasVisibleChildren(item)" class="nav-item-wrapper" role="navigation" @mouseenter="openDropdown = item.name" @mouseleave="closeDropdown" @focusin="openDropdown = item.name" @focusout="closeDropdown">
             <button
               class="nav-item nav-item-button"
               :class="{ active: isActive(item), open: openDropdown === item.name }"

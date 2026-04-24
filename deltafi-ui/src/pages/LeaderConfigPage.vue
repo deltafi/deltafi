@@ -138,7 +138,7 @@
     <div v-if="viewMode === 'snapshot'" class="snapshot-view">
       <div class="snapshot-controls mb-3">
         <span class="control-label">Compare Leader with:</span>
-        <Select v-model="selectedMember" :options="memberDropdownOptions" optionLabel="name" optionValue="name" optionDisabled="disabled" placeholder="Select member..." class="w-15rem" @change="onMemberChange">
+        <Select v-model="selectedMember" :options="memberDropdownOptions" optionLabel="name" optionValue="name" optionDisabled="disabled" placeholder="Select member..." class="w-15rem" aria-label="Compare leader with member" @change="onMemberChange">
           <template #option="{ option }">
             <span :class="{ 'text-color-secondary': option.disabled }">
               {{ option.name }}

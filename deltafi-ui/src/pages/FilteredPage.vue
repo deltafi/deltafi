@@ -27,12 +27,12 @@
       @clear="clearOptions"
     >
       <div class="filter-item">
-        <label>Flow</label>
-        <Select v-model="flowSelected" placeholder="Select a Flow" show-clear :options="formattedFlows" option-group-label="label" option-group-children="sources" option-label="name" :editable="false" filter filter-placeholder="Filter flows" class="w-full" />
+        <label for="filtered-flow-filter">Flow</label>
+        <Select id="filtered-flow-filter" v-model="flowSelected" placeholder="Select a Flow" show-clear :options="formattedFlows" option-group-label="label" option-group-children="sources" option-label="name" :editable="false" filter filter-placeholder="Filter flows" class="w-full" />
       </div>
       <div class="filter-item">
-        <label>Filter Cause</label>
-        <Select v-model="causeSelected" placeholder="Select a Filter Cause" show-clear :options="uniqueMessages" filter filter-placeholder="Filter causes" class="w-full" />
+        <label for="filtered-cause-filter">Filter Cause</label>
+        <Select id="filtered-cause-filter" v-model="causeSelected" placeholder="Select a Filter Cause" show-clear :options="uniqueMessages" filter filter-placeholder="Filter causes" class="w-full" />
       </div>
     </FilterSidebar>
 

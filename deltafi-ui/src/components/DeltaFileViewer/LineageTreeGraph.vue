@@ -70,7 +70,10 @@
             :stroke-width="node.did === rootDid ? 3 : 1.5"
             :stroke-dasharray="node.overflowCount > 0 ? '4 3' : null"
             class="node-rect"
+            role="button"
+            tabindex="0"
             @click="onNodeClick(node)"
+            @keydown.enter="onNodeClick(node)"
           />
 
           <!-- Filename (line 1) -->
@@ -80,8 +83,12 @@
             :y="14"
             text-anchor="middle"
             class="node-filename"
+            role="presentation"
+            tabindex="0"
             @mouseenter="isLabelTruncated(node.name) && showTooltip($event, node.name)"
             @mouseleave="hideTooltip"
+            @focusin="isLabelTruncated(node.name) && showTooltip($event, node.name)"
+            @focusout="hideTooltip"
           >
             {{ truncateLabel(node.name) }}
           </text>
@@ -114,8 +121,12 @@
             :y="nodeHeight - 4"
             text-anchor="middle"
             class="node-datasource"
+            role="presentation"
+            tabindex="0"
             @mouseenter="isLabelTruncated(node.dataSource) && showTooltip($event, node.dataSource)"
             @mouseleave="hideTooltip"
+            @focusin="isLabelTruncated(node.dataSource) && showTooltip($event, node.dataSource)"
+            @focusout="hideTooltip"
           >
             {{ truncateLabel(node.dataSource, 20) }}
           </text>
@@ -136,7 +147,10 @@
             v-if="hasUnexpandedAncestors(node.did)"
             class="expand-button"
             :transform="`translate(-12, ${nodeHeight / 2})`"
+            role="button"
+            tabindex="0"
             @click.stop="onExpandAncestors(node)"
+            @keydown.enter.stop="onExpandAncestors(node)"
           >
             <circle r="10" class="expand-button-bg" />
             <text y="4" text-anchor="middle" class="expand-button-icon">
@@ -149,7 +163,10 @@
             v-if="hasUnexpandedDescendants(node.did)"
             class="expand-button"
             :transform="`translate(${nodeWidth + 12}, ${nodeHeight / 2})`"
+            role="button"
+            tabindex="0"
             @click.stop="onExpandDescendants(node)"
+            @keydown.enter.stop="onExpandDescendants(node)"
           >
             <circle r="10" class="expand-button-bg" />
             <text y="4" text-anchor="middle" class="expand-button-icon">

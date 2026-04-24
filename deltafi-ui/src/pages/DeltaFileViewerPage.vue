@@ -30,7 +30,7 @@
       <div class="row">
         <div class="col-4">
           <div class="p-inputgroup">
-            <InputText v-model="did" placeholder="DID (UUID)" :class="{ 'p-invalid': did && !validDID }" @keyup.enter="navigateToDID" />
+            <InputText v-model="did" placeholder="DID (UUID)" :class="{ 'p-invalid': did && !validDID }" :aria-invalid="did && !validDID" aria-label="DeltaFile ID" @keyup.enter="navigateToDID" />
             <Button class="p-button-primary ml-2" :disabled="!did || !validDID" @click="navigateToDID"> View </Button>
           </div>
           <small v-if="did && !validDID" class="p-error ml-1">Invalid UUID</small>

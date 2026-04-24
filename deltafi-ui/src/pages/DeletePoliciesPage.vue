@@ -33,7 +33,7 @@
       <template #icons>
         <IconField iconPosition="left">
           <InputIcon class="pi pi-search"> </InputIcon>
-          <InputText v-model="filters['global'].value" class="p-inputtext-sm deltafi-input-field mx-1" placeholder="Search" />
+          <InputText v-model="filters['global'].value" class="p-inputtext-sm deltafi-input-field mx-1" placeholder="Search" aria-label="Search delete policies" />
         </IconField>
       </template>
       <DataTable aria-label="Delete policies" v-model:filters="filters" :value="uiDeletePoliciesList" :loading="loading && !loaded" data-Key="id" striped-rows class="p-datatable-sm p-datatable-gridlines delete-policy-table" :global-filter-fields="['name', 'flow']" :row-hover="true">

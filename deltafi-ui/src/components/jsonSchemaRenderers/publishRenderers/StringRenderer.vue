@@ -19,10 +19,10 @@
 <template>
   <control-wrapper v-bind="schemaData.controlWrapper" :styles="schemaData.styles" :is-focused="schemaData.isFocused" :applied-options="schemaData.appliedOptions">
     <dl>
-      <dt :id="schemaData.control.id + '-input-label'">{{ computedLabel }}<span v-if="schemaData.control.required" class="required-indicator">*</span></dt>
+      <dt :id="schemaData.control.id + '-input-label'">{{ computedLabel }}<span v-if="schemaData.control.required" class="required-indicator" aria-hidden="true">*</span></dt>
       <dd>
         <template v-if="_.isEqual(schemaData.control.i18nKeyPrefix.split('.').pop(), 'topic')">
-          <AutoComplete :id="schemaData.control.id + '-input'" v-model="schemaData.control.data" dropdown :class="schemaData.styles.control.input + ' auto-complete-input-width'" :suggestions="topicList" @complete="search" @change="schemaData.onChange(schemaData.control.data)" />
+          <AutoComplete :id="schemaData.control.id + '-input'" v-model="schemaData.control.data" dropdown :class="schemaData.styles.control.input + ' auto-complete-input-width'" :aria-required="schemaData.control.required" :suggestions="topicList" @complete="search" @change="schemaData.onChange(schemaData.control.data)" />
         </template>
         <template v-else-if="isConditionField">
           <SpelEditorDialog
@@ -35,13 +35,13 @@
           />
         </template>
         <template v-else-if="optionList !== undefined">
-          <Select :id="schemaData.control.id + '-input'" v-model="schemaData.control.data" :class="schemaData.styles.control.input + ' inputWidth'" :disabled="!schemaData.control.enabled" :autofocus="schemaData.appliedOptions.focus" :placeholder="schemaData.appliedOptions.placeholder" :options="optionList" :option-label="optionsDisplay" @change="schemaData.onChange(schemaData.control.data)" @focus="schemaData.isFocused = true" @blur="schemaData.isFocused = false" />
+          <Select :id="schemaData.control.id + '-input'" v-model="schemaData.control.data" :class="schemaData.styles.control.input + ' inputWidth'" :aria-required="schemaData.control.required" :disabled="!schemaData.control.enabled" :autofocus="schemaData.appliedOptions.focus" :placeholder="schemaData.appliedOptions.placeholder" :options="optionList" :option-label="optionsDisplay" @change="schemaData.onChange(schemaData.control.data)" @focus="schemaData.isFocused = true" @blur="schemaData.isFocused = false" />
         </template>
         <template v-else-if="schemaData.control.schema.maxLength !== undefined && schemaData.control.schema.maxLength > 80">
-          <Textarea :id="schemaData.control.id + '-input'" v-model="schemaData.control.data" :class="schemaData.styles.control.input + ' inputWidth align-items-center'" :disabled="!schemaData.control.enabled" :autofocus="schemaData.appliedOptions.focus" :placeholder="schemaData.appliedOptions.placeholder" rows="10" cols="80" @input="schemaData.onChange(undefinedStringCheck(schemaData.control.data))" @focus="schemaData.isFocused = true" @blur="schemaData.isFocused = false" />
+          <Textarea :id="schemaData.control.id + '-input'" v-model="schemaData.control.data" :class="schemaData.styles.control.input + ' inputWidth align-items-center'" :aria-required="schemaData.control.required" :disabled="!schemaData.control.enabled" :autofocus="schemaData.appliedOptions.focus" :placeholder="schemaData.appliedOptions.placeholder" rows="10" cols="80" @input="schemaData.onChange(undefinedStringCheck(schemaData.control.data))" @focus="schemaData.isFocused = true" @blur="schemaData.isFocused = false" />
         </template>
         <template v-else>
-          <InputText :id="schemaData.control.id + '-input'" v-model="schemaData.control.data" :class="schemaData.styles.control.input + ' inputWidth align-items-center'" :disabled="!schemaData.control.enabled" :autofocus="schemaData.appliedOptions.focus" :placeholder="schemaData.appliedOptions.placeholder" @input="schemaData.onChange(undefinedStringCheck(schemaData.control.data))" @focus="schemaData.isFocused = true" @blur="schemaData.isFocused = false" />
+          <InputText :id="schemaData.control.id + '-input'" v-model="schemaData.control.data" :class="schemaData.styles.control.input + ' inputWidth align-items-center'" :aria-required="schemaData.control.required" :disabled="!schemaData.control.enabled" :autofocus="schemaData.appliedOptions.focus" :placeholder="schemaData.appliedOptions.placeholder" @input="schemaData.onChange(undefinedStringCheck(schemaData.control.data))" @focus="schemaData.isFocused = true" @blur="schemaData.isFocused = false" />
         </template>
         <div>
           <small v-if="!_.isEmpty(schemaData.control.description)" v-html="markdownIt.render(schemaData.control.description)"></small>

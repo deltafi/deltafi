@@ -21,13 +21,13 @@
     <div v-if="!_.isEmpty(publishData.rules)">
       <div v-if="!_.isEmpty(publishData.defaultRule.topic)">
         <span v-if="publishData.rules.length > 1">&bull;</span>
-        <span class="cursor-pointer" @click="showOverlayPanel($event)">{{ publishData.defaultRule.topic }}</span>
+        <span class="cursor-pointer" role="button" tabindex="0" @click="showOverlayPanel($event)" @keydown.enter="showOverlayPanel($event)">{{ publishData.defaultRule.topic }}</span>
         <TopicSubscribers :topic-name="publishData.defaultRule.topic" class="ml-1" />
       </div>
       <div v-for="(topic, index) in _.uniq(_.map(publishData.rules, 'topic'))" :key="index">
         <div v-if="!_.isEmpty(topic)">
           <span v-if="publishData.rules.length > 1">&bull;</span>
-          <span class="cursor-pointer" @click="showOverlayPanel($event)">
+          <span class="cursor-pointer" role="button" tabindex="0" @click="showOverlayPanel($event)" @keydown.enter="showOverlayPanel($event)">
             {{ topic }} {{ counts[topic] > 1 ? `(x${counts[topic]})` : '' }}
           </span>
           <TopicSubscribers :topic-name="topic" />

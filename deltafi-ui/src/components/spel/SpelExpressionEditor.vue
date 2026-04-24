@@ -28,6 +28,8 @@
         :placeholder="placeholder"
         :disabled="disabled"
         :class="['expression-textarea', { 'p-invalid': !validationResult.valid && expressionValue }]"
+        :aria-invalid="!validationResult.valid && !!expressionValue"
+        aria-label="SpEL expression"
         rows="3"
         @blur="validateOnBlur"
         @input="onInput"

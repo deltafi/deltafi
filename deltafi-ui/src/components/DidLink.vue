@@ -19,7 +19,7 @@
 <template>
   <span ref="link" class="cursor-pointer">
     <router-link class="monospace cursor-pointer" :to="{ path: path }">{{ shortDid }}</router-link>
-    <span v-tooltip.right="'Copy full DID to clipboard'" :style="{ visibility: isHovered ? 'visible' : 'hidden' }" class="copy-link" @click.stop="onCopy($event)">
+    <span v-tooltip.right="'Copy full DID to clipboard'" :style="{ visibility: isHovered ? 'visible' : 'hidden' }" class="copy-link" role="button" tabindex="0" @click.stop="onCopy($event)" @keydown.enter.stop="onCopy($event)">
       <i :class="copyLinkIconClass" />
     </span>
   </span>

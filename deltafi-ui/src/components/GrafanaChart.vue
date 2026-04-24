@@ -17,7 +17,7 @@
 -->
 
 <template>
-  <iframe :src="src" :width="props.width" :height="props.height" frameborder="0" />
+  <iframe :src="src" :width="props.width" :height="props.height" frameborder="0" title="Grafana chart" />
 </template>
 
 <script setup>

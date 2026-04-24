@@ -39,7 +39,7 @@
         <template #loading><span class="datatable-loading-text">Loading. Please wait...</span></template>
         <Column field="id" header="ID" class="id-column">
           <template #body="data">
-            <a v-tooltip.top="`View Snapshot`" class="cursor-pointer monospace" @click="showSnapshot(data.data)">{{ data.data.id.split('-').slice(-1)[0] }}</a>
+            <a v-tooltip.top="`View Snapshot`" role="button" tabindex="0" class="cursor-pointer monospace" @click="showSnapshot(data.data)" @keydown.enter="showSnapshot(data.data)">{{ data.data.id.split('-').slice(-1)[0] }}</a>
           </template>
         </Column>
         <Column field="reason" header="Reason" />

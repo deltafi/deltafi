@@ -22,7 +22,7 @@
       <div class="d-flex btn-toolbar">
         <IconField iconPosition="left">
           <InputIcon class="pi pi-search"> </InputIcon>
-          <InputText v-model="filters['global'].value" class="deltafi-input-field mx-1" placeholder="Search" />
+          <InputText v-model="filters['global'].value" class="deltafi-input-field mx-1" placeholder="Search" aria-label="Search topics" />
         </IconField>
       </div>
     </PageHeader>

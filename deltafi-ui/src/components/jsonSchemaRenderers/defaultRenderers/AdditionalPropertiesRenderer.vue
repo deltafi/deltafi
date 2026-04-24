@@ -26,7 +26,7 @@
     <div v-else class="additional-properties-list">
       <div v-for="(element, index) in additionalPropertyItems" :key="`entry-${index}`" class="additional-properties-row">
         <div class="additional-properties-key">
-          <InputText :model-value="element.propertyName.startsWith('__new_key_') ? '' : element.propertyName" :class="['key-input', { 'p-invalid': getKeyError(element.propertyName, index) }]" :disabled="!jsonSchema.control.enabled" placeholder="key" @update:model-value="updatePropertyKey(index, $event ?? '')" />
+          <InputText :model-value="element.propertyName.startsWith('__new_key_') ? '' : element.propertyName" :class="['key-input', { 'p-invalid': getKeyError(element.propertyName, index) }]" :aria-invalid="!!getKeyError(element.propertyName, index)" :disabled="!jsonSchema.control.enabled" placeholder="key" @update:model-value="updatePropertyKey(index, $event ?? '')" />
           <small v-if="getKeyError(element.propertyName, index)" class="p-error">{{ getKeyError(element.propertyName, index) }}</small>
         </div>
         <span class="additional-properties-equals">=</span>

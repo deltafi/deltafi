@@ -27,10 +27,10 @@
       </Message>
       <div v-for="(field, index) in modifiedMetadata" :key="index" class="row p-fluid mb-4">
         <div class="col-5">
-          <InputText v-model="field.key" type="text" placeholder="Key" @change="onInputChange" />
+          <InputText v-model="field.key" type="text" placeholder="Key" aria-label="Metadata key" @change="onInputChange" />
         </div>
         <div class="col-5">
-          <InputText v-model="field.value" type="text" placeholder="Value" />
+          <InputText v-model="field.value" type="text" placeholder="Value" aria-label="Metadata value" />
         </div>
         <div class="col-2 text-right">
           <Button icon="pi pi-times" aria-label="Remove metadata field" @click="removeMetadataField(index)" />

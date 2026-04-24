@@ -27,16 +27,16 @@
     >
       <div class="member-filters">
         <div class="filter-item">
-          <label>Search by Name</label>
-          <InputText v-model="filterText" placeholder="Filter by member name..." class="w-full" />
+          <label for="leader-dashboard-name-filter">Search by Name</label>
+          <InputText id="leader-dashboard-name-filter" v-model="filterText" placeholder="Filter by member name..." class="w-full" />
         </div>
         <div class="filter-item">
-          <label>Filter by Tags</label>
-          <MultiSelect v-model="selectedTags" :options="allTags" placeholder="Select tags..." class="w-full" />
+          <label for="leader-dashboard-tags-filter">Filter by Tags</label>
+          <MultiSelect id="leader-dashboard-tags-filter" v-model="selectedTags" :options="allTags" placeholder="Select tags..." class="w-full" />
         </div>
         <div v-if="isMetricView" class="filter-item">
-          <label>Filter by {{ tableKeyHeader }}</label>
-          <InputText v-model="metricFilter" :placeholder="`Filter ${tableKeyHeader.toLowerCase()}...`" class="w-full" />
+          <label for="leader-dashboard-metric-filter">Filter by {{ tableKeyHeader }}</label>
+          <InputText id="leader-dashboard-metric-filter" v-model="metricFilter" :placeholder="`Filter ${tableKeyHeader.toLowerCase()}...`" class="w-full" />
         </div>
         <div class="filter-stats">
           Showing {{ sortedMembers.length }} of {{ members.length }} members
@@ -268,7 +268,7 @@
         <Column v-if="!isMetricView" header="" style="width: 1%; white-space: nowrap; text-align: right">
           <template #body="{ data }">
             <div v-if="data.memberData" class="member-icons justify-end">
-              <i v-if="!data.memberData.isLeader" class="pi pi-external-link text-muted cursor-pointer" @click="openMemberSite(data.memberData.url)" v-tooltip.top="'Visit ' + data.memberData.url" />
+              <i v-if="!data.memberData.isLeader" role="button" tabindex="0" class="pi pi-external-link text-muted cursor-pointer" @click="openMemberSite(data.memberData.url)" @keydown.enter="openMemberSite(data.memberData.url)" v-tooltip.top="'Visit ' + data.memberData.url" />
               <i v-else class="pi pi-external-link" style="visibility: hidden" />
               <i class="pi pi-tag text-muted" v-tooltip.top="data.memberData.tags.length > 0 ? 'Tags: ' + data.memberData.tags.join(', ') : 'No tags'" />
               <Tag v-if="data.memberData.connectionState === 'UNREACHABLE'" severity="danger" value="Unreachable" class="status-tag" />

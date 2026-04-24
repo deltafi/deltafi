@@ -57,7 +57,7 @@
             <div class="d-flex justify-content-between">
               <span>
                 <i v-tooltip.top="dataSourceTypeLabel(data.dataSourceType)" :class="dataSourceTypeIcon(data.dataSourceType)" class="mr-2 text-muted" />
-                <span class="cursor-pointer" @click="showAction(data)">{{ data.name }}</span>
+                <span class="cursor-pointer" role="button" tabindex="0" @click="showAction(data)" @keydown.enter="showAction(data)">{{ data.name }}</span>
               </span>
               <span>
                 <DataSourceNameColumnButtonGroup :key="data.name" :row-data-prop="data" @reload-data-sources="refresh" @update-rate-limit="updateRateLimit" />

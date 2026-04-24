@@ -27,7 +27,7 @@
       <div v-for="field in modifiedMetadata" :key="field" class="row p-fluid mb-4">
         <div class="col-5">
           <InputText v-if="field.changed === 'new'" v-model="field.key" type="text" placeholder="Key" @change="onInputChange(field)" />
-          <InputText v-else-if="field.changed === 'error'" v-model="field.key" type="text" placeholder="Key" class="p-invalid" @change="onInputChange(field)" />
+          <InputText v-else-if="field.changed === 'error'" v-model="field.key" type="text" placeholder="Key" class="p-invalid" aria-invalid="true" @change="onInputChange(field)" />
           <InputText v-else v-model="field.key" type="text" placeholder="Key" disabled class="p-valid" />
         </div>
         <div class="col-5">

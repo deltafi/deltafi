@@ -803,6 +803,17 @@ td.did-column {
   background: var(--p-panel-header-background, #ffffff) !important;
 }
 
+/* Reset Bootstrap label margin when labels are used inside dt for accessible form patterns */
+dt > label {
+  margin-bottom: 0;
+}
+
+/* Required field indicator */
+.required-indicator {
+  color: var(--red-500);
+  margin-left: 0.125rem;
+}
+
 /* ── PrimeVue 3 Dialog look ────────────────────────────────────────────── */
 .p-dialog-header {
   padding: 0.5rem 1.5rem !important;

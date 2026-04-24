@@ -99,7 +99,7 @@
           class="table-panel running-tasks-panel"
         >
           <template #header>
-            <div class="clickable-header" @click="runningTasksCollapsed = !runningTasksCollapsed">
+            <div role="button" tabindex="0" class="clickable-header" @click="runningTasksCollapsed = !runningTasksCollapsed" @keydown.enter="runningTasksCollapsed = !runningTasksCollapsed">
               {{ runningTasksHeader }}
             </div>
           </template>

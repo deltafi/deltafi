@@ -17,17 +17,19 @@
 -->
 
 <template>
-  <Toast>
-    <template #message="slotProps">
-      <span :class="iconClass(slotProps.message.severity)" />
-      <div class="p-toast-message-text">
-        <span class="p-toast-summary">{{ slotProps.message.summary }}</span>
-        <div class="p-toast-detail">
-          <div v-html="formatString(slotProps.message.detail)" />
+  <div aria-live="polite" aria-atomic="true">
+    <Toast>
+      <template #message="slotProps">
+        <span :class="iconClass(slotProps.message.severity)" aria-hidden="true" />
+        <div class="p-toast-message-text">
+          <span class="p-toast-summary">{{ slotProps.message.summary }}</span>
+          <div class="p-toast-detail">
+            <div v-html="formatString(slotProps.message.detail)" />
+          </div>
         </div>
-      </div>
-    </template>
-  </Toast>
+      </template>
+    </Toast>
+  </div>
 </template>
 
 <script setup>

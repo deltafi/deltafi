@@ -69,7 +69,11 @@
             <g
               class="settings-button"
               :transform="`translate(${18}, ${lane.y + lane.height - 18})`"
+              role="button"
+              tabindex="0"
+              aria-label="Publish settings"
               @click="$emit('open-publish-settings')"
+              @keydown.enter="$emit('open-publish-settings')"
             >
               <circle r="8" class="settings-button-bg" />
               <text dy="0.35em" text-anchor="middle" class="settings-button-icon fas">&#xf013;</text>
@@ -154,13 +158,18 @@
 
       <!-- Nodes -->
       <g class="nodes">
+        <!-- eslint-disable-next-line vuejs-accessibility/no-static-element-interactions -- SVG node group with tooltip on hover/focus -->
         <g
           v-for="node in nodes"
           :key="node.id"
           :transform="`translate(${node.x}, ${node.y})`"
           :class="{ 'dragging-source': isDragging && draggedNode?.id === node.id }"
+          role="group"
+          :aria-label="node.name"
           @mouseenter="(e) => showTooltip(e, node)"
           @mouseleave="hideTooltip"
+          @focusin="(e) => showTooltip(e, node)"
+          @focusout="hideTooltip"
         >
           <TransformFlowNode
             :name="node.name"
@@ -170,7 +179,11 @@
             :selected="selectedNodeId === node.id"
             :has-error="hasNodeError(node)"
             :condition="node.condition"
+            role="button"
+            tabindex="0"
+            :aria-label="`Edit ${node.name}`"
             @click="handleNodeClick(node)"
+            @keydown.enter="handleNodeClick(node)"
             @mousedown="(e) => handleDragStart(e, node)"
           />
         </g>
@@ -199,7 +212,11 @@
           :key="`add-${btn.buttonType}-${index}`"
           :transform="`translate(${btn.x}, ${btn.y})`"
           class="add-button"
+          role="button"
+          tabindex="0"
+          :aria-label="`Add ${btn.buttonType}`"
           @click="handleAddClick(btn)"
+          @keydown.enter="handleAddClick(btn)"
         >
           <circle r="10" class="add-button-circle" />
           <text dy="0.35em" text-anchor="middle" class="add-button-text">+</text>
@@ -311,17 +328,26 @@ const { nodes, edges, viewBox, addButtonPositions, lanes, config } = useTransfor
 const tooltip = ref({ visible: false, text: '', x: 0, y: 0 });
 const maxLabelLength = computed(() => Math.floor(config.nodeWidth / 7.5));
 
-const showTooltip = (event: MouseEvent, node: LayoutNode) => {
+const showTooltip = (event: MouseEvent | FocusEvent, node: LayoutNode) => {
   if (node.name.length <= maxLabelLength.value) return;
   const container = containerRef.value;
   if (!container) return;
   const rect = container.getBoundingClientRect();
-  tooltip.value = {
-    visible: true,
-    text: node.name,
-    x: event.clientX - rect.left,
-    y: event.clientY - rect.top - 30,
-  };
+  if ('clientX' in event) {
+    tooltip.value = {
+      visible: true,
+      text: node.name,
+      x: event.clientX - rect.left,
+      y: event.clientY - rect.top - 30,
+    };
+  } else {
+    tooltip.value = {
+      visible: true,
+      text: node.name,
+      x: node.x + config.nodeWidth / 2,
+      y: node.y - 10,
+    };
+  }
 };
 
 const hideTooltip = () => {

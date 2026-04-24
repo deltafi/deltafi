@@ -29,7 +29,7 @@
       <div class="d-flex justify-content-between">
         <IconField iconPosition="left" class="mb-3">
           <InputIcon class="pi pi-search"></InputIcon>
-          <InputText v-model="filterFlowsText" type="text" placeholder="Search" class="p-inputtext deltafi-input-field" />
+          <InputText v-model="filterFlowsText" type="text" placeholder="Search" aria-label="Search data sources" class="p-inputtext deltafi-input-field" />
         </IconField>
         <div class="kill-switch" >
           <span class="mr-2 text-muted">Ingress Enabled</span>

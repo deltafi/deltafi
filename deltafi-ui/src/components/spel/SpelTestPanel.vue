@@ -38,8 +38,9 @@
       />
     </div>
     <div v-if="availableFlows.length > 0" class="flow-picker">
-      <label>Flow:</label>
+      <label for="spel-flow-picker">Flow:</label>
       <Dropdown
+        id="spel-flow-picker"
         v-model="selectedFlow"
         :options="availableFlows"
         option-label="label"
@@ -138,12 +139,12 @@
     <!-- Template-specific fields -->
     <div v-if="mode === 'TEMPLATE'" class="template-fields">
       <div class="template-field">
-        <label>deltaFileName:</label>
-        <InputText v-model="testData.deltaFileName" placeholder="test-file.dat" />
+        <label for="spel-delta-file-name">deltaFileName:</label>
+        <InputText id="spel-delta-file-name" v-model="testData.deltaFileName" placeholder="test-file.dat" />
       </div>
       <div class="template-field">
-        <label>did:</label>
-        <InputText v-model="testData.did" placeholder="00000000-0000-0000-0000-000000000000" />
+        <label for="spel-did">did:</label>
+        <InputText id="spel-did" v-model="testData.did" placeholder="00000000-0000-0000-0000-000000000000" />
       </div>
     </div>
 

@@ -31,7 +31,7 @@
     </div>
     <div v-for="(pair, i) in pairs" :key="i" class="map-row mb-2 align-items-center">
       <div class="mr-2" :style="{ width: '30px', 'text-align': 'right' }">{{ pair.column }}{{ props.rowDataProp.keyColumns.includes(pair.column) ? "*" : "" }}:</div>
-      <InputText v-model="pair.value" class="mr-2 inputWidth" />
+      <InputText v-model="pair.value" class="mr-2 inputWidth" :aria-label="`Value for ${pair.column}`" />
     </div>
     <teleport v-if="isMounted" to="#dialogTemplate">
       <div class="p-dialog-footer">

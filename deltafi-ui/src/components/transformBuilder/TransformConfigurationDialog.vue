@@ -20,7 +20,7 @@
   <div class="transform-configuration-dialog">
     <div class="transform-configuration-panel">
       <div class="pb-0">
-        <div v-if="hasErrors" class="pt-2">
+        <div v-if="hasErrors" class="pt-2" role="alert" aria-live="assertive">
           <Message severity="error" :sticky="true" class="mb-2 mt-0" @close="clearErrors()">
             <ul>
               <div v-for="(error, key) in errors" :key="key">
@@ -32,17 +32,17 @@
           </Message>
         </div>
         <dl>
-          <dt>Name*</dt>
+          <dt><label for="tc-name">Name<span class="required-indicator" aria-hidden="true">*</span></label></dt>
           <dd>
-            <InputText ref="nameInputRef" v-model="model.name" class="inputWidth" :disabled="editTransform" />
+            <InputText id="tc-name" ref="nameInputRef" v-model="model.name" class="inputWidth" aria-required="true" :disabled="editTransform" />
           </dd>
-          <dt>Description*</dt>
+          <dt><label for="tc-description">Description<span class="required-indicator" aria-hidden="true">*</span></label></dt>
           <dd>
-            <Textarea v-model="model.description" rows="4" cols="47" class="inputWidth" @input="onDescriptionInput" />
+            <Textarea id="tc-description" v-model="model.description" rows="4" cols="47" class="inputWidth" aria-required="true" @input="onDescriptionInput" />
           </dd>
-          <dt>Clone From <small class="text-muted">- Optional</small></dt>
+          <dt><label for="tc-clone-from">Clone From <small class="text-muted">- Optional</small></label></dt>
           <dd>
-            <Select v-model="model.selectedTransform" :options="_.orderBy(allTransforms[`${_.toLower(model.type)}`], [(transform) => transform.name.toLowerCase()], ['asc'])" option-label="name" placeholder="Select Transform" :show-clear="!editTransform" :disabled="editTransform" class="inputWidth" />
+            <Select id="tc-clone-from" v-model="model.selectedTransform" :options="_.orderBy(allTransforms[`${_.toLower(model.type)}`], [(transform) => transform.name.toLowerCase()], ['asc'])" option-label="name" placeholder="Select Transform" :show-clear="!editTransform" :disabled="editTransform" class="inputWidth" />
           </dd>
         </dl>
       </div>

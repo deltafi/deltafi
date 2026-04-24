@@ -20,7 +20,7 @@
   <div class="plugin-configuration-dialog">
     <div class="install-plugin-panel">
       <div class="pb-0">
-        <div v-if="!_.isEmpty(errorsList)" class="pt-2">
+        <div v-if="!_.isEmpty(errorsList)" class="pt-2" role="alert" aria-live="assertive">
           <Message severity="error" :sticky="true" class="mb-2 mt-0" @close="clearErrors()">
             <ul>
               <div v-for="(error, key) in errorsList" :key="key">
@@ -32,20 +32,22 @@
           </Message>
         </div>
         <dl>
-          <dt>{{ pluginConfigurationMap.get("imageName").header }}</dt>
+          <dt><label for="pi-image-name">{{ pluginConfigurationMap.get("imageName").header }}<span v-if="pluginConfigurationMap.get('imageName').required" class="required-indicator" aria-hidden="true">*</span></label></dt>
           <dd>
-            <InputText v-model.trim="model.imageName" :placeholder="pluginConfigurationMap.get('imageName').placeholder" class="inputWidth" />
+            <InputText id="pi-image-name" v-model.trim="model.imageName" :placeholder="pluginConfigurationMap.get('imageName').placeholder" :aria-required="pluginConfigurationMap.get('imageName').required" class="inputWidth" />
           </dd>
-          <dt>{{ pluginConfigurationMap.get("imageTag").header }}</dt>
+          <dt><label for="pi-image-tag">{{ pluginConfigurationMap.get("imageTag").header }}<span v-if="pluginConfigurationMap.get('imageTag').required" class="required-indicator" aria-hidden="true">*</span></label></dt>
           <dd>
-            <InputText v-model.trim="model.imageTag" :placeholder="pluginConfigurationMap.get('imageTag').placeholder" class="inputWidth" />
+            <InputText id="pi-image-tag" v-model.trim="model.imageTag" :placeholder="pluginConfigurationMap.get('imageTag').placeholder" :aria-required="pluginConfigurationMap.get('imageTag').required" class="inputWidth" />
           </dd>
           <dt>
-            {{ pluginConfigurationMap.get("imagePullSecret").header }}
-            <i v-tooltip="pluginConfigurationMap.get('imagePullSecret').tooltip" class="ml-0 text-muted fas fa-info-circle fa-fw" />
+            <label for="pi-pull-secret">
+              {{ pluginConfigurationMap.get("imagePullSecret").header }}
+              <i v-tooltip="pluginConfigurationMap.get('imagePullSecret').tooltip" class="ml-0 text-muted fas fa-info-circle fa-fw" aria-hidden="true" />
+            </label>
           </dt>
           <dd>
-            <InputText v-model.trim="model.imagePullSecret" :placeholder="pluginConfigurationMap.get('imagePullSecret').placeholder" class="inputWidth" />
+            <InputText id="pi-pull-secret" v-model.trim="model.imagePullSecret" :placeholder="pluginConfigurationMap.get('imagePullSecret').placeholder" class="inputWidth" />
           </dd>
         </dl>
       </div>
@@ -109,8 +111,8 @@ const model = computed({
 const originalModel = Object.assign({}, model.value);
 
 const pluginConfigurationMap = new Map([
-  ["imageName", { header: "Image Name*", placeholder: "e.g. docker.io/deltafi/deltafi-passthrough" }],
-  ["imageTag", { header: "Image Tag*", placeholder: "e.g. latest" }],
+  ["imageName", { header: "Image Name", required: true, placeholder: "e.g. docker.io/deltafi/deltafi-passthrough" }],
+  ["imageTag", { header: "Image Tag", required: true, placeholder: "e.g. latest" }],
   ["imagePullSecret", { header: "Image Pull Secret", placeholder: "e.g. docker-secret", tooltip: "Optional - the name of the secret that holds the credentials necessary to pull this image" }],
 ]);
 

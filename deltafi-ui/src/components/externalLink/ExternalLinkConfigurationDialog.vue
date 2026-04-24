@@ -19,7 +19,7 @@
 <template>
   <div class="external-link-body">
     <div class="external-link-panel">
-      <div v-if="!_.isEmpty(errorsList)" class="pt-2">
+      <div v-if="!_.isEmpty(errorsList)" class="pt-2" role="alert" aria-live="assertive">
         <Message severity="error" :sticky="true" class="mb-2 mt-0" @close="clearErrors()">
           <ul>
             <div v-for="(error, key) in errorsList" :key="key">
@@ -31,21 +31,21 @@
         </Message>
       </div>
       <dl>
-        <dt>{{ linkConfigurationMap.get("linkType").header }}</dt>
+        <dt><label for="el-link-type">{{ linkConfigurationMap.get("linkType").header }}<span v-if="linkConfigurationMap.get('linkType').required" class="required-indicator" aria-hidden="true">*</span></label></dt>
         <dd>
-          <Select v-model="selectedLinkType" :options="linkConfigurationMap.get('linkType').types" :placeholder="linkConfigurationMap.get('linkType').placeholder" :disabled="linkConfigurationMap.get('linkType').disabled" :show-clear="!linkConfigurationMap.get('linkType').disabled" class="inputWidth" />
+          <Select id="el-link-type" v-model="selectedLinkType" :options="linkConfigurationMap.get('linkType').types" :placeholder="linkConfigurationMap.get('linkType').placeholder" :disabled="linkConfigurationMap.get('linkType').disabled" :aria-required="linkConfigurationMap.get('linkType').required" :show-clear="!linkConfigurationMap.get('linkType').disabled" class="inputWidth" />
         </dd>
-        <dt>{{ linkConfigurationMap.get("name").header }}</dt>
+        <dt><label for="el-name">{{ linkConfigurationMap.get("name").header }}<span v-if="linkConfigurationMap.get('name').required" class="required-indicator" aria-hidden="true">*</span></label></dt>
         <dd>
-          <InputText v-model="model.name" :placeholder="linkConfigurationMap.get('name').placeholder" :disabled="linkConfigurationMap.get('name').disabled" class="inputWidth" />
+          <InputText id="el-name" v-model="model.name" :placeholder="linkConfigurationMap.get('name').placeholder" :disabled="linkConfigurationMap.get('name').disabled" :aria-required="linkConfigurationMap.get('name').required" class="inputWidth" />
         </dd>
-        <dt>{{ linkConfigurationMap.get("description").header }}</dt>
+        <dt><label for="el-description">{{ linkConfigurationMap.get("description").header }}</label></dt>
         <dd>
-          <InputText v-model="model.description" :placeholder="linkConfigurationMap.get('description').placeholder" :disabled="linkConfigurationMap.get('description').disabled" class="inputWidth" />
+          <InputText id="el-description" v-model="model.description" :placeholder="linkConfigurationMap.get('description').placeholder" :disabled="linkConfigurationMap.get('description').disabled" class="inputWidth" />
         </dd>
-        <dt>{{ linkConfigurationMap.get("url").header }}</dt>
+        <dt><label for="el-url">{{ linkConfigurationMap.get("url").header }}<span v-if="linkConfigurationMap.get('url').required" class="required-indicator" aria-hidden="true">*</span></label></dt>
         <dd>
-          <InputText v-model="model.url" :placeholder="linkConfigurationMap.get('url').placeholder" :disabled="linkConfigurationMap.get('url').disabled" class="inputWidth" />
+          <InputText id="el-url" v-model="model.url" :placeholder="linkConfigurationMap.get('url').placeholder" :disabled="linkConfigurationMap.get('url').disabled" :aria-required="linkConfigurationMap.get('url').required" class="inputWidth" />
         </dd>
       </dl>
     </div>
@@ -126,9 +126,9 @@ const model = computed({
 const isMounted = ref(useMounted());
 
 const linkConfigurationMap = new Map([
-  ["linkType", { header: "Link Type*", placeholder: "Custom Link Type", types: ["DeltaFile Link", "External Link"], disabled: viewLink || editLink }],
-  ["url", { header: "Url*", placeholder: "Url for linked service", disabled: viewLink }],
-  ["name", { header: "Name*", placeholder: "Name of linked Service", disabled: viewLink }],
+  ["linkType", { header: "Link Type", required: true, placeholder: "Custom Link Type", types: ["DeltaFile Link", "External Link"], disabled: viewLink || editLink }],
+  ["url", { header: "Url", required: true, placeholder: "Url for linked service", disabled: viewLink }],
+  ["name", { header: "Name", required: true, placeholder: "Name of linked Service", disabled: viewLink }],
   ["description", { header: "Description", placeholder: "Description of linked service", disabled: viewLink }],
 ]);
 

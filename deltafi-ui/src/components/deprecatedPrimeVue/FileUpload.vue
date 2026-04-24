@@ -20,15 +20,16 @@
   <span class="fileupload-page">
     <div v-if="isAdvanced" class="p-fileupload p-fileupload-advanced p-component">
       <div class="p-fileupload-buttonbar">
-        <span v-ripple :class="advancedChooseButtonClass" :style="style" tabindex="0" @click="choose" @keydown.enter="choose" @focus="onFocus" @blur="onBlur">
-          <input ref="fileInput" type="file" :multiple="multiple" :accept="accept" :disabled="chooseDisabled" @change="onFileSelect">
+        <span v-ripple role="button" :class="advancedChooseButtonClass" :style="style" tabindex="0" @click="choose" @keydown.enter="choose" @focus="onFocus" @blur="onBlur">
+          <input ref="fileInput" type="file" :multiple="multiple" :accept="accept" :disabled="chooseDisabled" aria-label="Choose files" @change="onFileSelect">
           <span class="p-button-icon p-button-icon-left pi pi-fw pi-plus" />
           <span class="p-button-label">{{ chooseButtonLabel }}</span>
         </span>
         <FileUploadButton v-if="showUploadButton" :label="uploadButtonLabel" icon="pi pi-upload" :disabled="uploadDisabled" @click="upload" />
         <FileUploadButton v-if="showCancelButton" :label="cancelButtonLabel" icon="pi pi-times" :disabled="cancelDisabled" @click="clear" />
       </div>
-      <div ref="content" class="p-fileupload-content" @dragenter="onDragEnter" @dragover="onDragOver" @dragleave="onDragLeave" @drop="onDrop">
+      <!-- eslint-disable-next-line vuejs-accessibility/no-static-element-interactions -- drag-and-drop file zone requires native drag events -->
+      <div ref="content" role="region" aria-label="File drop zone" class="p-fileupload-content" @dragenter="onDragEnter" @dragover="onDragOver" @dragleave="onDragLeave" @drop="onDrop">
         <FileUploadProgressBar v-if="hasFiles" :value="progress" />
         <FileUploadMessage v-for="msg of messages" :key="msg" severity="error" @close="onMessageClose">{{ msg }}</FileUploadMessage>
         <div v-if="hasFiles" class="p-fileupload-files">
@@ -50,10 +51,10 @@
     </div>
     <div v-else-if="isBasic" class="p-fileupload p-fileupload-basic p-component">
       <FileUploadMessage v-for="msg of messages" :key="msg" severity="error" @close="onMessageClose">{{ msg }}</FileUploadMessage>
-      <span v-ripple :class="basicChooseButtonClass" :style="style" tabindex="0" @mouseup="onBasicUploaderClick" @keydown.enter="choose" @focus="onFocus" @blur="onBlur">
+      <span v-ripple role="button" :class="basicChooseButtonClass" :style="style" tabindex="0" @mouseup="onBasicUploaderClick" @keydown.enter="choose" @focus="onFocus" @blur="onBlur">
         <span :class="basicChooseButtonIconClass" />
         <span class="p-button-label">{{ basicChooseButtonLabel }}</span>
-        <input v-if="!hasFiles" ref="fileInput" type="file" :accept="accept" :disabled="disabled" :multiple="multiple" @change="onFileSelect" @focus="onFocus" @blur="onBlur">
+        <input v-if="!hasFiles" ref="fileInput" type="file" :accept="accept" :disabled="disabled" :multiple="multiple" aria-label="Choose file" @change="onFileSelect" @focus="onFocus" @blur="onBlur">
       </span>
     </div>
   </span>

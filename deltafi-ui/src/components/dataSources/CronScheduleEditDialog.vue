@@ -22,7 +22,8 @@
       <dl>
         <dd>
           <CronLight v-model="model['cronSchedule']" format="quartz" @error="errors.push($event)" />
-          <InputText v-model="model['cronSchedule']" placeholder="e.g.	*/5 * * * * *" style="margin-top: 0.5rem" class="inputWidth" />
+          <label for="cron-schedule" class="sr-only">Cron Schedule</label>
+          <InputText id="cron-schedule" v-model="model['cronSchedule']" placeholder="e.g.	*/5 * * * * *" style="margin-top: 0.5rem" class="inputWidth" />
         </dd>
       </dl>
       <div class="p-dialog-footer">

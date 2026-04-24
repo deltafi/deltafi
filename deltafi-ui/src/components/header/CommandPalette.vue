@@ -24,7 +24,8 @@
   <Dialog v-model:visible="visible" modal :dismissableMask="!pendingAction" :closable="false" :showHeader="false" aria-label="Command palette" class="command-palette-dialog" :pt="{ root: { class: 'command-palette-root' } }">
     <div class="command-palette">
       <!-- Confirmation Overlay -->
-      <div v-if="pendingAction" class="confirmation-overlay" @keydown="handleConfirmationKeydown">
+      <!-- eslint-disable-next-line vuejs-accessibility/no-static-element-interactions -- alertdialog traps keyboard focus intentionally -->
+      <div v-if="pendingAction" class="confirmation-overlay" role="alertdialog" tabindex="-1" @keydown="handleConfirmationKeydown">
         <div class="confirmation-content">
           <div class="confirmation-icon">
             <i class="fas fa-exclamation-triangle" />
@@ -76,8 +77,12 @@
           <div
             :data-index="0"
             :class="['command-item selectable-item filtered-search-item', { selected: selectedIndex === 0 }]"
+            role="button"
+            tabindex="0"
             @click="executeFilteredSearch"
+            @keydown.enter="executeFilteredSearch"
             @mouseenter="selectedIndex = 0"
+            @focusin="selectedIndex = 0"
           >
             <span class="command-left">
               <i class="fas fa-search command-icon" />
@@ -105,8 +110,12 @@
               :key="result.did"
               :data-index="idx + filteredSearchOffset"
               :class="['result-item selectable-item', { selected: idx + filteredSearchOffset === selectedIndex }]"
+              role="button"
+              tabindex="0"
               @click="executeDeltaFile(result)"
+              @keydown.enter="executeDeltaFile(result)"
               @mouseenter="selectedIndex = idx + filteredSearchOffset"
+              @focusin="selectedIndex = idx + filteredSearchOffset"
             >
               <div class="result-main">
                 <i class="far fa-file result-icon" />
@@ -147,8 +156,12 @@
                 :key="cmd.path || cmd.url || cmd.name"
                 :data-index="getCommandSelectedIndex(group.name, idx)"
                 :class="['command-item selectable-item', { selected: getCommandSelectedIndex(group.name, idx) === selectedIndex }]"
+                role="button"
+                tabindex="0"
                 @click="selectAndExecute(cmd)"
+                @keydown.enter="selectAndExecute(cmd)"
                 @mouseenter="selectedIndex = getCommandSelectedIndex(group.name, idx)"
+                @focusin="selectedIndex = getCommandSelectedIndex(group.name, idx)"
               >
                 <span class="command-left">
                   <i :class="cmd.icon" class="command-icon" />

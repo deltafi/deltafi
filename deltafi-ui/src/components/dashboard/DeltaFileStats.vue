@@ -26,7 +26,7 @@
         <div v-for="label in statLabels" :key="label" class="stat-cell text-center">
           <div class="stat-label">
             {{ label }}
-            <span v-if="label === 'In-flight' && deltaFileStats.inFlightCount > 0 && deltaFileStats.oldestInFlightCreated" v-tooltip.top="oldestTooltip" class="oldest-clock" :class="{ clickable: deltaFileStats.oldestInFlightDid }" @click="viewOldestDeltaFile">
+            <span v-if="label === 'In-flight' && deltaFileStats.inFlightCount > 0 && deltaFileStats.oldestInFlightCreated" v-tooltip.top="oldestTooltip" class="oldest-clock" :class="{ clickable: deltaFileStats.oldestInFlightDid }" role="button" tabindex="0" @click="viewOldestDeltaFile" @keydown.enter="viewOldestDeltaFile">
               <i class="pi pi-clock" />
             </span>
           </div>

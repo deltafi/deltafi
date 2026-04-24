@@ -20,7 +20,7 @@
   <div id="error-message" class="data-sink-configuration-dialog">
     <div class="data-sink-panel">
       <div class="pb-0">
-        <div v-if="!_.isEmpty(errors)" class="pt-2">
+        <div v-if="!_.isEmpty(errors)" class="pt-2" role="alert" aria-live="assertive">
           <Message severity="error" :sticky="true" class="mb-2 mt-0" @close="clearErrors()">
             <ul>
               <div v-for="(error, key) in errors" :key="key">
@@ -32,16 +32,16 @@
           </Message>
         </div>
         <dl>
-          <dt>Name*</dt>
+          <dt><label for="sink-name">Name<span class="required-indicator" aria-hidden="true">*</span></label></dt>
           <dd>
-            <InputText v-model="model['name']" placeholder="Data Sink Name" :disabled="editDataSink" class="inputWidth" />
+            <InputText id="sink-name" v-model="model['name']" placeholder="Data Sink Name" aria-required="true" :disabled="editDataSink" class="inputWidth" />
           </dd>
-          <dt>Description*</dt>
+          <dt><label for="sink-description">Description<span class="required-indicator" aria-hidden="true">*</span></label></dt>
           <dd>
-            <TextArea v-model="model['description']" placeholder="Data Sink Description" class="inputWidth" rows="5" />
+            <TextArea id="sink-description" v-model="model['description']" placeholder="Data Sink Description" aria-required="true" class="inputWidth" rows="5" />
           </dd>
           <dt class="d-flex inputWidth justify-content-between">
-            <div>Subscribe*</div>
+            <div>Subscribe<span class="required-indicator" aria-hidden="true">*</span></div>
             <div>
               <Badge v-if="!_.isEmpty(validateSubscribe)" v-tooltip.left="{ value: `${validateSubscribe}`, class: 'tooltip-width', showDelay: 300 }" value=" " :class="'pi pi-exclamation-triangle validation-badge'" severity="danger" />
             </div>
@@ -53,9 +53,9 @@
               </div>
             </div>
           </dd>
-          <dt>Egress Action*</dt>
+          <dt><label for="sink-egress-action">Egress Action<span class="required-indicator" aria-hidden="true">*</span></label></dt>
           <dd>
-            <Select v-model="model['egressActionOption']" :options="flattenedActionsTypes" option-label="name" placeholder="Select an action" show-clear class="inputWidth" />
+            <Select id="sink-egress-action" v-model="model['egressActionOption']" :options="flattenedActionsTypes" option-label="name" placeholder="Select an action" aria-required="true" show-clear class="inputWidth" />
           </dd>
           <template v-if="!_.isEmpty(model['egressActionOption'])">
             <template v-if="schemaProvided(model['egressActionOption']['schema'])">

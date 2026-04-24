@@ -55,7 +55,7 @@
         </Column>
         <Column field="summary" header="Summary" sortable class="summary-col">
           <template #body="{ data }">
-            <span @click="showEvent(data)">
+            <span role="button" tabindex="0" @click="showEvent(data)" @keydown.enter="showEvent(data)">
               <a class="cursor-pointer" style="color: var(--df-body-color)">{{ data.summary }}</a>
             </span>
           </template>
@@ -88,7 +88,7 @@
             <i v-if="data.notification" class="pi pi-check" />
           </template>
           <template #filter="{ filterModel }">
-            <Select v-model="filterModel.value" :options="[true, false]" placeholder="All" show-clear />
+            <Select v-model="filterModel.value" :options="[true, false]" placeholder="All" show-clear aria-label="Filter by notification" />
           </template>
         </Column>
         <Column field="acknowledged" data-type="boolean" sortable class="acknowledged-col">
@@ -101,7 +101,7 @@
             <i v-if="data.acknowledged" class="pi pi-check" />
           </template>
           <template #filter="{ filterModel }">
-            <Select v-model="filterModel.value" :options="[true, false]" placeholder="All" show-clear />
+            <Select v-model="filterModel.value" :options="[true, false]" placeholder="All" show-clear aria-label="Filter by acknowledged" />
           </template>
         </Column>
       </DataTable>

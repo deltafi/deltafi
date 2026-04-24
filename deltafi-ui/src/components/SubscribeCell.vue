@@ -24,7 +24,7 @@
           <span v-if="_.uniq(_.map(subscribeData, 'topic')) > 1">&bull;</span>
           <TopicPublishers :topic-name="topic" />
           {{ topic }} {{ counts[topic] > 1 ? `(x${counts[topic]})` : "" }}
-          <i v-if="conditionsByTopic[topic]?.length" class="fa-solid fa-circle-info text-muted ml-1 cursor-pointer" @click="showOverlayPanel($event, topic)"></i>
+          <i v-if="conditionsByTopic[topic]?.length" class="fa-solid fa-circle-info text-muted ml-1 cursor-pointer" role="button" tabindex="0" @click="showOverlayPanel($event, topic)" @keydown.enter="showOverlayPanel($event, topic)"></i>
         </div>
       </div>
     </div>

@@ -31,7 +31,7 @@
       <template #loading><span class="datatable-loading-text">Loading. Please wait...</span></template>
       <Column field="flow" header="Flow" :sortable="true" class="filename-column">
         <template #body="{ data }">
-          <a class="monospace" @click="showAllTab(data.flow, data.type)">{{ data.flow }}</a>
+          <a role="button" tabindex="0" class="monospace" @click="showAllTab(data.flow, data.type)" @keydown.enter="showAllTab(data.flow, data.type)">{{ data.flow }}</a>
         </template>
       </Column>
       <Column field="type" header="Flow Type" :sortable="true" />

@@ -19,7 +19,7 @@
 <template>
   <div ref="listContainer" class="list-edit">
     <div v-for="(item, i) in list" :key="i" class="list-row mb-2">
-      <InputText v-model="list[i]" class="mr-2" />
+      <InputText v-model="list[i]" class="mr-2" aria-label="List item" />
       <Button icon="pi pi-times" aria-label="Remove item" class="p-button-secondary p-button-outlined remove-button" @click="removeItem(i)" />
     </div>
     <Button ref="addButton" icon="pi pi-plus" label="Add Item" class="p-button-secondary p-button-outlined" @click="addItem" />

@@ -176,7 +176,10 @@
                     v-for="pub in getPublishers(selectedNode.id)"
                     :key="pub.id"
                     class="connection-chip"
+                    role="button"
+                    tabindex="0"
                     @click="onFocusNode(pub)"
+                    @keydown.enter="onFocusNode(pub)"
                   >
                     {{ pub.name }}
                   </span>
@@ -189,7 +192,10 @@
                     v-for="sub in getSubscribers(selectedNode.id)"
                     :key="sub.id"
                     class="connection-chip"
+                    role="button"
+                    tabindex="0"
                     @click="onFocusNode(sub)"
+                    @keydown.enter="onFocusNode(sub)"
                   >
                     {{ sub.name }}
                   </span>
@@ -266,7 +272,10 @@
                     v-for="node in getUpstream(selectedNode.id)"
                     :key="node.id"
                     class="connection-chip"
+                    role="button"
+                    tabindex="0"
                     @click="onFocusNode(node)"
+                    @keydown.enter="onFocusNode(node)"
                   >
                     {{ node.name }}
                   </span>
@@ -279,7 +288,10 @@
                     v-for="node in getDownstream(selectedNode.id)"
                     :key="node.id"
                     class="connection-chip"
+                    role="button"
+                    tabindex="0"
                     @click="onFocusNode(node)"
+                    @keydown.enter="onFocusNode(node)"
                   >
                     {{ node.name }}
                   </span>

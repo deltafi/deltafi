@@ -63,7 +63,7 @@
       </template>
     </Dialog>
     <Dialog v-if="!props.readonly" v-model:visible="showPauseDialog" icon :header="'Pause ' + pauseStatusCheckId" :style="{ width: '30vw' }" :modal="true" :dismissable-mask="true" class="pause-dialog">
-      <Select :options="pauseDurations" placeholder="Choose duration..." optionLabel="label" @change="onPauseChange($event, pauseStatusCheckId)" />
+      <Select :options="pauseDurations" placeholder="Choose duration..." optionLabel="label" aria-label="Pause duration" @change="onPauseChange($event, pauseStatusCheckId)" />
     </Dialog>
   </span>
 </template>

@@ -20,7 +20,7 @@
   <div class="auto-resume-body">
     <div class="auto-resume-panel">
       <div class="pb-0">
-        <div v-if="!_.isEmpty(errorsList)" class="pt-2">
+        <div v-if="!_.isEmpty(errorsList)" class="pt-2" role="alert" aria-live="assertive">
           <Message severity="error" :sticky="true" class="mb-2 mt-0" @close="clearErrors()">
             <ul>
               <div v-for="(error, key) in errorsList" :key="key">
@@ -32,32 +32,32 @@
           </Message>
         </div>
         <dl>
-          <dt>{{ autoResumeConfigurationMap.get("name").header }}</dt>
+          <dt><label for="ar-name">{{ autoResumeConfigurationMap.get("name").header }}<span v-if="autoResumeConfigurationMap.get('name').required" class="required-indicator" aria-hidden="true">*</span></label></dt>
           <dd>
-            <InputText v-model="selectedRuleName" :placeholder="autoResumeConfigurationMap.get('name').placeholder" :disabled="autoResumeConfigurationMap.get('name').disabled" class="inputWidth" />
+            <InputText id="ar-name" v-model="selectedRuleName" :placeholder="autoResumeConfigurationMap.get('name').placeholder" :disabled="autoResumeConfigurationMap.get('name').disabled" :aria-required="autoResumeConfigurationMap.get('name').required" class="inputWidth" />
           </dd>
-          <dt>{{ autoResumeConfigurationMap.get("dataSource").header }}</dt>
+          <dt><label for="ar-datasource">{{ autoResumeConfigurationMap.get("dataSource").header }}</label></dt>
           <dd>
-            <Select v-model="selectedRuleDataSource" :options="formattedDataSourceNames" option-group-label="label" option-group-children="sources" :placeholder="autoResumeConfigurationMap.get('dataSource').placeholder" :disabled="autoResumeConfigurationMap.get('dataSource').disabled" show-clear class="inputWidth" />
+            <Select id="ar-datasource" v-model="selectedRuleDataSource" :options="formattedDataSourceNames" option-group-label="label" option-group-children="sources" :placeholder="autoResumeConfigurationMap.get('dataSource').placeholder" :disabled="autoResumeConfigurationMap.get('dataSource').disabled" show-clear class="inputWidth" />
           </dd>
-          <dt>{{ autoResumeConfigurationMap.get("action").header }}</dt>
+          <dt><label for="ar-action">{{ autoResumeConfigurationMap.get("action").header }}</label></dt>
           <dd>
-            <InputText v-model="selectedRuleAction" :placeholder="autoResumeConfigurationMap.get('action').placeholder" :disabled="autoResumeConfigurationMap.get('action').disabled" class="inputWidth" />
+            <InputText id="ar-action" v-model="selectedRuleAction" :placeholder="autoResumeConfigurationMap.get('action').placeholder" :disabled="autoResumeConfigurationMap.get('action').disabled" class="inputWidth" />
           </dd>
-          <dt>{{ autoResumeConfigurationMap.get("errorSubstring").header }}</dt>
+          <dt><label for="ar-error-substring">{{ autoResumeConfigurationMap.get("errorSubstring").header }}</label></dt>
           <dd>
-            <InputText v-model="selectedRuleErrorSubstring" :placeholder="autoResumeConfigurationMap.get('errorSubstring').placeholder" :disabled="autoResumeConfigurationMap.get('errorSubstring').disabled" class="inputWidth" />
+            <InputText id="ar-error-substring" v-model="selectedRuleErrorSubstring" :placeholder="autoResumeConfigurationMap.get('errorSubstring').placeholder" :disabled="autoResumeConfigurationMap.get('errorSubstring').disabled" class="inputWidth" />
           </dd>
-          <dt>{{ autoResumeConfigurationMap.get("maxAttempts").header }}</dt>
+          <dt><label for="maxAttemptsId">{{ autoResumeConfigurationMap.get("maxAttempts").header }}<span v-if="autoResumeConfigurationMap.get('maxAttempts').required" class="required-indicator" aria-hidden="true">*</span></label></dt>
           <dd class="mb-0">
-            <InputNumber id="maxAttemptsId" v-model="selectedRuleMaxAttempts" show-buttons :min="autoResumeConfigurationMap.get('maxAttempts').min" :max="autoResumeConfigurationMap.get('maxAttempts').max" decrement-button-class="p-button-secondary" increment-button-class="p-button-secondary" increment-button-icon="pi pi-plus" decrement-button-icon="pi pi-minus" :disabled="autoResumeConfigurationMap.get('maxAttempts').disabled" />
+            <InputNumber id="maxAttemptsId" v-model="selectedRuleMaxAttempts" aria-describedby="maxAttemptsId-help" :aria-required="autoResumeConfigurationMap.get('maxAttempts').required" show-buttons :min="autoResumeConfigurationMap.get('maxAttempts').min" :max="autoResumeConfigurationMap.get('maxAttempts').max" decrement-button-class="p-button-secondary" increment-button-class="p-button-secondary" increment-button-icon="pi pi-plus" decrement-button-icon="pi pi-minus" :disabled="autoResumeConfigurationMap.get('maxAttempts').disabled" />
           </dd>
           <dd>
             <small id="maxAttemptsId-help">Set the max number of attempts for this rule.</small>
           </dd>
-          <dt>{{ autoResumeConfigurationMap.get("priority").header }}</dt>
+          <dt><label for="priorityId">{{ autoResumeConfigurationMap.get("priority").header }}</label></dt>
           <dd class="mb-0">
-            <InputNumber id="priorityId" v-model="selectedPriority" show-buttons decrement-button-class="p-button-secondary" increment-button-class="p-button-secondary" increment-button-icon="pi pi-plus" decrement-button-icon="pi pi-minus" :disabled="autoResumeConfigurationMap.get('priority').disabled" />
+            <InputNumber id="priorityId" v-model="selectedPriority" aria-describedby="priorityId-help" show-buttons decrement-button-class="p-button-secondary" increment-button-class="p-button-secondary" increment-button-icon="pi pi-plus" decrement-button-icon="pi pi-minus" :disabled="autoResumeConfigurationMap.get('priority').disabled" />
           </dd>
           <dd>
             <small id="priorityId-help">Set the priority for the rule.</small>
@@ -67,30 +67,30 @@
             <div class="deltafi-fieldset">
               <div class="px-2 pt-3">
                 <dl>
-                  <dt>{{ autoResumeConfigurationMap.get("delay").header }}</dt>
+                  <dt><label for="delayId">{{ autoResumeConfigurationMap.get("delay").header }}<span v-if="autoResumeConfigurationMap.get('delay').required" class="required-indicator" aria-hidden="true">*</span></label></dt>
                   <dd class="mb-0">
-                    <InputNumber id="delayId" v-model="selectedRuleDelay" show-buttons :min="autoResumeConfigurationMap.get('delay').min" :max="autoResumeConfigurationMap.get('delay').max" decrement-button-class="p-button-secondary" increment-button-class="p-button-secondary" increment-button-icon="pi pi-plus" decrement-button-icon="pi pi-minus" :disabled="autoResumeConfigurationMap.get('delay').disabled" />
+                    <InputNumber id="delayId" v-model="selectedRuleDelay" aria-describedby="delayId-help" :aria-required="autoResumeConfigurationMap.get('delay').required" show-buttons :min="autoResumeConfigurationMap.get('delay').min" :max="autoResumeConfigurationMap.get('delay').max" decrement-button-class="p-button-secondary" increment-button-class="p-button-secondary" increment-button-icon="pi pi-plus" decrement-button-icon="pi pi-minus" :disabled="autoResumeConfigurationMap.get('delay').disabled" />
                   </dd>
                   <dd>
                     <small id="delayId-help">Delay (in seconds) is a required property and must be set to a non-negative number.</small>
                   </dd>
-                  <dt>{{ autoResumeConfigurationMap.get("maxDelay").header }}</dt>
+                  <dt><label for="maxDelayId">{{ autoResumeConfigurationMap.get("maxDelay").header }}</label></dt>
                   <dd class="mb-0">
-                    <InputNumber id="maxDelayId" v-model="selectedRuleMaxDelay" show-buttons :min="autoResumeConfigurationMap.get('maxDelay').min" :max="autoResumeConfigurationMap.get('maxDelay').max" decrement-button-class="p-button-secondary" increment-button-class="p-button-secondary" increment-button-icon="pi pi-plus" decrement-button-icon="pi pi-minus" :disabled="autoResumeConfigurationMap.get('maxDelay').disabled" />
+                    <InputNumber id="maxDelayId" v-model="selectedRuleMaxDelay" aria-describedby="maxDelayId-help" show-buttons :min="autoResumeConfigurationMap.get('maxDelay').min" :max="autoResumeConfigurationMap.get('maxDelay').max" decrement-button-class="p-button-secondary" increment-button-class="p-button-secondary" increment-button-icon="pi pi-plus" decrement-button-icon="pi pi-minus" :disabled="autoResumeConfigurationMap.get('maxDelay').disabled" />
                   </dd>
                   <dd>
                     <small id="maxDelayId-help">Sets the Max Delay (in second) when using Multiplier or Random.</small>
                   </dd>
-                  <dt>{{ autoResumeConfigurationMap.get("multiplier").header }}</dt>
+                  <dt><label for="multiplierId">{{ autoResumeConfigurationMap.get("multiplier").header }}</label></dt>
                   <dd class="mb-0">
-                    <InputNumber id="multiplierId" v-model="selectedRuleMultiplier" show-buttons :min="autoResumeConfigurationMap.get('multiplier').min" :max="autoResumeConfigurationMap.get('multiplier').max" decrement-button-class="p-button-secondary" increment-button-class="p-button-secondary" increment-button-icon="pi pi-plus" decrement-button-icon="pi pi-minus" :disabled="autoResumeConfigurationMap.get('multiplier').disabled" />
+                    <InputNumber id="multiplierId" v-model="selectedRuleMultiplier" aria-describedby="multiplierId-help" show-buttons :min="autoResumeConfigurationMap.get('multiplier').min" :max="autoResumeConfigurationMap.get('multiplier').max" decrement-button-class="p-button-secondary" increment-button-class="p-button-secondary" increment-button-icon="pi pi-plus" decrement-button-icon="pi pi-minus" :disabled="autoResumeConfigurationMap.get('multiplier').disabled" />
                   </dd>
                   <dd>
                     <small id="multiplierId-help">Setting Multiplier calculates the delay by multiplying Delay, Multiplier, and the number of attempts for that action.</small>
                   </dd>
-                  <dt>{{ autoResumeConfigurationMap.get("random").header }}</dt>
+                  <dt><label for="randomId">{{ autoResumeConfigurationMap.get("random").header }}</label></dt>
                   <dd class="mb-0">
-                    <ToggleSwitch id="randomId" v-model="selectedRuleRandom" :disabled="autoResumeConfigurationMap.get('random').disabled" />
+                    <ToggleSwitch id="randomId" v-model="selectedRuleRandom" aria-describedby="randomId-help" :disabled="autoResumeConfigurationMap.get('random').disabled" />
                   </dd>
                   <dd>
                     <small id="randomId-help">Setting Random calculates the delay by using a random value between the Delay and Max Delay. If Random is true, Max Delay must also be set.</small>
@@ -171,13 +171,13 @@ const autoResumeRuleUpload = ref(null);
 const errorsList = ref([]);
 
 const autoResumeConfigurationMap = new Map([
-  ["name", { header: "Name*", placeholder: "e.g. Auto resume smoke error", type: "string", disabled: viewAutoResumeRule }],
+  ["name", { header: "Name", required: true, placeholder: "e.g. Auto resume smoke error", type: "string", disabled: viewAutoResumeRule }],
   ["dataSource", { header: "Data Source", placeholder: "e.g. smoke, passthrough", type: "string", disabled: viewAutoResumeRule }],
   ["action", { header: "Action", placeholder: "e.g. smoke.SmokeEgressAction", type: "string", disabled: viewAutoResumeRule }],
-  ["maxAttempts", { header: "Max Attempts*", placeholder: "A number 2 or greater", type: "number", min: 2, max: null, disabled: viewAutoResumeRule }],
+  ["maxAttempts", { header: "Max Attempts", required: true, placeholder: "A number 2 or greater", type: "number", min: 2, max: null, disabled: viewAutoResumeRule }],
   ["priority", { header: "Priority", placeholder: "A number 0 or greater", type: "number", disabled: viewAutoResumeRule }],
   ["errorSubstring", { header: "Error Substring", placeholder: "Exact substring match; e.g. post failure", type: "string", disabled: viewAutoResumeRule }],
-  ["delay", { header: "Delay*", placeholder: "A number 0 or greater", type: "number", min: 0, max: null, disabled: viewAutoResumeRule }],
+  ["delay", { header: "Delay", required: true, placeholder: "A number 0 or greater", type: "number", min: 0, max: null, disabled: viewAutoResumeRule }],
   ["maxDelay", { header: "Max Delay", placeholder: "A number greater than 0", type: "number", min: 0, max: null, disabled: viewAutoResumeRule }],
   ["multiplier", { header: "Multiplier", placeholder: "A number greater than 0", type: "number", min: 0, max: null, disabled: viewAutoResumeRule }],
   ["random", { header: "Random", type: "number", min: 0, max: null, disabled: viewAutoResumeRule }],

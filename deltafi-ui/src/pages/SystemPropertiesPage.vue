@@ -21,7 +21,7 @@
     <PageHeader heading="System Properties">
       <IconField iconPosition="left">
         <InputIcon class="pi pi-search" />
-        <InputText v-model="filterText" type="text" placeholder="Search" class="p-inputtext deltafi-input-field" />
+        <InputText v-model="filterText" type="text" placeholder="Search" aria-label="Search system properties" class="p-inputtext deltafi-input-field" />
       </IconField>
     </PageHeader>
     <span v-if="hasErrors">

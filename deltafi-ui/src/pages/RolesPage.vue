@@ -35,32 +35,32 @@
               <Timestamp :timestamp="data[field]" format="YYYY-MM-DD HH:mm:ss" />
             </span>
             <span v-else-if="['name'].includes(field)">
-              <span class="cursor-pointer" @click="showRole(data)">{{ data.name }}</span>
+              <span role="button" tabindex="0" class="cursor-pointer" @click="showRole(data)" @keydown.enter="showRole(data)">{{ data.name }}</span>
             </span>
             <span v-else>{{ data[field] }}</span>
           </template>
         </Column>
         <Column style="width: 5rem; padding: 0" :hidden="!$hasSomePermissions('RoleUpdate', 'RoleDelete')">
           <template #body="{ data }">
-            <Button v-tooltip.top="`Edit Role ${data.name}`" :hidden="!$hasPermission('RoleUpdate')" icon="pi pi-pencil" class="p-button-text p-button-sm p-button-rounded p-button-secondary" @click="editRole(data)" />
-            <Button v-tooltip.top="`Remove Role ${data.name}`" :hidden="!$hasPermission('RoleDelete')" icon="pi pi-trash" class="p-button-text p-button-sm p-button-rounded p-button-danger" @click="confirmDeleteRole(data)" />
+            <Button v-tooltip.top="`Edit Role ${data.name}`" :hidden="!$hasPermission('RoleUpdate')" icon="pi pi-pencil" :aria-label="`Edit role ${data.name}`" class="p-button-text p-button-sm p-button-rounded p-button-secondary" @click="editRole(data)" />
+            <Button v-tooltip.top="`Remove Role ${data.name}`" :hidden="!$hasPermission('RoleDelete')" icon="pi pi-trash" :aria-label="`Delete role ${data.name}`" class="p-button-text p-button-sm p-button-rounded p-button-danger" @click="confirmDeleteRole(data)" />
           </template>
         </Column>
       </DataTable>
     </Panel>
     <Dialog v-model:visible="roleDialog" :style="{ width: '60vw' }" header="Role Details" :modal="true" class="p-fluid roles-dialog" :dismissable-mask="false">
-      <Message v-if="errors.length" severity="error">
+      <Message v-if="errors.length" severity="error" role="alert" aria-live="assertive">
         <div v-for="error in errors" :key="error">
           {{ error }}
         </div>
       </Message>
       <div>
         <dl>
-          <dt>Name*</dt>
+          <dt><label for="name">Name<span class="required-indicator" aria-hidden="true">*</span></label></dt>
           <dd>
-            <InputText id="name" v-model="role.name" autofocus :class="{ 'p-invalid': submitted && !role.name }" autocomplete="off" placeholder="Role Name" :disabled="isReadOnly" />
+            <InputText id="name" v-model="role.name" autofocus :class="{ 'p-invalid': submitted && !role.name }" :aria-invalid="submitted && !role.name" aria-required="true" autocomplete="off" placeholder="Role Name" :disabled="isReadOnly" />
           </dd>
-          <dt>Permissions*</dt>
+          <dt>Permissions<span class="required-indicator" aria-hidden="true">*</span></dt>
           <dd>
             <div class="deltafi-fieldset">
               <div class="px-2">

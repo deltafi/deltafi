@@ -18,14 +18,15 @@
 
 <template>
   <div>
+    <a href="#main-content" class="skip-to-content">Skip to main content</a>
     <nav class="sticky-top">
       <HeaderBanner />
       <AppTopBar />
       <PrimaryNavBar />
     </nav>
-    <div role="main" class="content-wrapper-full">
+    <main id="main-content" ref="mainContent" class="content-wrapper-full" tabindex="-1">
       <router-view />
-    </div>
+    </main>
     <FooterBanner />
     <CustomToast position="bottom-right" />
     <Dialog v-model:visible="idle" header="Are you still there?" :modal="true" :style="{ width: '25vw' }">
@@ -58,7 +59,7 @@ import useCurrentUser from "@/composables/useCurrentUser";
 import useVersion from '@/composables/useVersion';
 import useServerSentEvents from "@/composables/useServerSentEvents";
 import useNotifications from "@/composables/useNotifications";
-import { computed, onBeforeMount, watch, provide, onMounted, onUnmounted } from "vue";
+import { computed, nextTick, onBeforeMount, watch, provide, ref, onMounted, onUnmounted } from "vue";
 import { useTitle, useIdle } from "@vueuse/core";
 import { usePrimeVue } from "primevue/config";
 import MarkdownIt from "markdown-it";
@@ -68,6 +69,7 @@ const renderMarkdown = (source) => markdownIt.render(source);
 
 const primevue = usePrimeVue();
 const route = useRoute();
+const mainContent = ref(null);
 const router = useRouter();
 const title = useTitle("DeltaFi");
 const notify = useNotifications();
@@ -150,6 +152,11 @@ watch(
   () => route.name,
   () => {
     setPageTitle();
+    nextTick(() => {
+      if (mainContent.value) {
+        mainContent.value.focus();
+      }
+    });
   }
 );
 watch(
@@ -165,4 +172,24 @@ serverSentEvents.addEventListener("announcement", (event) => {
 
 <style scoped lang="scss">
 @use "@/styles/app.scss";
+
+.skip-to-content {
+  position: absolute;
+  left: -9999px;
+  top: 0;
+  z-index: 9999;
+  padding: 0.5rem 1rem;
+  background: var(--primary-color, #1976d2);
+  color: #fff;
+  text-decoration: none;
+  font-weight: 600;
+
+  &:focus {
+    left: 0;
+  }
+}
+
+:deep(#main-content:focus) {
+  outline: none;
+}
 </style>

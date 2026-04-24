@@ -22,7 +22,7 @@
       <div class="btn-toolbar mb-2 mb-md-0">
         <IconField iconPosition="left">
           <InputIcon class="pi pi-search"> </InputIcon>
-          <InputText v-model="filters['global'].value" v-tooltip.left="'Search on Name and Description'" placeholder="Search" class="deltafi-input-field mx-1" />
+          <InputText v-model="filters['global'].value" v-tooltip.left="'Search on Name and Description'" placeholder="Search" aria-label="Search external links" class="deltafi-input-field mx-1" />
         </IconField>
         <DialogTemplate component-name="externalLink/ExternalLinkConfigurationDialog" header="Add New Link" dialog-width="25vw" :row-data-prop="{}" @refresh-page="reloadUIConfigs()">
           <Button label="Add Link" icon="pi pi-plus" class="p-button-sm p-button-outlined mx-2" />

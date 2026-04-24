@@ -20,7 +20,7 @@
   <div class="delete-policy-configuration-dialog">
     <div class="delete-policy-panel">
       <div class="pb-0">
-        <div v-if="!_.isEmpty(errorsList)" class="pt-2">
+        <div v-if="!_.isEmpty(errorsList)" class="pt-2" role="alert" aria-live="assertive">
           <Message severity="error" :sticky="true" class="mb-2 mt-0" @close="clearErrors()">
             <ul>
               <div v-for="(error, key) in errorsList" :key="key">
@@ -32,21 +32,21 @@
           </Message>
         </div>
         <dl>
-          <dt>{{ deletePolicyConfigurationMap.get("name").header }}</dt>
+          <dt><label for="dp-name">{{ deletePolicyConfigurationMap.get("name").header }}<span v-if="deletePolicyConfigurationMap.get('name').required" class="required-indicator" aria-hidden="true">*</span></label></dt>
           <dd>
-            <InputText v-model="selectedDeleteName" :placeholder="deletePolicyConfigurationMap.get('name').placeholder" :disabled="deletePolicyConfigurationMap.get('name').disabled" class="inputWidth" />
+            <InputText id="dp-name" v-model="selectedDeleteName" :placeholder="deletePolicyConfigurationMap.get('name').placeholder" :disabled="deletePolicyConfigurationMap.get('name').disabled" :aria-required="deletePolicyConfigurationMap.get('name').required" class="inputWidth" />
           </dd>
-          <dt>{{ deletePolicyConfigurationMap.get("dataSource").header }}</dt>
+          <dt><label for="dp-datasource">{{ deletePolicyConfigurationMap.get("dataSource").header }}</label></dt>
           <dd>
-            <Select v-model="selectedDeleteFlow" :options="formattedDataSourceNames" option-group-label="label" option-group-children="sources" :placeholder="deletePolicyConfigurationMap.get('dataSource').placeholder" :disabled="deletePolicyConfigurationMap.get('dataSource').disabled" show-clear class="inputWidth" />
+            <Select id="dp-datasource" v-model="selectedDeleteFlow" :options="formattedDataSourceNames" option-group-label="label" option-group-children="sources" :placeholder="deletePolicyConfigurationMap.get('dataSource').placeholder" :disabled="deletePolicyConfigurationMap.get('dataSource').disabled" show-clear class="inputWidth" />
           </dd>
-          <dt v-if="deletePolicyTypes.length > 1">{{ deletePolicyConfigurationMap.get("__typename").header }}</dt>
+          <dt v-if="deletePolicyTypes.length > 1"><label for="dp-type">{{ deletePolicyConfigurationMap.get("__typename").header }}<span v-if="deletePolicyConfigurationMap.get('__typename').required" class="required-indicator" aria-hidden="true">*</span></label></dt>
           <dd v-if="deletePolicyTypes.length > 1">
-            <Select v-model="selectedDeleteType" :options="deletePolicyTypes" :placeholder="deletePolicyConfigurationMap.get('__typename').placeholder" :disabled="deletePolicyConfigurationMap.get('__typename').disabled" class="inputWidth" />
+            <Select id="dp-type" v-model="selectedDeleteType" :options="deletePolicyTypes" :placeholder="deletePolicyConfigurationMap.get('__typename').placeholder" :disabled="deletePolicyConfigurationMap.get('__typename').disabled" :aria-required="deletePolicyConfigurationMap.get('__typename').required" class="inputWidth" />
           </dd>
-          <dt>{{ deletePolicyConfigurationMap.get("enabled").header }}</dt>
+          <dt><label for="dp-enabled">{{ deletePolicyConfigurationMap.get("enabled").header }}</label></dt>
           <dd>
-            <ToggleSwitch v-model="selectedEnabledBoolean" :disabled="deletePolicyConfigurationMap.get('enabled').disabled" />
+            <ToggleSwitch id="dp-enabled" v-model="selectedEnabledBoolean" :disabled="deletePolicyConfigurationMap.get('enabled').disabled" />
           </dd>
           <template v-if="selectedDeleteType">
             <template v-if="_.isEqual(selectedDeleteType, 'TimedDeletePolicy')">
@@ -55,24 +55,24 @@
                 <div class="deltafi-fieldset">
                   <div class="px-2 pt-3">
                     <template v-if="_.isEmpty(selectedAfterComplete)">
-                      <dt>{{ deletePolicyConfigurationMap.get("afterCreate").header }}</dt>
+                      <dt><label for="dp-after-create">{{ deletePolicyConfigurationMap.get("afterCreate").header }}</label></dt>
                       <dd>
-                        <InputText v-model="selectedAfterCreate" :placeholder="deletePolicyConfigurationMap.get('afterCreate').placeholder" :disabled="deletePolicyConfigurationMap.get('afterCreate').disabled" class="inputWidth capitalizeText" />
+                        <InputText id="dp-after-create" v-model="selectedAfterCreate" :placeholder="deletePolicyConfigurationMap.get('afterCreate').placeholder" :disabled="deletePolicyConfigurationMap.get('afterCreate').disabled" class="inputWidth capitalizeText" />
                       </dd>
                     </template>
                     <template v-if="_.isEmpty(selectedAfterCreate)">
-                      <dt>{{ deletePolicyConfigurationMap.get("afterComplete").header }}</dt>
+                      <dt><label for="dp-after-complete">{{ deletePolicyConfigurationMap.get("afterComplete").header }}</label></dt>
                       <dd>
-                        <InputText v-model="selectedAfterComplete" :placeholder="deletePolicyConfigurationMap.get('afterComplete').placeholder" :disabled="deletePolicyConfigurationMap.get('afterComplete').disabled" class="inputWidth capitalizeText" />
+                        <InputText id="dp-after-complete" v-model="selectedAfterComplete" :placeholder="deletePolicyConfigurationMap.get('afterComplete').placeholder" :disabled="deletePolicyConfigurationMap.get('afterComplete').disabled" class="inputWidth capitalizeText" />
                       </dd>
                     </template>
-                    <dt>{{ deletePolicyConfigurationMap.get("minBytes").header }}</dt>
+                    <dt><label for="dp-min-bytes">{{ deletePolicyConfigurationMap.get("minBytes").header }}</label></dt>
                     <dd>
-                      <InputNumber v-model="selectedMinBytes" show-buttons :min="deletePolicyConfigurationMap.get('minBytes').min" :max="deletePolicyConfigurationMap.get('minBytes').max" decrement-button-class="p-button-secondary" increment-button-class="p-button-secondary" increment-button-icon="pi pi-plus" decrement-button-icon="pi pi-minus" :disabled="deletePolicyConfigurationMap.get('minBytes').disabled" />
+                      <InputNumber id="dp-min-bytes" v-model="selectedMinBytes" show-buttons :min="deletePolicyConfigurationMap.get('minBytes').min" :max="deletePolicyConfigurationMap.get('minBytes').max" decrement-button-class="p-button-secondary" increment-button-class="p-button-secondary" increment-button-icon="pi pi-plus" decrement-button-icon="pi pi-minus" :disabled="deletePolicyConfigurationMap.get('minBytes').disabled" />
                     </dd>
-                    <dt>{{ deletePolicyConfigurationMap.get("deleteMetadata").header }}</dt>
+                    <dt><label for="dp-delete-metadata">{{ deletePolicyConfigurationMap.get("deleteMetadata").header }}</label></dt>
                     <dd>
-                      <ToggleSwitch v-model="selectedDeleteMetadata" :disabled="deletePolicyConfigurationMap.get('deleteMetadata').disabled" />
+                      <ToggleSwitch id="dp-delete-metadata" v-model="selectedDeleteMetadata" :disabled="deletePolicyConfigurationMap.get('deleteMetadata').disabled" />
                     </dd>
                   </div>
                 </div>
@@ -137,15 +137,15 @@ const formattedDataSourceNames = ref([]);
 const errorsList = ref([]);
 
 const deletePolicyConfigurationMap = new Map([
-  ["name", { header: "Name*", placeholder: "e.g. oneHourAfterComplete", type: "string", disabled: viewDeletePolicy }],
-  ["__typename", { header: "Type*", placeholder: "e.g. TimedDeletePolicy", type: "select", disabled: viewDeletePolicy || editDeletePolicy }],
+  ["name", { header: "Name", required: true, placeholder: "e.g. oneHourAfterComplete", type: "string", disabled: viewDeletePolicy }],
+  ["__typename", { header: "Type", required: true, placeholder: "e.g. TimedDeletePolicy", type: "select", disabled: viewDeletePolicy || editDeletePolicy }],
   ["dataSource", { header: "Data Source", placeholder: "e.g. smoke, passthrough", type: "string", disabled: viewDeletePolicy }],
   ["enabled", { header: "Enabled", type: "boolean", disabled: viewDeletePolicy }],
   ["afterCreate", { header: "After Create", placeholder: "Duration in ISO 1806 notation. e.g. PT1H, P23DT23H, P4Y", type: "string", disabled: viewDeletePolicy }],
   ["afterComplete", { header: "After Complete", placeholder: "Duration in ISO 1806 notation. e.g. PT1H, P23DT23H, P4Y", type: "string", disabled: viewDeletePolicy }],
   ["minBytes", { header: "Min Bytes", placeholder: "e.g. oneHourAfterComplete, over98PerCent", type: "number", min: null, max: null, disabled: viewDeletePolicy }],
   ["deleteMetadata", { header: "Delete Metadata", placeholder: "e.g. oneHourAfterComplete, over98PerCent", type: "boolean", disabled: viewDeletePolicy }],
-  ["maxPercent", { header: "Max Percent*", placeholder: "A number between 0 and 100", type: "number", min: 0, max: 100, disabled: viewDeletePolicy }],
+  ["maxPercent", { header: "Max Percent", required: true, placeholder: "A number between 0 and 100", type: "number", min: 0, max: 100, disabled: viewDeletePolicy }],
 ]);
 
 const selectedDeleteId = ref(_.get(rowData, "id", null));

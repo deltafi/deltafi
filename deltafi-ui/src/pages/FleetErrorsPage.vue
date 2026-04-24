@@ -30,24 +30,24 @@
       @clear="clearFilters"
     >
       <div class="filter-item">
-        <label>Members</label>
-        <MultiSelect v-model="memberNamesFilter" :options="availableMemberNames" placeholder="All Members" :max-selected-labels="2" class="w-full" />
+        <label for="fleet-errors-members-filter">Members</label>
+        <MultiSelect id="fleet-errors-members-filter" v-model="memberNamesFilter" :options="availableMemberNames" placeholder="All Members" :max-selected-labels="2" class="w-full" />
       </div>
       <div class="filter-item">
-        <label>Tags</label>
-        <MultiSelect v-model="memberTagsFilter" :options="availableTags" placeholder="All Tags" :max-selected-labels="2" class="w-full" />
+        <label for="fleet-errors-tags-filter">Tags</label>
+        <MultiSelect id="fleet-errors-tags-filter" v-model="memberTagsFilter" :options="availableTags" placeholder="All Tags" :max-selected-labels="2" class="w-full" />
       </div>
       <div class="filter-item">
-        <label>Data Sources</label>
-        <MultiSelect v-model="dataSourcesFilter" :options="availableDataSources" placeholder="All Data Sources" :max-selected-labels="2" class="w-full" />
+        <label for="fleet-errors-datasources-filter">Data Sources</label>
+        <MultiSelect id="fleet-errors-datasources-filter" v-model="dataSourcesFilter" :options="availableDataSources" placeholder="All Data Sources" :max-selected-labels="2" class="w-full" />
       </div>
       <div class="filter-item">
-        <label>Error Message</label>
-        <InputText v-model="errorCauseFilter" placeholder="Contains text..." class="w-full" />
+        <label for="fleet-errors-message-filter">Error Message</label>
+        <InputText id="fleet-errors-message-filter" v-model="errorCauseFilter" placeholder="Contains text..." class="w-full" />
       </div>
       <div class="filter-item">
-        <label>Acknowledgement</label>
-        <Select v-model="acknowledgedFilter" :options="ackOptions" option-label="name" option-value="value" class="w-full" />
+        <label for="fleet-errors-ack-filter">Acknowledgement</label>
+        <Select id="fleet-errors-ack-filter" v-model="acknowledgedFilter" :options="ackOptions" option-label="name" option-value="value" class="w-full" />
       </div>
     </FilterSidebar>
     <div class="main-content">

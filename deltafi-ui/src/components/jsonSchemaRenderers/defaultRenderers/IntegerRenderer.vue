@@ -20,11 +20,11 @@
   <control-wrapper v-bind="schemaData.controlWrapper" :styles="schemaData.styles" :is-focused="schemaData.isFocused" :applied-options="schemaData.appliedOptions">
     <dl class="integer-field">
       <dt :id="schemaData.control.id + '-input-label'" class="integer-label">
-        {{ computedLabel }}<span v-if="schemaData.control.required" class="required-indicator">*</span>
+        {{ computedLabel }}<span v-if="schemaData.control.required" class="required-indicator" aria-hidden="true">*</span>
         <i v-if="!_.isEmpty(schemaData.control.description)" v-tooltip.right="schemaData.control.description" class="pi pi-info-circle info-icon" />
       </dt>
       <dd class="integer-input">
-        <InputNumber :id="schemaData.control.id + '-input'" :model-value="integerDecider(schemaData.control.data)" :class="schemaData.styles.control.input + ' inputWidth'" :step="steps" input-id="stacked-buttons" show-buttons @input="schemaData.onChange($event.value)" @focus="schemaData.isFocused = true" @blur="schemaData.isFocused = false" />
+        <InputNumber :id="schemaData.control.id + '-input'" :model-value="integerDecider(schemaData.control.data)" :class="schemaData.styles.control.input + ' inputWidth'" :aria-required="schemaData.control.required" :step="steps" input-id="stacked-buttons" show-buttons @input="schemaData.onChange($event.value)" @focus="schemaData.isFocused = true" @blur="schemaData.isFocused = false" />
       </dd>
     </dl>
   </control-wrapper>

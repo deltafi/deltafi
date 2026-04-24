@@ -19,7 +19,7 @@
 <template>
   <div id="error-message" class="action-configuration-dialog">
     <div class="action-configuration-panel">
-      <div v-if="hasErrors" class="pt-2">
+      <div v-if="hasErrors" class="pt-2" role="alert" aria-live="assertive">
         <Message severity="error" :sticky="true" class="mb-2 mt-0" @close="clearErrors()">
           <ul class="error-list">
             <li v-for="(error, index) in errors" :key="index">{{ error }}</li>
@@ -56,25 +56,25 @@
               </template>
               <template v-if="_.isEqual(displayActionInfo, 'join')">
                 <dl class="join-fields">
-                  <dt>maxAge</dt>
+                  <dt><label for="ac-join-max-age">maxAge</label></dt>
                   <dd>
-                    <InputText v-model="joinData['maxAge']" class="inputWidth" :disabled="displayMap.get(displayActionInfo).disableEdit && rowData.disableEdit" />
-                    <small :id="join - maxAge - input - help" style="display: inline-block">The maximum duration (ISO 8601) to wait after the first DeltaFile is received for a join group before this action is executed</small>
+                    <InputText id="ac-join-max-age" v-model="joinData['maxAge']" class="inputWidth" :disabled="displayMap.get(displayActionInfo).disableEdit && rowData.disableEdit" aria-describedby="ac-join-max-age-help" />
+                    <small id="ac-join-max-age-help" style="display: inline-block">The maximum duration (ISO 8601) to wait after the first DeltaFile is received for a join group before this action is executed</small>
                   </dd>
-                  <dt>minNum</dt>
+                  <dt><label for="ac-join-min-num">minNum</label></dt>
                   <dd>
-                    <InputNumber v-model="joinData['minNum']" class="inputWidth" :disabled="displayMap.get(displayActionInfo).disableEdit && rowData.disableEdit" :min="0" show-buttons />
-                    <small :id="join - minNum - input - help" style="display: inline-block">The minimum number of DeltaFiles to join within maxAge. If this number is not reached, all DeltaFiles received for the join group will have this action marked in error.</small>
+                    <InputNumber id="ac-join-min-num" v-model="joinData['minNum']" class="inputWidth" :disabled="displayMap.get(displayActionInfo).disableEdit && rowData.disableEdit" :min="0" show-buttons aria-describedby="ac-join-min-num-help" />
+                    <small id="ac-join-min-num-help" style="display: inline-block">The minimum number of DeltaFiles to join within maxAge. If this number is not reached, all DeltaFiles received for the join group will have this action marked in error.</small>
                   </dd>
-                  <dt>maxNum</dt>
+                  <dt><label for="ac-join-max-num">maxNum</label></dt>
                   <dd>
-                    <InputNumber v-model="joinData['maxNum']" class="inputWidth" :disabled="displayMap.get(displayActionInfo).disableEdit && rowData.disableEdit" :min="0" show-buttons />
-                    <small :id="join - maxNum - input - help" style="display: inline-block">The maximum number of DeltaFiles to join before this action is executed</small>
+                    <InputNumber id="ac-join-max-num" v-model="joinData['maxNum']" class="inputWidth" :disabled="displayMap.get(displayActionInfo).disableEdit && rowData.disableEdit" :min="0" show-buttons aria-describedby="ac-join-max-num-help" />
+                    <small id="ac-join-max-num-help" style="display: inline-block">The maximum number of DeltaFiles to join before this action is executed</small>
                   </dd>
-                  <dt>metadataKey</dt>
+                  <dt><label for="ac-join-metadata-key">metadataKey</label></dt>
                   <dd>
-                    <InputText v-model="joinData['metadataKey']" class="inputWidth" :disabled="displayMap.get(displayActionInfo).disableEdit && rowData.disableEdit" />
-                    <small :id="join - metadataKey - input - help" style="display: inline-block">An optional metadata key used to get the value to group joins by. If not set, DeltaFiles are not grouped when joining.</small>
+                    <InputText id="ac-join-metadata-key" v-model="joinData['metadataKey']" class="inputWidth" :disabled="displayMap.get(displayActionInfo).disableEdit && rowData.disableEdit" aria-describedby="ac-join-metadata-key-help" />
+                    <small id="ac-join-metadata-key-help" style="display: inline-block">An optional metadata key used to get the value to group joins by. If not set, DeltaFiles are not grouped when joining.</small>
                   </dd>
                 </dl>
               </template>

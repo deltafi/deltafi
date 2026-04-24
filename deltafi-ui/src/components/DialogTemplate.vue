@@ -18,7 +18,7 @@
 
 <template>
   <div>
-    <span @click="showDialog()">
+    <span role="button" tabindex="0" @click="showDialog()" @keydown.enter="showDialog()">
       <slot />
     </span>
     <Dialog

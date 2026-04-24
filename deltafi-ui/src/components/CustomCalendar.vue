@@ -18,8 +18,8 @@
 
 <template class="time-range btn-toolbar mb-2 mb-md-0">
   <div class="date-picker-container">
-    <input :value="formattedValue" placeholder="Select Date" class="p-inputtext p-component deltafi-input-field input-area-width" readonly @click="showCalendar" />
-    <input v-show="showRefreshRange" type="text" :value="helperButtonText" placeholder="Select Date" class="p-inputtext p-component deltafi-input-field input-area-width refresh-range-input" readonly @click="showCalendar()" />
+    <input :value="formattedValue" placeholder="Select Date" aria-label="Date range" class="p-inputtext p-component deltafi-input-field input-area-width" readonly @click="showCalendar" />
+    <input v-show="showRefreshRange" type="text" :value="helperButtonText" placeholder="Select Date" aria-label="Refresh range" class="p-inputtext p-component deltafi-input-field input-area-width refresh-range-input" readonly @click="showCalendar()" />
     <CalendarDialog v-if="showCalendarDialog" :key="computedKey" ref="calendarDialogRef" :date-input="calendarDateInput" :calendar-date-input="calendarDateInput" switch-button-label="All Day" :format="timestampFormat" :same-date-format="sameDateFormat" :initial-dates="[new Date(startTimeDate), new Date(endTimeDate)]" :show-helper-buttons="true" :helper-buttons="helperButtons" class="test" @on-apply="updateInputDateTime" @on-reset="resetDateTime(true)" @select-date="dateSelected" />
   </div>
 </template>

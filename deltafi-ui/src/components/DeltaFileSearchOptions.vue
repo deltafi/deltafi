@@ -27,17 +27,17 @@
           <template v-for="[i, formInfo] of _.orderBy(_.filter(advanceOptionsPanelInfo, ['column', columnNumber]), ['order'], ['asc']).entries()" :key="formInfo">
             <span class="dflex btn-group align-items-center">
               <label :for="`${formInfo.field}` + 'Id'" :class="!_.isEqual(i, 0) ? 'mt-2' : ''">{{ formInfo.label }}</label>
-              <span @click="toggleAnnotationHelp">
+              <span role="button" tabindex="0" @click="toggleAnnotationHelp" @keydown.enter="toggleAnnotationHelp">
                 <i v-if="_.get(formInfo, 'description', false)" class="fas fa-info-circle fa-fw ml-1" />
               </span>
             </span>
             <InputText v-if="_.isEqual(formInfo.componentType, 'InputText')" :id="`${formInfo.field}` + 'Id'" :model-value="modelValue[formInfo.field]" :placeholder="formInfo.placeholder" :class="formInfo.class" @update:model-value="updateField(formInfo.field, $event)" />
             <MultiSelect v-if="_.isEqual(formInfo.componentType, 'MultiSelect')" :id="`${formInfo.field}` + 'Id'" :model-value="modelValue[formInfo.field]" :options="formInfo.options" :placeholder="formInfo.placeholder" :option-group-label="formInfo.optionGroupLabel" :option-group-children="formInfo.optionGroupChildren" :option-label="formInfo.optionLabel" :option-value="formInfo.optionValue" :filter="formInfo.filter" :class="formInfo.class" display="chip" @update:model-value="updateField(formInfo.field, $event)" />
             <div v-if="_.isEqual(formInfo.componentType, 'SizeUnit')" class="size-container">
-              <Select :model-value="modelValue.sizeType" :options="sizeTypesOptions" style="width: 8rem" class="deltafi-input-field mr-2" @update:model-value="updateField('sizeType', $event)" />
+              <Select :model-value="modelValue.sizeType" :options="sizeTypesOptions" aria-label="Size type" style="width: 8rem" class="deltafi-input-field mr-2" @update:model-value="updateField('sizeType', $event)" />
               <InputNumber :model-value="modelValue.sizeMin" class="p-inputnumber input-area-height" :input-style="{ width: '4rem' }" placeholder="Min" @update:model-value="updateField('sizeMin', $event)" /> -
               <InputNumber :model-value="modelValue.sizeMax" class="p-inputnumber input-area-height" :input-style="{ width: '4rem' }" placeholder="Max" @update:model-value="updateField('sizeMax', $event)" />
-              <Select :model-value="modelValue.sizeUnit" :options="[...sizeUnitsOptionsMap.keys()]" class="deltafi-input-field ml-2" @update:model-value="updateField('sizeUnit', $event)" />
+              <Select :model-value="modelValue.sizeUnit" :options="[...sizeUnitsOptionsMap.keys()]" aria-label="Size unit" class="deltafi-input-field ml-2" @update:model-value="updateField('sizeUnit', $event)" />
             </div>
             <Select v-if="_.isEqual(formInfo.componentType, 'Dropdown')" :id="`${formInfo.field}` + 'Id'" :model-value="modelValue[formInfo.field]" :placeholder="formInfo.placeholder" :options="formInfo.options" :show-clear="formInfo.showClear" :class="formInfo.class" @update:model-value="updateField(formInfo.field, $event)">
               <template #value="slotProps">
@@ -66,7 +66,7 @@
           </template>
         </div>
         <Popover ref="annotationsOverlay">
-          <Select v-model="newAnnotationKey" placeholder="Key" :options="annotationsKeysOptions" option-label="key" style="width: 13rem" @keyup.enter="addAnnotationItemEvent" /> :
+          <Select v-model="newAnnotationKey" placeholder="Key" :options="annotationsKeysOptions" option-label="key" aria-label="Annotation key" style="width: 13rem" @keyup.enter="addAnnotationItemEvent" /> :
           <InputText v-model="newAnnotationValue" placeholder="Value" style="width: 13rem" @keyup.enter="addAnnotationItemEvent" />
         </Popover>
       </div>

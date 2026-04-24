@@ -28,8 +28,9 @@
       @clear="clearSelectedFilter"
     >
       <div class="filter-section">
-        <label>Data Sources</label>
+        <label for="system-map-datasource-filter">Data Sources</label>
         <Select
+          id="system-map-datasource-filter"
           v-model="selectedDataSource"
           :options="dataSourceOptions"
           option-label="name"
@@ -43,8 +44,9 @@
       </div>
 
       <div class="filter-section">
-        <label>Transforms</label>
+        <label for="system-map-transform-filter">Transforms</label>
         <Select
+          id="system-map-transform-filter"
           v-model="selectedTransform"
           :options="transformOptions"
           option-label="name"
@@ -58,8 +60,9 @@
       </div>
 
       <div class="filter-section">
-        <label>Data Sinks</label>
+        <label for="system-map-datasink-filter">Data Sinks</label>
         <Select
+          id="system-map-datasink-filter"
           v-model="selectedDataSink"
           :options="dataSinkOptions"
           option-label="name"
@@ -73,8 +76,9 @@
       </div>
 
       <div class="filter-section">
-        <label>Topics</label>
+        <label for="system-map-topic-filter">Topics</label>
         <Select
+          id="system-map-topic-filter"
           v-model="selectedTopic"
           :options="topicOptions"
           option-label="name"
@@ -251,7 +255,10 @@
                   v-for="pub in getPublishers(selectedNode.id)"
                   :key="pub.id"
                   class="connection-chip"
+                  role="button"
+                  tabindex="0"
                   @click="onSelectNode(pub)"
+                  @keydown.enter="onSelectNode(pub)"
                 >
                   {{ pub.name }}
                 </span>
@@ -264,7 +271,10 @@
                   v-for="sub in getSubscribers(selectedNode.id)"
                   :key="sub.id"
                   class="connection-chip"
+                  role="button"
+                  tabindex="0"
                   @click="onSelectNode(sub)"
+                  @keydown.enter="onSelectNode(sub)"
                 >
                   {{ sub.name }}
                 </span>
@@ -280,7 +290,10 @@
                   v-for="node in getUpstream(selectedNode.id)"
                   :key="node.id"
                   class="connection-chip"
+                  role="button"
+                  tabindex="0"
                   @click="onSelectNode(node)"
+                  @keydown.enter="onSelectNode(node)"
                 >
                   {{ node.name }}
                 </span>
@@ -293,7 +306,10 @@
                   v-for="node in getDownstream(selectedNode.id)"
                   :key="node.id"
                   class="connection-chip"
+                  role="button"
+                  tabindex="0"
                   @click="onSelectNode(node)"
+                  @keydown.enter="onSelectNode(node)"
                 >
                   {{ node.name }}
                 </span>

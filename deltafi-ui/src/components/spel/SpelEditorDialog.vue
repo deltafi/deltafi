@@ -20,7 +20,7 @@
 
 <template>
   <div class="spel-editor-dialog-trigger p-inputgroup">
-    <div class="value-preview" :class="{ 'has-value': hasValue }" @click="openDialog">
+    <div class="value-preview" :class="{ 'has-value': hasValue }" role="button" tabindex="0" @click="openDialog" @keydown.enter="openDialog">
       <code v-if="hasValue" class="preview-text">{{ truncatedValue }}</code>
       <span v-else class="placeholder-text">{{ emptyPlaceholder }}</span>
     </div>

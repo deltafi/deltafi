@@ -27,7 +27,11 @@
         v-if="line.foldStart"
         class="fold-toggle"
         :class="{ collapsed: line.collapsed }"
+        role="button"
+        tabindex="0"
+        :aria-label="line.collapsed ? 'Expand code fold' : 'Collapse code fold'"
         @click="toggleFold(i)"
+        @keydown.enter="toggleFold(i)"
       /><span
         v-else
         class="fold-toggle-spacer"

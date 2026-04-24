@@ -51,7 +51,7 @@
       </a>
     </template>
   </Menu>
-  <i v-if="hasRateLimit" v-tooltip.top="rateLimitTooltip" class="fa-solid fa-stopwatch fa-lg text-info cursor-pointer mr-2" @click="addRateLimit.showDialog()" />
+  <i v-if="hasRateLimit" v-tooltip.top="rateLimitTooltip" class="fa-solid fa-stopwatch fa-lg text-info cursor-pointer mr-2" role="button" tabindex="0" @click="addRateLimit.showDialog()" @keydown.enter="addRateLimit.showDialog()" />
   <Button :id="`${rowData.name}-${rowData.type}`" ref="optionsButton" type="button" v-tooltip.top="`Options`" @click="menuButtonClick" severity="secondary" outlined iconPos="right" size="small" :icon="horizontalEllipsis ? 'pi pi-ellipsis-h' : 'pi pi-ellipsis-v'" class="mt-n1 mb-n1" />
   <DataSinkRemoveButton ref="removeDataSink" :row-data-prop="rowData" @reload-data-sinks="refresh" />
   <DialogTemplate ref="editDataSink" component-name="dataSinks/DataSinkConfigurationDialog" header="Edit Data Sink" dialog-width="50vw" :row-data-prop="rowData" edit-data-sink @refresh-page="refresh" />

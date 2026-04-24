@@ -17,14 +17,19 @@
 -->
 
 <template>
+  <!-- eslint-disable-next-line vuejs-accessibility/no-static-element-interactions -- pan/zoom canvas uses role="application" -->
   <div
     class="pipeline-graph"
     ref="graphContainer"
+    role="application"
+    aria-label="Pipeline graph"
     @mousedown="startPan"
     @mousemove="doPan"
     @mouseup="endPan"
     @mouseleave="endPan"
     @wheel="doZoom"
+    @focusin="startPan"
+    @focusout="endPan"
   >
     <!-- Zoom controls -->
     <div class="zoom-controls">
@@ -45,16 +50,16 @@
     </div>
 
     <!-- Pan indicators -->
-    <div v-if="canPanLeft" class="pan-indicator pan-indicator-left" @click="panLeft" title="Pan left">
+    <div v-if="canPanLeft" class="pan-indicator pan-indicator-left" role="button" tabindex="0" @click="panLeft" @keydown.enter="panLeft" title="Pan left">
       <i class="fas fa-chevron-left" />
     </div>
-    <div v-if="canPanRight" class="pan-indicator pan-indicator-right" @click="panRight" title="Pan right">
+    <div v-if="canPanRight" class="pan-indicator pan-indicator-right" role="button" tabindex="0" @click="panRight" @keydown.enter="panRight" title="Pan right">
       <i class="fas fa-chevron-right" />
     </div>
-    <div v-if="canPanUp" class="pan-indicator pan-indicator-up" @click="panUp" title="Pan up">
+    <div v-if="canPanUp" class="pan-indicator pan-indicator-up" role="button" tabindex="0" @click="panUp" @keydown.enter="panUp" title="Pan up">
       <i class="fas fa-chevron-up" />
     </div>
-    <div v-if="canPanDown" class="pan-indicator pan-indicator-down" @click="panDown" title="Pan down">
+    <div v-if="canPanDown" class="pan-indicator pan-indicator-down" role="button" tabindex="0" @click="panDown" @keydown.enter="panDown" title="Pan down">
       <i class="fas fa-chevron-down" />
     </div>
 
@@ -113,6 +118,7 @@
 
       <!-- Nodes -->
       <g class="nodes">
+        <!-- eslint-disable-next-line vuejs-accessibility/click-events-have-key-events, vuejs-accessibility/no-static-element-interactions -- keyboard handling is inside GraphNode component -->
         <GraphNode
           v-for="node in layoutNodes"
           :key="node.id"

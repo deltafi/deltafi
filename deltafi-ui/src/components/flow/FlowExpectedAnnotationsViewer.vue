@@ -20,7 +20,7 @@
   <div class="flow-expected-annotations-viewer">
     <div class="btn-group">
       <div class="btn-group-vertical">
-        <InputChips id="expectedAnnotationsInputId" ref="expectedAnnotationsInputRef" v-model="readReceiptsList" :class="newAnnotationDataPresent ? 'p-invalid' : ''" :disabled="!$hasPermission('FlowUpdate')" />
+        <InputChips id="expectedAnnotationsInputId" ref="expectedAnnotationsInputRef" v-model="readReceiptsList" :class="newAnnotationDataPresent ? 'p-invalid' : ''" :aria-invalid="newAnnotationDataPresent" :disabled="!$hasPermission('FlowUpdate')" aria-label="Expected annotations" />
         <small v-if="newAnnotationDataPresent" id="expectedAnnotationsInputId-input-help" class="mt-2">Press enter to add to the list</small>
       </div>
       <div>

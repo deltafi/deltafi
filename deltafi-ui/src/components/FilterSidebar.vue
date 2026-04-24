@@ -55,29 +55,38 @@
       <div
         v-for="tab in tabs"
         :key="tab.name"
+        role="button"
+        tabindex="0"
         class="filter-sidebar-tab"
         :class="{ active: activeTab === tab.name && modelValue }"
         @click="selectTab(tab.name)"
+        @keydown.enter="selectTab(tab.name)"
       >
         <i :class="activeTab === tab.name && modelValue ? chevronIcon : inactiveChevronIcon" />
         <span class="tab-label">{{ tab.label }}</span>
         <span
           v-if="tab.hasActiveFilters"
           v-tooltip.left="'Clear filters'"
+          role="button"
+          tabindex="0"
           class="filter-badge clickable"
           @click.stop="$emit('clear', tab.name)"
+          @keydown.enter.stop="$emit('clear', tab.name)"
         />
       </div>
     </div>
     <!-- Single tab pull-out tab (backward compatible) -->
-    <div v-else class="filter-sidebar-tab" :style="tabStyle" @click="toggle">
+    <div v-else role="button" tabindex="0" class="filter-sidebar-tab" :style="tabStyle" @click="toggle" @keydown.enter="toggle">
       <i :class="chevronIcon" />
       <span class="tab-label">{{ tabLabel }}</span>
       <span
         v-if="hasActiveFilters"
         v-tooltip.left="'Clear filters'"
+        role="button"
+        tabindex="0"
         class="filter-badge clickable"
         @click.stop="$emit('clear')"
+        @keydown.enter.stop="$emit('clear')"
       />
     </div>
   </div>

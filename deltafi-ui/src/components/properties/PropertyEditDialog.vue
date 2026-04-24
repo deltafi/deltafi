@@ -18,7 +18,7 @@
 
 <template>
   <div>
-    <span @click="show()">
+    <span role="button" tabindex="0" @click="show()" @keydown.enter="show()">
       <slot />
     </span>
     <Dialog v-model:visible="dialogVisible" :maximizable="false" :modal="true" :dismissable-mask="false" :closable="false" :draggable="false" :style="{ width: '30vw', minWidth: '400px' }" :aria-label="'Editing ' + localProperty.key" @show="onShow" @keydown.esc="hide">

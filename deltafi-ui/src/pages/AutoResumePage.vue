@@ -33,7 +33,7 @@
         <div class="btn-group align-items-center">
           <IconField iconPosition="left">
             <InputIcon class="pi pi-search"> </InputIcon>
-            <InputText v-model="filters['global'].value" class="p-inputtext-sm deltafi-input-field mx-1" placeholder="Search" />
+            <InputText v-model="filters['global'].value" class="p-inputtext-sm deltafi-input-field mx-1" placeholder="Search" aria-label="Search auto resume rules" />
           </IconField>
           <Button severity="secondary" variant="text" class="p-panel-header-icon mr-2" @click="toggleMenu">
             <span class="fas fa-bars" />
@@ -59,7 +59,7 @@
             <span v-else>{{ data[field] }}</span>
           </template>
           <template #editor="{ data, field }">
-            <InputNumber v-model="data[field]" class="p-inputtext-sm priority-column-input" autofocus />
+            <InputNumber v-model="data[field]" class="p-inputtext-sm priority-column-input" aria-label="Priority" autofocus />
           </template>
         </Column>
         <Column :style="{ width: '5%' }" :body-style="{ padding: 0 }" :hidden="!$hasSomePermissions('ResumePolicyUpdate', 'ResumePolicyDelete')">

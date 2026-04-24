@@ -23,15 +23,22 @@
   <g
     class="node-group"
     :class="{ selected: selected, focused: focused, [nodeTypeClass]: true }"
+    role="button"
+    tabindex="0"
+    :aria-label="node.name"
     @click="$emit('click', $event)"
+    @keydown.enter="$emit('click', $event)"
   >
     <!-- Queue indicator (left side, near incoming arrow) -->
     <g
       v-if="node.type !== 'TOPIC' && queueCounts && queueCounts.total > 0"
       class="queue-indicator"
       :transform="`translate(-${nodeWidth / 2 + (showInputMetrics ? metricsBoxWidth : 0) + 38}, 0)`"
+      tabindex="0"
       @mouseenter="$emit('show-tooltip', $event, queueTooltip)"
       @mouseleave="$emit('hide-tooltip')"
+      @focusin="$emit('show-tooltip', $event, queueTooltip)"
+      @focusout="$emit('hide-tooltip')"
     >
       <rect x="-18" y="-10" width="36" height="20" rx="10" class="queue-indicator-bg" />
       <text dy="0.35em" text-anchor="middle" class="queue-indicator-text">
@@ -43,9 +50,13 @@
     <g
       v-if="canExpandUpstream"
       class="expand-button expand-upstream"
+      tabindex="0"
       @click.stop="$emit('expand-upstream')"
+      @keydown.enter.stop="$emit('expand-upstream')"
       @mouseenter="$emit('show-tooltip', $event, 'Show upstream neighbors')"
       @mouseleave="$emit('hide-tooltip')"
+      @focusin="$emit('show-tooltip', $event, 'Show upstream neighbors')"
+      @focusout="$emit('hide-tooltip')"
       :transform="`translate(-${nodeWidth / 2 + (showInputMetrics ? metricsBoxWidth : 0) + 20}, 0)`"
     >
       <circle r="12" />
@@ -92,9 +103,13 @@
       v-if="node.type !== 'TOPIC' && errorCount > 0"
       class="error-badge"
       :transform="`translate(${nodeWidth / 2 + (showOutputMetrics ? metricsBoxWidth : 0)}, ${-nodeHeight / 2})`"
+      tabindex="0"
       @click.stop="$emit('error-badge-click')"
+      @keydown.enter.stop="$emit('error-badge-click')"
       @mouseenter="$emit('show-tooltip', $event, errorCount + (errorCount === 1 ? ' error' : ' errors') + ' - click to view')"
       @mouseleave="$emit('hide-tooltip')"
+      @focusin="$emit('show-tooltip', $event, errorCount + (errorCount === 1 ? ' error' : ' errors') + ' - click to view')"
+      @focusout="$emit('hide-tooltip')"
     >
       <circle r="10" class="error-badge-circle" />
       <text dy="0.35em" text-anchor="middle" class="error-badge-text">
@@ -110,6 +125,8 @@
       text-anchor="middle"
       @mouseenter="isTruncated && $emit('show-tooltip', $event, node.name)"
       @mouseleave="isTruncated && $emit('hide-tooltip')"
+      @focusin="isTruncated && $emit('show-tooltip', $event, node.name)"
+      @focusout="isTruncated && $emit('hide-tooltip')"
     >
       {{ displayLabel }}
     </text>
@@ -157,8 +174,11 @@
       class="status-badge"
       :class="statusBadge.severity"
       :transform="`translate(${-nodeWidth / 2 + 30}, ${controlsY})`"
+      tabindex="0"
       @mouseenter="$emit('show-tooltip', $event, statusBadge.tooltip)"
       @mouseleave="$emit('hide-tooltip')"
+      @focusin="$emit('show-tooltip', $event, statusBadge.tooltip)"
+      @focusout="$emit('hide-tooltip')"
     >
       <rect x="-26" y="-7" width="52" height="14" rx="3" class="status-badge-bg" />
       <text class="status-badge-icon fas" x="-20" dy="0.35em" text-anchor="middle">{{ statusBadge.icon }}</text>
@@ -218,9 +238,13 @@
     <g
       v-if="canExpandDownstream"
       class="expand-button expand-downstream"
+      tabindex="0"
       @click.stop="$emit('expand-downstream')"
+      @keydown.enter.stop="$emit('expand-downstream')"
       @mouseenter="$emit('show-tooltip', $event, 'Show downstream neighbors')"
       @mouseleave="$emit('hide-tooltip')"
+      @focusin="$emit('show-tooltip', $event, 'Show downstream neighbors')"
+      @focusout="$emit('hide-tooltip')"
       :transform="`translate(${nodeWidth / 2 + (showOutputMetrics ? metricsBoxWidth : 0) + 20}, 0)`"
     >
       <circle r="12" />

@@ -49,12 +49,12 @@
       <template #members>
         <div class="member-filters">
           <div class="filter-item">
-            <label>Search by Name</label>
-            <InputText v-model="systemNameFilter" placeholder="Filter by system name..." class="w-full" />
+            <label for="fleet-search-name-filter">Search by Name</label>
+            <InputText id="fleet-search-name-filter" v-model="systemNameFilter" placeholder="Filter by system name..." class="w-full" />
           </div>
           <div class="filter-item">
-            <label>Filter by Tags</label>
-            <MultiSelect v-model="selectedResultTags" :options="availableResultTags" placeholder="Select tags..." class="w-full" />
+            <label for="fleet-search-tags-filter">Filter by Tags</label>
+            <MultiSelect id="fleet-search-tags-filter" v-model="selectedResultTags" :options="availableResultTags" placeholder="Select tags..." class="w-full" />
           </div>
           <div v-if="searchResponse" class="filter-stats">
             Showing {{ filteredResults.length }} of {{ searchResponse.results.length }} systems

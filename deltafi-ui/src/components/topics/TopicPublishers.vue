@@ -18,7 +18,7 @@
 
 <template>
   <span class="cursor-pointer">
-    <span v-if="!_.isEmpty(publishersByState)" @click="showOverlayPanel($event)">
+    <span v-if="!_.isEmpty(publishersByState)" role="button" tabindex="0" @click="showOverlayPanel($event)" @keydown.enter="showOverlayPanel($event)">
       <span v-for="(icon, state) in stateIcons" :key="state">
         <span v-if="publishersByState[state]?.length">
           <span :class="stateBadgeClass[state]">{{ publishersByState[state].length }}</span>

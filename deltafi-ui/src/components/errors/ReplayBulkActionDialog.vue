@@ -33,7 +33,7 @@
           </div>
           <div class="field mt-2" v-if="acknowledgeOnReplay">
             <label for="reason">Acknowledge Reason</label>
-            <InputText id="reason" v-model="reason" type="text" :disabled="!acknowledgeOnReplay" :class="{ 'p-invalid': reasonInvalid }" />
+            <InputText id="reason" v-model="reason" type="text" :disabled="!acknowledgeOnReplay" :class="{ 'p-invalid': reasonInvalid }" :aria-invalid="reasonInvalid" />
           </div>
           <small v-if="reasonInvalid" class="p-error">Reason is required when acknowledging</small>
         </div>

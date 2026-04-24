@@ -20,7 +20,7 @@
   <div id="error-message" class="lookup-table-configuration-dialog">
     <div class="lookup-table-panel">
       <div class="pb-0">
-        <div v-if="!_.isEmpty(errors)" class="pt-2">
+        <div v-if="!_.isEmpty(errors)" class="pt-2" role="alert" aria-live="assertive">
           <Message severity="error" :sticky="true" class="mb-2 mt-0" @close="clearErrors()">
             <ul>
               <div v-for="(error, key) in errors" :key="key">
@@ -32,13 +32,14 @@
           </Message>
         </div>
         <dl>
-          <dt>Name*</dt>
+          <dt><label for="lt-name">Name<span class="required-indicator" aria-hidden="true">*</span></label></dt>
           <dd>
-            <InputText v-model="model['name']" placeholder="Lookup Table Name" :disabled="editLookupTable" class="inputWidth" />
+            <InputText id="lt-name" v-model="model['name']" placeholder="Lookup Table Name" aria-required="true" :disabled="editLookupTable" class="inputWidth" />
           </dd>
-          <dt>Columns*</dt>
+          <dt><label for="lt-columns">Columns<span class="required-indicator" aria-hidden="true">*</span></label></dt>
           <dd>
             <InputChips
+              id="lt-columns"
               v-model="model['columns']"
               separator=","
               :placeholder="!_.isEmpty(model['columns']) ? null : 'Lookup Table Columns'"
@@ -50,9 +51,10 @@
               }"
             />
           </dd>
-          <dt>Key Columns*</dt>
+          <dt><label for="lt-key-columns">Key Columns<span class="required-indicator" aria-hidden="true">*</span></label></dt>
           <dd>
             <InputChips
+              id="lt-key-columns"
               v-model="model['keyColumns']"
               separator=","
               :placeholder="!_.isEmpty(model['keyColumns']) ? null : 'Lookup Table Key Columns'"
@@ -64,21 +66,21 @@
               }"
             />
           </dd>
-          <dt>Service Backed*</dt>
+          <dt><label for="lt-service-backed">Service Backed<span class="required-indicator" aria-hidden="true">*</span></label></dt>
           <dd>
-            <Checkbox v-model="model['serviceBacked']" :binary="true" aria-label="Service backed" />
+            <Checkbox id="lt-service-backed" v-model="model['serviceBacked']" :binary="true" aria-label="Service backed" />
           </dd>
-          <dt>Backing Service Active*</dt>
+          <dt><label for="lt-backing-active">Backing Service Active<span class="required-indicator" aria-hidden="true">*</span></label></dt>
           <dd>
-            <Checkbox v-model="model['backingServiceActive']" :binary="true" aria-label="Backing service active" />
+            <Checkbox id="lt-backing-active" v-model="model['backingServiceActive']" :binary="true" aria-label="Backing service active" />
           </dd>
-          <dt>Pull Through*</dt>
+          <dt><label for="lt-pull-through">Pull Through<span class="required-indicator" aria-hidden="true">*</span></label></dt>
           <dd>
-            <Checkbox v-model="model['pullThrough']" :binary="true" aria-label="Pull through" />
+            <Checkbox id="lt-pull-through" v-model="model['pullThrough']" :binary="true" aria-label="Pull through" />
           </dd>
-          <dt>Refresh Duration</dt>
+          <dt><label for="lt-refresh-duration">Refresh Duration</label></dt>
           <dd>
-            <InputText v-model="model['refreshDuration']" placeholder="Duration in ISO 1806 notation. e.g. PT1H, P23DT23H, PT1M" class="inputWidth" />
+            <InputText id="lt-refresh-duration" v-model="model['refreshDuration']" placeholder="Duration in ISO 1806 notation. e.g. PT1H, P23DT23H, PT1M" class="inputWidth" />
           </dd>
         </dl>
       </div>

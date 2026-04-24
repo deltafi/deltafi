@@ -20,8 +20,8 @@
   <control-wrapper v-bind="schemaData.controlWrapper" :styles="schemaData.styles" :is-focused="schemaData.isFocused" :applied-options="schemaData.appliedOptions">
     <dl class="boolean-field">
       <dd class="boolean-row">
-        <ToggleSwitch :id="schemaData.control.id + '-input'" :model-value="booleanDecider(schemaData.control.data)" @update:model-value="schemaData.onChange($event)" @focus="schemaData.isFocused = true" @blur="schemaData.isFocused = false" />
-        <label :for="schemaData.control.id + '-input'" class="boolean-label">{{ computedLabel }}<span v-if="schemaData.control.required" class="required-indicator">*</span></label>
+        <ToggleSwitch :id="schemaData.control.id + '-input'" :model-value="booleanDecider(schemaData.control.data)" :aria-required="schemaData.control.required" @update:model-value="schemaData.onChange($event)" @focus="schemaData.isFocused = true" @blur="schemaData.isFocused = false" />
+        <label :for="schemaData.control.id + '-input'" class="boolean-label">{{ computedLabel }}<span v-if="schemaData.control.required" class="required-indicator" aria-hidden="true">*</span></label>
         <i v-if="schemaData.control.description" v-tooltip.right="schemaData.control.description" class="pi pi-info-circle info-icon" />
       </dd>
     </dl>

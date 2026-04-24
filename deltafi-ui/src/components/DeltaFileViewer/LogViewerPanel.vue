@@ -35,7 +35,7 @@
             </Button>
             <IconField iconPosition="left">
               <InputIcon class="pi pi-search" />
-              <InputText v-model="filters['global'].value" type="text" placeholder="Search" class="p-inputtext deltafi-input-field mx-1" />
+              <InputText v-model="filters['global'].value" type="text" placeholder="Search" aria-label="Search log messages" class="p-inputtext deltafi-input-field mx-1" />
             </IconField>
             <Button severity="secondary" variant="text" class="p-panel-header-icon mr-2" @click="toggleMenu">
               <span class="fas fa-bars" />

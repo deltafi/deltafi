@@ -20,7 +20,7 @@
 
 <template>
   <div>
-    <span @click="showDialog()">
+    <span role="button" tabindex="0" @click="showDialog()" @keydown.enter="showDialog()">
       <slot />
     </span>
     <Dialog v-model:visible="dialogVisible" :header="header" :style="{ width: '75vw', height: '90vh' }" :maximizable="true" :modal="true" :dismissable-mask="true" :draggable="false">

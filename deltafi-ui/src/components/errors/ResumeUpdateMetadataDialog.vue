@@ -28,10 +28,10 @@
         </Message>
         <div v-for="(field, index) in batchMetadata" :key="index" class="row p-fluid mb-4">
           <div class="col-5">
-            <InputText v-model="field.key" type="text" placeholder="Key" @change="onBatchInputChange" />
+            <InputText v-model="field.key" type="text" placeholder="Key" aria-label="Metadata key" @change="onBatchInputChange" />
           </div>
           <div class="col-5">
-            <InputText v-model="field.value" type="text" placeholder="Value" />
+            <InputText v-model="field.value" type="text" placeholder="Value" aria-label="Metadata value" />
           </div>
           <div class="col-2 text-right">
             <Button icon="pi pi-times" aria-label="Remove metadata field" @click="removeBatchField(index)" />
@@ -47,11 +47,11 @@
           <div v-for="pairs in actions.keyVals" :key="pairs">
             <div v-if="pairs.changed !== 'deleted'" class="row p-fluid mb-4">
               <div class="col-5">
-                <InputText v-if="pairs.changed === 'new'" v-model="pairs.key" type="text" placeholder="Key" @change="onCellEditComplete(pairs, actions.flow, actions.action)" />
-                <InputText v-else v-model="pairs.key" type="text" placeholder="Key" disabled class="p-valid" />
+                <InputText v-if="pairs.changed === 'new'" v-model="pairs.key" type="text" placeholder="Key" aria-label="Metadata key" @change="onCellEditComplete(pairs, actions.flow, actions.action)" />
+                <InputText v-else v-model="pairs.key" type="text" placeholder="Key" aria-label="Metadata key" disabled class="p-valid" />
               </div>
               <div class="col-5">
-                <InputText v-model="pairs.values" type="text" placeholder="Value" @change="onCellEditComplete(pairs, actions.flow, actions.action)" />
+                <InputText v-model="pairs.values" type="text" placeholder="Value" aria-label="Metadata value" @change="onCellEditComplete(pairs, actions.flow, actions.action)" />
               </div>
               <div class="col-2 text-right">
                 <Button icon="pi pi-times" aria-label="Remove metadata field" @click="removeMetadataField(pairs, actions.flow, actions.action)" />

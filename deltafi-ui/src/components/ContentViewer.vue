@@ -24,7 +24,7 @@
       <div class="content-viewer-section">
         <Toolbar>
           <template #start>
-            <Select v-model="selectedRenderFormat" :options="renderFormats" option-label="name" class="mr-3" style="min-width: 12rem" />
+            <Select v-model="selectedRenderFormat" :options="renderFormats" option-label="name" aria-label="Render format" class="mr-3" style="min-width: 12rem" />
             <slot name="toolbar-start" />
           </template>
           <template #end>

@@ -31,14 +31,14 @@
       <template #loading><span class="datatable-loading-text">Loading. Please wait...</span></template>
       <Column v-if="groupErrorMessageData.length > 0" expander class="expander-column">
         <template #body="{ data }">
-          <div @click.stop="onExpandClicked(data)">
+          <div role="button" tabindex="0" @click.stop="onExpandClicked(data)" @keydown.enter.stop="onExpandClicked(data)">
             <ChevronSwitch :expanded-rows="expandedErrorGroups" :row="data" class="text-muted" />
           </div>
         </template>
       </Column>
       <Column field="message" header="Message" sortable>
         <template #body="{ data }">
-          <a class="monospace" @click="showErrors(data.message, null, null)">{{ data.message }}</a>
+          <a role="button" tabindex="0" class="monospace" @click="showErrors(data.message, null, null)" @keydown.enter="showErrors(data.message, null, null)">{{ data.message }}</a>
         </template>
       </Column>
       <Column field="count" header="Count" sortable />
@@ -50,7 +50,7 @@
             <Column field="count" header="Count" sortable />
             <Column field="message" header="Message" sortable>
               <template #body="{ data }">
-                <a class="monospace" @click="showErrors(data.message, data.flow, data.type)">{{ data.message }}</a>
+                <a role="button" tabindex="0" class="monospace" @click="showErrors(data.message, data.flow, data.type)" @keydown.enter="showErrors(data.message, data.flow, data.type)">{{ data.message }}</a>
               </template>
             </Column>
           </DataTable>

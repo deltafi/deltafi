@@ -26,16 +26,16 @@
       @clear="clearOptions"
     >
       <div class="filter-item">
-        <label>Flow</label>
-        <Select v-model="flowSelected" placeholder="Select a Flow" show-clear :options="formattedFlows" option-group-label="label" option-group-children="sources" option-label="name" :editable="false" filter filter-placeholder="Filter flows" class="w-full" />
+        <label for="errors-flow-filter">Flow</label>
+        <Select id="errors-flow-filter" v-model="flowSelected" placeholder="Select a Flow" show-clear :options="formattedFlows" option-group-label="label" option-group-children="sources" option-label="name" :editable="false" filter filter-placeholder="Filter flows" class="w-full" />
       </div>
       <div class="filter-item">
-        <label>Error Message</label>
-        <Select v-model="errorMessageSelected" placeholder="Select an Error Message" show-clear :options="uniqueErrorMessages" filter filter-placeholder="Filter messages" class="w-full" />
+        <label for="errors-message-filter">Error Message</label>
+        <Select id="errors-message-filter" v-model="errorMessageSelected" placeholder="Select an Error Message" show-clear :options="uniqueErrorMessages" filter filter-placeholder="Filter messages" class="w-full" />
       </div>
       <div class="filter-item">
-        <label>Status</label>
-        <Select v-model="selectedAckOption" :options="ackOptions" option-label="name" option-value="value" :editable="false" class="w-full" />
+        <label for="errors-status-filter">Status</label>
+        <Select id="errors-status-filter" v-model="selectedAckOption" :options="ackOptions" option-label="name" option-value="value" :editable="false" class="w-full" />
       </div>
     </FilterSidebar>
 

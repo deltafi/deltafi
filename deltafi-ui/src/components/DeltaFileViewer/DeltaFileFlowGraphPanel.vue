@@ -38,12 +38,18 @@
 
         <!-- Edges -->
         <g class="edges">
+          <!-- eslint-disable-next-line vuejs-accessibility/no-static-element-interactions -- SVG edge group with tooltip on hover/focus -->
           <g
             v-for="edge in layoutEdges"
             :key="`${edge.source}-${edge.target}`"
             class="edge-group"
+            role="group"
+            :aria-label="`Edge from ${edge.source} to ${edge.target}`"
+            tabindex="0"
             @mouseenter="showEdgeTooltip($event, edge)"
             @mouseleave="hideTooltip"
+            @focusin="showEdgeTooltip($event, edge)"
+            @focusout="hideTooltip"
           >
             <!-- Invisible wider path for easier hit detection -->
             <path :d="edge.path" class="edge-hit-area" />
@@ -63,7 +69,10 @@
             :key="node.id"
             :transform="`translate(${node.x - nodeWidth / 2}, ${node.y - nodeHeight / 2})`"
             :class="['node-group', { 'node-clickable': nodeIsClickable(node) }]"
+            role="button"
+            tabindex="0"
             @click="onNodeClick(node)"
+            @keydown.enter="onNodeClick(node)"
           >
             <!-- Main node rectangle (extends to include output panel if present) -->
             <rect
@@ -81,7 +90,10 @@
                 :d="`M ${nodeWidth - 1} 2 L ${nodeWidth + outputBoxWidth - 6} 2 Q ${nodeWidth + outputBoxWidth - 2} 2 ${nodeWidth + outputBoxWidth - 2} 6 L ${nodeWidth + outputBoxWidth - 2} ${nodeHeight - 6} Q ${nodeWidth + outputBoxWidth - 2} ${nodeHeight - 2} ${nodeWidth + outputBoxWidth - 6} ${nodeHeight - 2} L ${nodeWidth - 1} ${nodeHeight - 2} Z`"
                 class="output-panel-bg"
                 :fill="getOutputPanelColor(node.type, node.state)"
+                role="button"
+                tabindex="0"
                 @click.stop="openFlowOutput(node)"
+                @keydown.enter.stop="openFlowOutput(node)"
               />
               <text
                 :x="nodeWidth / 2"
@@ -89,9 +101,12 @@
                 text-anchor="middle"
                 dominant-baseline="middle"
                 class="node-label"
+                role="presentation"
                 :class="{ truncated: isLabelTruncated(node.name) }"
                 @mouseenter="isLabelTruncated(node.name) && showNodeTooltip($event, node.name)"
                 @mouseleave="isLabelTruncated(node.name) && hideTooltip()"
+                @focusin="isLabelTruncated(node.name) && showNodeTooltip($event, node.name)"
+                @focusout="isLabelTruncated(node.name) && hideTooltip()"
               >
                 {{ truncateLabel(node.name) }}
               </text>
@@ -127,7 +142,10 @@
                 :y="nodeHeight / 2 + 1"
                 text-anchor="middle"
                 dominant-baseline="middle"
+                role="button"
+                tabindex="0"
                 @click.stop="openFlowOutput(node)"
+                @keydown.enter.stop="openFlowOutput(node)"
               >{{ flowHasChanges(node) ? '\uf31c' : '\uf15b' }}</text>
           </g>
         </g>

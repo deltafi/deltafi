@@ -25,7 +25,7 @@
     <div v-else>
       <IconField iconPosition="left" class="mb-3">
         <InputIcon class="pi pi-search"></InputIcon>
-        <InputText v-model="filterFlowsText" type="text" placeholder="Search" class="p-inputtext deltafi-input-field" />
+        <InputText v-model="filterFlowsText" type="text" placeholder="Search" aria-label="Search transforms" class="p-inputtext deltafi-input-field" />
       </IconField>
       <FlowDataTable flow-type-prop="transform" :flow-data-prop="flowData" :filter-flows-text-prop="filterFlowsText" :flow-data-by-plugin-prop="flowDataByPlugin" @reload-transforms="refresh" />
     </div>

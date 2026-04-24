@@ -35,6 +35,16 @@ export default defineConfigWithVueTs(
       "@typescript-eslint/no-unused-expressions": "off",
       "@typescript-eslint/no-unused-vars": "off",
       "@typescript-eslint/no-wrapper-object-types": "off",
+      "vuejs-accessibility/no-autofocus": "off",
+      "vuejs-accessibility/label-has-for": [
+        "error",
+        {
+          required: {
+            some: ["nesting", "id"],
+          },
+          controlComponents: ["InputText", "Textarea", "TextArea", "Select", "InputNumber", "InputChips", "Checkbox", "ToggleSwitch", "AutoComplete", "DatePicker"],
+        },
+      ],
     },
   }
 );

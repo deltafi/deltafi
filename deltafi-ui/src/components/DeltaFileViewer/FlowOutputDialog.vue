@@ -19,7 +19,7 @@
 <!-- ABOUTME: Used by flow graph and table view to show flow details on icon click. -->
 
 <template>
-  <span @click="show">
+  <span role="button" tabindex="0" @click="show" @keydown.enter="show">
     <slot />
   </span>
   <Dialog

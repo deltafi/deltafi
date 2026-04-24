@@ -20,7 +20,7 @@
   <control-wrapper v-bind="schemaData.controlWrapper" :styles="schemaData.styles" :is-focused="schemaData.isFocused" :applied-options="schemaData.appliedOptions">
     <dl class="env-var-field">
       <dt :id="schemaData.control.id + '-input-label'" class="env-var-label">
-        {{ computedLabel }}<span v-if="schemaData.control.required" class="required-indicator">*</span>
+        {{ computedLabel }}<span v-if="schemaData.control.required" class="required-indicator" aria-hidden="true">*</span>
         <i v-if="fieldDescription" v-tooltip.right="fieldDescription" class="pi pi-info-circle info-icon" />
       </dt>
       <dd class="env-var-dd">
@@ -34,6 +34,8 @@
               :id="schemaData.control.id + '-input'"
               v-model="envVarName"
               :class="['env-var-input', { 'p-invalid': !isValid && envVarName }]"
+              :aria-invalid="!isValid && !!envVarName"
+              :aria-required="schemaData.control.required"
               :disabled="!schemaData.control.enabled"
               :autofocus="schemaData.appliedOptions.focus"
               placeholder="MY_SECRET_KEY"

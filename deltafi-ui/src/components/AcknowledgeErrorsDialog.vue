@@ -21,7 +21,7 @@
     <div class="p-fluid">
       <div class="field">
         <label for="reason">Reason</label>
-        <InputText id="reason" v-model="reason" type="text" :class="{ 'p-invalid': reasonInvalid }" autofocus />
+        <InputText id="reason" v-model="reason" type="text" :class="{ 'p-invalid': reasonInvalid }" :aria-invalid="reasonInvalid" autofocus />
       </div>
     </div>
     <template #footer>

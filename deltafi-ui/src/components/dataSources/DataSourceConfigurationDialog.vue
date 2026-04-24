@@ -20,7 +20,7 @@
   <div id="error-message" class="data-source-configuration-dialog">
     <div class="data-source-panel">
       <div class="pb-0">
-        <div v-if="!_.isEmpty(errors)" class="pt-2">
+        <div v-if="!_.isEmpty(errors)" class="pt-2" role="alert" aria-live="assertive">
           <Message severity="error" :sticky="true" class="mb-2 mt-0" @close="clearErrors()">
             <ul>
               <div v-for="(error, key) in errors" :key="key">
@@ -32,26 +32,26 @@
           </Message>
         </div>
         <dl>
-          <dt>Name*</dt>
+          <dt><label for="ds-name">Name<span class="required-indicator" aria-hidden="true">*</span></label></dt>
           <dd>
-            <InputText v-model="model['name']" placeholder="Data Source Name." :disabled="editDataSource" class="inputWidth" aria-label="Data source name" />
+            <InputText id="ds-name" v-model="model['name']" placeholder="Data Source Name." aria-required="true" :disabled="editDataSource" class="inputWidth" />
           </dd>
-          <dt>Description*</dt>
+          <dt><label for="ds-description">Description<span class="required-indicator" aria-hidden="true">*</span></label></dt>
           <dd>
-            <TextArea v-model="model['description']" placeholder="Data Source Description." class="inputWidth" rows="5" aria-label="Data source description" />
+            <TextArea id="ds-description" v-model="model['description']" placeholder="Data Source Description." aria-required="true" class="inputWidth" rows="5" />
           </dd>
-          <dt>Data Source Type*</dt>
+          <dt><label for="ds-type">Data Source Type<span class="required-indicator" aria-hidden="true">*</span></label></dt>
           <dd>
-            <Select v-model="model['dataSourceType']" :options="dataSourceTypeOptions" placeholder="Select a Data Source Type" show-clear class="inputWidth" aria-label="Data source type" />
+            <Select id="ds-type" v-model="model['dataSourceType']" :options="dataSourceTypeOptions" placeholder="Select a Data Source Type" aria-required="true" show-clear class="inputWidth" />
           </dd>
           <template v-if="_.isEqual(model['dataSourceType'], 'On-Error Data Source')">
-            <dt>Error Message Regex</dt>
+            <dt><label for="ds-error-regex">Error Message Regex</label></dt>
             <dd>
-              <InputText v-model="model['errorMessageRegex']" placeholder="Error Message Regex" class="inputWidth" aria-label="Error message regex" />
+              <InputText id="ds-error-regex" v-model="model['errorMessageRegex']" placeholder="Error Message Regex" class="inputWidth" />
             </dd>
-            <dt>Source Metadata Prefix</dt>
+            <dt><label for="ds-source-prefix">Source Metadata Prefix</label></dt>
             <dd>
-              <InputText v-model="model['sourceMetadataPrefix']" placeholder="Source Metadata Prefix" class="inputWidth" aria-label="Source metadata prefix" />
+              <InputText id="ds-source-prefix" v-model="model['sourceMetadataPrefix']" placeholder="Source Metadata Prefix" class="inputWidth" />
             </dd>
             <dt>Include Source Metadata Regex</dt>
             <dd>
@@ -70,14 +70,14 @@
             </dd>
           </template>
           <template v-if="_.isEqual(model['dataSourceType'], 'Timed Data Source')">
-            <dt>Cron Schedule*</dt>
+            <dt><label for="ds-cron">Cron Schedule<span class="required-indicator" aria-hidden="true">*</span></label></dt>
             <dd>
               <CronLight v-model="model['cronSchedule']" format="quartz" @error="errors.push($event)" />
-              <InputText v-model="model['cronSchedule']" placeholder="e.g.	*/5 * * * * *" style="margin-top: 0.5rem" class="inputWidth" aria-label="Cron schedule" />
+              <InputText id="ds-cron" v-model="model['cronSchedule']" placeholder="e.g.	*/5 * * * * *" aria-required="true" style="margin-top: 0.5rem" class="inputWidth" />
             </dd>
-            <dt>Action*</dt>
+            <dt>Action<span class="required-indicator" aria-hidden="true">*</span></dt>
             <dd>
-              <Select v-model="model['timedIngressActionOption']" :options="flattenedActionsTypes" option-label="name" placeholder="Select an action" show-clear class="inputWidth" />
+              <Select v-model="model['timedIngressActionOption']" :options="flattenedActionsTypes" option-label="name" placeholder="Select an action" aria-label="Timed ingress action" aria-required="true" show-clear class="inputWidth" />
             </dd>
             <template v-if="!_.isEmpty(model['timedIngressActionOption'])">
               <template v-if="schemaProvided(model['timedIngressActionOption']['schema'])">
@@ -97,9 +97,9 @@
               </dd>
             </template>
           </template>
-          <dt>Topic*</dt>
+          <dt><label for="ds-topic">Topic<span class="required-indicator" aria-hidden="true">*</span></label></dt>
           <dd>
-            <AutoComplete v-model="model['topic']" placeholder="Publish to Topic" class="auto-complete-input-width" :suggestions="topicList" dropdown @complete="search" />
+            <AutoComplete id="ds-topic" v-model="model['topic']" placeholder="Publish to Topic" aria-required="true" class="auto-complete-input-width" :suggestions="topicList" dropdown @complete="search" />
           </dd>
           <dt>Annotation Configuration</dt>
           <dd>

@@ -20,7 +20,7 @@
   <Panel header="Metrics" class="metrics-panel pb-3">
     <template #icons>
       <div class="time-range btn-toolbar mb-2 mb-md-0">
-        <Select v-model="timeFrame" :options="timeFrames" option-label="name" style="min-width: 11rem;" />
+        <Select v-model="timeFrame" :options="timeFrames" option-label="name" aria-label="Time frame" style="min-width: 11rem;" />
       </div>
     </template>
     <div class="row">

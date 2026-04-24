@@ -25,7 +25,7 @@
         <DataTable :value="variables" aria-label="SpEL variables" class="p-datatable-sm">
           <Column field="name" header="Variable" style="width: 30%">
             <template #body="{ data }">
-              <code class="clickable" @click="insert(data.insertText || data.name)">{{ data.name }}</code>
+              <code class="clickable" role="button" tabindex="0" @click="insert(data.insertText || data.name)" @keydown.enter="insert(data.insertText || data.name)">{{ data.name }}</code>
             </template>
           </Column>
           <Column field="type" header="Type" style="width: 25%" />
@@ -37,7 +37,7 @@
         <DataTable :value="methods" aria-label="SpEL methods" class="p-datatable-sm">
           <Column field="name" header="Method" style="width: 35%">
             <template #body="{ data }">
-              <code class="clickable" @click="insert(data.insertText || data.name)">{{ data.name }}</code>
+              <code class="clickable" role="button" tabindex="0" @click="insert(data.insertText || data.name)" @keydown.enter="insert(data.insertText || data.name)">{{ data.name }}</code>
             </template>
           </Column>
           <Column field="returns" header="Returns" style="width: 15%" />
@@ -49,13 +49,13 @@
         <DataTable :value="operators" aria-label="SpEL operators" class="p-datatable-sm">
           <Column field="operator" header="Operator" style="width: 15%">
             <template #body="{ data }">
-              <code class="clickable" @click="insert(data.insertText || data.operator)">{{ data.operator }}</code>
+              <code class="clickable" role="button" tabindex="0" @click="insert(data.insertText || data.operator)" @keydown.enter="insert(data.insertText || data.operator)">{{ data.operator }}</code>
             </template>
           </Column>
           <Column field="description" header="Description" style="width: 35%" />
           <Column field="example" header="Example">
             <template #body="{ data }">
-              <code class="clickable" @click="insert(data.example)">{{ data.example }}</code>
+              <code class="clickable" role="button" tabindex="0" @click="insert(data.example)" @keydown.enter="insert(data.example)">{{ data.example }}</code>
             </template>
           </Column>
         </DataTable>
@@ -63,7 +63,7 @@
 
       <TabPanel header="Examples">
         <div class="examples-list">
-          <div v-for="example in examples" :key="example.expression" class="example-item clickable" @click="insert(example.expression)">
+          <div v-for="example in examples" :key="example.expression" class="example-item clickable" role="button" tabindex="0" @click="insert(example.expression)" @keydown.enter="insert(example.expression)">
             <div class="example-expression">
               <code>{{ example.expression }}</code>
             </div>

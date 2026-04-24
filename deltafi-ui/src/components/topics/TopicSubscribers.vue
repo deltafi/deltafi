@@ -18,7 +18,7 @@
 
 <template>
   <span class="cursor-pointer">
-    <span v-if="!_.isEmpty(subscribersByState)" @click="showOverlayPanel($event)">
+    <span v-if="!_.isEmpty(subscribersByState)" role="button" tabindex="0" @click="showOverlayPanel($event)" @keydown.enter="showOverlayPanel($event)">
       <span class="text-muted">→ </span>
       <span v-for="(icon, state) in stateIcons" :key="state">
         <span v-if="subscribersByState[state]?.length">

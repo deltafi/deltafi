@@ -52,7 +52,7 @@
       </a>
     </template>
   </Menu>
-  <i v-if="hasRateLimit" v-tooltip.top="rateLimitTooltip" class="fa-solid fa-stopwatch fa-lg text-info cursor-pointer mr-2" @click="addRateLimit.showDialog()" />
+  <i v-if="hasRateLimit" v-tooltip.top="rateLimitTooltip" class="fa-solid fa-stopwatch fa-lg text-info cursor-pointer mr-2" role="button" tabindex="0" @click="addRateLimit.showDialog()" @keydown.enter="addRateLimit.showDialog()" />
   <Button :id="`${data.name}-${data.type}`" ref="optionsButton" type="button" v-tooltip.top="`Options`" @click="menuButtonClick" severity="secondary" outlined iconPos="right" size="small" :icon="horizontalEllipsis ? 'pi pi-ellipsis-h' : 'pi pi-ellipsis-v'" class="mt-n1 mb-n1" />
   <DataSourceRemoveButton ref="removeDataSource" :row-data-prop="data" @reload-data-sources="refresh" />
   <DialogTemplate ref="editDataSource" component-name="dataSources/DataSourceConfigurationDialog" header="Edit Data Source" dialog-width="50vw" :row-data-prop="data" edit-data-source @refresh-page="refresh" />

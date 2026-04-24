@@ -22,7 +22,7 @@
 
     <div class="d-flex justify-content-between">
       <div>
-        <InputText v-model="did" placeholder="DID (UUID)" :class="{ 'p-invalid': did && !validDID }" style="width: 24rem" @keyup.enter="importFromDID" />
+        <InputText v-model="did" placeholder="DID (UUID)" :class="{ 'p-invalid': did && !validDID }" :aria-invalid="did && !validDID" aria-label="DeltaFile ID for metadata import" style="width: 24rem" @keyup.enter="importFromDID" />
         <div>
           <small v-if="did && !validDID" class="p-error ml-1">Invalid UUID</small>
         </div>

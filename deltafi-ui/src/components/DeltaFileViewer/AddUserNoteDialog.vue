@@ -20,7 +20,7 @@
   <div id="error-message" class="add-user-note-dialog">
     <div class="user-note-panel">
       <div class="pb-0">
-        <div v-if="!_.isEmpty(errors)" class="pt-2">
+        <div v-if="!_.isEmpty(errors)" class="pt-2" role="alert" aria-live="assertive">
           <Message severity="error" :sticky="true" class="mb-2 mt-0" @close="clearErrors()">
             <ul>
               <div v-for="(error, key) in errors" :key="key">
@@ -32,9 +32,9 @@
           </Message>
         </div>
         <dl>
-          <dt>User Note*</dt>
+          <dt><label for="user-note">User Note<span class="required-indicator" aria-hidden="true">*</span></label></dt>
           <dd>
-            <TextArea v-model="message" placeholder="Add User Note" class="inputWidth" rows="5" />
+            <TextArea id="user-note" v-model="message" placeholder="Add User Note" aria-required="true" class="inputWidth" rows="5" />
           </dd>
         </dl>
       </div>

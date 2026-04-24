@@ -47,7 +47,7 @@
               <InputText type="text" value="Data Source" disabled />
             </div>
             <div class="col-5">
-              <Select v-model="selectedDataSource" :options="formattedDataSourceNames" placeholder="Select a REST Data Source" show-clear :class="dataSourceDropdownClass" />
+              <Select v-model="selectedDataSource" :options="formattedDataSourceNames" placeholder="Select a REST Data Source" show-clear :class="dataSourceDropdownClass" aria-label="Select a REST Data Source" />
             </div>
           </div>
           <div v-for="field in metadata" :key="field" class="row mt-4 p-fluid">

@@ -19,7 +19,7 @@
 <template>
   <div v-if="schemaData.control.visible" class="object-wrapper">
     <dt class="object-label">
-      {{ computedLabel }}<span v-if="schemaData.control.required" class="required-indicator">*</span>
+      {{ computedLabel }}<span v-if="schemaData.control.required" class="required-indicator" aria-hidden="true">*</span>
       <i v-if="!_.isEmpty(schemaData.control.description)" v-tooltip.right="schemaData.control.description" class="pi pi-info-circle info-icon" />
     </dt>
     <div class="deltafi-fieldset">

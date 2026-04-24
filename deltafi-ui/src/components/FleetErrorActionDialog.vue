@@ -36,8 +36,8 @@
 
       <div v-if="requiresReason" class="mt-3">
         <div class="field">
-          <label for="reason">Reason (required)</label>
-          <InputText id="reason" ref="reasonInput" v-model="reason" type="text" :class="{ 'p-invalid': reasonInvalid }" />
+          <label for="reason">Reason<span class="required-indicator" aria-hidden="true">*</span></label>
+          <InputText id="reason" ref="reasonInput" v-model="reason" type="text" aria-required="true" :class="{ 'p-invalid': reasonInvalid }" :aria-invalid="reasonInvalid" />
         </div>
       </div>
 

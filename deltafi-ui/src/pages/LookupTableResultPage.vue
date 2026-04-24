@@ -29,7 +29,7 @@
         </div>
       </template>
     </PageHeader>
-    <label>Filter:</label>
+    <label for="lookup-table-filter">Filter:</label>
     <div class="btn-toolbar border-bottom mb-3 pb-3 align-items-center">
       <Button v-tooltip.right="{ value: `Clear Filters`, disabled: _.isEmpty(columnValueInputs) }" rounded :class="`mr-1 p-column-filter-menu-button p-column-filter-menu-button-open ${!_.isEmpty(columnValueInputs) ? 'p-column-filter-menu-button-active' : null}`" :disabled="_.isEmpty(columnValueInputs)" @click="clearFilterOptions()">
         <i class="pi pi-filter" style="font-size: 1rem" />
@@ -44,8 +44,8 @@
         </Chip>
       </div>
       <Popover ref="columnValueOverlay" @hide="hideColumnValuesOverlay">
-        <Select v-model="newColumnKey" placeholder="Key" :options="filterColumnOptions" option-label="column" style="width: 13rem" @keyup.enter="addColumnValueItemEvent" /> :
-        <AutoComplete v-model.trim="newColumnValue" placeholder="Value" :suggestions="items" :disabled="_.isEmpty(newColumnKey)" @complete="search($event, newColumnKey)" @keyup.enter="addColumnValueItemEvent" @item-select="addColumnValueItemEvent" />
+        <Select id="lookup-table-filter" v-model="newColumnKey" placeholder="Key" :options="filterColumnOptions" option-label="column" style="width: 13rem" aria-label="Filter column key" @keyup.enter="addColumnValueItemEvent" /> :
+        <AutoComplete v-model.trim="newColumnValue" placeholder="Value" :suggestions="items" :disabled="_.isEmpty(newColumnKey)" aria-label="Filter column value" @complete="search($event, newColumnKey)" @keyup.enter="addColumnValueItemEvent" @item-select="addColumnValueItemEvent" />
       </Popover>
     </div>
     <Panel header="Results" class="table-panel results">

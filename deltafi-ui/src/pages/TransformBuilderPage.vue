@@ -73,7 +73,7 @@
         <div class="action-picker-search mb-3">
           <IconField iconPosition="left" class="w-full">
             <InputIcon class="pi pi-search" />
-            <InputText v-model="actionSearchQuery" class="w-full" placeholder="Search actions..." autofocus />
+            <InputText v-model="actionSearchQuery" class="w-full" placeholder="Search actions..." aria-label="Search actions" autofocus />
           </IconField>
         </div>
         <table class="action-picker-table">
@@ -144,15 +144,17 @@
     <Dialog v-model:visible="actionEditorVisible" :header="`Edit Action: ${editingAction?.name || editingAction?.displayName || ''}`" :modal="true" :style="{ width: '600px' }" :dismissable-mask="true">
       <div v-if="editingAction" class="action-editor-content">
         <div class="field">
-          <label>Name</label>
-          <InputText v-model="editingAction.name" class="w-full" placeholder="Action Name Required" />
+          <label for="action-name-input">Name<span class="required-indicator" aria-hidden="true">*</span></label>
+          <InputText id="action-name-input" v-model="editingAction.name" class="w-full" aria-required="true" placeholder="Action Name Required" />
         </div>
         <div class="field">
-          <label>Type</label>
-          <div class="action-type-display">{{ editingAction.type }}</div>
+          <!-- eslint-disable-next-line vuejs-accessibility/label-has-for -- labels a non-input display element via aria-labelledby -->
+          <label id="action-type-label">Type</label>
+          <div class="action-type-display" aria-labelledby="action-type-label">{{ editingAction.type }}</div>
         </div>
         <div v-if="editingAction.schema && !_.isEmpty(editingAction.schema.properties)" class="field">
-          <label>Parameters</label>
+          <!-- eslint-disable-next-line vuejs-accessibility/label-has-for -- labels a JsonForms component group -->
+          <label id="action-params-label">Parameters</label>
           <JsonForms
             :data="editingAction.parameters || {}"
             :renderers="renderers"
@@ -173,12 +175,12 @@
     <Dialog v-model:visible="subscribeEditorVisible" :header="isAddingSubscribe ? 'Add Subscribe Topic' : 'Edit Subscribe Topic'" :modal="true" :style="{ width: '500px' }" :dismissable-mask="true" @hide="cancelSubscribeEdit">
       <div v-if="editingSubscribeTopic" class="topic-editor-content">
         <div class="field">
-          <label>Topic</label>
-          <Dropdown v-model="editingSubscribeTopic.topic" :options="allTopics" placeholder="Select a topic or type a new name" class="w-full" editable />
+          <label for="subscribe-topic-input">Topic</label>
+          <Dropdown id="subscribe-topic-input" v-model="editingSubscribeTopic.topic" :options="allTopics" placeholder="Select a topic or type a new name" class="w-full" editable />
         </div>
         <div class="field">
-          <label>Condition (Optional)</label>
-          <SpelEditorDialog v-model="editingSubscribeTopic.condition" mode="CONDITION" empty-placeholder="No condition" />
+          <label for="subscribe-condition-input">Condition (Optional)</label>
+          <SpelEditorDialog id="subscribe-condition-input" v-model="editingSubscribeTopic.condition" mode="CONDITION" empty-placeholder="No condition" />
         </div>
       </div>
       <template #footer>
@@ -192,12 +194,12 @@
     <Dialog v-model:visible="publishEditorVisible" :header="isAddingPublish ? 'Add Publish Topic' : 'Edit Publish Topic'" :modal="true" :style="{ width: '500px' }" :dismissable-mask="true" @hide="cancelPublishEdit">
       <div v-if="editingPublishTopic" class="topic-editor-content">
         <div class="field">
-          <label>Topic</label>
-          <Dropdown v-model="editingPublishTopic.topic" :options="allTopics" placeholder="Select a topic or type a new name" class="w-full" editable />
+          <label for="publish-topic-input">Topic</label>
+          <Dropdown id="publish-topic-input" v-model="editingPublishTopic.topic" :options="allTopics" placeholder="Select a topic or type a new name" class="w-full" editable />
         </div>
         <div class="field">
-          <label>Condition (Optional)</label>
-          <SpelEditorDialog v-model="editingPublishTopic.condition" mode="CONDITION" empty-placeholder="No condition" />
+          <label for="publish-condition-input">Condition (Optional)</label>
+          <SpelEditorDialog id="publish-condition-input" v-model="editingPublishTopic.condition" mode="CONDITION" empty-placeholder="No condition" />
         </div>
       </div>
       <template #footer>
@@ -211,16 +213,16 @@
     <Dialog v-model:visible="publishSettingsVisible" header="Publish Settings" :modal="true" :style="{ width: '500px' }" :dismissable-mask="true">
       <div v-if="model['publish']" class="publish-settings-content">
         <div class="field">
-          <label>If multiple topics would receive data:</label>
-          <Dropdown v-model="model['publish'].matchingPolicy" :options="matchingPolicyOptions" option-label="label" option-value="value" class="w-full" />
+          <label for="matching-policy-input">If multiple topics would receive data:</label>
+          <Dropdown id="matching-policy-input" v-model="model['publish'].matchingPolicy" :options="matchingPolicyOptions" option-label="label" option-value="value" class="w-full" />
         </div>
         <div class="field">
-          <label>If no topics would receive data:</label>
-          <Dropdown v-model="model['publish'].defaultRule.defaultBehavior" :options="defaultBehaviorOptions" option-label="label" option-value="value" class="w-full" />
+          <label for="default-behavior-input">If no topics would receive data:</label>
+          <Dropdown id="default-behavior-input" v-model="model['publish'].defaultRule.defaultBehavior" :options="defaultBehaviorOptions" option-label="label" option-value="value" class="w-full" />
         </div>
         <div v-if="model['publish']?.defaultRule?.defaultBehavior === 'PUBLISH'" class="field">
-          <label>Default publish topic:</label>
-          <Dropdown v-model="model['publish'].defaultRule.topic" :options="allTopics" placeholder="Select a topic" class="w-full" editable />
+          <label for="default-topic-input">Default publish topic:</label>
+          <Dropdown id="default-topic-input" v-model="model['publish'].defaultRule.topic" :options="allTopics" placeholder="Select a topic" class="w-full" editable />
         </div>
       </div>
       <template #footer>

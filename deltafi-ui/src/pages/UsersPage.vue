@@ -50,7 +50,7 @@
               <Timestamp :timestamp="data[field]" format="YYYY-MM-DD HH:mm:ss" />
             </span>
             <span v-else-if="['name'].includes(field)">
-              <span class="cursor-pointer" @click="showUser(data)">{{ data.name }}</span>
+              <span role="button" tabindex="0" class="cursor-pointer" @click="showUser(data)" @keydown.enter="showUser(data)">{{ data.name }}</span>
             </span>
             <span v-else>{{ data[field] }}</span>
           </template>
@@ -64,16 +64,16 @@
       </DataTable>
     </Panel>
     <Dialog v-model:visible="userDialog" :style="{ width: '60vw' }" header="User Details" :modal="true" class="p-fluid users-page-dialog">
-      <Message v-if="errors.length" severity="error">
+      <Message v-if="errors.length" severity="error" role="alert" aria-live="assertive">
         <div v-for="error in errors" :key="error">
           {{ error }}
         </div>
       </Message>
       <div>
         <dl>
-          <dt>Name*</dt>
+          <dt><label for="name">Name<span class="required-indicator" aria-hidden="true">*</span></label></dt>
           <dd>
-            <InputText id="name" v-model="user.name" autofocus :class="{ 'p-invalid': submitted && !user.name }" autocomplete="off" placeholder="e.g. Jane Doe" :disabled="isReadOnly" />
+            <InputText id="name" v-model="user.name" autofocus :class="{ 'p-invalid': submitted && !user.name }" :aria-invalid="submitted && !user.name" aria-required="true" autocomplete="off" placeholder="e.g. Jane Doe" :disabled="isReadOnly" />
           </dd>
 
           <dt>Authentication</dt>
@@ -91,8 +91,8 @@
                         Authentication mode is currently set to <strong>{{ uiConfig.authMode }}</strong>. This must be set to <strong>basic</strong> before changes to this section will take effect.
                       </Message>
                       <div class="field mb-2">
-                        <label for="dn">Username*</label>
-                        <InputText id="username" v-model="user.username" autocomplete="off" placeholder="janedoe" :disabled="isReadOnly" />
+                        <label for="dn">Username<span class="required-indicator" aria-hidden="true">*</span></label>
+                        <InputText id="username" v-model="user.username" autocomplete="off" aria-required="true" placeholder="janedoe" :disabled="isReadOnly" />
                       </div>
                       <div v-if="!isReadOnly" class="field mb-2">
                         <label for="dn">Password</label>

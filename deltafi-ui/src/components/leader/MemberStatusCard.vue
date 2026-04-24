@@ -28,7 +28,7 @@
     </template>
     <template #icons>
       <div class="header-icons">
-        <i v-if="!member.isLeader" class="pi pi-external-link text-muted header-icon" @click="openSite" v-tooltip.top="'Visit ' + member.url" />
+        <i v-if="!member.isLeader" class="pi pi-external-link text-muted header-icon" role="button" tabindex="0" @click="openSite" @keydown.enter="openSite" v-tooltip.top="'Visit ' + member.url" />
         <i class="pi pi-tag text-muted" v-tooltip.top="member.tags.length > 0 ? 'Tags: ' + member.tags.join(', ') : 'No tags'" />
         <div class="member-status-badge">
           <!-- Connection state indicator -->

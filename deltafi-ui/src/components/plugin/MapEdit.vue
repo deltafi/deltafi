@@ -19,8 +19,8 @@
 <template>
   <div class="map-edit">
     <div v-for="(pair, i) in pairs" :key="i" class="map-row mb-2">
-      <InputText v-model="pair.key" class="mr-2" />
-      <InputText v-model="pair.value" class="mr-2" />
+      <InputText v-model="pair.key" class="mr-2" aria-label="Map key" />
+      <InputText v-model="pair.value" class="mr-2" aria-label="Map value" />
       <Button icon="pi pi-times" aria-label="Remove item" class="p-button-secondary p-button-outlined remove-button" @click="removeItem(i)" />
     </div>
     <Button icon="pi pi-plus" label="Add Item" class="p-button-secondary p-button-outlined" @click="addItem" />

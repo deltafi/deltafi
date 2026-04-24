@@ -21,8 +21,9 @@
 
 <template>
   <div class="metrics-controls">
-    <label class="mr-2">Metrics:</label>
+    <label for="metrics-interval" class="mr-2">Metrics:</label>
     <Select
+      id="metrics-interval"
       :model-value="modelValue"
       :options="intervalOptions"
       option-label="label"
