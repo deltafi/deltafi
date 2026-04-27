@@ -1,11 +1,11 @@
 # activemq-ingress
 
-DeltaFi ActiveMQ Ingress Bridge
+DeltaFi ActiveMQ Classic Ingress Bridge
 
 ## Description
 
-Provides a container which will connect to an ActiveMQ broker and subscribe to a JMS topic. When a message is received
-on the topic, the message content will be sent to DeltaFi to ingress on the configured REST data source.
+Provides a container which will connect to an ActiveMQ broker and subscribe to a JMS destination (topic or queue). When a message is received
+on the destination, the message content will be sent to DeltaFi to ingress on the configured REST data source.
 
 ## Set up listen on a topic
 
@@ -20,10 +20,11 @@ services:
       core-scheduler:
         condition: service_healthy
     environment:
-      JMS_BROKER_URL: tcp://artemis:61616
+      JMS_BROKER_URL: tcp://activemq:61616
       JMS_BROKER_USER: admin
-      JMS_BROKER_PASSWORD: admin123
-      JMS_LISTEN_TOPIC: passthrough-amq-topic
+      JMS_BROKER_PASSWORD: admin
+      LISTEN_DEST_NAME: passthrough-amq-topic
+      LISTEN_DEST_ISATOPIC: true
       JMS_REST_DATA_SOURCE: passthrough-rest-data-source
       JMS_MEDIA_TYPE: application/octet-stream
     env_file:
@@ -41,9 +42,9 @@ services:
     user: "${USER_ID}:${GROUP_ID}"
 ```
 
-## Set up listen on a second topic
+## Set up a second listener on a queue this time
 
-Edit `site/compose.yaml`, and add another service with a different name, container name, topic, and data source:
+Edit `site/compose.yaml`, and add another service with a different name, container name, destination, and data source. Do not include `LISTEN_DEST_ISATOPIC` in the environment section this time, which will default to "false" and use a queue instead of a pub-sub topic:
 
 ```
 services:
@@ -54,10 +55,10 @@ services:
       core-scheduler:
         condition: service_healthy
     environment:
-      JMS_BROKER_URL: tcp://artemis:61616
+      JMS_BROKER_URL: tcp://activemq:61616
       JMS_BROKER_USER: admin
-      JMS_BROKER_PASSWORD: admin123
-      JMS_LISTEN_TOPIC: smoke-amq-topic
+      JMS_BROKER_PASSWORD: admin
+      LISTEN_DEST_NAME: smoke-amq-queue
       JMS_REST_DATA_SOURCE: smoke-rest-data-source
       JMS_MEDIA_TYPE: application/octet-stream
     env_file:
@@ -77,26 +78,25 @@ services:
 
 ## Testing
 
-To start an ActiveMQ broker for testing, add the following to the services section of `site/compose.yaml`:
+To start an ActiveMQ Classic broker for testing, add the following to the services section of `site/compose.yaml`:
 
 ```
 services:
-  artemis:
-    image: apache/activemq-artemis:latest
+  activemq:
+    image: apache/activemq-classic:latest
     ports:
       - "61616:61616"
       - "8161:8161"
-    environment:
-      - ARTEMIS_USER=admin
-      - ARTEMIS_PASSWORD=admin123
     networks:
       - deltafi
-
 ```
+Default user and password are "admin" and "admin".
+
+Note: `activemq-ingress` is also compatible with apache/activemq-artemis.
 
 1. deltafi up
 2. Make sure the passthrough and smoke data sources are running.
-3. Navigate to `http://deltafi.localhost:8161/console/artemis` in a browser.
-4. Login with admin/admin123.
-5. Select the Queues tab.
-6. Use the Send Message option from the right-most column menu to send a test message to a queue.
+3. Navigate to `http://deltafi.localhost:8161/admin` in a browser.
+4. Login with admin/admin.
+5. Select the Topics tab.
+6. Use the 'Send To' option from the right-most column menu to send a test message to a topic.

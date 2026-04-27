@@ -35,4 +35,5 @@ include 'gradle-plugin'
 include 'tui'
 
 include 'activemq-ingress'
+include 'artemis-ingress'
 include 'nats-ingress'

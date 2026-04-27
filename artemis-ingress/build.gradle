@@ -1,0 +1,36 @@
+plugins {
+    id 'docker-java'
+    id 'org.springframework.boot' version "${springBootVersion}"
+    id 'io.spring.dependency-management' version "${springDependencyManagement}"
+}
+
+description = 'DeltaFi Artemis-ActiveMQ Ingress'
+
+dependencies {
+    implementation project(':deltafi-common')
+    implementation project(':deltafi-ingress')
+
+    implementation 'org.springframework.boot:spring-boot-starter-artemis'
+    implementation 'com.fasterxml.jackson.core:jackson-core'
+    implementation 'com.fasterxml.jackson.core:jackson-databind'
+    implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310'
+
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testImplementation 'org.apache.activemq:artemis-jms-server'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+springBoot {
+    buildInfo()
+}
+
+jar {
+    // do not create the -plain.jar
+    enabled = false
+}
+
+dockerPrepare {
+    from bootJar, 'probe.sh'
+}
+
+// Add a task to run trivy on the docker image

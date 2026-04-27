@@ -465,6 +465,8 @@ deltafi:
     workers: 8
   activemq_ingress:
     image: ${repo}/activemq-ingress:${tag}
+  artemis_ingress:
+    image: ${repo}/artemis-ingress:${tag}
   nats_ingress:
     image: ${repo}/nats-ingress:${tag}
   dirwatcher:
@@ -584,6 +586,7 @@ _write_startup_file() {
   _append_startup_from_values "DELTAFI_DIRWATCHER" ".deltafi.dirwatcher.image"
   _append_startup_from_values "DELTAFI_EGRESS_SINK" ".deltafi.egress_sink.image"
   _append_startup_from_values "DELTAFI_ACTIVEMQ_INGRESS" ".deltafi.activemq_ingress.image"
+  _append_startup_from_values "DELTAFI_ARTEMIS_INGRESS" ".deltafi.artemis_ingress.image"
   _append_startup_from_values "DELTAFI_NATS_INGRESS" ".deltafi.nats_ingress.image"
   _append_startup_from_values "DELTAFI_ANALYTICS" ".deltafi.analytics.image"
   _append_startup_from_values "DUCKDB_MEMORY_LIMIT" ".deltafi.analytics.duckdbMemoryLimit"

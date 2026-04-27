@@ -20,7 +20,8 @@ package org.deltafi.activemq.ingress.listener;
 import jakarta.jms.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.activemq.artemis.jms.client.ActiveMQQueue;
+import org.apache.activemq.command.ActiveMQQueue;
+import org.apache.activemq.command.ActiveMQTopic;
 import org.deltafi.common.uuid.UUIDGenerator;
 import org.deltafi.ingress.config.DeltaFiProperties;
 import org.deltafi.ingress.exception.IngressException;
@@ -29,7 +30,9 @@ import org.springframework.jms.annotation.JmsListener;
 import org.springframework.stereotype.Component;
 
 import java.nio.charset.StandardCharsets;
-import java.util.*;
+import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.Map;
 
 @Component
 @RequiredArgsConstructor
@@ -40,7 +43,7 @@ public class JmsIngressListener {
     private final DeltaFiProperties deltaFiProperties;
     private final UUIDGenerator uuidGenerator;
 
-    @JmsListener(destination = "${jms.queue.name}")
+    @JmsListener(destination = "${listener.destination.name}")
     public void receive(Message message) throws JMSException, IngressException {
         String msgId = message.getJMSMessageID() != null ?
                 message.getJMSMessageID() : uuidGenerator.generate().toString();
@@ -55,7 +58,7 @@ public class JmsIngressListener {
                 .bytes(extractMessageBytes(message))
                 .addMetadata(deltaFiProperties.getMetadata())
                 .addMetadata(propertiesToMetadata(message))
-                .addMetadata("jms.queue.name", getDestination(message))
+                .addMetadata("receivedOnDestination", getDestination(message))
                 .execute();
     }
 
@@ -63,6 +66,8 @@ public class JmsIngressListener {
         Destination destination = message.getJMSDestination();
         if (destination instanceof ActiveMQQueue queue) {
             return queue.getQueueName();
+        } else if (destination instanceof ActiveMQTopic topic) {
+            return topic.getTopicName();
         }
         return destination.toString();
     }

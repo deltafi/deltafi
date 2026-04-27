@@ -986,6 +986,7 @@ func (o *ComposeOrchestrator) startupEnvironment() error {
 		"DELTAFI_CORE":                         o.getValue(values, "deltafi.core.image"),
 		"DELTAFI_CORE_ACTIONS":                 o.getValue(values, "deltafi.core_actions.image"),
 		"DELTAFI_ACTIVEMQ_INGRESS":             o.getValue(values, "deltafi.activemq_ingress.image"),
+		"DELTAFI_ARTEMIS_INGRESS":              o.getValue(values, "deltafi.artemis_ingress.image"),
 		"DELTAFI_NATS_INGRESS":                 o.getValue(values, "deltafi.nats_ingress.image"),
 		"DELTAFI_DIRWATCHER":                   o.getValue(values, "deltafi.dirwatcher.image"),
 		"DELTAFI_EGRESS_SINK":                  o.getValue(values, "deltafi.egress_sink.image"),

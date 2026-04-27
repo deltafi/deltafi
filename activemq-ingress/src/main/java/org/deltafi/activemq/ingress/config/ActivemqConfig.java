@@ -19,6 +19,7 @@ package org.deltafi.activemq.ingress.config;
 
 import jakarta.jms.ConnectionFactory;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.boot.autoconfigure.jms.DefaultJmsListenerContainerFactoryConfigurer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.jms.config.DefaultJmsListenerContainerFactory;
@@ -27,10 +28,12 @@ import org.springframework.jms.config.DefaultJmsListenerContainerFactory;
 @Slf4j
 public class ActivemqConfig {
     @Bean
-    public DefaultJmsListenerContainerFactory jmsListenerContainerFactory(ConnectionFactory connectionFactory) {
+    public DefaultJmsListenerContainerFactory jmsListenerContainerFactory(
+            ConnectionFactory cf,
+            DefaultJmsListenerContainerFactoryConfigurer configurer) {
         DefaultJmsListenerContainerFactory factory = new DefaultJmsListenerContainerFactory();
-        factory.setConnectionFactory(connectionFactory);
-        factory.setErrorHandler(throwable -> log.error("ActiveMQ exception: {}", throwable.getMessage(), throwable));
+        configurer.configure(factory, cf);   // honors spring.jms.pub-sub-domain
+        factory.setErrorHandler(t -> log.error("ActiveMQ exception: {}", t.getMessage(), t));
         return factory;
     }
 }

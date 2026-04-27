@@ -1,0 +1,13 @@
+.artemisingress:
+  variables:
+    PROJECT_NAME: artemis-ingress
+
+"🐳 Publish artemis-ingress (GitLab)":
+  extends:
+    - .artemisingress
+    - .docker
+
+"🐳 Publish artemis-ingress (docker.io)":
+  extends:
+    - .artemisingress
+    - .docker-multiarch

@@ -46,6 +46,8 @@ deltafi:
     workers: 8
   activemq_ingress:
     image: {{.Repo}}/activemq-ingress:{{.Tag}}
+  artemis_ingress:
+    image: {{.Repo}}/artemis-ingress:{{.Tag}}
   nats_ingress:
     image: {{.Repo}}/nats-ingress:{{.Tag}}
   dirwatcher:

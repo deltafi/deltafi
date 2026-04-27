@@ -2,12 +2,16 @@ deltafi:
   base-core-url: ${CORE_URL:http://deltafi-core:8080}
   data-source: ${JMS_REST_DATA_SOURCE:smoke-rest-data-source}
   media-type: ${JMS_MEDIA_TYPE:application/octet-stream}
+
 spring:
-  artemis:
+  activemq:
     mode: native
     broker-url: ${JMS_BROKER_URL:tcp://localhost:61616}
     user: ${JMS_BROKER_USER:user}
     password: ${JMS_BROKER_PASSWORD:pass}
-jms:
-  queue:
-    name: ${JMS_LISTEN_TOPIC:deltafi-ingress-topic}
+  jms:
+    pub-sub-domain:  ${LISTEN_DEST_ISATOPIC:false}
+
+listener:
+  destination:
+    name: ${LISTEN_DEST_NAME:deltafi-ingress-topic}

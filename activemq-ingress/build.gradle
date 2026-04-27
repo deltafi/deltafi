@@ -4,13 +4,13 @@ plugins {
     id 'io.spring.dependency-management' version "${springDependencyManagement}"
 }
 
-description = 'DeltaFi ActiveMQ Ingress'
+description = 'DeltaFi ActiveMQ Classic Ingress'
 
 dependencies {
     implementation project(':deltafi-common')
     implementation project(':deltafi-ingress')
 
-    implementation 'org.springframework.boot:spring-boot-starter-artemis'
+    implementation 'org.springframework.boot:spring-boot-starter-activemq'
     implementation 'com.fasterxml.jackson.core:jackson-core'
     implementation 'com.fasterxml.jackson.core:jackson-databind'
     implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310'
