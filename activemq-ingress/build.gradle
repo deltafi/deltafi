@@ -16,7 +16,7 @@ dependencies {
     implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310'
 
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
-    testImplementation 'org.apache.activemq:artemis-jms-server'
+    testImplementation 'org.apache.activemq:activemq-broker'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
 

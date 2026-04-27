@@ -37,7 +37,9 @@ import java.util.Map;
 import static org.junit.jupiter.api.Assertions.*;
 
 @SpringBootTest(properties = {
-        "spring.artemis.mode=embedded",
+        "spring.activemq.broker-url=vm://localhost?broker.persistent=false",
+        "spring.activemq.in-memory=true",
+        "spring.activemq.packages.trust-all=true",
         "spring.jms.cache.enabled=false",
         "deltafi.media-type=" + MediaType.APPLICATION_JSON,
         "deltafi.data-source=smoke-rest-data-source",
@@ -63,7 +65,6 @@ class ActivemqIngressApplicationTests {
 
     @Autowired
     JmsTemplate jmsTemplate;
-
     @Autowired
     DeltaFiIngressService deltaFiIngressService;
 
@@ -71,7 +72,7 @@ class ActivemqIngressApplicationTests {
     void setUp() {
         Mockito.clearInvocations(deltaFiIngressService);
     }
-/*
+
     @Test
     @SuppressWarnings("unchecked")
     void receivesMessage() throws IngressException {
@@ -91,7 +92,6 @@ class ActivemqIngressApplicationTests {
                 ((IngressRequest.ByValue) ingressRequestCaptor.getValue()).mediaType());
         assertEquals("smoke-rest-data-source", ingressRequestCaptor.getValue().dataSource());
         Map<String, String> combined = new HashMap<>(TEST_METADATA);
-        combined.put("JMSXDeliveryCount", "1");
         combined.put("X-Correlation-ID", "abc");
         combined.put("property_1", "c");
         combined.put("property_2", "123");
@@ -119,7 +119,6 @@ class ActivemqIngressApplicationTests {
                 ((IngressRequest.ByValue) ingressRequestCaptor.getValue()).mediaType());
         assertEquals("smoke-rest-data-source", ingressRequestCaptor.getValue().dataSource());
         Map<String, String> combined = new HashMap<>(TEST_METADATA);
-        combined.put("JMSXDeliveryCount", "1");
         combined.put("X-Correlation-ID", "abc");
         combined.put("ContentType", MediaType.APPLICATION_XML);
         combined.put("property_1", "c");
@@ -128,5 +127,4 @@ class ActivemqIngressApplicationTests {
         assertEquals(combined, ingressRequestCaptor.getValue().metadata());
     }
 
- */
 }
