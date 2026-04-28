@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "deltafi": {
+      "type": "stdio",
+      "command": "deltafi",
+      "args": ["mcp"]
+    }
+  }
+}

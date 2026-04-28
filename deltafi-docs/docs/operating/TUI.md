@@ -70,6 +70,7 @@ Switch modes with `deltafi config --wizard` (interactive) or by passing the appr
 - **Real-time Monitoring**: Live system status, metrics, and health monitoring
 - **Plugin Ecosystem Support**: Full plugin lifecycle management from installation to development
 - **Multi-environment Support**: Works with Compose, Kubernetes, and KinD deployments
+- **AI Integration**: Built-in [MCP server](/operating/mcp-server) for AI assistant integration (Claude, ChatGPT, Cursor, etc.)
 
 ## Table of Contents
 - [Installation](#installation)
@@ -2277,6 +2278,20 @@ DeltaFi documentation browser.
 ```bash
 deltafi docs
 ```
+
+#### `mcp`
+Start the MCP (Model Context Protocol) server for AI assistant integration. See the [MCP Server documentation](/operating/mcp-server) for detailed usage.
+
+```bash
+# Start with all tools
+deltafi mcp
+
+# Start with specific tool groups
+deltafi mcp --tags debug,flows
+```
+
+**Flags:**
+- `--tags`: Tool tags to enable (debug, operations, flows, ingest, plugins, admin, metrics, generate, all). Default: all
 
 ## Common Flags
 

@@ -390,4 +390,74 @@ mutation DeleteTimedDataSource($name: String!) {
 # Delete an on-error data source flow
 mutation DeleteOnErrorDataSource($name: String!) {
   removeOnErrorDataSourcePlan(name: $name)
-} 
+}
+
+# Validate a REST data source flow
+query ValidateRestDataSource($name: String!) {
+  validateRestDataSource(name: $name) {
+    name
+    type
+    description
+    maxErrors
+    flowStatus {
+      state
+      valid
+      testMode
+      errors {
+        configName
+        errorType
+        message
+      }
+    }
+    topic
+  }
+}
+
+# Validate a timed data source flow
+query ValidateTimedDataSource($name: String!) {
+  validateTimedDataSource(name: $name) {
+    name
+    type
+    description
+    maxErrors
+    flowStatus {
+      state
+      valid
+      testMode
+      errors {
+        configName
+        errorType
+        message
+      }
+    }
+    topic
+    cronSchedule
+    timedIngressAction {
+      name
+      type
+      parameters
+    }
+  }
+}
+
+# Validate an on-error data source flow
+query ValidateOnErrorDataSource($name: String!) {
+  validateOnErrorDataSource(name: $name) {
+    name
+    type
+    description
+    maxErrors
+    flowStatus {
+      state
+      valid
+      testMode
+      errors {
+        configName
+        errorType
+        message
+      }
+    }
+    topic
+    errorMessageRegex
+  }
+}

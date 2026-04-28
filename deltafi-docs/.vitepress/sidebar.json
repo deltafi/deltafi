@@ -63,6 +63,7 @@
     "items": [
       { "text": "Ingress", "link": "/operating/ingress" },
       { "text": "TUI (Text User Interface)", "link": "/operating/TUI" },
+      { "text": "MCP Server (AI Integration)", "link": "/operating/mcp-server" },
       { "text": "GUI", "link": "/operating/GUI" },
       { "text": "Site Configuration", "link": "/operating/site-configuration" },
       { "text": "Configuration", "link": "/operating/configuration" },
