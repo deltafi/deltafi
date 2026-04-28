@@ -481,6 +481,7 @@ type Query {
 
   errorMetadataUnion(dids: [UUID!]!) : [PerActionUniqueKeyValues!]! @deprecated(reason: "Use deltaFile query for single DeltaFile metadata")
   sourceMetadataUnion(dids: [UUID!]!) : [UniqueKeyValues!]! @deprecated(reason: "Use deltaFile query for single DeltaFile metadata")
+  replaySourceMetadata(did: UUID!): [KeyValue!]!
 
   actionDescriptors: [ActionDescriptor!]!
   exportConfigAsYaml: String!

@@ -1955,6 +1955,18 @@ public class DeltaFilesService {
         return new ArrayList<>(keyValues.values());
     }
 
+    public List<KeyValue> replaySourceMetadata(UUID did) {
+        DeltaFile deltaFile = deltaFileRepo.findById(did).orElse(null);
+        if (deltaFile == null || deltaFile.getJoinId() != null || deltaFile.firstFlow() == null) {
+            return List.of();
+        }
+
+        return deltaFile.firstFlow().getMetadata().entrySet().stream()
+                .sorted(Map.Entry.comparingByKey())
+                .map(entry -> new KeyValue(entry.getKey(), entry.getValue()))
+                .toList();
+    }
+
     private void advanceAndSave(List<StateMachineInput> inputs, boolean insertAndForget) {
         if (inputs.isEmpty()) {
             return;

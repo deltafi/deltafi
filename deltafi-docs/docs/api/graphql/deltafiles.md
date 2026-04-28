@@ -187,6 +187,33 @@ query {
 
 **Permission:** `DeltaFileMetadataView`
 
+### replaySourceMetadata
+
+Get the metadata preview that replay will use for a single non-joined DeltaFile. Returns an empty list for joined DeltaFiles — replay of a joined child re-runs the join action against each parent's data, so there is no single "source" view to preview.
+
+```graphql
+query {
+  replaySourceMetadata(did: "550e8400-e29b-41d4-a716-446655440000") {
+    key
+    value
+  }
+}
+```
+
+**Permission:** `DeltaFileMetadataView`
+
+### Replay Semantics
+
+Replay creates a new child DeltaFile. The existing DeltaFile is not modified except that its `replayed` timestamp and `replayDid` are set.
+
+- Regular DeltaFiles replay from the beginning using the accumulated metadata of the first flow.
+- Child DeltaFiles created by split or by an earlier replay also replay from the beginning of their own first flow, using that flow's accumulated metadata.
+- Joined child DeltaFiles re-run the join action against each parent's data; the original parent DeltaFiles are not re-ingested.
+
+For joined replay, the `replaceSourceMetadata` and `removeSourceMetadata` arguments on the `replay` mutation are broadcast to every parent's contribution before the join action runs: an added or replaced key overrides that key in every parent's metadata, and a removed key is stripped from every parent's metadata.
+
+The `replaySourceMetadata` query is meaningful only for non-joined DeltaFiles. It returns an empty list for joined DeltaFiles, since there is no single source-metadata view to preview — each parent contributes its own.
+
 ### Error and Filter Summaries
 
 Aggregate error or filter counts by flow or by message.
@@ -310,6 +337,13 @@ mutation {
 ```
 
 **Permission:** `DeltaFileReplay`
+
+#### Replay Notes
+
+- Replay always creates a new child DeltaFile.
+- Each DeltaFile can only be replayed once. After a replay succeeds, the original DeltaFile is no longer replayable and any later replay must target the replay child.
+- `removeSourceMetadata` and `replaceSourceMetadata` are applied to the replay source metadata before the new child is queued.
+- Replay of a joined child reruns the join path. It does not restart from the original parent ingresses.
 
 ### Acknowledge
 

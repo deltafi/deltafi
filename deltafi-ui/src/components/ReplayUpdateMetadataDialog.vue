@@ -23,6 +23,9 @@
       <Message v-if="isBatchMode && modifiedMetadata.length === 0" severity="info" :closable="false">
         No metadata preview available for batch operations. Enter key/value pairs below to add or override metadata.
       </Message>
+      <Message v-else-if="isJoinedReplay" severity="info" :closable="false" class="mb-3">
+        This DeltaFile was created by joining multiple parents. Replay will re-run the join action against each parent's data. Any metadata you add below will override that key in every parent's contribution before the join runs.
+      </Message>
       <Message v-else-if="!isBatchMode && modifiedMetadata.length === 0" severity="info" :closable="false"> No metadata to display </Message>
       <div v-for="field in modifiedMetadata" :key="field" class="row p-fluid mb-4">
         <div class="col-5">
@@ -76,11 +79,12 @@ const props = defineProps({
   },
 });
 
-const { getDeltaFile, data: deltaFileData } = useDeltaFiles();
+const { getDeltaFile, getReplaySourceMetadata, data: deltaFileData } = useDeltaFiles();
 
 const modifiedMetadata = ref([]);
 const removedMetadata = ref([]);
 const metadataDialogVisible = ref(false);
+const isJoinedReplay = ref(false);
 
 const isBatchMode = computed(() => props.did.length !== 1);
 
@@ -96,24 +100,21 @@ const getAllMeta = async () => {
     return [];
   }
 
-  // Single DeltaFile mode - fetch it and extract source metadata from flow 0
   const did = props.did[0];
-  await getDeltaFile(did);
-
-  if (deltaFileData && deltaFileData.flows && deltaFileData.flows.length > 0) {
-    // Flow 0 is the source flow - get its accumulated metadata
-    const sourceFlow = deltaFileData.flows[0];
-    const sourceMetadata = sourceFlow.input?.metadata || {};
-
-    displayFetchingMetadataDialog.value = false;
-    return Object.entries(sourceMetadata).map(([key, value]) => ({
+  try {
+    await getDeltaFile(did);
+    isJoinedReplay.value = (deltaFileData.parentDids?.length ?? 0) > 1;
+    if (isJoinedReplay.value) {
+      return [];
+    }
+    const replaySourceMetadata = await getReplaySourceMetadata(did);
+    return (replaySourceMetadata || []).map(({ key, value }) => ({
       key,
       values: value,
     }));
+  } finally {
+    displayFetchingMetadataDialog.value = false;
   }
-
-  displayFetchingMetadataDialog.value = false;
-  return [];
 };
 
 const closeMetadataDialog = () => {

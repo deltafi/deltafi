@@ -445,6 +445,41 @@ class DeltaFilesServiceTest {
     }
 
     @Test
+    void replaySourceMetadata_usesAccumulatedFirstFlowMetadataForNonJoinedDeltaFile() {
+        UUID did = UUID.randomUUID();
+        DeltaFile deltaFile = utilService.buildDeltaFile(did, List.of(), Map.of("keep", "original", "remove", "soon"));
+        Action metadataUpdate = deltaFile.firstFlow().addAction("UpdateMetadata", null, ActionType.TRANSFORM, ActionState.COMPLETE, OffsetDateTime.now(testClock));
+        metadataUpdate.setMetadata(Map.of("keep", "updated", "added", "value"));
+        metadataUpdate.setDeleteMetadataKeys(List.of("remove"));
+        deltaFile.wireBackPointers();
+
+        when(deltaFileRepo.findById(did)).thenReturn(Optional.of(deltaFile));
+
+        List<KeyValue> metadata = deltaFilesService.replaySourceMetadata(did);
+
+        assertThat(metadata).containsExactly(
+                new KeyValue("added", "value"),
+                new KeyValue("keep", "updated"));
+    }
+
+    @Test
+    void replaySourceMetadata_returnsEmptyListForJoinedDeltaFile() {
+        DeltaFile joined = utilService.emptyDeltaFile(UUID.randomUUID(), "joined");
+        joined.setJoinId(UUID.randomUUID());
+        when(deltaFileRepo.findById(joined.getDid())).thenReturn(Optional.of(joined));
+
+        assertThat(deltaFilesService.replaySourceMetadata(joined.getDid())).isEmpty();
+    }
+
+    @Test
+    void replaySourceMetadata_returnsEmptyListForMissingDeltaFile() {
+        UUID did = UUID.randomUUID();
+        when(deltaFileRepo.findById(did)).thenReturn(Optional.empty());
+
+        assertThat(deltaFilesService.replaySourceMetadata(did)).isEmpty();
+    }
+
+    @Test
     void testDelete() {
         UUID did1 = UUID.randomUUID();
         Content content1 = new Content("name", "mediaType", new Segment(UUID.randomUUID(), did1));

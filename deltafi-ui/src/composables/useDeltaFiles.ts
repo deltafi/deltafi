@@ -142,6 +142,20 @@ export default function useDeltaFiles() {
     loaded.value = true;
   };
 
+  const getReplaySourceMetadata = async (did: string) => {
+    const query = {
+      replaySourceMetadata: {
+        __args: {
+          did: did,
+        },
+        key: true,
+        value: true,
+      },
+    };
+    await queryGraphQL(query, "getReplaySourceMetadata");
+    return response.value.data.replaySourceMetadata;
+  };
+
   const getRawDeltaFile = async (did: string) => {
     let fields;
     try {
@@ -222,5 +236,5 @@ export default function useDeltaFiles() {
         return buildURL("deltafile/export/" + did);
   }
 
-  return { data, loading, loaded, getDeltaFile, getRawDeltaFile, cancelDeltaFile, pin, unpin, exportDeltaFileUrl, errors };
+  return { data, loading, loaded, getDeltaFile, getReplaySourceMetadata, getRawDeltaFile, cancelDeltaFile, pin, unpin, exportDeltaFileUrl, errors };
 }

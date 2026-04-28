@@ -99,6 +99,7 @@ class DeltaFilesDatafetcherSecurityTest {
         callables.add(() -> deltaFilesDatafetcher.annotationKeys());
         callables.add(() -> deltaFilesDatafetcher.stressTest(null, null, null, null, null));
         callables.add(() -> deltaFilesDatafetcher.sourceMetadataUnion(null));
+        callables.add(() -> deltaFilesDatafetcher.replaySourceMetadata(DID));
         return callables;
     }
 }

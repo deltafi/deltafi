@@ -483,6 +483,12 @@ public class DeltaFilesDatafetcher {
     return deltaFilesService.sourceMetadataUnion(dids);
   }
 
+  @DgsQuery
+  @NeedsPermission.DeltaFileMetadataView
+  public List<KeyValue> replaySourceMetadata(@InputArgument UUID did) {
+    return deltaFilesService.replaySourceMetadata(did);
+  }
+
   @DgsMutation
   @NeedsPermission.StressTest
   public int stressTest(@InputArgument String flow, @InputArgument Integer contentSize, @InputArgument Integer numFiles, @InputArgument Map<String, String> metadata, @InputArgument Integer batchSize) throws ObjectStorageException, IngressException {

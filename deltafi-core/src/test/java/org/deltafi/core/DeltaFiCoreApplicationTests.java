@@ -1634,6 +1634,27 @@ class DeltaFiCoreApplicationTests {
 	}
 
 	@Test
+	void testReplaySourceMetadata() throws IOException {
+		UUID did = UUID.randomUUID();
+		DeltaFile deltaFile = utilService.buildDeltaFile(did, List.of(), Map.of("keep", "original", "remove", "soon"));
+		Action metadataUpdate = deltaFile.firstFlow().addAction("UpdateMetadata", null, ActionType.TRANSFORM, ActionState.COMPLETE, OffsetDateTime.now(clock));
+		metadataUpdate.setMetadata(Map.of("keep", "updated", "added", "value"));
+		metadataUpdate.setDeleteMetadataKeys(List.of("remove"));
+		deltaFile.wireBackPointers();
+		deltaFileRepo.save(deltaFile);
+
+		List<KeyValue> replayMetadata = dgsQueryExecutor.executeAndExtractJsonPathAsObject(
+				String.format(graphQL("replaySourceMetadata"), did),
+				"data." + DgsConstants.QUERY.ReplaySourceMetadata,
+				new TypeRef<>() {
+				});
+
+		assertEquals(List.of(
+				new KeyValue("added", "value"),
+				new KeyValue("keep", "updated")), replayMetadata);
+	}
+
+	@Test
 	void testFilterTransform() throws IOException {
 		UUID did = UUID.randomUUID();
 		verifyFiltered(fullFlowExemplarService.postIngressDeltaFile(did), TRANSFORM_FLOW_NAME, UUID_1, "Utf8TransformAction");

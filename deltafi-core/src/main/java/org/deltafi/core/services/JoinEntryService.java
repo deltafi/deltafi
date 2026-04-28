@@ -107,7 +107,7 @@ public class JoinEntryService {
     }
 
     public List<UUID> findJoinedDids(UUID joinEntryId) {
-        return joinEntryDidRepo.findByJoinEntryId(joinEntryId).stream().map(JoinEntryDid::getDid).toList();
+        return joinEntryDidRepo.findByJoinEntryIdOrderById(joinEntryId).stream().map(JoinEntryDid::getDid).toList();
     }
 
     public List<UUID> findJoinedDidsExcludingPaused(UUID joinEntryId) {
