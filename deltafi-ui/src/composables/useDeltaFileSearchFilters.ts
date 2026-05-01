@@ -255,7 +255,7 @@ export default function useDeltaFileSearchFilters(options: UseDeltaFileSearchFil
         r[k] = isoStringToDate(v as string);
       } else if (["egressed", "filtered", "testMode", "replayable", "terminalStage", "pendingAnnotations", "paused", "warnings", "pinned"].includes(k)) {
         r[k] = JSON.parse(v as string);
-      } else if (["requeueMin", "sizeMin", "sizeMax", "perPage", "page"].includes(k)) {
+      } else if (["requeueMin", "sizeMin", "sizeMax", "perPage", "page", "offset"].includes(k)) {
         r[k] = Number(v);
       } else if (["dataSources", "dataSinks", "transforms", "topics"].includes(k)) {
         r[k] = (v as string).split(",");
@@ -273,7 +273,7 @@ export default function useDeltaFileSearchFilters(options: UseDeltaFileSearchFil
         r[k] = dateToISOString(v as Date);
       } else if (["egressed", "filtered", "testMode", "replayable", "terminalStage", "pendingAnnotations", "paused", "warnings", "pinned"].includes(k)) {
         r[k] = Boolean(v);
-      } else if (["requeueMin", "sizeMin", "sizeMax", "perPage", "page"].includes(k)) {
+      } else if (["requeueMin", "sizeMin", "sizeMax", "perPage", "page", "offset"].includes(k)) {
         r[k] = Number(v);
       } else if (["dataSources", "dataSinks", "transforms", "topics"].includes(k)) {
         r[k] = String(v);
