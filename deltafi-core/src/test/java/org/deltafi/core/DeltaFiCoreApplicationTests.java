@@ -4316,6 +4316,39 @@ class DeltaFiCoreApplicationTests {
 	static final PluginCoordinates NEW_VERSION = PluginCoordinates.builder().groupId("org").artifactId("deltafi").version("2").build();
 
 	@Test
+	@Transactional
+	void saveVariables_returnsAllNamesInSameTransactionAfterPartialStash() {
+		// Reproduces the snapshot-restore-then-register sequence inside a single transaction
+		// (the registration txn that calls saveVariables and then upgradeFlows -> getVariablesByPlugin).
+		// A partial stash row pre-exists for the plugin; saveVariables must merge in the full list
+		// and the subsequent read in the same transaction must see every variable name. Without a
+		// JPA-managed update on the loaded entity (or persistence-context clearing on the native
+		// upsert), the cached pre-update entity wins on the read and the flow build sees only the
+		// stash's names.
+		PluginCoordinates coords = PluginCoordinates.builder().groupId("org.deltafi.test").artifactId("partial-stash").version("1").build();
+		pluginVariableRepo.findIgnoringVersion(coords.getGroupId(), coords.getArtifactId())
+				.forEach(existing -> pluginVariableRepo.deleteBySourcePlugin(existing.getGroupId(), existing.getArtifactId(), existing.getVersion()));
+
+		PluginVariables stashRow = new PluginVariables();
+		stashRow.setSourcePlugin(coords);
+		stashRow.setVariables(List.of(UtilService.buildVariable("setVar", "user-set-value", "default")));
+		pluginVariableRepo.save(stashRow);
+
+		Variable setVar = UtilService.buildVariable("setVar", null, "default");
+		Variable defaultedVar = UtilService.buildVariable("defaultedVar", null, "another-default");
+		pluginVariableService.saveVariables(coords, List.of(setVar, defaultedVar));
+
+		List<Variable> readBack = pluginVariableService.getVariablesByPlugin(coords, false);
+		assertThat(readBack).extracting(Variable::getName).containsExactlyInAnyOrder("setVar", "defaultedVar");
+
+		Variable readSet = readBack.stream().filter(v -> "setVar".equals(v.getName())).findFirst().orElseThrow();
+		assertThat(readSet.getValue()).isEqualTo("user-set-value");
+		Variable readDefaulted = readBack.stream().filter(v -> "defaultedVar".equals(v.getName())).findFirst().orElseThrow();
+		assertThat(readDefaulted.getValue()).isNull();
+		assertThat(readDefaulted.getDefaultValue()).isEqualTo("another-default");
+	}
+
+	@Test
 	void testConcurrentPluginVariableRegistration() {
 		IntStream.range(0, 10).forEach(ignore -> {
 			PluginVariables pluginVariables = new PluginVariables();

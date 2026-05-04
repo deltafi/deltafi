@@ -17,6 +17,9 @@
  */
 package org.deltafi.core.services;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.uuid.Generators;
 import lombok.AllArgsConstructor;
 import org.deltafi.common.types.KeyValue;
 import org.deltafi.common.types.PluginCoordinates;
@@ -37,6 +40,7 @@ import static org.deltafi.core.services.PluginService.*;
 @Service
 @AllArgsConstructor
 public class PluginVariableService implements PluginCleaner, Snapshotter {
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
     private final PluginVariableRepo pluginVariableRepo;
     private final BuildProperties buildProperties;
 
@@ -165,7 +169,7 @@ public class PluginVariableService implements PluginCleaner, Snapshotter {
 
         // remove the old variables if they weren't replaced by the save above
         if (!existing.getSourcePlugin().equals(pluginCoordinates)) {
-            pluginVariableRepo.deleteBySourcePlugin(existing.getSourcePlugin());
+            deleteBySourcePlugin(existing.getSourcePlugin());
         }
     }
 
@@ -221,8 +225,18 @@ public class PluginVariableService implements PluginCleaner, Snapshotter {
     }
 
     private void insertVariables(PluginCoordinates pluginCoordinates, List<Variable> variables) {
-        pluginVariableRepo.upsertVariables(pluginCoordinates, variables.stream()
-                .sorted(Comparator.comparing(Variable::getName)).toList());
+        pluginVariableRepo.upsertVariables(Generators.timeBasedEpochGenerator().generate(), pluginCoordinates.getGroupId(),
+                pluginCoordinates.getArtifactId(), pluginCoordinates.getVersion(), toJsonString(variables));
+    }
+
+    static String toJsonString(List<Variable> variables) {
+        try {
+            List<Variable> sortedVariables = variables.stream()
+                    .sorted(Comparator.comparing(Variable::getName)).toList();
+            return OBJECT_MAPPER.writeValueAsString(sortedVariables);
+        } catch (JsonProcessingException e) {
+            throw new IllegalArgumentException("Error converting variables to JSON", e);
+        }
     }
 
     /**
@@ -230,7 +244,7 @@ public class PluginVariableService implements PluginCleaner, Snapshotter {
      * @param pluginCoordinates plugin coordinates of the plugin whose variables should be removed
      */
     public void removeAllVariables(PluginCoordinates pluginCoordinates) {
-        pluginVariableRepo.deleteBySourcePlugin(pluginCoordinates);
+        deleteBySourcePlugin(pluginCoordinates);
     }
 
     /**
@@ -329,15 +343,35 @@ public class PluginVariableService implements PluginCleaner, Snapshotter {
             pluginVariableRepo.resetAllUnmaskedVariableValues();
         }
 
-        List<PluginVariables> storedPluginVariables = pluginVariableRepo.findAll();
-        Map<PluginCoordinates, PluginVariables> snapshotVariables = snapshot.getPluginVariables().stream()
-                .collect(Collectors.toMap(PluginVariables::getSourcePlugin, Function.identity()));
-
-        storedPluginVariables.forEach(targetVariables -> rollbackValues(targetVariables, snapshotVariables.get(targetVariables.getSourcePlugin())));
-        
-        pluginVariableRepo.saveAll(storedPluginVariables);
+        if (snapshot.getPluginVariables() != null) {
+            snapshot.getPluginVariables().forEach(this::applySnapshotVariables);
+        }
 
         return new Result();
+    }
+
+    private void applySnapshotVariables(PluginVariables snapshotVars) {
+        findExisting(snapshotVars.getSourcePlugin()).ifPresentOrElse(
+                existing -> mergeSnapshotVariables(existing, snapshotVars),
+                () -> saveSnapshotVariables(snapshotVars));
+    }
+
+    // A row exists for this plugin (at any version). Merge the snapshot's values into the existing plugin variables
+    private void mergeSnapshotVariables(PluginVariables existing, PluginVariables snapshotVars) {
+        rollbackValues(existing, snapshotVars);
+        pluginVariableRepo.save(existing);
+    }
+
+    // No row at all, the plugin has not registered yet, put the variables in place so are used
+    // after the snapshot installs the plugin
+    private void saveSnapshotVariables(PluginVariables snapshotVars) {
+        List<Variable> filtered = snapshotVars.getVariables().stream()
+                .filter(v -> !(v.isMasked() && Variable.MASK_STRING.equals(v.getValue())))
+                .toList();
+
+        if (!filtered.isEmpty()) {
+            insertVariables(snapshotVars.getSourcePlugin(), filtered);
+        }
     }
 
     void rollbackValues(PluginVariables targetVariables, PluginVariables sourceVariables) {
@@ -361,6 +395,10 @@ public class PluginVariableService implements PluginCleaner, Snapshotter {
         }
 
         target.setValue(source.getValue());
+    }
+
+    private void deleteBySourcePlugin(PluginCoordinates sourcePlugin) {
+        pluginVariableRepo.deleteBySourcePlugin(sourcePlugin.getGroupId(), sourcePlugin.getArtifactId(), sourcePlugin.getVersion());
     }
 
     @Override

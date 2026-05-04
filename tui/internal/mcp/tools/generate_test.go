@@ -201,4 +201,3 @@ func TestDetectPluginLanguage_MixedMarkersListed(t *testing.T) {
 		}
 	}
 }
-

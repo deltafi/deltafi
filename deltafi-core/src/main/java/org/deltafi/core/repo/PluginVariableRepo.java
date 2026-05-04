@@ -17,17 +17,17 @@
  */
 package org.deltafi.core.repo;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.uuid.Generators;
 import org.deltafi.common.types.PluginCoordinates;
-import org.deltafi.common.types.Variable;
 import org.deltafi.core.types.PluginVariables;
-import org.springframework.data.jpa.repository.*;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.*;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
 
 @Repository
 public interface PluginVariableRepo extends JpaRepository<PluginVariables, UUID> {
@@ -42,7 +42,7 @@ public interface PluginVariableRepo extends JpaRepository<PluginVariables, UUID>
     @Query("SELECT pv FROM PluginVariables pv WHERE pv.groupId = :groupId AND pv.artifactId = :artifactId")
     List<PluginVariables> findIgnoringVersion(String groupId, String artifactId);
 
-    @Modifying
+    @Modifying(clearAutomatically = true)
     @Transactional
     @Query(value = "INSERT INTO plugin_variables (id, group_id, artifact_id, version, variables) " +
             "VALUES (:id, :groupId, :artifactId, :version, CAST(:variables AS jsonb)) " +
@@ -54,17 +54,6 @@ public interface PluginVariableRepo extends JpaRepository<PluginVariables, UUID>
                          String artifactId,
                          String version,
                          String variables);
-
-    @Transactional
-    default void upsertVariables(PluginCoordinates sourcePlugin, List<Variable> variables) {
-        ObjectMapper objectMapper = new ObjectMapper();
-        try {
-            String jsonVariables = objectMapper.writeValueAsString(variables);
-            upsertVariables(Generators.timeBasedEpochGenerator().generate(), sourcePlugin.getGroupId(), sourcePlugin.getArtifactId(), sourcePlugin.getVersion(), jsonVariables);
-        } catch (JsonProcessingException e) {
-            throw new RuntimeException("Error converting variables to JSON", e);
-        }
-    }
 
     @Modifying
     @Transactional
@@ -88,11 +77,6 @@ public interface PluginVariableRepo extends JpaRepository<PluginVariables, UUID>
     @Transactional
     @Query("DELETE FROM PluginVariables pv WHERE pv.groupId = :groupId AND pv.artifactId = :artifactId AND pv.version = :version")
     void deleteBySourcePlugin(String groupId, String artifactId, String version);
-
-    @Transactional
-    default void deleteBySourcePlugin(PluginCoordinates sourcePlugin) {
-        deleteBySourcePlugin(sourcePlugin.getGroupId(), sourcePlugin.getArtifactId(), sourcePlugin.getVersion());
-    }
 
     @Modifying
     @Transactional

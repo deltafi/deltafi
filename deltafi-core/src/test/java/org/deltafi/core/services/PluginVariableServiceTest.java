@@ -37,6 +37,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -75,7 +76,7 @@ class PluginVariableServiceTest {
     }
 
     @Test
-    void resetFromSnapshot() {
+    void resetFromSnapshot_existingRow_mergesValues() {
         PluginVariables snapshotVariables = pluginVariables("a");
         snapshotVariables.setVariables(List.of(KEEP_VARIABLE));
 
@@ -83,27 +84,95 @@ class PluginVariableServiceTest {
         snapshot.setPluginVariables(List.of(snapshotVariables));
 
         PluginVariables storedPluginA = pluginVariables("a");
-        // keep value should be restored to 'value'
         storedPluginA.setVariables(List.of(Variable.builder().name("keep").value("updated").build(), SKIP_VARIABLE));
 
-        // nothing stored in snapshot shouldn't change
-        PluginVariables storedPluginB = pluginVariables("b");
-        storedPluginB.setVariables(List.of(SKIP_VARIABLE));
-
-        PluginVariables restoredPluginA = pluginVariables("a");
-        restoredPluginA.setVariables(List.of(KEEP_VARIABLE, SKIP_VARIABLE));
-
-        Mockito.when(pluginVariableRepo.findAll()).thenReturn(List.of(storedPluginA, storedPluginB));
+        Mockito.when(pluginVariableRepo.findIgnoringVersion("a", "a")).thenReturn(List.of(storedPluginA));
 
         Result result = pluginVariableService.resetFromSnapshot(snapshot, true);
 
         Mockito.verify(pluginVariableRepo).resetAllUnmaskedVariableValues();
 
-        Mockito.verify(pluginVariableRepo).saveAll(List.of(restoredPluginA, storedPluginB));
+        PluginVariables expectedSaved = pluginVariables("a");
+        expectedSaved.setVariables(List.of(KEEP_VARIABLE, SKIP_VARIABLE));
+        Mockito.verify(pluginVariableRepo).save(expectedSaved);
 
         assertThat(result.isSuccess()).isTrue();
         assertThat(result.getInfo()).isEmpty();
         assertThat(result.getErrors()).isEmpty();
+    }
+
+    @Test
+    void resetFromSnapshot_noExistingRow_writesSnapshotRowForLaterMerge() {
+        // Bug fix: snapshot carries values for a plugin that has no plugin_variables row yet
+        // (the deployer just queued it as PENDING). Persist the snapshot row so that when the
+        // plugin registers, saveVariables / preserveValue picks up the values naturally.
+        PluginVariables snapshotVariables = pluginVariables("a");
+        snapshotVariables.setVariables(List.of(KEEP_VARIABLE));
+
+        Snapshot snapshot = new Snapshot();
+        snapshot.setPluginVariables(List.of(snapshotVariables));
+
+        Mockito.when(pluginVariableRepo.findIgnoringVersion("a", "a")).thenReturn(List.of());
+
+        Result result = pluginVariableService.resetFromSnapshot(snapshot, false);
+
+        String json = PluginVariableService.toJsonString(List.of(KEEP_VARIABLE));
+        Mockito.verify(pluginVariableRepo).upsertVariables(Mockito.any(UUID.class), Mockito.eq("a"), Mockito.eq("a"), Mockito.eq("1"), Mockito.eq(json));
+        Mockito.verify(pluginVariableRepo, Mockito.never()).save(Mockito.any(PluginVariables.class));
+        Mockito.verify(pluginVariableRepo, Mockito.never()).resetAllUnmaskedVariableValues();
+        Mockito.verify(pluginVariableRepo, Mockito.never()).deleteBySourcePlugin(Mockito.anyString(), Mockito.anyString(), Mockito.anyString());
+
+        assertThat(result.isSuccess()).isTrue();
+    }
+
+    @Test
+    void resetFromSnapshot_existingDifferentVersion_mergesValuesWithoutDestroyingRow() {
+        // Soft reset must not delete or replace the live row when the snapshot's coords differ
+        // from the installed version. Merge the snapshot's values into the existing row by name;
+        // preserveValue handles any subsequent version transition at registration time.
+        PluginVariables snapshotVariables = pluginVariables("a"); // version "1"
+        snapshotVariables.setVariables(List.of(KEEP_VARIABLE));
+
+        Snapshot snapshot = new Snapshot();
+        snapshot.setPluginVariables(List.of(snapshotVariables));
+
+        PluginVariables storedDifferentVersion = new PluginVariables();
+        storedDifferentVersion.setSourcePlugin(new PluginCoordinates("a", "a", "2"));
+        storedDifferentVersion.setVariables(List.of(Variable.builder().name("keep").value("old").build(), SKIP_VARIABLE));
+
+        Mockito.when(pluginVariableRepo.findIgnoringVersion("a", "a")).thenReturn(List.of(storedDifferentVersion));
+
+        Result result = pluginVariableService.resetFromSnapshot(snapshot, false);
+
+        PluginVariables expectedSaved = new PluginVariables();
+        expectedSaved.setSourcePlugin(new PluginCoordinates("a", "a", "2"));
+        expectedSaved.setVariables(List.of(KEEP_VARIABLE, SKIP_VARIABLE));
+        Mockito.verify(pluginVariableRepo).save(expectedSaved);
+        Mockito.verify(pluginVariableRepo, Mockito.never()).deleteBySourcePlugin(Mockito.anyString(), Mockito.anyString(), Mockito.anyString());
+        Mockito.verify(pluginVariableRepo, Mockito.never()).upsertVariables(Mockito.any(UUID.class), Mockito.anyString(), Mockito.anyString(), Mockito.anyString(), Mockito.anyString());
+
+        assertThat(result.isSuccess()).isTrue();
+    }
+
+    @Test
+    void resetFromSnapshot_skipsMaskedPlaceholderForNewRow() {
+        // Imported snapshots may carry Variable.MASK_STRING placeholders for masked variables.
+        // When persisting a snapshot row for a plugin with no existing definitions, those
+        // placeholders must not be written as if they were real values.
+        Variable maskedPlaceholder = Variable.builder().name("secret").masked(true).value(Variable.MASK_STRING).build();
+        Variable realValue = Variable.builder().name("plain").value("hello").build();
+        PluginVariables snapshotVariables = pluginVariables("a");
+        snapshotVariables.setVariables(List.of(maskedPlaceholder, realValue));
+
+        Snapshot snapshot = new Snapshot();
+        snapshot.setPluginVariables(List.of(snapshotVariables));
+
+        Mockito.when(pluginVariableRepo.findIgnoringVersion("a", "a")).thenReturn(List.of());
+
+        pluginVariableService.resetFromSnapshot(snapshot, false);
+
+        String json = PluginVariableService.toJsonString(List.of(realValue));
+        Mockito.verify(pluginVariableRepo).upsertVariables(Mockito.any(UUID.class), Mockito.eq("a"), Mockito.eq("a"), Mockito.eq("1"), Mockito.eq(json));
     }
 
     @Test
