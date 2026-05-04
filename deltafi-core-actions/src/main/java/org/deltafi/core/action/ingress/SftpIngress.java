@@ -98,8 +98,6 @@ public class SftpIngress extends TimedIngressAction<SftpIngress.Parameters> {
 
     @Override
     public IngressResultType ingress(@NotNull ActionContext context, @NotNull SftpIngress.Parameters params) {
-        IngressResult ingressResult = new IngressResult(context);
-
         try {
             Session session = jSch.getSession(params.getUsername(), params.getHost(), params.getPort());
             session.setConfig("StrictHostKeyChecking", "no");
@@ -110,9 +108,7 @@ public class SftpIngress extends TimedIngressAction<SftpIngress.Parameters> {
                 // Use private key extracted from keystore provided in ssl properties
                 jSch.addIdentity(params.getUsername(), getPrivateKey(), null, null);
             } else {
-                ingressResult.setStatus(IngressStatus.UNHEALTHY);
-                ingressResult.setStatusMessage("Password variable not set and no keystore is configured");
-                return ingressResult;
+                return IngressResult.unhealthy(context, "Password variable not set and no keystore is configured");
             }
             session.connect();
             ChannelSftp channel = (ChannelSftp) session.openChannel("sftp");
@@ -128,6 +124,7 @@ public class SftpIngress extends TimedIngressAction<SftpIngress.Parameters> {
                 return ChannelSftp.LsEntrySelector.CONTINUE;
             });
 
+            IngressResult ingressResult = new IngressResult(context);
             for (ChannelSftp.LsEntry lsEntry : lsEntries) {
                 IngressResultItem resultItem = new IngressResultItem(context, lsEntry.getFilename());
                 resultItem.saveContent(channel.get(lsEntry.getFilename()), lsEntry.getFilename(),
@@ -135,13 +132,11 @@ public class SftpIngress extends TimedIngressAction<SftpIngress.Parameters> {
                 ingressResult.addItem(resultItem);
                 channel.rm(lsEntry.getFilename());
             }
+            return ingressResult;
         } catch (IllegalArgumentException | IllegalStateException | IOException | JSchException | SftpException | SslException e) {
-            ingressResult.setStatus(IngressStatus.UNHEALTHY);
-            ingressResult.setStatusMessage("Unable to get files from SFTP server: " + e.getMessage());
             log.error("Unable to get files from SFTP server", e);
+            return IngressResult.unhealthy(context, "Unable to get files from SFTP server: " + e.getMessage());
         }
-
-        return ingressResult;
     }
 
     private byte[] getPrivateKey() throws IOException, SslException {

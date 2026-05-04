@@ -12,8 +12,11 @@ services:
     environment:
       VALKEY_PASSWORD: ~
   core-actions:
+    entrypoint: [ "java", "-agentlib:jdwp=transport=dt_socket,address=*:5006,server=y,suspend=n", "-jar", "deltafi-app.jar" ]
     environment:
       VALKEY_PASSWORD: ~
+    ports:
+      - "5006:5006"
   deltafi-nodemonitor:
     environment:
       VALKEY_PASSWORD: ~

@@ -284,6 +284,7 @@ services:
     environment:
       S3PROXY_AUTHORIZATION: aws-v2-or-v4
       S3PROXY_ENDPOINT: "http://0.0.0.0:9000"
+      S3PROXY_IGNORE_UNKNOWN_HEADERS: true
       JCLOUDS_PROVIDER: filesystem
       JCLOUDS_FILESYSTEM_BASEDIR: /data
     env_file:

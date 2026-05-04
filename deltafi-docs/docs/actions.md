@@ -401,7 +401,7 @@ The provider will contain a populated `SslBundle` when the `certs` directory is 
 The action-kit also provides a `HttpClient` bean that is preconfigured with an `SSLContext` when the `SslContextProvider` is configured.
 
 To get a new `SSlContext` backed by the files in `/cert`, inject the `SslContextProvider` bean and call the `createSslContext` method.
-For more advanced use cases the `SslContextProvider` provides direct access the `SslBundle` (getSslBundle) and private key (getPrivateKey).
+For more advanced use cases the `SslContextProvider` provides direct access to the `SslBundle` (getSslBundle) and private key (getPrivateKey).
 
 ### Python
 

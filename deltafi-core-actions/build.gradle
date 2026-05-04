@@ -17,6 +17,11 @@ dependencies {
     implementation 'com.jayway.jsonpath:json-path:2.9.0'
     implementation 'org.bouncycastle:bcpkix-jdk18on:1.82'
 
+    implementation(platform("software.amazon.awssdk:bom:${awssdkVersion}"))
+    implementation 'software.amazon.awssdk:s3'
+    implementation 'software.amazon.awssdk:s3-event-notifications'
+    implementation 'software.amazon.awssdk:apache-client'
+
     testImplementation project(':deltafi-common-test')
     testImplementation project(':deltafi-action-kit-test')
 
@@ -31,6 +36,9 @@ dependencies {
     testImplementation 'org.assertj:assertj-core'
     testImplementation 'org.apache.sshd:sshd-core:2.15.0'
     testImplementation 'org.apache.sshd:sshd-sftp:2.15.0'
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testImplementation 'org.springframework.boot:spring-boot-testcontainers'
+    testImplementation "org.testcontainers:junit-jupiter:${testContainersVersion}"
 }
 
 jar {

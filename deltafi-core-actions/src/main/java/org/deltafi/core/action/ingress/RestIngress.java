@@ -111,9 +111,6 @@ public class RestIngress extends TimedIngressAction<RestIngress.Parameters> {
     }
 
     private IngressResult buildUnhealthyIngressResult(ActionContext context, String message) {
-        IngressResult ingressResult = new IngressResult(context);
-        ingressResult.setStatus(IngressStatus.UNHEALTHY);
-        ingressResult.setStatusMessage("Unable to get file from REST URL: " + message);
-        return ingressResult;
+        return IngressResult.unhealthy(context, "Unable to get file from REST URL: " + message);
     }
 }

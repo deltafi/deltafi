@@ -33,6 +33,13 @@ import java.util.List;
 @Getter
 @Setter
 public class IngressResult extends Result<IngressResult> implements IngressResultType {
+    public static IngressResult unhealthy(ActionContext context, String message) {
+        IngressResult ingressResult = new IngressResult(context);
+        ingressResult.setStatus(IngressStatus.UNHEALTHY);
+        ingressResult.setStatusMessage(message);
+        return ingressResult;
+    }
+
     String memo;
     List<IngressResultItem> ingressResultItems = new ArrayList<>();
     boolean executeImmediate = false;
