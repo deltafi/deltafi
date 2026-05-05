@@ -103,6 +103,8 @@ import Message from "primevue/message";
 import TextArea from "primevue/textarea";
 import _ from "lodash";
 
+import { extractSchemaDefaults } from "@/utils/schemaDefaults";
+
 const editing = inject("isEditing");
 
 const props = defineProps({
@@ -191,7 +193,7 @@ const getEgressActions = async () => {
       action["type"] = action["name"];
       const name = action.name.split(".").pop();
       action["name"] = name;
-      action["parameters"] = {};
+      action["parameters"] = extractSchemaDefaults(action["schema"]);
 
       tmpFlattenedActionsTypes.push(action);
     }

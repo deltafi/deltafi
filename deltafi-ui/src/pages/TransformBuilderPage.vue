@@ -277,6 +277,7 @@ import InputIcon from "primevue/inputicon";
 import InputText from "primevue/inputtext";
 import Panel from "primevue/panel";
 import SpelEditorDialog from "@/components/spel/SpelEditorDialog.vue";
+import { extractSchemaDefaults } from "@/utils/schemaDefaults";
 
 import _ from "lodash";
 
@@ -1157,14 +1158,7 @@ const getLoadedActions = () => {
       // Copy description from actionOptions if available
       action["description"] = action.actionOptions?.description || action.docsMarkdown || null;
 
-      action["parameters"] = {};
-      if (!_.isEmpty(action.schema.properties)) {
-        for (const [key, value] of Object.entries(action.schema.properties)) {
-          if (!_.isEmpty(value.default) || _.isBoolean(value.default) || _.isNumber(value.default)) {
-            action["parameters"][key] = value.default;
-          }
-        }
-      }
+      action["parameters"] = extractSchemaDefaults(action.schema);
 
       action["join"] = {};
       flattenedActions.value.push(action);

@@ -810,6 +810,126 @@ const generateData = () => {
               },
               additionalProperties: false
             }
+          },
+          {
+            name: "org.deltafi.core.action.s3.S3CopyObject",
+            type: "TRANSFORM",
+            description: "Copies objects within an S3 store. Content is passed through this action.",
+            schema: {
+              type: "object",
+              properties: {
+                destinationBucket: {
+                  type: "string",
+                  description: "The destination bucket"
+                },
+                destinationKey: {
+                  type: "string",
+                  description: "The destination key"
+                },
+                enableMultiUpload: {
+                  type: "boolean",
+                  description: "Enable multi-upload (slower, but required for objects > 5 GB)"
+                },
+                multiUploadPartSize: {
+                  type: "integer",
+                  description: "Size of each part for multi-upload",
+                  default: 104857600
+                },
+                multiUploadSize: {
+                  type: "integer",
+                  description: "Objects this size or greater use multi-upload",
+                  default: 5368709120
+                },
+                s3ClientParams: {
+                  type: "object",
+                  properties: {
+                    accelerateMode: {
+                      type: "boolean",
+                      description: "Enable accelerated transfer for S3 operations (AWS S3 only, not supported by MinIO).",
+                      default: false
+                    },
+                    accessKey: {
+                      type: "string",
+                      description: "Access key for S3 authentication. Leave empty to use default credential provider chain."
+                    },
+                    checksumValidationEnabled: {
+                      type: "boolean",
+                      description: "Enable checksum validation for all S3 operations.",
+                      default: false
+                    },
+                    chunkedEncodingDisabled: {
+                      type: "boolean",
+                      description: "Enable chunked encoding for uploads. Disable for compatibility with some S3-compatible services.",
+                      default: false
+                    },
+                    connectionTimeoutSeconds: {
+                      type: "integer",
+                      description: "Connection timeout in seconds for S3 client connections.",
+                      default: 30
+                    },
+                    enableSSL: {
+                      type: "boolean",
+                      description: "Enable SSL/TLS for HTTP connections. Only recommended turning off for local development.",
+                      default: true
+                    },
+                    endpoint: {
+                      type: "string",
+                      description: "Custom S3 endpoint URL. Leave empty to use AWS S3. For MinIO, use format: http://hostname:9000"
+                    },
+                    forcePathStyle: {
+                      type: "boolean",
+                      description: "Forces this client to use path-style addressing for buckets. Required to be true for MinIO and some S3-compatible services.",
+                      default: true
+                    },
+                    maxRetries: {
+                      type: "integer",
+                      description: "Maximum number of retry attempts for failed S3 operations.",
+                      default: 3
+                    },
+                    profileName: {
+                      type: "string",
+                      description: "Profile name to use from AWS credentials file (~/.aws/credentials). Leave empty to use default profile."
+                    },
+                    region: {
+                      type: "string",
+                      description: "AWS region or S3-compatible service region. Examples: us-east-1, us-west-2, eu-west-1",
+                      default: "us-east-1"
+                    },
+                    retryMode: {
+                      type: "string",
+                      enum: ["LEGACY", "STANDARD", "ADAPTIVE", "ADAPTIVE_V2"],
+                      description: "Set the RetryMode for failed requests. Legacy - 3 retries, no backoff, Standard - 2 retries, with backoff, Adaptive - 2 retries with adaptive backoff ",
+                      default: "STANDARD"
+                    },
+                    secretKey: {
+                      type: "string",
+                      description: "Secret key for S3 authentication. Leave empty to use default credential provider chain."
+                    },
+                    sessionToken: {
+                      type: "string",
+                      description: "Session token for temporary credentials (optional). Used with STS assumed roles."
+                    },
+                    socketTimeoutSeconds: {
+                      type: "integer",
+                      description: "Socket timeout in seconds for S3 client read operations.",
+                      default: 300
+                    }
+                  },
+                  additionalProperties: false,
+                  description: "The S3 client parameters"
+                },
+                sourceBucket: {
+                  type: "string",
+                  description: "The source bucket"
+                },
+                sourceKey: {
+                  type: "string",
+                  description: "The source key"
+                }
+              },
+              required: ["destinationBucket", "destinationKey", "s3ClientParams", "sourceBucket", "sourceKey"],
+              additionalProperties: false
+            }
           }
         ],
         actionKitVersion: "2.0-beta6"

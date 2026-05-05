@@ -151,6 +151,8 @@ import _ from "lodash";
 import "@vue-js-cron/light/dist/light.css";
 import { CronLight } from "@vue-js-cron/light";
 
+import { extractSchemaDefaults } from "@/utils/schemaDefaults";
+
 const editing = inject("isEditing");
 const { rendererList, publishRenderList, myStyles } = usePrimeVueJsonSchemaUIRenderers();
 provide("style", myStyles);
@@ -259,23 +261,6 @@ const model = computed({
 });
 
 const flattenedActionsTypes = ref([]);
-
-const extractSchemaDefaults = (schema) => {
-  const defaults = {};
-  if (schema && schema.properties) {
-    for (const [key, propSchema] of Object.entries(schema.properties)) {
-      if (propSchema.default !== undefined) {
-        defaults[key] = propSchema.default;
-      } else if (propSchema.properties) {
-        const nested = extractSchemaDefaults(propSchema);
-        if (Object.keys(nested).length > 0) {
-          defaults[key] = nested;
-        }
-      }
-    }
-  }
-  return defaults;
-};
 
 const getTimedIngressActions = async () => {
   const tmpFlattenedActionsTypes = [];
