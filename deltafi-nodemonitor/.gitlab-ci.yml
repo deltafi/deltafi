@@ -1,5 +1,4 @@
 .nodemonitor:
-  needs: []
   variables:
     PROJECT_NAME: deltafi-nodemonitor
 

@@ -1,5 +1,4 @@
 .dirwatcher:
-  needs: []
   variables:
     PROJECT_NAME: deltafi-dirwatcher
 

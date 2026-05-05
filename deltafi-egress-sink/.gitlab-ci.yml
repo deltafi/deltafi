@@ -1,5 +1,4 @@
 .egress-sink:
-  needs: []
   variables:
     PROJECT_NAME: deltafi-egress-sink
 

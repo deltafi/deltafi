@@ -1,5 +1,4 @@
 .clustermonitor:
-  needs: []
   variables:
     PROJECT_NAME: deltafi-clustermonitor
 

@@ -1,5 +1,4 @@
 .analytics:
-  needs: []
   variables:
     PROJECT_NAME: deltafi-analytics
 
