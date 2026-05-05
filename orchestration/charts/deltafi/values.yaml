@@ -157,7 +157,7 @@ headlamp:
 grafana:
   image:
     repository: deltafi/grafana
-    tag: 12.4.2-0
+    tag: 12.4.3-0
   persistence:
     enabled: true
     existingClaim: deltafi-grafana

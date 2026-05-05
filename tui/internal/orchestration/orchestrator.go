@@ -50,7 +50,7 @@ type DockerAuthConfig struct {
 type valuesData struct {
 	Tag                      string
 	Repo                     string `default:"deltafi"`
-	GrafanaContainer         string `default:"deltafi/grafana:12.4.2-0"`
+	GrafanaContainer         string `default:"deltafi/grafana:12.4.3-0"`
 	VictoriaMetricsContainer string `default:"deltafi/victoria-metrics:v1.140.0-0"`
 	LogrotateContainer       string `default:"deltafi/logrotate:1.0.0-6"`
 	VectorContainer          string `default:"deltafi/vector:0.54.0-alpine-0"`

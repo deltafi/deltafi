@@ -23,7 +23,7 @@ Document any changes on this branch here.
 
 ### Upgrade and Migration
 - Upgraded to the following dependency images:
-  - deltafi/grafana:12.4.2-0
+  - deltafi/grafana:12.4.3-0
   - deltafi/valkey:9.0.3-1
   - deltafi/vector:0.54.0-alpine-0
   - deltafi/victoria-metrics:v1.140.0-0
