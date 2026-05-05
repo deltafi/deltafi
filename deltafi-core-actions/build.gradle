@@ -15,7 +15,7 @@ dependencies {
     implementation "com.fasterxml.jackson.dataformat:jackson-dataformat-csv:${jacksonVersion}"
     implementation 'com.github.mwiede:jsch:2.27.3'
     implementation 'com.jayway.jsonpath:json-path:2.9.0'
-    implementation 'org.bouncycastle:bcpkix-jdk18on:1.82'
+    implementation 'org.bouncycastle:bcpkix-jdk18on:1.84'
 
     implementation(platform("software.amazon.awssdk:bom:${awssdkVersion}"))
     implementation 'software.amazon.awssdk:s3'
