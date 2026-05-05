@@ -242,7 +242,7 @@ const clearErrors = () => {
   }
 
   .inputWidth {
-    width: 90% !important;
+    width: 100% !important;
   }
 
   .chip-container {

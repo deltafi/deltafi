@@ -364,7 +364,7 @@ const submit = async () => {
   }
 
   .inputWidth {
-    width: 90% !important;
+    width: 100% !important;
   }
 
   .p-inputchips .p-inputchips-input {

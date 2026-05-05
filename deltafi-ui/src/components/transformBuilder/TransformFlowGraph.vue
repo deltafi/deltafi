@@ -219,7 +219,10 @@
           @keydown.enter="handleAddClick(btn)"
         >
           <circle r="10" class="add-button-circle" />
-          <text dy="0.35em" text-anchor="middle" class="add-button-text">+</text>
+          <g class="add-button-icon" pointer-events="none">
+            <line x1="-4" y1="0" x2="4" y2="0" />
+            <line x1="0" y1="-4" x2="0" y2="4" />
+          </g>
           <!-- Error badge -->
           <g v-if="addButtonError(btn)" class="error-badge" transform="translate(9, -9)">
             <circle r="6" class="error-badge-circle" />
@@ -328,22 +331,33 @@ const { nodes, edges, viewBox, addButtonPositions, lanes, config } = useTransfor
 const tooltip = ref({ visible: false, text: '', x: 0, y: 0 });
 const maxLabelLength = computed(() => Math.floor(config.nodeWidth / 7.5));
 
+const getNodeErrorMessage = (node: LayoutNode): string | null => {
+  if (node.nodeType === 'action' && node.data) {
+    const action = node.data as TransformAction;
+    return props.actionErrors.get(action.id) ?? null;
+  }
+  return null;
+};
+
 const showTooltip = (event: MouseEvent | FocusEvent, node: LayoutNode) => {
-  if (node.name.length <= maxLabelLength.value) return;
+  const errorMsg = getNodeErrorMessage(node);
+  const isTruncated = node.name.length > maxLabelLength.value;
+  if (!errorMsg && !isTruncated) return;
+  const text = errorMsg ?? node.name;
   const container = containerRef.value;
   if (!container) return;
   const rect = container.getBoundingClientRect();
   if ('clientX' in event) {
     tooltip.value = {
       visible: true,
-      text: node.name,
+      text,
       x: event.clientX - rect.left,
       y: event.clientY - rect.top - 30,
     };
   } else {
     tooltip.value = {
       visible: true,
-      text: node.name,
+      text,
       x: node.x + config.nodeWidth / 2,
       y: node.y - 10,
     };
@@ -663,15 +677,15 @@ onUnmounted(() => {
   stroke-dasharray: none;
 }
 
-.add-button-text {
-  fill: var(--primary-color);
-  font-size: 14px;
-  font-weight: bold;
-  pointer-events: none;
+.add-button-icon line {
+  stroke: var(--primary-color);
+  stroke-width: 2;
+  stroke-linecap: round;
+  transition: stroke 0.15s;
 }
 
-.add-button:hover .add-button-text {
-  fill: white;
+.add-button:hover .add-button-icon line {
+  stroke: white;
 }
 
 /* Add button error badge */

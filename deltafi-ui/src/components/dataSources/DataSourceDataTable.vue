@@ -174,6 +174,40 @@
           <span v-else>{{ activeDataSource[fieldName] || "-" }}</span>
         </div>
       </template>
+      <!-- Metadata and Annotations (common to all data source types) — sections hidden when empty -->
+      <div v-if="!_.isEmpty(activeDataSource.metadata)" class="mb-3">
+        <strong>Metadata</strong>
+        <br />
+        <DataTable aria-label="Metadata" :value="keyValueRows(activeDataSource.metadata)" class="p-datatable-sm p-datatable-gridlines">
+          <Column header="Key" field="key" />
+          <Column header="Value" field="value" />
+        </DataTable>
+      </div>
+      <section v-if="hasAnnotationConfig(activeDataSource)" class="annotation-config-section mb-3">
+        <h6 class="annotation-config-heading">Annotation Configuration</h6>
+        <div class="annotation-config-children">
+          <div v-if="!_.isEmpty(activeDataSource.annotationConfig?.annotations)" class="mb-3">
+            <strong>Annotations</strong>
+            <br />
+            <DataTable aria-label="Annotations" :value="keyValueRows(activeDataSource.annotationConfig.annotations)" class="p-datatable-sm p-datatable-gridlines">
+              <Column header="Key" field="key" />
+              <Column header="Value" field="value" />
+            </DataTable>
+          </div>
+          <div v-if="!_.isEmpty(activeDataSource.annotationConfig?.metadataPatterns)" class="mb-3">
+            <strong>Metadata Patterns</strong>
+            <br />
+            <ul>
+              <li v-for="(pattern, index) in activeDataSource.annotationConfig.metadataPatterns" :key="index">{{ pattern }}</li>
+            </ul>
+          </div>
+          <div v-if="activeDataSource.annotationConfig?.discardPrefix" class="mb-0">
+            <strong>Discard Prefix</strong>
+            <br />
+            <span>{{ activeDataSource.annotationConfig.discardPrefix }}</span>
+          </div>
+        </div>
+      </section>
     </template>
   </Dialog>
 </template>
@@ -477,6 +511,13 @@ const showAction = (data) => {
   viewDialogVisible.value = true;
 };
 
+const keyValueRows = (obj) => _.map(obj, (value, key) => ({ key, value }));
+
+const hasAnnotationConfig = (ds) =>
+  !_.isEmpty(ds?.annotationConfig?.annotations) ||
+  !_.isEmpty(ds?.annotationConfig?.metadataPatterns) ||
+  !!ds?.annotationConfig?.discardPrefix;
+
 const updateRateLimit = (data) => {
   emit("updateRateLimit", data);
 };
@@ -533,6 +574,21 @@ const refresh = async () => {
 .data-source-dialog {
   .p-dialog-footer {
     padding: 1rem 1rem 0.6rem 1rem !important;
+  }
+
+  .annotation-config-section {
+    .annotation-config-heading {
+      font-size: 1rem;
+      font-weight: 700;
+      margin-bottom: 0.5rem;
+      padding-bottom: 0.25rem;
+      border-bottom: 1px solid var(--df-border-color, rgb(225, 225, 225));
+    }
+
+    .annotation-config-children {
+      border-left: 3px solid var(--df-border-color, rgb(225, 225, 225));
+      padding-left: 0.75rem;
+    }
   }
 }
 </style>

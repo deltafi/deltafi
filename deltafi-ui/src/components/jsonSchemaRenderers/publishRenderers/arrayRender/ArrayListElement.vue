@@ -22,9 +22,9 @@
       <slot></slot>
     </div>
     <div class="col btn-group px-0 align-items-center">
-      <Button icon="pi pi-angle-up text-dark" aria-label="Move item up" text rounded :disabled="!moveUpEnabled" @click="moveUpClicked" />
-      <Button icon="pi pi-angle-down text-dark" aria-label="Move item down" text rounded :disabled="!moveDownEnabled" @click="moveDownClicked" />
-      <Button icon="pi pi-trash text-dark" aria-label="Delete item" text rounded @click="deleteClicked" />
+      <Button icon="pi pi-angle-up" aria-label="Move item up" class="array-list-control-icon" text rounded :disabled="!moveUpEnabled" @click="moveUpClicked" />
+      <Button icon="pi pi-angle-down" aria-label="Move item down" class="array-list-control-icon" text rounded :disabled="!moveDownEnabled" @click="moveDownClicked" />
+      <Button icon="pi pi-trash" aria-label="Delete item" class="array-list-control-icon" text rounded @click="deleteClicked" />
     </div>
   </div>
 </template>

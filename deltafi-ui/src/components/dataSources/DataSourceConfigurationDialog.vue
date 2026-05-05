@@ -588,7 +588,7 @@ const metadataSchema = {
   }
 
   .inputWidth {
-    width: 90% !important;
+    width: 100% !important;
 
     .p-inputchips-input {
       width: 100% !important;

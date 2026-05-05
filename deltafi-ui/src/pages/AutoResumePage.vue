@@ -22,7 +22,7 @@
       <div class="d-flex">
         <Button label="Export Rules" icon="fas fa-download fa-fw" class="p-button-sm p-button-secondary p-button-outlined mx-1" @click="exportAutoResume()" />
         <AutoResumeImportFile v-has-permission:ResumePolicyCreate @refresh-page="fetchAutoResumeRules()" />
-        <DialogTemplate component-name="autoResume/AutoResumeConfigurationDialog" header="Add New Auto Resume Rule" required-permission="ResumePolicyCreate" dialog-width="75vw" :row-data-prop="{}" @refresh-page="fetchAutoResumeRules()">
+        <DialogTemplate component-name="autoResume/AutoResumeConfigurationDialog" header="Add New Auto Resume Rule" required-permission="ResumePolicyCreate" dialog-width="50vw" :row-data-prop="{}" @refresh-page="fetchAutoResumeRules()">
           <Button v-has-permission:ResumePolicyCreate label="Add Rule" icon="pi pi-plus" class="p-button-sm p-button-outlined mx-1" />
         </DialogTemplate>
       </div>

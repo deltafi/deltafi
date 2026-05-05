@@ -137,7 +137,7 @@ const computedLabel = computed(() => {
   padding: 0.5rem 0.75rem;
   border: 1px solid var(--surface-border);
   border-radius: 6px;
-  background-color: var(--surface-50);
+  background-color: var(--surface-ground);
 }
 
 .array-list-empty {
@@ -163,7 +163,7 @@ const computedLabel = computed(() => {
   padding: 0.5rem;
   border: 1px solid var(--surface-border);
   border-radius: 4px;
-  background-color: var(--surface-0);
+  background-color: var(--surface-card);
 }
 
 .array-list-row {

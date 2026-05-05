@@ -22,7 +22,7 @@
       v-tooltip.bottom="tooltipText"
       class="toggle-btn"
       :aria-label="tooltipText"
-      @click="cycleMode"
+      @click="toggleDarkMode"
     >
       <i :class="iconClass" />
     </button>
@@ -33,29 +33,13 @@
 import { computed } from "vue";
 import useTheme from "@/composables/useTheme";
 
-const { mode, cycleMode } = useTheme();
+const { isDark, toggleDarkMode } = useTheme();
 
-const iconClass = computed(() => {
-  switch (mode.value) {
-    case "dark":
-      return "fas fa-moon";
-    case "system":
-      return "fas fa-desktop";
-    default:
-      return "fas fa-sun";
-  }
-});
+const iconClass = computed(() => (isDark.value ? "pi pi-moon" : "pi pi-sun"));
 
-const tooltipText = computed(() => {
-  switch (mode.value) {
-    case "dark":
-      return "Dark mode (click for system)";
-    case "system":
-      return "System mode (click for light)";
-    default:
-      return "Light mode (click for dark)";
-  }
-});
+const tooltipText = computed(() =>
+  isDark.value ? "Dark mode (click for light)" : "Light mode (click for dark)"
+);
 </script>
 
 <style scoped lang="scss">

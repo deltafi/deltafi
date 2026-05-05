@@ -32,7 +32,7 @@
     <template #item="{ item, props }">
       <a v-ripple class="flex align-items-center" v-bind="props.action">
         <span :class="item.icon" />
-        <span class="ml-2 text-dark">{{ item.label }}</span>
+        <span class="ml-2">{{ item.label }}</span>
       </a>
     </template>
   </Menu>

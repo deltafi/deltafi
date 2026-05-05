@@ -43,7 +43,7 @@
           <dt class="d-flex inputWidth justify-content-between">
             <div>Subscribe<span class="required-indicator" aria-hidden="true">*</span></div>
             <div>
-              <Badge v-if="!_.isEmpty(validateSubscribe)" v-tooltip.left="{ value: `${validateSubscribe}`, class: 'tooltip-width', showDelay: 300 }" value=" " :class="'pi pi-exclamation-triangle validation-badge'" severity="danger" />
+              <Badge v-if="!_.isEmpty(validateSubscribe)" v-tooltip.left="{ value: `${validateSubscribe}`, class: 'tooltip-width', showDelay: 300 }" value=" " :class="'pi pi-info validation-badge'" severity="danger" />
             </div>
           </dt>
           <dd>
@@ -407,7 +407,7 @@ const subscribeSchema = {
   }
 
   .inputWidth {
-    width: 90% !important;
+    width: 100% !important;
   }
 
   .p-filled.capitalizeText {

@@ -64,7 +64,7 @@ import SpelExpressionEditor from './SpelExpressionEditor.vue';
 import type { SpelExpressionMode } from '@/composables/useSpelTest';
 
 const props = withDefaults(defineProps<{
-  modelValue: string;
+  modelValue: string | null;
   mode: SpelExpressionMode;
   placeholder?: string;
   emptyPlaceholder?: string;
@@ -143,10 +143,10 @@ const apply = () => {
 .value-preview {
   flex: 1;
   padding: 0.5rem 0.75rem;
-  border: 1px solid var(--surface-300);
+  border: 1px solid var(--surface-border);
   border-right: none;
   border-radius: 4px 0 0 4px;
-  background: var(--surface-0);
+  background: var(--surface-card);
   cursor: pointer;
   min-height: 2.5rem;
   display: flex;
@@ -159,7 +159,7 @@ const apply = () => {
 }
 
 .value-preview.has-value {
-  background: var(--surface-50);
+  background: var(--surface-ground);
 }
 
 .preview-text {

@@ -20,7 +20,7 @@
   <control-wrapper v-bind="schemaData.controlWrapper" :styles="schemaData.styles" :is-focused="schemaData.isFocused" :applied-options="schemaData.appliedOptions">
     <dl class="boolean-field">
       <dd class="boolean-row">
-        <ToggleSwitch :id="schemaData.control.id + '-input'" :model-value="booleanDecider(schemaData.control.data)" :aria-required="schemaData.control.required" @update:model-value="schemaData.onChange($event)" @focus="schemaData.isFocused = true" @blur="schemaData.isFocused = false" />
+        <TriStateToggle :model-value="triStateValue(schemaData.control.data)" @update:model-value="schemaData.onChange($event)" />
         <label :for="schemaData.control.id + '-input'" class="boolean-label">{{ computedLabel }}<span v-if="schemaData.control.required" class="required-indicator" aria-hidden="true">*</span></label>
         <i v-if="schemaData.control.description" v-tooltip.right="schemaData.control.description" class="pi pi-info-circle info-icon" />
       </dd>
@@ -31,13 +31,12 @@
 <script setup lang="ts">
 import useSchemaComposition from "@/components/jsonSchemaRenderers/defaultRenderers/util/useSchemaComposition";
 import { default as ControlWrapper } from "./ControlWrapper.vue";
+import TriStateToggle from "@/components/TriStateToggle.vue";
 import { ControlElement } from "@jsonforms/core";
 import { computed, reactive } from "vue";
 import { rendererProps, useJsonFormsControl } from "@jsonforms/vue";
 
 import _ from "lodash";
-
-import ToggleSwitch from "primevue/toggleswitch";
 
 const { useControl } = useSchemaComposition();
 
@@ -45,19 +44,16 @@ const props = defineProps({
   ...rendererProps<ControlElement>(),
 });
 
-const schemaData = reactive(useControl(useJsonFormsControl(props), (newValue: any) => newValue || false));
+const schemaData = reactive(useControl(useJsonFormsControl(props), (newValue: any) => newValue));
 
-const booleanDecider = (boolVal: any) => {
-  // Checks to see if the value passed in is an empty string, object, collection, map, or set and also checks if the value is not a boolean.
-  if (_.isEmpty(boolVal) && !_.isBoolean(boolVal)) {
-    return false;
+const triStateValue = (val: any): boolean | null => {
+  if (_.isBoolean(val)) return val;
+  if (_.isString(val)) {
+    const lower = val.toLowerCase();
+    if (lower === "true") return true;
+    if (lower === "false") return false;
   }
-
-  if (_.isString(boolVal)) {
-    return String(boolVal).toLowerCase() === "true";
-  }
-
-  return boolVal;
+  return null;
 };
 
 const computedLabel = computed(() => {

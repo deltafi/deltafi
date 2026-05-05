@@ -226,7 +226,7 @@ const submit = async () => {
   }
 
   .inputWidth {
-    width: 97% !important;
+    width: 100% !important;
   }
 }
 </style>

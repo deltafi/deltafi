@@ -91,7 +91,7 @@ const modelPosition = computed(() => {
 
 <style>
 .inputWidth {
-  width: 60% !important;
+  width: 100% !important;
 }
 
 .p-filled.capitalizeText {

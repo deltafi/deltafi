@@ -151,6 +151,6 @@ const optionsDisplay = computed(() => {
 }
 
 .inputWidth {
-  width: 90% !important;
+  width: 100% !important;
 }
 </style>

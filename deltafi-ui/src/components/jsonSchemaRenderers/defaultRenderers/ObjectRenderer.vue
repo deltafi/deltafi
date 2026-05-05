@@ -120,6 +120,6 @@ const computedLabel = computed(() => {
   padding: 0.5rem 0.75rem;
   border-radius: 6px;
   border: 1px solid var(--surface-border);
-  background-color: var(--surface-50);
+  background-color: var(--surface-ground);
 }
 </style>

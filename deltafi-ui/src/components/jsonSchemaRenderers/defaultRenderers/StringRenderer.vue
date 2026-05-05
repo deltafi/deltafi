@@ -199,7 +199,7 @@ const optionsDisplay = computed(() => {
 }
 
 .inputWidth {
-  width: 90% !important;
+  width: 100% !important;
 }
 
 /* Style select trigger to match AutoComplete dropdown button */

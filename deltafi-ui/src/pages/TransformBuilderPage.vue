@@ -1731,6 +1731,10 @@ const publishUISchema = {
       color: var(--text-color);
       margin-bottom: 0.5rem;
     }
+
+    .w-full {
+      width: 100%;
+    }
   }
 }
 

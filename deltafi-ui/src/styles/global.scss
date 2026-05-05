@@ -215,6 +215,8 @@
   --df-hover-shadow-color: black;
   --df-progressbar-label-color: #212529;
   --df-secondary-bg: #6c757d;
+  --df-secondary-color: #ffffff;
+  --df-array-control-icon: #000000;
 
   /* Graph node colors (by type) */
   --df-node-datasource-fill: var(--orange-100);
@@ -387,6 +389,8 @@ html.dark-mode {
   --df-hover-shadow-color: transparent;
   --df-progressbar-label-color: #e2e8f0;
   --df-secondary-bg: #475569;
+  --df-secondary-color: #ffffff;
+  --df-array-control-icon: #ffffff;
 
   /* Graph node colors (by type) */
   --df-node-datasource-fill: var(--orange-800);
@@ -633,6 +637,24 @@ a {
   max-width: 20rem;
 }
 
+.p-menu a,
+.p-contextmenu a {
+  color: var(--text-color);
+  text-decoration: none;
+}
+
+.p-menu a:hover,
+.p-contextmenu a:hover {
+  text-decoration: none;
+}
+
+.p-menu a > span:first-child,
+.p-contextmenu a > span:first-child {
+  display: inline-block;
+  width: 1.25rem;
+  text-align: center;
+}
+
 .p-tabs .p-tablist .p-tab[data-p-active="true"] {
   color: var(--df-tab-active-color);
 }
@@ -682,8 +704,31 @@ td.did-column {
   text-shadow: 0.02rem 0px var(--df-hover-shadow-color);
 }
 
-.p-tag-secondary {
-  background-color: var(--df-secondary-bg);
+.p-tag.p-tag-secondary {
+  background: var(--df-secondary-bg);
+  color: var(--df-secondary-color);
+}
+
+.array-list-control-icon,
+.array-list-control-icon:enabled:hover {
+  color: var(--df-array-control-icon) !important;
+}
+
+.array-list-control-icon:disabled {
+  color: var(--df-array-control-icon) !important;
+  opacity: 0.4;
+}
+
+.p-inputgroup {
+  display: flex !important;
+  align-items: stretch;
+}
+
+.p-inputgroup > input.p-inputtext,
+.p-inputgroup > .p-inputtext {
+  flex: 1 1 auto !important;
+  width: auto !important;
+  min-width: 0 !important;
 }
 
 /* PrimeVue 3 Bootstrap4-Light-Blue selected row styling */
@@ -780,11 +825,13 @@ td.did-column {
   top: -6px;
 }
 
-/* Center icon inside Badge when used as a validation indicator */
+/* Validation indicator badge — red circle with white info icon */
 .validation-badge.p-badge {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  font-size: 1rem;
+  color: #ffffff;
 }
 
 /* Ensure form labels appear above their inputs (PrimeVue 3 provided this via .p-fluid, PrimeVue 4 does not) */

@@ -172,10 +172,12 @@ onUnmounted(() => {
 
   .p-tag.topic {
     background-color: #d4e5ce;
+    color: #333333;
   }
 
   .p-tag.p-tag-warning {
     background-color: #ffeec7;
+    color: #333333;
   }
 }
 </style>

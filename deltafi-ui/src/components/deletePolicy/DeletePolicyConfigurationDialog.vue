@@ -276,7 +276,7 @@ const clearErrors = () => {
   }
 
   .inputWidth {
-    width: 90% !important;
+    width: 100% !important;
   }
 
   .p-filled.capitalizeText {

@@ -163,7 +163,7 @@ const clearErrors = () => {
   }
 
   .inputWidth {
-    width: 60% !important;
+    width: 100% !important;
   }
 }
 </style>
