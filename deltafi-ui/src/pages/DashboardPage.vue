@@ -28,7 +28,7 @@
     </div>
     <div class="row mb-3">
       <div class="col-12">
-        <MetricsPanel :key="refreshKey" />
+        <MetricsPanel ref="metricsPanelRef" />
       </div>
     </div>
     <div class="row mb-3">
@@ -48,8 +48,12 @@ import { defineAsyncComponent, reactive, ref } from "vue";
 import DeltaFileStats from "@/components/dashboard/DeltaFileStats.vue";
 import Button from "primevue/button";
 
+const metricsPanelRef = ref(null);
 const refreshKey = ref(0);
-const refreshDashboard = () => (refreshKey.value += 1);
+const refreshDashboard = () => {
+  refreshKey.value += 1;
+  metricsPanelRef.value?.reload();
+};
 
 const columns = reactive({
   one: ["InstalledPlugins"],

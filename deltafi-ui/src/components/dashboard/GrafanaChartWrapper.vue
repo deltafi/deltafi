@@ -19,13 +19,13 @@
 <template>
   <div>
     <h5>{{ header }}</h5>
-    <GrafanaChart :panel-id="panelId" :from="from" :to="to" :key-pairs="props.keyPairs" :dashboard-id="props.dashboardId" />
+    <GrafanaChart ref="chartRef" :panel-id="panelId" :from="from" :to="to" :refresh="refresh" :key-pairs="props.keyPairs" :dashboard-id="props.dashboardId" />
   </div>
 </template>
 
 <script setup>
 import GrafanaChart from "@/components/GrafanaChart.vue";
-import { computed, onMounted, onUnmounted, ref, toRefs } from "vue";
+import { computed, ref, toRefs } from "vue";
 const props = defineProps({
   header: {
     type: String,
@@ -35,10 +35,10 @@ const props = defineProps({
     type: Number,
     required: true,
   },
-  refreshMinutes: {
-    type: Number,
+  refresh: {
+    type: String,
     required: false,
-    default: 1,
+    default: "1m",
   },
   timeframeMinutes: {
     type: Number,
@@ -46,12 +46,12 @@ const props = defineProps({
     default: 60,
   },
   from: {
-    type: Number,
+    type: [Number, String],
     required: false,
     default: null,
   },
   to: {
-    type: Number,
+    type: [Number, String],
     required: false,
     default: null,
   },
@@ -67,27 +67,20 @@ const props = defineProps({
   },
 });
 
-const { header, panelId, refreshMinutes, timeframeMinutes } = toRefs(props);
+const { header, panelId, timeframeMinutes } = toRefs(props);
+const chartRef = ref(null);
 
-let autoRefresh = null;
-const refreshInterval = computed(() => refreshMinutes.value * 60 * 1000);
-const last = computed(() => timeframeMinutes.value * 60 * 1000);
-const now = ref(new Date());
+const reload = () => chartRef.value?.reload();
+defineExpose({ reload });
+
+// Use Grafana's relative time syntax so the iframe URL stays stable.
+// Grafana handles its own data refresh internally via the refresh param.
 const from = computed(() => {
   if (props.from) return props.from;
-  return new Date(now.value - last.value).getTime();
+  return `now-${timeframeMinutes.value}m`;
 });
 const to = computed(() => {
   if (props.to) return props.to;
-  return now.value.getTime();
+  return "now";
 });
-
-onMounted(() => {
-  now.value = new Date();
-  autoRefresh = setInterval(() => {
-    now.value = new Date();
-  }, refreshInterval.value);
-});
-
-onUnmounted(() => clearInterval(autoRefresh));
 </script>

@@ -17,11 +17,11 @@
 -->
 
 <template>
-  <iframe :src="src" :width="props.width" :height="props.height" frameborder="0" title="Grafana chart" />
+  <iframe ref="iframeRef" :src="src" :width="props.width" :height="props.height" frameborder="0" title="Grafana chart" />
 </template>
 
 <script setup>
-import { computed } from "vue";
+import { computed, ref } from "vue";
 import useUiConfig from "@/composables/useUiConfig";
 import useTheme from "@/composables/useTheme";
 
@@ -34,11 +34,11 @@ const props = defineProps({
     required: true,
   },
   from: {
-    type: Number,
+    type: [Number, String],
     required: true,
   },
   to: {
-    type: Number,
+    type: [Number, String],
     required: true,
   },
   width: {
@@ -83,15 +83,25 @@ const props = defineProps({
   },
 });
 
+const iframeRef = ref(null);
+
 const src = computed(() => {
   const params = {
     ...props,
     ...props.keyPairs,
     theme: isDark.value ? "dark" : "light",
   };
-  if (uiConfig.useUTC) params.timezone = "utc";
+  params.timezone = uiConfig.useUTC ? "utc" : "browser";
   delete params.keyPairs;
   const formattedParams = new URLSearchParams(params);
   return `/visualization/d-solo/${props.dashboardId}?${formattedParams}`;
 });
+
+const reload = () => {
+  if (iframeRef.value) {
+    iframeRef.value.src = src.value;
+  }
+};
+
+defineExpose({ reload });
 </script>

@@ -25,7 +25,7 @@
     </template>
     <div class="row">
       <div v-for="(panelId, header) in grafanaPanelIdMap" :key="panelId" :class="`col-6 chart`">
-        <GrafanaChartWrapper :key="refreshKey" :header="header" :panel-id="panelId" :timeframe-minutes="timeFrame.minutes" />
+        <GrafanaChartWrapper :ref="(el) => { if (el) chartRefs[header] = el; }" :header="header" :panel-id="panelId" :timeframe-minutes="timeFrame.minutes" />
       </div>
     </div>
   </Panel>
@@ -35,10 +35,16 @@
 import GrafanaChartWrapper from "@/components/dashboard/GrafanaChartWrapper.vue";
 import Select from "primevue/select";
 import Panel from "primevue/panel";
-import { ref, onBeforeMount, watch } from "vue";
+import { reactive, ref, onBeforeMount, watch } from "vue";
 import { useStorage, StorageSerializers } from "@vueuse/core";
 
-const refreshKey = ref(0);
+const chartRefs = reactive({});
+
+const reload = () => {
+  Object.values(chartRefs).forEach((chart) => chart?.reload());
+};
+
+defineExpose({ reload });
 
 const timeFrames = [
   { name: "Last Hour", minutes: 60 },

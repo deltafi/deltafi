@@ -27,7 +27,7 @@
     </template>
     <div class="row">
       <div v-for="(panelId, header) in grafanaPanelIdMap" :key="panelId" :class="`col-6 chart`">
-        <GrafanaChartWrapper :key="refreshKey" :header="header" :panel-id="panelId" :key-pairs="keyPairs" :refresh-minutes="5" :timeframe-minutes="timeFrame.minutes" :dashboard-id="uiChartID" />
+        <GrafanaChartWrapper :ref="(el) => { if (el) chartRefs[header] = el; }" :header="header" :panel-id="panelId" :key-pairs="keyPairs" refresh="5m" :timeframe-minutes="timeFrame.minutes" :dashboard-id="uiChartID" />
       </div>
     </div>
   </Panel>
@@ -38,14 +38,16 @@ import GrafanaChartWrapper from "@/components/dashboard/GrafanaChartWrapper.vue"
 import Button from "primevue/button";
 import Select from "primevue/select";
 import Panel from "primevue/panel";
-import { ref, onBeforeMount, watch, computed } from "vue";
+import { reactive, ref, onBeforeMount, watch, computed } from "vue";
 import { useStorage, StorageSerializers } from "@vueuse/core";
 import useSystemMetrics from "@/composables/useSystemMetrics";
 
 const { data: nodes, fetch: fetchSystemMetrics } = useSystemMetrics();
 const uiChartID = computed(() => (node.value == "All" ? "ui-charts" : "ui-charts-by-node"));
-const refreshDashboard = () => (refreshKey.value += 1);
-const refreshKey = ref(0);
+const chartRefs = reactive({});
+const refreshDashboard = () => {
+  Object.values(chartRefs).forEach((chart) => chart?.reload());
+};
 
 const timeFrames = [
   { name: "Last Hour", minutes: 60 },
