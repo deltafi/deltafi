@@ -41,15 +41,13 @@ func resultText(t *testing.T, result *mcp.CallToolResult) string {
 	return tc.Text
 }
 
-func ptr(s string) *string { return &s }
-
 func makePluginResponse(image, tag string, state graphql.PluginState, installErr *string) *graphql.GetPluginsResponse {
 	return &graphql.GetPluginsResponse{
 		Plugins: []graphql.GetPluginsPluginsPlugin{
 			{
 				DisplayName: "Test Plugin",
-				ImageName:   ptr(image),
-				ImageTag:    ptr(tag),
+				ImageName:   new(image),
+				ImageTag:    new(tag),
 				PluginCoordinates: graphql.GetPluginsPluginsPluginPluginCoordinates{
 					GroupId:    "org.deltafi",
 					ArtifactId: "test-plugin",
@@ -82,7 +80,7 @@ func TestPollPluginInstall_ImmediateSuccess(t *testing.T) {
 
 func TestPollPluginInstall_Failure(t *testing.T) {
 	fetch := func() (*graphql.GetPluginsResponse, error) {
-		return makePluginResponse("my-plugin", "latest", graphql.PluginStateFailed, ptr("image not found")), nil
+		return makePluginResponse("my-plugin", "latest", graphql.PluginStateFailed, new("image not found")), nil
 	}
 
 	result, err := pollPluginInstall(context.Background(), "my-plugin:latest", 5*time.Second, 1*time.Millisecond, fetch)

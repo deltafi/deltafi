@@ -166,10 +166,7 @@ func searchDeltaFiles(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallTo
 	// Limit
 	limit := 50
 	if l, err := req.RequireFloat("limit"); err == nil {
-		limit = int(l)
-		if limit > 500 {
-			limit = 500
-		}
+		limit = min(int(l), 500)
 	}
 	offset := 0
 

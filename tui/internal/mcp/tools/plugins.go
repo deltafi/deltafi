@@ -23,6 +23,7 @@ package tools
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/mark3labs/mcp-go/mcp"
@@ -194,13 +195,13 @@ func installPlugin(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolR
 	}
 
 	if !resp.InstallPlugin.Success {
-		errors := ""
+		var errors strings.Builder
 		for _, e := range resp.InstallPlugin.Errors {
 			if e != nil {
-				errors += *e + "; "
+				errors.WriteString(*e + "; ")
 			}
 		}
-		return registry.ErrorResult("installation failed: " + errors), nil
+		return registry.ErrorResult("installation failed: " + errors.String()), nil
 	}
 
 	// Check if wait was requested
@@ -233,13 +234,13 @@ func uninstallPlugin(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToo
 	}
 
 	if !resp.UninstallPlugin.Success {
-		errors := ""
+		var errors strings.Builder
 		for _, e := range resp.UninstallPlugin.Errors {
 			if e != nil {
-				errors += *e + "; "
+				errors.WriteString(*e + "; ")
 			}
 		}
-		return registry.ErrorResult("uninstall failed: " + errors), nil
+		return registry.ErrorResult("uninstall failed: " + errors.String()), nil
 	}
 
 	return mcp.NewToolResultText(fmt.Sprintf("Plugin %s uninstalled successfully", name)), nil

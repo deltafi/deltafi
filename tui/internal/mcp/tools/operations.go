@@ -101,10 +101,7 @@ func listErrors(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResu
 	// Limit
 	limit := 50
 	if l, err := req.RequireFloat("limit"); err == nil {
-		limit = int(l)
-		if limit > 500 {
-			limit = 500
-		}
+		limit = min(int(l), 500)
 	}
 	offset := 0
 
@@ -176,10 +173,7 @@ func searchErroredDeltaFiles(ctx context.Context, req mcp.CallToolRequest) (*mcp
 	// Limit
 	limit := 50
 	if l, err := req.RequireFloat("limit"); err == nil {
-		limit = int(l)
-		if limit > 500 {
-			limit = 500
-		}
+		limit = min(int(l), 500)
 	}
 	offset := 0
 
