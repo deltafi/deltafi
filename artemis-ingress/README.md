@@ -41,6 +41,32 @@ services:
     user: "${USER_ID}:${GROUP_ID}"
 ```
 
+An alternative to setting up the Artermis parameters using the `environment` section would be to override the `application.yaml` with an addtional volumes entry instead. E.g.,
+```
+    volumes:
+      - ${DATA_DIR}/certs/${DELTAFI_SECRET_PLUGINS_SSL:-ssl-secret}:/certs
+      - ${DATA_DIR}/artemis-ingress/application.yaml:/config/application.yaml
+```
+along with the creation of `${DATA_DIR}/artemis-ingress/application.yaml`. For example:
+```
+$ cat data/artemis-ingress/application.yaml
+deltafi:
+  base-core-url: ${CORE_URL:http://deltafi-core:8080}
+  data-source: passthrough-rest-data-source
+  media-type: application/octet-stream
+
+spring:
+  artemis:
+    mode: native
+    broker-url: tcp://artemis:61616
+    user: admin
+    password: admin123
+
+listener:
+  destination:
+    name: passthrough-queue
+```
+
 ## Set up listen on a second queue
 
 Edit `site/compose.yaml`, and add another service with a different name, container name, queue, and data source:

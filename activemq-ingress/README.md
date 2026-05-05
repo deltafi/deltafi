@@ -42,6 +42,34 @@ services:
     user: "${USER_ID}:${GROUP_ID}"
 ```
 
+An alternative to setting up the Active MQ parameters using the `environment` section would be to override the `application.yaml` with an addtional volumes entry instead. E.g.,
+```
+    volumes:
+      - ${DATA_DIR}/certs/${DELTAFI_SECRET_PLUGINS_SSL:-ssl-secret}:/certs
+      - ${DATA_DIR}/activemq-ingress/application.yaml:/config/application.yaml
+```
+along with the creation of `${DATA_DIR}/activemq-ingress/application.yaml`. For example:
+```
+$ cat data/activemq-ingress/application.yaml
+deltafi:
+  base-core-url: ${CORE_URL:http://deltafi-core:8080}
+  data-source: passthrough-rest-data-source
+  media-type: application/octet-stream
+
+spring:
+  activemq:
+    mode: native
+    broker-url: tcp://activemq:61616
+    user: admin
+    password: admin
+  jms:
+    pub-sub-domain: true
+
+listener:
+  destination:
+    name: passthrough-amq-topic
+```
+
 ## Set up a second listener on a queue this time
 
 Edit `site/compose.yaml`, and add another service with a different name, container name, destination, and data source. Do not include `LISTEN_DEST_ISATOPIC` in the environment section this time, which will default to "false" and use a queue instead of a pub-sub topic:
