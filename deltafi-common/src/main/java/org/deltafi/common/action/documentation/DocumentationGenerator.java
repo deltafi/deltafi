@@ -59,6 +59,7 @@ public class DocumentationGenerator {
         int lastDotIndex = actionDescriptor.getName().lastIndexOf('.');
         docs.append("# ").append(lastDotIndex != -1 ?
                 actionDescriptor.getName().substring(lastDotIndex + 1) : actionDescriptor.getName()).append('\n');
+        docs.append("#### <font color='#888'>Type: ").append(actionDescriptor.getName()).append("</font>\n");
         docs.append(actionDescriptor.getActionOptions().getDescription()).append("\n\n");
 
         docs.append(generateParametersMarkdown(actionDescriptor.getSchema()));
