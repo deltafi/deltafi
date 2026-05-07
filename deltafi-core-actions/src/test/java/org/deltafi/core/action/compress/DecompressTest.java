@@ -409,6 +409,16 @@ public class DecompressTest {
     }
 
     @Test
+    public void decompressGzipWithEmbeddedZipAutoDetect() {
+        runTest(new DecompressParameters(), Format.GZIP, input("fileA.zip.gz"), "fileA.zip");
+    }
+
+    @Test
+    public void decompressGzipWithEmbeddedZipExplicitFormat() {
+        runTest(Format.GZIP, input("fileA.zip.gz"), "fileA.zip");
+    }
+
+    @Test
     public void retainAndDecompressesMultipleGzip() {
         runTest(Format.GZIP, true, input("fileA.gz", "fileB.gz"), "fileA", "fileB");
     }
@@ -769,7 +779,8 @@ public class DecompressTest {
         }
 
         for (String outputFile : outputFiles) {
-            transformResultAssert.hasContentMatchingAt(index++, outputFile, MediaType.APPLICATION_OCTET_STREAM,
+            String mediaType = outputFile.endsWith("zip") ? "application/zip" : MediaType.APPLICATION_OCTET_STREAM;
+            transformResultAssert.hasContentMatchingAt(index++, outputFile, mediaType,
                     runner.readResourceAsBytes(outputFile));
         }
 

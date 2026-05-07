@@ -93,9 +93,7 @@ public class Decompress extends TransformAction<DecompressParameters> {
                                 .build()))
                         .build())
                 .errors(List.of(new ActionOptions.DescriptionWithConditions("On content that cannot be decompressed", List.of("""
-                        Occurs when a format is provided and all content is not in the format.""", """
-                        Occurs when content is detected as being a compressed archive but the format of the archive is
-                        not tar. Only tar archives are permitted within compressed content (.tar.bz2, .tar.gz, .tar.xz, .tar.Z)."""))))
+                        Occurs when a format is provided and all content is not in the format."""))))
                 .notes(List.of("""
                         Compressed content in tar format will use an in-place decompression. This will result in much
                         quicker decompression than other formats since no additional writes will be made to the content
@@ -351,38 +349,34 @@ public class Decompress extends TransformAction<DecompressParameters> {
             throws ArchiveException {
         // Wrap in a BufferedInputStream (supporting mark/reset) so the type can be detected.
         BufferedInputStream bufferedCompressorInputStream = new BufferedInputStream(compressorInputStream);
-        ArchiveInputStream<?> archiveInputStream;
 
+        // Sniff the inner type without constructing an archive stream — avoids leaking
+        // the Inflater/etc. allocated by archive streams we don't end up using.
+        String innerType;
         try {
-            archiveInputStream = ArchiveStreamFactory.DEFAULT.createArchiveInputStream(bufferedCompressorInputStream);
+            innerType = ArchiveStreamFactory.detect(bufferedCompressorInputStream);
         } catch (ArchiveException e) {
-            // Not a compressed archive stream, just a compressed stream
-            Format format = switch (compressorInputStream) {
-                case BZip2CompressorInputStream ignored -> Format.BZIP2;
-                case GzipCompressorInputStream ignored -> Format.GZIP;
-                case XZCompressorInputStream ignored -> Format.XZ;
-                default -> Format.Z;
-            };
-            return new DetectedFormatData(format, bufferedCompressorInputStream, null);
+            innerType = null;
         }
 
-        if (archiveInputStream instanceof TarArchiveInputStream) {
+        if (ArchiveStreamFactory.TAR.equals(innerType)) {
+            // Tar-in-compressed: fast path uses in-place subcontent extraction.
             Format format = switch (compressorInputStream) {
                 case BZip2CompressorInputStream ignored -> Format.TAR_BZIP2;
                 case GzipCompressorInputStream ignored -> Format.TAR_GZIP;
                 case XZCompressorInputStream ignored -> Format.TAR_XZ;
                 default -> Format.TAR_Z;
             };
-            return new DetectedFormatData(format, null, archiveInputStream);
+            return new DetectedFormatData(format, null, new TarArchiveInputStream(bufferedCompressorInputStream));
         }
 
-        String archiveType = ArchiveStreamFactory.detect(bufferedCompressorInputStream);
-        try {
-            archiveInputStream.close();
-        } catch (IOException ioe) {
-            throw new RuntimeException(ioe);
-        }
-        throw new ArchiveException("Archive type in compressed content not supported: " + archiveType);
+        Format format = switch (compressorInputStream) {
+            case BZip2CompressorInputStream ignored -> Format.BZIP2;
+            case GzipCompressorInputStream ignored -> Format.GZIP;
+            case XZCompressorInputStream ignored -> Format.XZ;
+            default -> Format.Z;
+        };
+        return new DetectedFormatData(format, bufferedCompressorInputStream, null);
     }
 
     private DetectedFormatData detectNoncompressedArchiveType(BufferedInputStream bufferedContentInputStream)
