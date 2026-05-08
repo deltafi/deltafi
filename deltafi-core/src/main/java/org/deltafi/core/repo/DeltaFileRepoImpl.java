@@ -48,6 +48,7 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
     // a magic number known by the GUI that says there are "many" total results
     private static final int MANY_RESULTS = 10_000;
     public static final String LIMIT = "limit";
+    private static final String DATA_SOURCE_SORT_FIELD = "dataSource";
 
     @PersistenceContext(unitName = "primary")
     private final EntityManager entityManager;
@@ -683,16 +684,18 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
                 .collect(Collectors.joining(", ")); */
         Map<String, Object> parameters = new HashMap<>();
         StringBuilder sqlQuery = new StringBuilder();
-        String criteria = populateQuery(filter, parameters, sqlQuery);
+        boolean sortByDataSource = orderBy != null && DATA_SOURCE_SORT_FIELD.equals(orderBy.getField());
+        String criteria = populateQuery(filter, parameters, sqlQuery, sortByDataSource);
 
-        sqlQuery.append("ORDER BY df.");
+        sqlQuery.append("ORDER BY ");
         if (orderBy != null) {
-            sqlQuery.append(toSnakeCase(orderBy.getField()))
+            String field = sortByDataSource ? "fd.name" : "df." + toSnakeCase(orderBy.getField());
+            sqlQuery.append(field)
                     .append(" ")
                     .append(orderBy.getDirection() == DeltaFileDirection.ASC ? "ASC" : "DESC")
                     .append(" ");
         } else {
-            sqlQuery.append("modified DESC ");
+            sqlQuery.append("df.modified DESC ");
         }
 
         sqlQuery.append("LIMIT :limit OFFSET :offset");
@@ -808,7 +811,7 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
     public List<DeltaFile> deltaFiles(DeltaFilesFilter filter, int limit, boolean skipLocked) {
         Map<String, Object> parameters = new HashMap<>();
         StringBuilder sqlQuery = new StringBuilder();
-        populateQuery(filter, parameters, sqlQuery);
+        populateQuery(filter, parameters, sqlQuery, false);
         if (skipLocked) {
             sqlQuery.append("FOR UPDATE OF df SKIP LOCKED ");
         }
@@ -825,8 +828,11 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
         return deltaFileList;
     }
 
-    private String populateQuery(DeltaFilesFilter filter, Map<String, Object> parameters, StringBuilder sqlQuery) {
+    private String populateQuery(DeltaFilesFilter filter, Map<String, Object> parameters, StringBuilder sqlQuery, boolean joinFlowDefinitions) {
         sqlQuery.append("SELECT df.* FROM delta_files df ");
+        if (joinFlowDefinitions) {
+            sqlQuery.append("JOIN flow_definitions fd ON fd.id = df.data_source_id ");
+        }
         sqlQuery.append(buildAnnotationJoins(filter));
         sqlQuery.append("WHERE TRUE\n");
         String criteria = buildDeltaFilesCriteria(parameters, filter);

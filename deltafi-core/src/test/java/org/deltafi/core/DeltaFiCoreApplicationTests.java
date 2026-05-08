@@ -3811,6 +3811,22 @@ class DeltaFiCoreApplicationTests {
 	}
 
 	@Test
+	void testDeltaFiles_sortByDataSource() {
+		DeltaFile zebra = utilService.buildDeltaFile(UUID.randomUUID(), "zebra", DeltaFileStage.COMPLETE, NOW, NOW);
+		DeltaFile alpha = utilService.buildDeltaFile(UUID.randomUUID(), "alpha", DeltaFileStage.COMPLETE, NOW, NOW);
+		DeltaFile mango = utilService.buildDeltaFile(UUID.randomUUID(), "mango", DeltaFileStage.COMPLETE, NOW, NOW);
+		deltaFileRepo.insertBatch(List.of(zebra, alpha, mango), 1000);
+
+		DeltaFiles asc = deltaFileRepo.deltaFiles(null, 50, new DeltaFilesFilter(),
+				DeltaFileOrder.newBuilder().direction(DeltaFileDirection.ASC).field("dataSource").build(), null);
+		assertEquals(List.of(alpha, mango, zebra), asc.getDeltaFiles());
+
+		DeltaFiles desc = deltaFileRepo.deltaFiles(null, 50, new DeltaFilesFilter(),
+				DeltaFileOrder.newBuilder().direction(DeltaFileDirection.DESC).field("dataSource").build(), null);
+		assertEquals(List.of(zebra, mango, alpha), desc.getDeltaFiles());
+	}
+
+	@Test
 	void testDeltaFiles_filter() {
 		DeltaFile deltaFile1 = utilService.buildDeltaFile(UUID.randomUUID(), "dataSource", DeltaFileStage.COMPLETE, NOW.minusSeconds(2), NOW.plusSeconds(2));
 		deltaFile1.setPinned(true);
