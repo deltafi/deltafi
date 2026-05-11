@@ -13,7 +13,7 @@ DeltaFi exposes two APIs: a REST API for data operations, system management, and
 |-----|----------|-------|
 | REST | `/api/v2/` | All REST endpoints except plugin registration |
 | Plugin Registration | `/plugins` | Used by plugins during startup |
-| GraphQL | `/graphql` | Single endpoint, POST only |
+| GraphQL | `/api/v2/graphql` | Single endpoint, POST only |
 | GraphiQL IDE | `/graphiql` | Interactive query editor (browser) |
 
 In local development, use `http://local.deltafi.org` as the host. In production, use the configured DeltaFi domain over HTTPS.

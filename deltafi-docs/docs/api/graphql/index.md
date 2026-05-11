@@ -9,10 +9,10 @@ DeltaFi uses [Netflix DGS](https://netflix.github.io/dgs/) to expose a GraphQL A
 
 ## Endpoint
 
-| | |
-|-|-|
-| **URL** | `/graphql` |
-| **Method** | `POST` |
+| |                    |
+|-|--------------------|
+| **URL** | `/api/v2/graphql`  |
+| **Method** | `POST`             |
 | **Content-Type** | `application/json` |
 
 ### GraphiQL IDE
@@ -22,7 +22,7 @@ An interactive query editor is available at `/graphiql` in the browser. Use it t
 ### Making Requests
 
 ```bash
-curl -X POST http://deltafi-host/graphql \
+curl -X POST http://deltafi-host/api/v2/graphql \
   -H "Content-Type: application/json" \
   -d '{
     "query": "{ version }"
@@ -32,7 +32,7 @@ curl -X POST http://deltafi-host/graphql \
 With variables:
 
 ```bash
-curl -X POST http://deltafi-host/graphql \
+curl -X POST http://deltafi-host/api/v2/graphql \
   -H "Content-Type: application/json" \
   -d '{
     "query": "query GetDeltaFile($did: UUID!) { deltaFile(did: $did) { name stage } }",

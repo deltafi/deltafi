@@ -224,15 +224,23 @@ Same as above, but accepts the content request as a JSON body.
 ```json
 {
   "did": "550e8400-e29b-41d4-a716-446655440000",
-  "segment": {
-    "uuid": "660e8400-e29b-41d4-a716-446655440000",
-    "offset": 0,
-    "size": 1024,
-    "did": "550e8400-e29b-41d4-a716-446655440000"
-  },
-  "name": "example.txt",
-  "mediaType": "text/plain"
+  "flowNumber": 0,
+  "actionIndex": 0,
+  "contentIndex": 0,
+  "offset": null,
+  "size": null
 }
 ```
 
-**Response:** Binary file stream with appropriate content headers
+| Field | Type | Description |
+|-------|------|-------------|
+| `did` | UUID | DeltaFile identifier |
+| `flowNumber` | int | Flow number on the DeltaFile |
+| `actionIndex` | int \| null | Action index within the flow (`null` = flow input) |
+| `contentIndex` | int | Index into the action's content list |
+| `offset` | long \| null | Optional byte offset for a partial read |
+| `size` | long \| null | Optional byte count for a partial read |
+
+The GET variant accepts the same JSON, base64-encoded, in the `content` query parameter.
+
+**Response:** Binary file stream. The original filename and media type are returned via response headers (`Content-Disposition` and `Content-Type`); they are not part of the request.
