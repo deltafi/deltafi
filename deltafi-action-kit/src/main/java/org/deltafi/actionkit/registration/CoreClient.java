@@ -15,24 +15,27 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
+// ABOUTME: Transport interface for posting a plugin registration to the DeltaFi core.
+// ABOUTME: HttpCoreClient is the standard implementation; embedded mode can register in-JVM.
 package org.deltafi.actionkit.registration;
 
-import feign.Headers;
-import feign.RequestLine;
 import org.deltafi.common.types.PluginRegistration;
 
-// ABOUTME: Feign client interface for registering plugins with the DeltaFi core.
-// ABOUTME: Posts plugin registration data to the core REST API.
-
 /**
- * Feign client for communicating with the DeltaFi core plugin registration endpoint
+ * Posts a plugin registration to a DeltaFi core. Implementations: {@link HttpCoreClient} for the
+ * standard HTTP path, or an in-JVM implementation for embedded mode where the action kit and
+ * core share a process and registration can bypass the wire.
  */
-public interface CoreClient {
+public interface CoreClient extends AutoCloseable {
+
     /**
-     * Register a plugin with the core
-     * @param pluginRegistration the plugin registration data to post
+     * Submit the registration. Implementations are expected to throw on failure (after their own
+     * retry policy, if any) so that the calling {@code PluginRegistrar} surfaces the failure to
+     * the host framework's startup pipeline.
      */
-    @RequestLine("POST /plugins")
-    @Headers("Content-Type: application/json")
-    void postPlugin(PluginRegistration pluginRegistration);
+    void register(PluginRegistration registration);
+
+    /** Default no-op so most implementations don't need to override. */
+    @Override
+    default void close() {}
 }

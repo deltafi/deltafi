@@ -37,6 +37,8 @@ import org.deltafi.actionkit.action.service.HeartbeatService;
 import org.deltafi.actionkit.artifact.ArtifactConfiguration;
 import org.deltafi.actionkit.lookup.*;
 import org.deltafi.actionkit.properties.ActionsProperties;
+import org.deltafi.actionkit.registration.CoreClient;
+import org.deltafi.actionkit.registration.HttpCoreClient;
 import org.deltafi.actionkit.registration.PluginRegistrar;
 import org.deltafi.actionkit.service.ActionEventQueue;
 import org.deltafi.actionkit.service.HostnameService;
@@ -48,12 +50,12 @@ import org.deltafi.actionkit.lookup.LookupTableClient;
 import org.deltafi.actionkit.lookup.LookupTableSupplier;
 import org.deltafi.common.queue.valkey.ValkeyKeyedBlockingQueue;
 import org.deltafi.common.ssl.SslAutoConfiguration;
+import org.deltafi.common.types.BuildInfo;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.info.BuildProperties;
-import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.DependsOn;
 import org.springframework.context.annotation.Import;
@@ -125,28 +127,48 @@ public class ActionKitAutoConfiguration {
     }
 
     /**
-     * Create the registrar that registers the plugin and its actions with the core.
-     * @param actionRunner the action runner managing action execution
-     * @param lookupTableSupplierRunner the runner managing lookup table suppliers
-     * @param buildProperties build metadata from Spring Boot
-     * @param applicationContext the Spring application context
-     * @param environment the Spring environment
-     * @param schemaGenerator the JSON schema generator for action parameters
-     * @return a configured PluginRegistrar
+     * Translate Spring Boot's {@link BuildProperties} into the framework-agnostic {@link BuildInfo}
+     * consumed by both the registrar and the action runner. Plugin authors can override this bean
+     * to supply build metadata from another source.
      */
     @Bean
-    public PluginRegistrar pluginRegistrar(ActionRunner actionRunner,
-            LookupTableSupplierRunner lookupTableSupplierRunner, BuildProperties buildProperties,
-            ApplicationContext applicationContext, Environment environment, SchemaGenerator schemaGenerator) {
-        return new PluginRegistrar(actionRunner, lookupTableSupplierRunner, buildProperties, applicationContext,
-                environment, schemaGenerator);
+    @ConditionalOnMissingBean
+    public BuildInfo buildInfo(BuildProperties buildProperties) {
+        return new BuildInfo(
+                buildProperties.getGroup(),
+                buildProperties.getArtifact(),
+                buildProperties.getVersion(),
+                buildProperties.getName(),
+                buildProperties.get("description"),
+                buildProperties.get("actionKitVersion"),
+                buildProperties.get("pluginDependencies"));
     }
 
-    /** Create the action runner that polls for and executes actions.
-     * @return a configured ActionRunner
+    /** Default HTTP transport for plugin registration; replace by defining your own CoreClient bean. */
+    @Bean
+    @ConditionalOnMissingBean
+    public CoreClient coreClient(Environment environment) {
+        return new HttpCoreClient(environment.getProperty("CORE_URL", "http://localhost"));
+    }
+
+    /**
+     * Create the registrar that registers the plugin and its actions with the core.
+     * Runs before {@code actionRunner} so the plugin cannot consume work until registration is acknowledged.
      */
     @Bean
-    @DependsOn({"lookupTableSupplierRunner"})
+    public PluginRegistrar pluginRegistrar(LookupTableSupplierRunner lookupTableSupplierRunner,
+            List<Action<?, ?, ?>> actions, BuildInfo buildInfo, CoreClient coreClient,
+            SchemaGenerator schemaGenerator) {
+        return new PluginRegistrar(actions, lookupTableSupplierRunner, schemaGenerator,
+                buildInfo, coreClient, Thread.currentThread().getContextClassLoader());
+    }
+
+    /**
+     * Create the action runner that polls for and executes actions.
+     * Depends on {@code pluginRegistrar} so workers are not constructed until registration succeeds.
+     */
+    @Bean
+    @DependsOn({"lookupTableSupplierRunner", "pluginRegistrar"})
     public ActionRunner actionRunner() {
         return new ActionRunner();
     }

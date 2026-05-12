@@ -24,97 +24,94 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.github.victools.jsonschema.generator.SchemaGenerator;
-import feign.Retryer;
-import feign.jackson.JacksonDecoder;
-import feign.jackson.JacksonEncoder;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.deltafi.actionkit.action.Action;
-import org.deltafi.actionkit.action.service.ActionRunner;
 import org.deltafi.actionkit.action.transform.Join;
-import org.deltafi.actionkit.lookup.LookupTableSupplierRunner;
-import org.deltafi.common.http.client.feign.FeignClientFactory;
 import org.deltafi.actionkit.lookup.LookupTableSupplier;
+import org.deltafi.actionkit.lookup.LookupTableSupplierRunner;
 import org.deltafi.common.types.*;
 import org.deltafi.common.types.integration.IntegrationTest;
+import org.deltafi.common.util.ClasspathScanner;
 import org.deltafi.common.util.ResourceMapper;
-import org.springframework.boot.info.BuildProperties;
-import org.springframework.context.ApplicationContext;
-import org.springframework.core.env.Environment;
-import org.springframework.core.io.Resource;
 
 import java.io.IOException;
-import java.util.*;
+import java.net.URL;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
 
 /**
- * Registers the plugin and its actions with the DeltaFi core on startup
+ * Registers the plugin and its actions with the DeltaFi core on startup. Framework-agnostic:
+ * discovers classpath resources, build metadata, and the {@code IMAGE} / {@code IMAGE_PULL_SECRET}
+ * environment variables itself. The wire transport is pluggable via {@link CoreClient}.
  */
-@RequiredArgsConstructor
 @Slf4j
+@RequiredArgsConstructor
 public class PluginRegistrar {
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper()
             .registerModule(new JavaTimeModule())
             .enable(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY);
 
-    private final ActionRunner actionRunner;
-    private final LookupTableSupplierRunner lookupTableSupplierRunner;
-    private final BuildProperties buildProperties;
-    private final ApplicationContext applicationContext;
-    private final Environment environment;
-    private final SchemaGenerator schemaGenerator;
+    private static final String FLOWS_DIRECTORY = "flows";
+    private static final String INTEGRATION_DIRECTORY = "integration";
 
-    /** Build and post the plugin registration to the DeltaFi core */
+    private final List<Action<?, ?, ?>> singletonActions;
+    private final LookupTableSupplierRunner lookupTableSupplierRunner;
+    private final SchemaGenerator schemaGenerator;
+    private final BuildInfo buildInfo;
+    private final CoreClient coreClient;
+    private final ClassLoader classLoader;
+
+    /** Build and submit the plugin registration. Closes the CoreClient on the way out. */
     @PostConstruct
     public void register() {
-        String coreUrl = environment.getProperty("CORE_URL", String.class, "http://localhost");
-        PluginRegistration pluginRegistration = buildPluginRegistration();
+        PluginRegistration registration = buildPluginRegistration();
+        log.info("Registering plugin with core: {}", registration.getPluginCoordinates());
+        try (coreClient) {
+            coreClient.register(registration);
+        } catch (Exception e) {
+            throw new IllegalStateException("Plugin registration failed", e);
+        }
+    }
 
-        log.info("Registering plugin with core: {}", pluginRegistration.getPluginCoordinates());
-        CoreClient coreClient = FeignClientFactory.build(CoreClient.class, coreUrl, new JacksonEncoder(OBJECT_MAPPER),
-                new JacksonDecoder(OBJECT_MAPPER), new Retryer.Default(500, 2000, 3));
-        coreClient.postPlugin(pluginRegistration);
+    /**
+     * Read environment configuration. Override to redirect to a framework lookup (Spring
+     * {@code Environment}, Micronaut, a test fixture).
+     */
+    protected String env(String name) {
+        return System.getenv(name);
     }
 
     private PluginRegistration buildPluginRegistration() {
-        PluginCoordinates pluginCoordinates = PluginCoordinates.builder()
-                .groupId(buildProperties.getGroup())
-                .artifactId(buildProperties.getArtifact())
-                .version(buildProperties.getVersion())
-                .build();
-
-        PluginRegistration.PluginRegistrationBuilder pluginRegistrationBuilder = PluginRegistration.builder()
-                .image(environment.getProperty("IMAGE"))
-                .imagePullSecret(environment.getProperty("IMAGE_PULL_SECRET"))
-                .pluginCoordinates(pluginCoordinates)
-                .displayName(buildProperties.getName())
-                .description(buildProperties.get("description"))
-                .actionKitVersion(buildProperties.get("actionKitVersion"))
-                .dependencies(toPluginCoordinatesList(buildProperties.get("pluginDependencies")))
-                .actions(actionRunner.getSingletonActions().stream().map(this::buildActionDescriptor).toList())
+        PluginRegistration.PluginRegistrationBuilder builder = PluginRegistration.builder()
+                .image(env("IMAGE"))
+                .imagePullSecret(env("IMAGE_PULL_SECRET"))
+                .pluginCoordinates(buildInfo.pluginCoordinates())
+                .displayName(buildInfo.name())
+                .description(buildInfo.description())
+                .actionKitVersion(buildInfo.actionKitVersion())
+                .dependencies(buildInfo.dependenciesList())
+                .actions(singletonActions.stream().map(this::buildActionDescriptor).toList())
                 .lookupTables(lookupTableSupplierRunner.getLookupTableSupplierMap().values().stream()
                         .map(LookupTableSupplier::getLookupTable).toList());
 
-        Resource flowsDirectory = applicationContext.getResource("classpath:flows");
-        if (flowsDirectory.exists()) {
-            pluginRegistrationBuilder.variables(loadVariables()).flowPlans(loadFlowPlans());
+        if (classLoader.getResource(FLOWS_DIRECTORY) != null) {
+            List<URL> flowResources = ClasspathScanner.list(classLoader, FLOWS_DIRECTORY);
+            builder.variables(loadVariables(flowResources)).flowPlans(loadFlowPlans(flowResources));
         } else {
             log.info("No flows directory exists to load variables or flows");
         }
 
-        Resource testsDirectory = applicationContext.getResource("classpath:integration");
-        if (testsDirectory.exists()) {
-            pluginRegistrationBuilder.integrationTests(loadIntegrationTests());
+        if (classLoader.getResource(INTEGRATION_DIRECTORY) != null) {
+            builder.integrationTests(loadIntegrationTests());
         } else {
             log.info("No tests directory exists to load integration tests");
         }
 
-        return pluginRegistrationBuilder.build();
-    }
-
-    private List<PluginCoordinates> toPluginCoordinatesList(String pluginDependencies) {
-        return pluginDependencies == null ? List.of() :
-            Arrays.stream(pluginDependencies.split(",\\s?")).map(PluginCoordinates::new).toList();
+        return builder.build();
     }
 
     private ActionDescriptor buildActionDescriptor(Action<?, ?, ?> action) {
@@ -131,84 +128,68 @@ public class PluginRegistrar {
                 .build();
     }
 
-    private List<Variable> loadVariables() {
-        Resource variablesResource = findVariables();
-        if (variablesResource == null) {
+    private List<Variable> loadVariables(List<URL> flowResources) {
+        URL url = findVariables(flowResources);
+        if (url == null) {
             log.info("No plugin variables have been defined");
             return Collections.emptyList();
         }
-
         try {
-            return ResourceMapper.readValues(variablesResource, Variable.class);
+            return ResourceMapper.readValues(url, Variable.class);
         } catch (IOException e) {
             log.warn("Unable to load variables", e);
             return Collections.emptyList();
         }
     }
 
-    private Resource findVariables() {
+    private URL findVariables(List<URL> flowResources) {
         for (String extension : List.of(".json", ".yaml", ".yml", ".jsonl")) {
-            Resource variablesResource = applicationContext.getResource("classpath:flows/variables" + extension);
-            if (variablesResource.exists()) {
-                return variablesResource;
+            String target = "variables" + extension;
+            for (URL url : flowResources) {
+                if (target.equals(ClasspathScanner.filenameOf(url))) {
+                    return url;
+                }
             }
         }
         return null;
     }
 
-    private List<FlowPlan> loadFlowPlans() {
-        Resource[] flowPlanResources;
-        try {
-            flowPlanResources = applicationContext.getResources("classpath:flows/*");
-        } catch (IOException e) {
-            log.warn("Unable to load flow plans", e);
-            return Collections.emptyList();
-        }
-
-        if (flowPlanResources.length == 0) {
+    private List<FlowPlan> loadFlowPlans(List<URL> flowResources) {
+        if (flowResources.isEmpty()) {
             log.info("No flow plans exist in the flows directory");
             return Collections.emptyList();
         }
-
         List<FlowPlan> flowPlans = new ArrayList<>();
-        for (Resource flowPlanResource : flowPlanResources) {
-            String filename = flowPlanResource.getFilename();
-            if (filename == null || filename.startsWith("variables.") || invalidExtension(filename)) {
+        for (URL url : flowResources) {
+            String filename = ClasspathScanner.filenameOf(url);
+            if (filename.startsWith("variables.") || invalidExtension(filename)) {
                 continue;
             }
             try {
-                flowPlans.add(ResourceMapper.readValue(flowPlanResource, FlowPlan.class));
+                flowPlans.add(ResourceMapper.readValue(url, FlowPlan.class));
             } catch (IOException e) {
-                log.warn("Unable to load flow plan ({})", flowPlanResource.getFilename(), e);
+                log.warn("Unable to load flow plan ({})", filename, e);
             }
         }
         return flowPlans;
     }
 
     private List<IntegrationTest> loadIntegrationTests() {
-        Resource[] testResources;
-        try {
-            testResources = applicationContext.getResources("classpath:integration/*");
-        } catch (IOException e) {
-            log.warn("Unable to load tests", e);
-            return Collections.emptyList();
-        }
-
-        if (testResources.length == 0) {
+        List<URL> resources = ClasspathScanner.list(classLoader, INTEGRATION_DIRECTORY);
+        if (resources.isEmpty()) {
             log.info("No tests exist in the tests directory");
             return Collections.emptyList();
         }
-
         List<IntegrationTest> tests = new ArrayList<>();
-        for (Resource testResource : testResources) {
-            String filename = testResource.getFilename();
-            if (filename == null || invalidExtension(filename)) {
+        for (URL url : resources) {
+            String filename = ClasspathScanner.filenameOf(url);
+            if (invalidExtension(filename)) {
                 continue;
             }
             try {
-                tests.add(ResourceMapper.readValue(testResource, IntegrationTest.class));
+                tests.add(ResourceMapper.readValue(url, IntegrationTest.class));
             } catch (IOException e) {
-                log.warn("Unable to load test ({})", testResource.getFilename(), e);
+                log.warn("Unable to load test ({})", filename, e);
             }
         }
         return tests;

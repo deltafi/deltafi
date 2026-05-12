@@ -40,12 +40,12 @@ import org.deltafi.common.content.ContentStorageService;
 import org.deltafi.common.types.ActionContext;
 import org.deltafi.common.types.ActionEvent;
 import org.deltafi.common.types.ActionInput;
+import org.deltafi.common.types.BuildInfo;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.MDC;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
-import org.springframework.boot.info.BuildProperties;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationListener;
 import org.springframework.context.event.ContextClosedEvent;
@@ -79,7 +79,7 @@ public class ActionRunner implements ApplicationListener<ContextClosedEvent> {
     private List<Action<?, ?, ?>> singletonActions = Collections.emptyList();
 
     @Autowired
-    BuildProperties buildProperties;
+    BuildInfo buildInfo;
 
     @Autowired
     ContentStorageService contentStorageService;
@@ -146,7 +146,7 @@ public class ActionRunner implements ApplicationListener<ContextClosedEvent> {
             while (!Thread.currentThread().isInterrupted()) {
                 log.trace("{} listening", action.getClassCanonicalName());
                 ActionInput actionInput = actionEventQueue.takeAction(action.getClassCanonicalName());
-                actionInput.getActionContext().setActionVersion(buildProperties.getVersion());
+                actionInput.getActionContext().setActionVersion(buildInfo.version());
                 actionInput.getActionContext().setHostname(hostnameService.getHostname());
                 actionInput.getActionContext().setStartTime(OffsetDateTime.now());
                 actionInput.getActionContext().setContentStorageService(actionContentStorageService);

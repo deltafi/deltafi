@@ -28,6 +28,8 @@ import org.springframework.core.io.Resource;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
+import java.net.URL;
 import java.util.List;
 import java.util.Optional;
 
@@ -97,8 +99,32 @@ public class ResourceMapper {
         }
     }
 
+    /**
+     * Read content from a URL. The URL's trailing extension selects JSON vs YAML.
+     * @throws IOException if the content cannot be read
+     */
+    public static <T> T readValue(URL url, Class<T> type) throws IOException {
+        try (InputStream in = url.openStream()) {
+            return getMapper(url.toString()).readValue(in, type);
+        }
+    }
+
+    /**
+     * Read multiple documents from a URL. The URL's trailing extension selects JSON vs YAML.
+     * @throws IOException if the content cannot be read
+     */
+    public static <T> List<T> readValues(URL url, Class<T> type) throws IOException {
+        try (InputStream in = url.openStream();
+             MappingIterator<T> it = getMapper(url.toString()).readerFor(type).readValues(in)) {
+            return it.readAll();
+        }
+    }
+
     private static ObjectMapper getMapper(Resource resource) {
-        String fileName = Optional.ofNullable(resource.getFilename()).orElse("");
-        return fileName.endsWith(".json") || fileName.endsWith(".jsonl") ? JSON_MAPPER : YAML_MAPPER;
+        return getMapper(Optional.ofNullable(resource.getFilename()).orElse(""));
+    }
+
+    private static ObjectMapper getMapper(String filename) {
+        return filename.endsWith(".json") || filename.endsWith(".jsonl") ? JSON_MAPPER : YAML_MAPPER;
     }
 }
