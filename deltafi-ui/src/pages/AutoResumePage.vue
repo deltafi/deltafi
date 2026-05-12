@@ -62,6 +62,11 @@
             <InputNumber v-model="data[field]" class="p-inputtext-sm priority-column-input" aria-label="Priority" autofocus />
           </template>
         </Column>
+        <Column field="enabled" header="Enabled" :sortable="true" :style="{ width: '8%' }">
+          <template #body="{ data }">
+            <AutoResumeStateInputSwitch :row-data-prop="data" @reload-auto-resume-rules="fetchAutoResumeRules()" />
+          </template>
+        </Column>
         <Column :style="{ width: '5%' }" :body-style="{ padding: 0 }" :hidden="!$hasSomePermissions('ResumePolicyUpdate', 'ResumePolicyDelete')">
           <template #body="{ data }">
             <div class="d-flex">
@@ -80,6 +85,7 @@
 <script setup>
 import AutoResumeImportFile from "@/components/autoResume/AutoResumeImportFile.vue";
 import AutoResumeRemoveButton from "@/components/autoResume/AutoResumeRemoveButton.vue";
+import AutoResumeStateInputSwitch from "@/components/autoResume/AutoResumeStateInputSwitch.vue";
 import DialogTemplate from "@/components/DialogTemplate.vue";
 import PageHeader from "@/components/PageHeader.vue";
 import useAutoResumeConfiguration from "@/composables/useAutoResumeConfiguration";

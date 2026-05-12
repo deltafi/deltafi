@@ -39,6 +39,7 @@ type ResumePolicy {
     maxAttempts: Int!
     priority: Int
     backOff: BackOff!
+    enabled: Boolean!
 }
 
 input ResumePolicyInput {
@@ -50,6 +51,7 @@ input ResumePolicyInput {
     maxAttempts: Int!
     priority: Int
     backOff: BackOffInput!
+    enabled: Boolean
 }
 
 extend type Query {
@@ -63,4 +65,5 @@ extend type Mutation {
   loadResumePolicies(replaceAll: Boolean!, policies: [ResumePolicyInput!]!): [Result!]!
     removeResumePolicy(id: UUID!) : Boolean!
     updateResumePolicy(resumePolicy: ResumePolicyInput!) : Result!
+    enableResumePolicy(id: UUID!, enabled: Boolean!) : Boolean!
 }

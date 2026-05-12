@@ -104,6 +104,21 @@ public interface DeltaFileRepoCustom {
     List<DeltaFile> findReadyForAutoResume(OffsetDateTime maxReadyTime, boolean excludeEgressActions, int batchSize);
 
     /**
+     * Clear DeltaFile auto-resume fields whose flow-level reason matches the given policy name.
+     *
+     * @param reason the policy name carried in {@code delta_file_flows.next_auto_resume_reason}
+     * @return number of rows updated
+     */
+    int clearAutoResumeSchedulesByReason(String reason);
+
+    /**
+     * Clear every auto-resume field
+     *
+     * @return number of rows updated
+     */
+    int clearAllAutoResumeSchedules();
+
+    /**
      * Search for DeltaFiles in an ERROR stage which may be candidates for applying
      *  a new or recently updated auto resume policy.
      *

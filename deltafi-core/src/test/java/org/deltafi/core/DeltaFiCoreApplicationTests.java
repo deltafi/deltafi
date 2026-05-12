@@ -493,6 +493,7 @@ class DeltaFiCoreApplicationTests {
 		loadTimedDataSources();
 		loadOnErrorDataSources();
 		refreshFlowCaches();
+		loadResumePolicy();
 	}
 
 	static final TransformFlow SAMPLE_TRANSFORM_FLOW;
@@ -542,6 +543,14 @@ class DeltaFiCoreApplicationTests {
 
 	void loadOnErrorDataSources() {
 		onErrorDataSourceRepo.batchInsert(List.of(ON_ERROR_DATA_SOURCE));
+	}
+
+	void loadResumePolicy() {
+		ResumePolicy policy = new ResumePolicy();
+		policy.setId(new UUID(0,0));
+		policy.setName("resume-errors");
+		policy.setEnabled(true);
+		resumePolicyRepo.save(policy);
 	}
 
 	@Test
@@ -2872,6 +2881,21 @@ class DeltaFiCoreApplicationTests {
 		assertEquals(Stream.of(shouldResume, shouldAlsoResume).map(DeltaFile::getDid).sorted().toList(),
 				hits.stream().map(DeltaFile::getDid).sorted().toList());
 
+		// disable is filter-only: rows are excluded by the JOIN to resume_policies,
+		// next_auto_resume on delta_file_flows is left untouched.
+		ResumePolicy policy = resumePolicyRepo.findById(new UUID(0, 0)).orElseThrow();
+		policy.setEnabled(false);
+		resumePolicyRepo.saveAndFlush(policy);
+		assertThat(deltaFileRepo.findReadyForAutoResume(NOW, false, 5000)).isEmpty();
+		DeltaFile stillStamped = deltaFileRepo.findById(shouldResume.getDid()).orElseThrow();
+		assertNotNull(stillStamped.firstFlow().getNextAutoResume());
+		assertEquals("resume-errors", stillStamped.firstFlow().getNextAutoResumeReason());
+
+		// re-enabling restores eligibility at the originally stored time
+		policy.setEnabled(true);
+		resumePolicyRepo.saveAndFlush(policy);
+		assertEquals(2, deltaFileRepo.findReadyForAutoResume(NOW, false, 5000).size());
+
 		// one scheduled pass processes a single bounded batch, then asks the trigger for a fast follow-up
 		assertEquals(1, deltaFilesService.autoResume(NOW, 1));
 
@@ -2879,6 +2903,22 @@ class DeltaFiCoreApplicationTests {
 		Mockito.verify(metricService, times(1)).increment
 				(new Metric(DeltaFiConstants.FILES_AUTO_RESUMED, 1)
 						.addTag(DATA_SOURCE, TRANSFORM_FLOW_NAME));
+
+		// delete clears in-flight stamps in the same transaction so the flows fall to
+		// "errored, no schedule" rather than orphaning silently behind the JOIN filter.
+		assertThat(resumePolicyService.remove(new UUID(0, 0))).isTrue();
+		assertThat(deltaFileRepo.findReadyForAutoResume(NOW, false, 5000)).isEmpty();
+		for (UUID did : List.of(shouldResume.getDid(), shouldAlsoResume.getDid())) {
+			DeltaFile cleared = deltaFileRepo.findById(did).orElseThrow();
+			assertNull(cleared.firstFlow().getNextAutoResume());
+			assertNull(cleared.firstFlow().getNextAutoResumeReason());
+			// Actions render in the UI; nr/nrr must be cleared there too.
+			Action hitAction = cleared.firstFlow().getActions().stream()
+					.filter(a -> "hit".equals(a.getName())).findFirst().orElseThrow();
+			assertNull(hitAction.getNextAutoResume());
+			assertNull(hitAction.getNextAutoResumeReason());
+		}
+
 		Mockito.verifyNoMoreInteractions(metricService);
 	}
 
@@ -2890,6 +2930,7 @@ class DeltaFiCoreApplicationTests {
         DeltaFileFlow dataSink = input.lastFlow();
         dataSink.setState(DeltaFileFlowState.ERROR);
         dataSink.setNextAutoResume(nextAutoResume);
+		dataSink.setNextAutoResumeReason("resume-errors");
         Action egressAction = dataSink.lastAction();
         egressAction.setState(ERROR);
         egressAction.setNextAutoResume(nextAutoResume);

@@ -22,12 +22,14 @@ import jakarta.annotation.PostConstruct;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.deltafi.core.generated.types.BackOff;
+import org.deltafi.core.repo.DeltaFileRepo;
 import org.deltafi.core.repo.ResumePolicyRepo;
 import org.deltafi.core.types.*;
 import org.deltafi.core.types.snapshot.SnapshotRestoreOrder;
 import org.deltafi.core.types.snapshot.Snapshot;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
 
@@ -37,6 +39,7 @@ import java.util.*;
 public class ResumePolicyService implements Snapshotter {
 
     private final ResumePolicyRepo resumePolicyRepo;
+    private final DeltaFileRepo deltaFileRepo;
     private final Random random = new Random();
     private List<ResumePolicy> policiesCache;
 
@@ -50,7 +53,8 @@ public class ResumePolicyService implements Snapshotter {
     }
 
     /**
-     * Find a resume policy for the specified criteria.
+     * Find an enabled resume policy matching the specified criteria.
+     * Disabled policies are skipped here
      *
      * @param attempt    number of times action attempted
      * @param errorCause error cause text.
@@ -60,7 +64,7 @@ public class ResumePolicyService implements Snapshotter {
      */
     Optional<ResumePolicy> find(int attempt, String errorCause, String flowName, String actionName) {
         for (ResumePolicy policy : policiesCache) {
-            if (policy.isMatch(attempt, errorCause, flowName, actionName)) {
+            if (Boolean.TRUE.equals(policy.getEnabled()) && policy.isMatch(attempt, errorCause, flowName, actionName)) {
                 return Optional.of(policy);
             }
         }
@@ -71,6 +75,25 @@ public class ResumePolicyService implements Snapshotter {
         return policiesCache.stream()
                 .filter(p -> p.getName().equals(name))
                 .findFirst();
+    }
+
+    /**
+     * Set the resume policy enabled field to the given value
+     * @param id of the resume policy to change the enable setting
+     * @param enable new enabled value
+     * @return true if the value was changed for the policy. If the policy
+     * was not found this returns false.
+     */
+    public boolean enablePolicy(UUID id, boolean enable) {
+        ResumePolicy policy = get(id).orElse(null);
+        if (policy == null || policy.getEnabled() == enable) {
+            return false;
+        }
+        policy.setEnabled(enable);
+        resumePolicyRepo.save(policy);
+        refreshCache();
+        log.info("{} resume policy {}", enable ? "Enabled" : "Disabled", policy.getName());
+        return true;
     }
 
     /**
@@ -156,7 +179,7 @@ public class ResumePolicyService implements Snapshotter {
      * @return List of ResumePolicy
      */
     public List<ResumePolicy> getAll() {
-        return resumePolicyRepo.findByOrderByPriorityDesc();
+        return resumePolicyRepo.findByOrderByPriorityAndName();
     }
 
     /**
@@ -166,6 +189,7 @@ public class ResumePolicyService implements Snapshotter {
      * @return Result of operation
      */
     public Result save(ResumePolicy resumePolicy) {
+        applyEnabledDefault(resumePolicy);
         if (resumePolicy.getId() == null) {
             resumePolicy.setId(Generators.timeBasedEpochGenerator().generate());
         }
@@ -199,32 +223,46 @@ public class ResumePolicyService implements Snapshotter {
     }
 
     /**
-     * Delete a resume policy by id.
+     * Delete a resume policy by id and clear any in-flight auto-resume schedules stamped with
+     * its name in the same transaction. Affected DeltaFiles fall to the standard "errored,
+     * no schedule" state and need to be resumed manually.
      *
      * @param id id of the policy to delete.
      * @return true if deleted; false if not found
      */
+    @Transactional
     public boolean remove(UUID id) {
-        if (get(id).isPresent()) {
-            resumePolicyRepo.deleteById(id);
-            refreshCache();
-            return true;
+        ResumePolicy policy = get(id).orElse(null);
+        if (policy == null) {
+            return false;
         }
-        return false;
+        int cleared = deltaFileRepo.clearAutoResumeSchedulesByReason(policy.getName());
+        resumePolicyRepo.deleteById(id);
+        refreshCache();
+        if (cleared > 0) {
+            log.info("Deleted resume policy {} and cleared {} in-flight schedule(s)",
+                    policy.getName(), cleared);
+        }
+        return true;
     }
 
     /**
-     * Remove all resume policies.
+     * Remove all resume policies and clear every in-flight auto-resume schedule in the same
+     * transaction.
      */
+    @Transactional
     public void removeAll() {
+        int cleared = deltaFileRepo.clearAllAutoResumeSchedules();
         resumePolicyRepo.deleteAll();
         refreshCache();
+        log.info("Deleted all resume policies and cleared {} in-flight schedule(s)", cleared);
     }
 
     private Result saveAll(List<ResumePolicy> policies) {
         Result result = new Result();
         List<ResumePolicy> valid = new ArrayList<>();
         for (ResumePolicy policy : policies) {
+            applyEnabledDefault(policy);
             if (policy.getId() == null) {
                 policy.setId(Generators.timeBasedEpochGenerator().generate());
             }
@@ -253,6 +291,8 @@ public class ResumePolicyService implements Snapshotter {
     }
 
     @Override
+    @SuppressWarnings({"java:S6809", "java:S2229", "SpringTransactionalMethodCallsInspection"})
+    // reset is inside its own transaction, the removeAll transaction isn't needed
     public Result resetFromSnapshot(Snapshot snapshot, boolean hardReset) {
         if (hardReset) {
             removeAll();
@@ -264,6 +304,14 @@ public class ResumePolicyService implements Snapshotter {
     @Override
     public int getOrder() {
         return SnapshotRestoreOrder.RESUME_POLICY_ORDER;
+    }
+
+    // Pre-V77 snapshots and JSON exports omit the enabled field, and Jackson's
+    // convertValue path explicitly nulls it out on input. Default to enabled true.
+    private void applyEnabledDefault(ResumePolicy policy) {
+        if (policy.getEnabled() == null) {
+            policy.setEnabled(true);
+        }
     }
 
     public record ResumeDetails(String name, Integer delay) {

@@ -19,18 +19,20 @@ package org.deltafi.core.services;
 
 import org.deltafi.common.types.*;
 import org.deltafi.core.generated.types.BackOff;
+import org.deltafi.core.repo.DeltaFileRepo;
 import org.deltafi.core.repo.ResumePolicyRepo;
 import org.deltafi.core.types.*;
+import org.deltafi.core.types.snapshot.Snapshot;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.Mockito;
+import org.mockito.*;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.OffsetDateTime;
 import java.util.*;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.tuple;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
@@ -47,13 +49,21 @@ class ResumePolicyServiceTest {
     @Mock
     ResumePolicyRepo resumePolicyRepo;
 
+    @Mock
+    DeltaFileRepo deltaFileRepo;
+
     @InjectMocks
     ResumePolicyService resumePolicyService;
 
+    @Captor
+    ArgumentCaptor<List<ResumePolicy>> policiesCaptor;
+
     @Test
     void testDeleteFound() {
-        when(resumePolicyRepo.findById(Mockito.any())).thenReturn(Optional.of(getDefault()));
+        ResumePolicy policy = getDefault();
+        when(resumePolicyRepo.findById(Mockito.any())).thenReturn(Optional.of(policy));
         assertTrue(resumePolicyService.remove(DEFAULT_ID));
+        verify(deltaFileRepo, times(1)).clearAutoResumeSchedulesByReason(policy.getName());
         verify(resumePolicyRepo, times(1)).deleteById(DEFAULT_ID);
     }
 
@@ -61,6 +71,7 @@ class ResumePolicyServiceTest {
     void testDeleteNotFound() {
         when(resumePolicyRepo.findById(Mockito.any())).thenReturn(Optional.empty());
         assertFalse(resumePolicyService.remove(NOT_FOUND));
+        verify(deltaFileRepo, never()).clearAutoResumeSchedulesByReason(Mockito.any());
         verify(resumePolicyRepo, times(0)).deleteById(NOT_FOUND);
     }
 
@@ -96,8 +107,56 @@ class ResumePolicyServiceTest {
     }
 
     @Test
+    void testEnablePolicyDisableSavesAndReturnsTrue() {
+        ResumePolicy policy = getDefault();
+        policy.setEnabled(true);
+        when(resumePolicyRepo.findById(DEFAULT_ID)).thenReturn(Optional.of(policy));
+
+        boolean changed = resumePolicyService.enablePolicy(DEFAULT_ID, false);
+
+        assertTrue(changed);
+        assertFalse(policy.getEnabled());
+        verify(resumePolicyRepo, times(1)).save(policy);
+    }
+
+    @Test
+    void testEnablePolicyEnableSavesAndReturnsTrue() {
+        ResumePolicy policy = getDefault();
+        policy.setEnabled(false);
+        when(resumePolicyRepo.findById(DEFAULT_ID)).thenReturn(Optional.of(policy));
+
+        boolean changed = resumePolicyService.enablePolicy(DEFAULT_ID, true);
+
+        assertTrue(changed);
+        assertTrue(policy.getEnabled());
+        verify(resumePolicyRepo, times(1)).save(policy);
+    }
+
+    @Test
+    void testEnablePolicyNoOpReturnsFalse() {
+        ResumePolicy policy = getDefault();
+        policy.setEnabled(true);
+        when(resumePolicyRepo.findById(DEFAULT_ID)).thenReturn(Optional.of(policy));
+
+        boolean changed = resumePolicyService.enablePolicy(DEFAULT_ID, true);
+
+        assertFalse(changed);
+        verify(resumePolicyRepo, never()).save(Mockito.any());
+    }
+
+    @Test
+    void testEnablePolicyUnknownIdReturnsFalse() {
+        when(resumePolicyRepo.findById(NOT_FOUND)).thenReturn(Optional.empty());
+
+        boolean changed = resumePolicyService.enablePolicy(NOT_FOUND, false);
+
+        assertFalse(changed);
+        verify(resumePolicyRepo, never()).save(Mockito.any());
+    }
+
+    @Test
     void testFind() {
-        when(resumePolicyRepo.findByOrderByPriorityDesc()).thenReturn(getTestList());
+        when(resumePolicyRepo.findByOrderByPriorityAndName()).thenReturn(getTestList());
         resumePolicyService.refreshCache();
         Optional<ResumePolicy> policy = resumePolicyService.find(1, ERROR, "2" + DATA_SOURCE, "2" + ACTION);
         assertFalse(policy.isEmpty());
@@ -106,7 +165,7 @@ class ResumePolicyServiceTest {
 
     @Test
     void testGetAutoResumeDelay() {
-        when(resumePolicyRepo.findByOrderByPriorityDesc()).thenReturn(getTestList());
+        when(resumePolicyRepo.findByOrderByPriorityAndName()).thenReturn(getTestList());
         resumePolicyService.refreshCache();
 
         Action errored = Action.builder().name("1action").type(ActionType.TRANSFORM).attempt(MAX_ATTEMPTS - 1).build();
@@ -180,7 +239,7 @@ class ResumePolicyServiceTest {
 
     @Test
     void testFindByName() {
-        when(resumePolicyRepo.findByOrderByPriorityDesc()).thenReturn(getTestList());
+        when(resumePolicyRepo.findByOrderByPriorityAndName()).thenReturn(getTestList());
         resumePolicyService.refreshCache();
 
         Optional<ResumePolicy> found = resumePolicyService.findByName("name2");
@@ -192,8 +251,21 @@ class ResumePolicyServiceTest {
     }
 
     @Test
+    void testFindSkipsDisabledButFindByNameDoesNot() {
+        ResumePolicy policy = getCustom("name1", "1");
+        policy.setEnabled(false);
+        when(resumePolicyRepo.findByOrderByPriorityAndName()).thenReturn(List.of(policy));
+        resumePolicyService.refreshCache();
+
+        // automatic firing skips disabled
+        assertTrue(resumePolicyService.find(1, ERROR, "1" + DATA_SOURCE, "1" + ACTION).isEmpty());
+        // manual operator action still resolves
+        assertTrue(resumePolicyService.findByName("name1").isPresent());
+    }
+
+    @Test
     void testMatchesActionError() {
-        when(resumePolicyRepo.findByOrderByPriorityDesc()).thenReturn(getTestList());
+        when(resumePolicyRepo.findByOrderByPriorityAndName()).thenReturn(getTestList());
         resumePolicyService.refreshCache();
 
         // DeltaFile matches policy: name1
@@ -226,7 +298,7 @@ class ResumePolicyServiceTest {
 
     @Test
     void testCanBeApplied() {
-        when(resumePolicyRepo.findByOrderByPriorityDesc()).thenReturn(getTestList());
+        when(resumePolicyRepo.findByOrderByPriorityAndName()).thenReturn(getTestList());
         resumePolicyService.refreshCache();
 
         List<DeltaFile> deltaFiles = List.of(
@@ -248,6 +320,34 @@ class ResumePolicyServiceTest {
                 resumePolicyService.findByName("name3").get(), deltaFiles, excludes).stream()
                 .map(DeltaFile::getDid).toList();
         assertTrue(noMatchese.isEmpty());
+    }
+
+    @Test
+    void testSnapshotBackwardsCompatibility() {
+        Snapshot snapshot = new Snapshot();
+
+        ResumePolicy noEnabledFlag = getCustom("noEnabledFlag", "1");
+        noEnabledFlag.setId(new UUID(0, 0));
+        noEnabledFlag.setEnabled(null);
+
+        ResumePolicy enabledFlagFalse = getCustom("enabledFlagFalse", "2");
+        enabledFlagFalse.setId(new UUID(0, 1));
+        enabledFlagFalse.setEnabled(false);
+
+        ResumePolicy enabledFlagTrue = getCustom("enabledFlagTrue", "3");
+        enabledFlagTrue.setId(new UUID(0, 2));
+        enabledFlagTrue.setEnabled(true);
+
+        snapshot.setResumePolicies(List.of(noEnabledFlag, enabledFlagFalse, enabledFlagTrue));
+        resumePolicyService.resetFromSnapshot(snapshot, true);
+
+        verify(resumePolicyRepo).saveAll(policiesCaptor.capture());
+        assertThat(policiesCaptor.getValue())
+                .extracting(ResumePolicy::getName, ResumePolicy::getEnabled)
+                .containsExactly(
+                        tuple("noEnabledFlag", true),
+                        tuple("enabledFlagFalse", false),
+                        tuple("enabledFlagTrue", true));
     }
 
     private DeltaFile getDeltaFile(String prefix, boolean withErrorAction) {

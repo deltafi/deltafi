@@ -58,6 +58,7 @@ public class DeltaFileFlowDTO {
     private String coldQueuedAction;
     private String errorOrFilterCause;
     private OffsetDateTime nextAutoResume;
+    private String nextAutoResumeReason;
 
     public static DeltaFileFlowDTO from(DeltaFileFlow entity) {
         if (entity == null) {
@@ -90,6 +91,7 @@ public class DeltaFileFlowDTO {
                 .coldQueuedAction(entity.getColdQueuedAction())
                 .errorOrFilterCause(entity.getErrorOrFilterCause())
                 .nextAutoResume(entity.getNextAutoResume())
+                .nextAutoResumeReason(entity.getNextAutoResumeReason())
                 .build();
     }
 

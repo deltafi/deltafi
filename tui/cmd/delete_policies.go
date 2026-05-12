@@ -19,12 +19,13 @@ package cmd
 
 import (
 	"fmt"
+	"sort"
+	"strconv"
+
 	"github.com/deltafi/tui/graphql"
 	"github.com/deltafi/tui/internal/api"
 	"github.com/google/uuid"
 	"github.com/spf13/cobra"
-	"sort"
-	"strconv"
 )
 
 var deletePoliciesCmd = &cobra.Command{
@@ -80,7 +81,7 @@ var getDeletePoliciesCmd = &cobra.Command{
 	Use:               "get [policyName]",
 	Short:             "Get a delete policy in DeltaFi",
 	Long:              `Get a delete policy with the given name in DeltaFi`,
-	ValidArgsFunction: suggestNames(IncludeAll),
+	ValidArgsFunction: suggestNames(IncludeAll, fetchRemoteDeletePolicyNames),
 	Args:              cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		RequireRunningDeltaFi()
@@ -97,7 +98,7 @@ var startDeletePolicyCmd = &cobra.Command{
 	Use:               "start [policyName]",
 	Short:             "Start a delete policy in DeltaFi",
 	Long:              `Start a delete policy with the given name in DeltaFi`,
-	ValidArgsFunction: suggestNames(IncludeDisabled),
+	ValidArgsFunction: suggestNames(IncludeDisabled, fetchRemoteDeletePolicyNames),
 	Args:              cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		RequireRunningDeltaFi()
@@ -110,7 +111,7 @@ var stopDeletePolicyCmd = &cobra.Command{
 	Use:               "stop [policyName]",
 	Short:             "Stop a delete policy in DeltaFi",
 	Long:              `Stop a delete policy with the given name in DeltaFi`,
-	ValidArgsFunction: suggestNames(IncludeEnabled),
+	ValidArgsFunction: suggestNames(IncludeEnabled, fetchRemoteDeletePolicyNames),
 	Args:              cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		RequireRunningDeltaFi()
@@ -123,7 +124,7 @@ var removeDeletePolicyCmd = &cobra.Command{
 	Use:               "delete [policyName]",
 	Short:             "Remove a delete policy from DeltaFi",
 	Long:              `Remove the delete policy with the given name from DeltaFi`,
-	ValidArgsFunction: suggestNames(IncludeAll),
+	ValidArgsFunction: suggestNames(IncludeAll, fetchRemoteDeletePolicyNames),
 	Args:              cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		RequireRunningDeltaFi()
@@ -252,44 +253,6 @@ func removeDeletePolicy(name string) error {
 	}
 
 	return newError("Delete policy was not removed", "The delete policy "+name+" ("+id.String()+") was not removed")
-}
-
-type IncludeMode int
-
-const (
-	IncludeEnabled = iota
-	IncludeDisabled
-	IncludeAll
-)
-
-func suggestNames(includeMode IncludeMode) func(*cobra.Command, []string, string) ([]string, cobra.ShellCompDirective) {
-	return func(_ *cobra.Command, args []string, _ string) ([]string, cobra.ShellCompDirective) {
-		if len(args) >= 1 {
-			return nil, cobra.ShellCompDirectiveNoFileComp
-		}
-
-		suggestions, err := getNameSuggestions(includeMode)
-		if err != nil {
-			return nil, cobra.ShellCompDirectiveNoFileComp
-		}
-		return suggestions, cobra.ShellCompDirectiveNoFileComp
-	}
-}
-
-func getNameSuggestions(includeMode IncludeMode) ([]string, error) {
-	policies, err := fetchRemoteDeletePolicyNames()
-	if err != nil {
-		return nil, err
-	}
-
-	matchEnabled := includeMode == IncludeEnabled
-	names := make([]string, 0, len(policies))
-	for _, policy := range policies {
-		if includeMode == IncludeAll || matchEnabled == policy.GetEnabled() {
-			names = append(names, policy.GetName())
-		}
-	}
-	return names, nil
 }
 
 func getIDByName(name string) (uuid.UUID, error) {

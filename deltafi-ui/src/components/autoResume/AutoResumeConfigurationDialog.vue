@@ -220,6 +220,8 @@ const createNewRule = () => {
 
   if (ruleId.value) {
     autoResumeRule["id"] = ruleId.value;
+    // Preserve enabled on edit; server treats absent as true, which would silently re-enable a disabled rule.
+    autoResumeRule["enabled"] = rowDataProp.enabled !== false;
   }
 
   if (selectedRuleName.value) {

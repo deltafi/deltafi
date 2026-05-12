@@ -2,6 +2,7 @@ query GetAllResumePolicies {
     getAllResumePolicies {
         id
         name
+        enabled
         errorSubstring
         dataSource
         action
@@ -20,6 +21,7 @@ query GetResumePolicy($id: UUID!) {
     getResumePolicy(id: $id) {
         id
         name
+        enabled
         errorSubstring
         dataSource
         action
@@ -48,6 +50,10 @@ mutation LoadResumePolicies($replaceAll: Boolean!, $policies: [ResumePolicyInput
         info
         errors
     }
+}
+
+mutation ToggleResumePolicy($enabled: Boolean!, $id: UUID!) {
+    enableResumePolicy(enabled: $enabled, id: $id)
 }
 
 mutation RemoveResumePolicy($id: UUID!) {

@@ -59,6 +59,9 @@ public class ResumePolicy {
     @Type(JsonBinaryType.class)
     @Column(columnDefinition = "jsonb")
     private BackOff backOff;
+    @Column(nullable = false)
+    @lombok.Builder.Default
+    private Boolean enabled = true;
 
     /**
      * Validate the resume policy for any errors.

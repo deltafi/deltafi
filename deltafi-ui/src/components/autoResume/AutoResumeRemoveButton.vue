@@ -60,7 +60,7 @@ const confirmationPopup = (event, rule) => {
   confirm.require({
     target: event.currentTarget,
     group: rule.id,
-    message: `Remove ${rule.name} Rule?`,
+    message: `Remove the ${rule.name} Auto Resume Rule? Any DeltaFiles pending auto resume based on this rule will be cleared and the affected DeltaFiles will need to be resumed manually.`,
     acceptLabel: "Remove",
     rejectLabel: "Cancel",
     icon: "pi pi-exclamation-triangle",

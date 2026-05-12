@@ -81,6 +81,14 @@ public class ResumePolicyDatafetcher {
         return resumePolicyService.update(policy);
     }
 
+    @DgsMutation
+    @NeedsPermission.ResumePolicyUpdate
+    public boolean enableResumePolicy(@InputArgument UUID id, @InputArgument Boolean enabled) {
+        auditLogger.audit("{} resume policy with id {}",
+                Boolean.TRUE.equals(enabled) ? "enabled" : "disabled", id);
+        return resumePolicyService.enablePolicy(id, enabled);
+    }
+
     private Result convertAndSave(ResumePolicyInput resumePolicyInput) {
         ResumePolicy resumePolicy = OBJECT_MAPPER.convertValue(resumePolicyInput, ResumePolicy.class);
         return resumePolicyService.save(resumePolicy);

@@ -54,7 +54,7 @@ var autoResumeGetCmd = &cobra.Command{
 	Use:               "get [name-or-id]",
 	Short:             "Get an auto resume rule",
 	Long:              `Get an auto resume rule by name or ID`,
-	ValidArgsFunction: suggestAutoResumeNames,
+	ValidArgsFunction: suggestNames(IncludeAll, fetchAllResumePolicies),
 	Args:              cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		RequireRunningDeltaFi()
@@ -63,6 +63,32 @@ var autoResumeGetCmd = &cobra.Command{
 			return err
 		}
 		return prettyPrint(cmd, rule)
+	},
+}
+
+var startResumeRuleCmd = &cobra.Command{
+	Use:               "start [ruleName]",
+	Short:             "Start a resume rule in DeltaFi",
+	Long:              `Start a resume rule with the given name in DeltaFi`,
+	ValidArgsFunction: suggestNames(IncludeDisabled, fetchAllResumePolicies),
+	Args:              cobra.ExactArgs(1),
+	RunE: func(cmd *cobra.Command, args []string) error {
+		RequireRunningDeltaFi()
+		name := args[0]
+		return toggleResumeRule(true, name)
+	},
+}
+
+var stopResumeRuleCmd = &cobra.Command{
+	Use:               "stop [ruleName]",
+	Short:             "Stop a resume rule in DeltaFi",
+	Long:              `Stop a resume rule with the given name in DeltaFi`,
+	ValidArgsFunction: suggestNames(IncludeEnabled, fetchAllResumePolicies),
+	Args:              cobra.ExactArgs(1),
+	RunE: func(cmd *cobra.Command, args []string) error {
+		RequireRunningDeltaFi()
+		name := args[0]
+		return toggleResumeRule(false, name)
 	},
 }
 
@@ -90,9 +116,9 @@ var autoResumeLoadCmd = &cobra.Command{
 var autoResumeDeleteCmd = &cobra.Command{
 	Use:               "delete [name-or-id]",
 	Aliases:           []string{"rm"},
-	Short:             "Delete an auto resume rule",
-	Long:              `Delete an auto resume rule by name or ID`,
-	ValidArgsFunction: suggestAutoResumeNames,
+	Short:             "Delete an auto resume rule and clear any DeltaFiles it had scheduled for resume",
+	Long:              `Delete an auto resume rule by name or ID. Any DeltaFiles already scheduled by the rule are cleared and fall back to "errored, no schedule".`,
+	ValidArgsFunction: suggestNames(IncludeAll, fetchAllResumePolicies),
 	Args:              cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		RequireRunningDeltaFi()
@@ -108,8 +134,8 @@ var autoResumeDeleteCmd = &cobra.Command{
 
 var autoResumeClearCmd = &cobra.Command{
 	Use:   "clear",
-	Short: "Delete all auto resume rules",
-	Long:  `Delete all auto resume rules from DeltaFi`,
+	Short: "Delete all auto resume rules and clear every schedule they created",
+	Long:  `Delete all auto resume rules from DeltaFi. Every in-flight auto-resume schedule is cleared; affected DeltaFiles fall back to "errored, no schedule".`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		RequireRunningDeltaFi()
 		force, _ := cmd.Flags().GetBool("force")
@@ -178,10 +204,11 @@ func listAutoResumeRules(cmd *cobra.Command) error {
 			strconv.Itoa(rule.GetMaxAttempts()),
 			priority,
 			formatBackOff(rule.GetBackOff()),
+			strconv.FormatBool(rule.GetEnabled()),
 		})
 	}
 
-	columns := []string{"Name", "Data Source", "Action", "Error Match", "Max Tries", "Priority", "Back Off"}
+	columns := []string{"Name", "Data Source", "Action", "Error Match", "Max Tries", "Priority", "Back Off", "Enabled"}
 	plain, _ := cmd.Flags().GetBool("plain")
 	t := api.NewTable(columns, rows)
 	renderAsSimpleTable(t, plain)
@@ -277,6 +304,34 @@ func loadAutoResumeRules(cmd *cobra.Command, filenames []string) error {
 	}
 
 	return lastErr
+}
+
+func toggleResumeRule(enabled bool, name string) error {
+	id, err := resolveAutoResumeID(name)
+	if err != nil {
+		return err
+	}
+
+	resp, err := graphql.ToggleResumePolicy(enabled, id)
+
+	if err != nil {
+		verb := "disabling"
+		if enabled {
+			verb = "enabling"
+		}
+		return wrapInError("Error "+verb+" the resume rule "+name+" ("+id.String()+")", err)
+	}
+
+	state := "disabled"
+	if enabled {
+		state = "enabled"
+	}
+	if resp.EnableResumePolicy {
+		fmt.Println("Resume rule " + name + " (" + id.String() + ") is now " + state)
+	} else {
+		fmt.Println("Resume rule " + name + " (" + id.String() + ") did not change")
+	}
+	return nil
 }
 
 func deleteAutoResumeRule(nameOrID string) error {
@@ -415,46 +470,33 @@ func getAutoResumeRuleByName(name string) (*graphql.GetResumePolicyGetResumePoli
 	return nil, newError("Rule not found", "No auto resume rule found with name "+name)
 }
 
-func fetchAutoResumeRuleNames() ([]string, error) {
+func fetchAllResumePolicies() ([]*graphql.GetAllResumePoliciesGetAllResumePoliciesResumePolicy, error) {
 	resp, err := graphql.GetAllResumePolicies()
 	if err != nil {
 		return nil, err
 	}
 
-	names := make([]string, 0, len(resp.GetAllResumePolicies))
-	for _, rule := range resp.GetAllResumePolicies {
-		names = append(names, rule.GetName())
+	policies := make([]*graphql.GetAllResumePoliciesGetAllResumePoliciesResumePolicy, len(resp.GetAllResumePolicies))
+	for i := range resp.GetAllResumePolicies {
+		policies[i] = &resp.GetAllResumePolicies[i]
 	}
-	return names, nil
-}
-
-func suggestAutoResumeNames(_ *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-	if len(args) >= 1 {
-		return nil, cobra.ShellCompDirectiveNoFileComp
-	}
-
-	names, err := fetchAutoResumeRuleNames()
-	if err != nil {
-		return nil, cobra.ShellCompDirectiveNoFileComp
-	}
-
-	return filterCompletions(names, toComplete), cobra.ShellCompDirectiveNoFileComp
+	return policies, nil
 }
 
 func suggestAutoResumeNamesMulti(_ *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-	names, err := fetchAutoResumeRuleNames()
+	policies, err := fetchAllResumePolicies()
 	if err != nil {
 		return nil, cobra.ShellCompDirectiveNoFileComp
 	}
 
-	// Filter out already-used names
 	usedNames := make(map[string]bool)
 	for _, arg := range args {
 		usedNames[arg] = true
 	}
 
-	var suggestions []string
-	for _, name := range names {
+	suggestions := make([]string, 0, len(policies))
+	for _, policy := range policies {
+		name := policy.GetName()
 		if !usedNames[name] {
 			suggestions = append(suggestions, name)
 		}
@@ -488,6 +530,8 @@ func init() {
 	autoResumeCmd.AddCommand(autoResumeClearCmd)
 	autoResumeCmd.AddCommand(autoResumeApplyCmd)
 	autoResumeCmd.AddCommand(autoResumeDryRunCmd)
+	autoResumeCmd.AddCommand(startResumeRuleCmd)
+	autoResumeCmd.AddCommand(stopResumeRuleCmd)
 
 	autoResumeListCmd.Flags().BoolP("plain", "p", false, "Plain output, omitting table borders")
 	autoResumeLoadCmd.Flags().BoolP("replace-all", "r", false, "Replace all existing rules")

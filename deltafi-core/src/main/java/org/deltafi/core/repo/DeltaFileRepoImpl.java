@@ -325,6 +325,9 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
 
     // SKIP LOCKED avoids deadlocks with concurrent delete operations.
     // Skipped rows are picked up on the next scheduled auto-resume cycle.
+    // INNER JOIN to resume_policies WHERE enabled = true is the disable mechanism:
+    // disabling a policy excludes its scheduled rows immediately, no UPDATE on
+    // delta_file_flows. Re-enabling makes them eligible again at their stored time.
     private static final String RESUME_READY = """
             SELECT df.did
             FROM delta_files df
@@ -332,6 +335,7 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
             AND df.content_deleted IS NULL
             AND EXISTS (
                 SELECT 1 FROM delta_file_flows dff
+                JOIN resume_policies rp ON rp.name = dff.next_auto_resume_reason AND rp.enabled = true
                 WHERE dff.delta_file_id = df.did
                 AND dff.state = 'ERROR'
                 AND dff.error_acknowledged IS NULL
@@ -349,6 +353,7 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
             AND EXISTS (
                 SELECT 1 FROM delta_file_flows dff
                 JOIN flow_definitions fd ON fd.id = dff.flow_definition_id
+                JOIN resume_policies rp ON rp.name = dff.next_auto_resume_reason AND rp.enabled = true
                 WHERE dff.delta_file_id = df.did
                 AND dff.state = 'ERROR'
                 AND dff.error_acknowledged IS NULL
@@ -371,6 +376,54 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
         List<UUID> dids = query.getResultList();
 
         return fetchByDidIn(dids);
+    }
+
+    // Bounded by the partial index on (state='ERROR' AND error_acknowledged IS NULL)
+    // that backs the scheduler scan; only currently-scheduled rows are touched.
+    // Strips nr/nrr from each matching action element so the UI, which renders
+    // the action list, doesn't keep showing the schedule after the policy goes away.
+    @Override
+    @Transactional
+    public int clearAutoResumeSchedulesByReason(String reason) {
+        return entityManager.createNativeQuery("""
+                UPDATE delta_file_flows
+                SET next_auto_resume = NULL,
+                    next_auto_resume_reason = NULL,
+                    actions = (
+                        SELECT jsonb_agg(
+                            CASE WHEN elem->>'nrr' = :reason
+                                THEN elem - 'nr' - 'nrr'
+                                ELSE elem
+                            END
+                            ORDER BY ord
+                        )
+                        FROM jsonb_array_elements(actions) WITH ORDINALITY AS arr(elem, ord)
+                    )
+                WHERE next_auto_resume_reason = :reason
+                """)
+                .setParameter("reason", reason)
+                .executeUpdate();
+    }
+
+    @Override
+    @Transactional
+    public int clearAllAutoResumeSchedules() {
+        return entityManager.createNativeQuery("""
+                UPDATE delta_file_flows
+                SET next_auto_resume = NULL,
+                    next_auto_resume_reason = NULL,
+                    actions = (
+                        SELECT jsonb_agg(
+                            CASE WHEN elem->>'nrr' IS NOT NULL
+                                THEN elem - 'nr' - 'nrr'
+                                ELSE elem
+                            END
+                            ORDER BY ord
+                        )
+                        FROM jsonb_array_elements(actions) WITH ORDINALITY AS arr(elem, ord)
+                    )
+                WHERE next_auto_resume_reason IS NOT NULL
+                """).executeUpdate();
     }
 
     @Override
@@ -1131,8 +1184,8 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
                                           publish_topics, depth, pending_annotations, test_mode, test_mode_reason,
                                           join_id, pending_actions, delta_file_id, version, actions,
                                           error_acknowledged, error_acknowledged_reason, cold_queued, cold_queued_action,
-                                          error_or_filter_cause, next_auto_resume)
-            VALUES (?, ?, ?, CAST(? AS dff_state_enum), ?, ?, ?::jsonb, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?::jsonb, ?, ?, ?, ?, ?, ?)""";
+                                          error_or_filter_cause, next_auto_resume, next_auto_resume_reason)
+            VALUES (?, ?, ?, CAST(? AS dff_state_enum), ?, ?, ?::jsonb, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?::jsonb, ?, ?, ?, ?, ?, ?, ?)""";
 
     private static final String INSERT_ANNOTATIONS = """
             INSERT INTO annotations (id, key, value, delta_file_id)
@@ -1327,6 +1380,7 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
         ps.setString(21, flow.getColdQueuedAction());
         ps.setString(22, flow.getErrorOrFilterCause());
         ps.setTimestamp(23, toTimestamp(flow.getNextAutoResume()));
+        ps.setString(24, flow.getNextAutoResumeReason());
     }
 
     private void setAnnotationParameters(PreparedStatement ps, Annotation annotation, DeltaFile deltaFile) throws SQLException {

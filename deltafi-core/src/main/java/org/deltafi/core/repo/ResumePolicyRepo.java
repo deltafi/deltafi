@@ -27,6 +27,7 @@ import java.util.UUID;
 
 @Repository
 public interface ResumePolicyRepo extends JpaRepository<ResumePolicy, UUID> {
-    @Query("SELECT r FROM ResumePolicy r ORDER BY r.priority DESC")
-    List<ResumePolicy> findByOrderByPriorityDesc();
+    @Query("SELECT r FROM ResumePolicy r ORDER BY r.priority DESC, r.name ASC")
+    List<ResumePolicy> findByOrderByPriorityAndName();
 }
+

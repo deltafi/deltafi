@@ -344,12 +344,14 @@ public class UtilService {
     public static Action autoResumeHit(OffsetDateTime time) {
         Action hit = Action.builder().name("hit").modified(time).state(ActionState.ERROR).build();
         hit.setNextAutoResume(time.minusSeconds(1000));
+        hit.setNextAutoResumeReason("resume-errors");
         return hit;
     }
 
     public static Action autoResumeMiss(OffsetDateTime time) {
         Action miss = Action.builder().name("miss").modified(time).state(ActionState.ERROR).build();
         miss.setNextAutoResume(time.plusSeconds(1000));
+        miss.setNextAutoResumeReason("resume-errors");
         return miss;
     }
 

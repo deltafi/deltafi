@@ -32,6 +32,7 @@ export default function useAutoResumeQueryBuilder() {
         action: true,
         maxAttempts: true,
         priority: true,
+        enabled: true,
         backOff: {
           delay: true,
           maxDelay: true,
@@ -124,6 +125,18 @@ export default function useAutoResumeQueryBuilder() {
     return sendGraphQLQuery(query, "applyResumePolicies", "mutation");
   };
 
+  const enableResumePolicy = (policyId: string, enabledState: boolean) => {
+    const query = {
+      enableResumePolicy: {
+        __args: {
+          id: policyId,
+          enabled: enabledState,
+        },
+      },
+    };
+    return sendGraphQLQuery(query, "enableResumePolicy", "mutation");
+  };
+
   const sendGraphQLQuery = async (query: any, operationName: string, queryType?: string, bypass?: boolean) => {
     try {
       await queryGraphQL(query, operationName, queryType, bypass);
@@ -140,6 +153,7 @@ export default function useAutoResumeQueryBuilder() {
     removeResumePolicy,
     updateResumePolicy,
     applyResumePolicies,
+    enableResumePolicy,
     loaded,
     loading,
     errors,

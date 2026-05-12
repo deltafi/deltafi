@@ -34,6 +34,7 @@ const generateData = (count: number) => {
         min: 250,
         max: 500,
       }),
+      enabled: true,
       backOff: {
         delay: faker.number.int({
           min: 250,

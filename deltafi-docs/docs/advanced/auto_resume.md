@@ -6,16 +6,16 @@ A DeltaFile may encounter an error during action execution. When this occurs, th
 
 A Resume Policy consists of the following fields:
 
-| Field | Required | Description |
-|-------|----------|-------------|
-| `id` | No | Auto-generated UUID if not provided |
-| `name` | Yes | Unique name for the policy |
-| `errorSubstring` | No* | Substring to match in the error cause |
-| `dataSource` | No* | Data source name to match |
-| `action` | No* | Full action name to match (e.g., `my-flow.MyAction`) |
-| `maxAttempts` | Yes | Maximum number of retry attempts (must be > 1) |
+| Field | Required | Description                                                                    |
+|-------|----------|--------------------------------------------------------------------------------|
+| `id` | No | Auto-generated UUID if not provided                                            |
+| `name` | Yes | Unique name for the policy                                                     |
+| `errorSubstring` | No* | Substring to match in the error cause                                          |
+| `dataSource` | No* | Data source name to match                                                      |
+| `action` | No* | Action name to match (the name of the action in a flow e.g. `MyAction`)        |
+| `maxAttempts` | Yes | Maximum number of retry attempts (must be > 1)                                 |
 | `priority` | No | Priority for matching (higher = matched first). Auto-calculated if not provided |
-| `backOff` | Yes | Back-off configuration for retry delays |
+| `backOff` | Yes | Back-off configuration for retry delays                                        |
 
 *At least one of `errorSubstring`, `dataSource`, or `action` must be specified.
 
@@ -35,7 +35,7 @@ When an action error occurs, the details of the error are compared to all resume
 1. The number of attempts for that action must be below `maxAttempts`
 2. If `errorSubstring` is set, the error cause must contain it (substring match)
 3. If `dataSource` is set, it must exactly match the DeltaFile's data source
-4. If `action` is set, it must exactly match the action name (including flow prefix)
+4. If `action` is set, it must exactly match the action name
 
 All specified criteria must match (AND logic). Only the first matching policy is applied.
 
@@ -81,6 +81,16 @@ Each retry waits a random time between 60 and 120 seconds. Useful for avoiding t
 ## Background Task
 
 DeltaFi periodically searches for DeltaFiles ready for automatic resume. This frequency is controlled by the `autoResumeCheckFrequency` system property. There may be a small delay between a DeltaFile's scheduled resume time and the actual resume.
+
+## Resume Rule Lifecycle
+
+Resume rules can be toggled on and off. When rules are enabled newly errored DeltaFiles are marked with an auto-resume timestamp. The DeltaFile will automatically be resumed once that timestamp is reached. When a rule is no longer needed it can either be disabled or deleted, the differences are below.
+
+**Disable** (`deltafi auto-resume stop <name>`, or the toggle on the Auto Resume page). This causes the auto resume scheduler to skip any DeltaFiles scheduled to be resumed by this rule while the rule is disabled. No new DeltaFile errors will attempt to apply this policy. When the rule is enabled again any DeltaFiles whose auto-resume task was skipped for this rule will now be fired if the DeltaFile is still resumable.
+
+**Delete** (`deltafi auto-resume delete <name>`, or delete the rule from the Auto Resume page). This removes the rule and clears any DeltaFiles marked for resume by this rule. Affected DeltaFiles fall back to "errored, no schedule" and stay in that state until either a manual resume or a different rule picks them up on its next evaluation. Delete is destructive and cannot be undone by recreating a rule with the same name.
+
+In short: **disable** when you want to pause a rule and possibly resume it later; **delete** when you want it gone and any pending resumes it produced gone with it.
 
 ## Examples
 
@@ -157,7 +167,7 @@ Retry failures from a specific egress action:
 ```json
 {
   "name": "retry-http-egress",
-  "action": "my-flow.HttpEgressAction",
+  "action": "HttpEgressAction",
   "maxAttempts": 3,
   "backOff": {
     "delay": 60
@@ -173,7 +183,7 @@ A specific error in a specific flow, with high priority to match before generic 
 {
   "name": "partner-validation-retry",
   "dataSource": "partner-feed",
-  "action": "partner-feed.ValidateAction",
+  "action": "ValidateAction",
   "errorSubstring": "schema validation failed",
   "maxAttempts": 2,
   "priority": 200,

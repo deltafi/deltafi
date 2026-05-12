@@ -120,6 +120,8 @@ Switch modes with `deltafi config --wizard` (interactive) or by passing the appr
       - [get](#auto-resume-get)
       - [export](#auto-resume-export)
       - [load](#auto-resume-load)
+      - [start](#auto-resume-start)
+      - [stop](#auto-resume-stop)
       - [delete](#auto-resume-delete)
       - [clear](#auto-resume-clear)
       - [apply](#auto-resume-apply)
@@ -637,11 +639,19 @@ Manage auto resume rules that automatically retry errored DeltaFiles. See [Autom
   deltafi auto-resume load <files...> [--replace-all|-r]
   ```
   Files can contain a single rule or an array of rules.
-- `delete [name-or-id]`: Delete an auto resume rule
+- `start [ruleName]`: Enable a resume rule. New errors will match it again, and any DeltaFiles whose auto-resume was skipped while the rule was stopped will fire on the next scheduler tick if still resumable.
+  ```bash
+  deltafi auto-resume start <ruleName>
+  ```
+- `stop [ruleName]`: Disable a resume rule. The scheduler skips any DeltaFiles scheduled by this rule, and new errors will not match it, until the rule is started again. Existing schedules are not cleared.
+  ```bash
+  deltafi auto-resume stop <ruleName>
+  ```
+- `delete [name-or-id]`: Delete an auto resume rule and clear any DeltaFiles it had scheduled for resume.
   ```bash
   deltafi auto-resume delete <name-or-id> [--force|-f]
   ```
-- `clear`: Delete all auto resume rules
+- `clear`: Delete all auto resume rules and clear every DeltaFile they had scheduled for resume.
   ```bash
   deltafi auto-resume clear [--force|-f]
   ```

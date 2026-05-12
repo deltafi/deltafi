@@ -93,6 +93,7 @@ public class DeltaFileFlow {
     private String coldQueuedAction;
     private String errorOrFilterCause;
     private OffsetDateTime nextAutoResume;
+    private String nextAutoResumeReason;
 
     @Version
     @EqualsAndHashCode.Exclude
@@ -127,6 +128,7 @@ public class DeltaFileFlow {
         this.coldQueuedAction = other.coldQueuedAction;
         this.errorOrFilterCause = other.errorOrFilterCause;
         this.nextAutoResume = other.nextAutoResume;
+        this.nextAutoResumeReason = other.nextAutoResumeReason;
         this.owner = other.owner;
     }
 
@@ -301,7 +303,14 @@ public class DeltaFileFlow {
         Action action = lastAction();
         action.setNextAutoResume(nextResume);
         action.setNextAutoResumeReason(nextResumeReason);
-        setNextAutoResume(nextResume);
+        setNextAutoResumeSchedule(nextResume, nextResumeReason);
+    }
+
+    // Flow-level next_auto_resume / next_auto_resume_reason are denormalized for
+    // the scheduler's index lookup and the disable-time bulk clear; keep them paired.
+    private void setNextAutoResumeSchedule(OffsetDateTime time, String reason) {
+        setNextAutoResume(time);
+        setNextAutoResumeReason(reason);
     }
 
     public boolean hasUnacknowledgedError() {
@@ -441,7 +450,7 @@ public class DeltaFileFlow {
         Action action = lastAction();
         if (action == null) {
             state = DeltaFileFlowState.COMPLETE;
-            nextAutoResume = null;
+            setNextAutoResumeSchedule(null, null);
             errorOrFilterCause = null;
             return;
         }
@@ -454,9 +463,9 @@ public class DeltaFileFlow {
 
         if (lastState == ActionState.ERROR) {
             errorOrFilterCause = action.getErrorCause();
-            nextAutoResume = action.getNextAutoResume();
+            setNextAutoResumeSchedule(action.getNextAutoResume(), action.getNextAutoResumeReason());
         } else {
-            nextAutoResume = null;
+            setNextAutoResumeSchedule(null, null);
             if (lastState == ActionState.FILTERED) {
                 errorOrFilterCause = action.getFilteredCause();
             } else {

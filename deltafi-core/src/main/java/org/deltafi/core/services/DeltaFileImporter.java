@@ -181,6 +181,7 @@ public class DeltaFileImporter {
                 .coldQueuedAction(flow.getColdQueuedAction())
                 .errorOrFilterCause(flow.getErrorOrFilterCause())
                 .nextAutoResume(flow.getNextAutoResume())
+                .nextAutoResumeReason(flow.getNextAutoResumeReason())
                 .build();
     }
 }
