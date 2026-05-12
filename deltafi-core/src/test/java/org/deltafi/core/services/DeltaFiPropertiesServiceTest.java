@@ -104,7 +104,7 @@ class DeltaFiPropertiesServiceTest {
                         Mockito.any());
 
         Boolean[] editable = captor.getValue();
-        assertEquals(56, editable.length);
+        assertEquals(57, editable.length);
         int notEditable = 0;
         for (int i = 0; i < editable.length; ++i) {
             if (editable[i] == false) {

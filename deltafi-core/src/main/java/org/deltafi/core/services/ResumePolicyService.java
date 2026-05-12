@@ -40,6 +40,7 @@ public class ResumePolicyService implements Snapshotter {
 
     private final ResumePolicyRepo resumePolicyRepo;
     private final DeltaFileRepo deltaFileRepo;
+    private final DeltaFiPropertiesService deltaFiPropertiesService;
     private final Random random = new Random();
     private List<ResumePolicy> policiesCache;
 
@@ -54,7 +55,9 @@ public class ResumePolicyService implements Snapshotter {
 
     /**
      * Find an enabled resume policy matching the specified criteria.
-     * Disabled policies are skipped here
+     * Disabled policies are skipped here. Returns empty when auto-resume is globally
+     * disabled so new errors are not marked for resume while the system-wide toggle is off
+     * (matching the behavior of disabling every individual policy).
      *
      * @param attempt    number of times action attempted
      * @param errorCause error cause text.
@@ -63,6 +66,9 @@ public class ResumePolicyService implements Snapshotter {
      * @return Optional ResumePolicy if found, else empty.
      */
     Optional<ResumePolicy> find(int attempt, String errorCause, String flowName, String actionName) {
+        if (!deltaFiPropertiesService.getDeltaFiProperties().isAutoResumeEnabled()) {
+            return Optional.empty();
+        }
         for (ResumePolicy policy : policiesCache) {
             if (Boolean.TRUE.equals(policy.getEnabled()) && policy.isMatch(attempt, errorCause, flowName, actionName)) {
                 return Optional.of(policy);

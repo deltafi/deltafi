@@ -82,6 +82,15 @@ Each retry waits a random time between 60 and 120 seconds. Useful for avoiding t
 
 DeltaFi periodically searches for DeltaFiles ready for automatic resume. This frequency is controlled by the `autoResumeCheckFrequency` system property. There may be a small delay between a DeltaFile's scheduled resume time and the actual resume.
 
+## Global Toggle
+
+The `autoResumeEnabled` system property (group: error controls, default: `true`) is a global switch for the auto-resume. Set it to `false` to turn auto-resume off across every rule without touching individual rule state. While the toggle is off:
+
+- The scheduled background task skips its passes — DeltaFiles already carrying a `nextAutoResume` timestamp stay errored and are not resumed.
+- Newly errored DeltaFiles are not evaluated against resume rules, so they are not stamped with `nextAutoResume`. This matches the behavior of disabling every individual rule and avoids building up a backlog that would all fire at once on re-enable.
+
+When the toggle flips back to `true`, the background task picks up any DeltaFiles that already had a `nextAutoResume` timestamp set (from before the toggle was turned off) on its next pass, and new errors are evaluated against rules again. Existing rule enable/disable state is untouched throughout — the global toggle layers on top of the per-rule toggles below.
+
 ## Resume Rule Lifecycle
 
 Resume rules can be toggled on and off. When rules are enabled newly errored DeltaFiles are marked with an auto-resume timestamp. The DeltaFile will automatically be resumed once that timestamp is reached. When a rule is no longer needed it can either be disabled or deleted, the differences are below.

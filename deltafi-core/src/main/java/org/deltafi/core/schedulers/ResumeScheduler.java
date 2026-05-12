@@ -19,7 +19,9 @@ package org.deltafi.core.schedulers;
 
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.deltafi.core.schedulers.trigger.ResumeTrigger;
+import org.deltafi.core.services.DeltaFiPropertiesService;
 import org.deltafi.core.services.DeltaFilesService;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.scheduling.TaskScheduler;
@@ -30,14 +32,24 @@ import org.springframework.stereotype.Service;
 @Service
 @EnableScheduling
 @RequiredArgsConstructor
+@Slf4j
 public class ResumeScheduler {
 
     private final DeltaFilesService deltaFilesService;
     private final TaskScheduler taskScheduler;
     private final ResumeTrigger resumeTrigger;
+    private final DeltaFiPropertiesService deltaFiPropertiesService;
 
     @PostConstruct
     public void resume() {
-        taskScheduler.schedule(deltaFilesService::autoResume, resumeTrigger);
+        taskScheduler.schedule(this::runIfEnabled, resumeTrigger);
+    }
+
+    private void runIfEnabled() {
+        if (!deltaFiPropertiesService.getDeltaFiProperties().isAutoResumeEnabled()) {
+            log.debug("Auto-resume disabled; skipping scheduled run");
+            return;
+        }
+        deltaFilesService.autoResume();
     }
 }

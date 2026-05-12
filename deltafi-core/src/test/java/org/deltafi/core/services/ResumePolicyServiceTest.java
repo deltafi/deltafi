@@ -18,11 +18,13 @@
 package org.deltafi.core.services;
 
 import org.deltafi.common.types.*;
+import org.deltafi.core.configuration.DeltaFiProperties;
 import org.deltafi.core.generated.types.BackOff;
 import org.deltafi.core.repo.DeltaFileRepo;
 import org.deltafi.core.repo.ResumePolicyRepo;
 import org.deltafi.core.types.*;
 import org.deltafi.core.types.snapshot.Snapshot;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.*;
@@ -52,11 +54,21 @@ class ResumePolicyServiceTest {
     @Mock
     DeltaFileRepo deltaFileRepo;
 
+    @Mock
+    DeltaFiPropertiesService deltaFiPropertiesService;
+
     @InjectMocks
     ResumePolicyService resumePolicyService;
 
     @Captor
     ArgumentCaptor<List<ResumePolicy>> policiesCaptor;
+
+    private final DeltaFiProperties deltaFiProperties = new DeltaFiProperties();
+
+    @BeforeEach
+    void setUp() {
+        lenient().when(deltaFiPropertiesService.getDeltaFiProperties()).thenReturn(deltaFiProperties);
+    }
 
     @Test
     void testDeleteFound() {
@@ -161,6 +173,17 @@ class ResumePolicyServiceTest {
         Optional<ResumePolicy> policy = resumePolicyService.find(1, ERROR, "2" + DATA_SOURCE, "2" + ACTION);
         assertFalse(policy.isEmpty());
         assertEquals("name2", policy.get().getName());
+    }
+
+    @Test
+    void testFindReturnsEmptyWhenAutoResumeGloballyDisabled() {
+        when(resumePolicyRepo.findByOrderByPriorityAndName()).thenReturn(getTestList());
+        resumePolicyService.refreshCache();
+        deltaFiProperties.setAutoResumeEnabled(false);
+
+        Optional<ResumePolicy> policy = resumePolicyService.find(1, ERROR, "2" + DATA_SOURCE, "2" + ACTION);
+
+        assertTrue(policy.isEmpty());
     }
 
     @Test

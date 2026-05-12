@@ -53,6 +53,9 @@ public class DeltaFiProperties {
     @PropertyInfo(group = PropertyGroup.ERROR_CONTROLS, description = "[Duration or ISO 8601] Frequency that the auto-resume check is triggered", defaultValue = "PT1M")
     private Duration autoResumeCheckFrequency = Duration.ofMinutes(1);
 
+    @PropertyInfo(group = PropertyGroup.ERROR_CONTROLS, description = "Globally enable or disable auto-resume. When false the scheduled auto-resume task skips all work regardless of individual rule state.", defaultValue = "true", dataType = VariableDataType.BOOLEAN)
+    private boolean autoResumeEnabled = true;
+
     @PropertyInfo(group = PropertyGroup.PERFORMANCE_CONTROLS, description = "The number of threads used in core processing", defaultValue = "16", dataType = VariableDataType.NUMBER)
     private int coreServiceThreads = 16;
 

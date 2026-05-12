@@ -81,6 +81,7 @@ type DeltaFiProperties {
     systemName: String!
     requeueDuration: String!
     autoResumeCheckFrequency: String!
+    autoResumeEnabled: Boolean!
     coreServiceThreads: Int!
     coreInternalQueueSize: Int!
     scheduledServiceThreads: Int!
@@ -125,6 +126,7 @@ input DeltaFiPropertiesInput {
     systemName: String!
     requeueDuration: String!
     autoResumeCheckFrequency: String!
+    autoResumeEnabled: Boolean!
     coreServiceThreads: Int!
     coreInternalQueueSize: Int!
     scheduledServiceThreads: Int!
