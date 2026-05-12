@@ -26,7 +26,7 @@ services:
       - ${DOCKER_GID}
     user: "${USER_ID}:${GROUP_ID}"
     environment:
-      JDK_JAVA_OPTIONS: "-Dcom.redhat.fips=false -Dschedule.diskSpace=false -Dlookup.enabled=${LOOKUP_TABLES_ENABLED}"
+      JDK_JAVA_OPTIONS: "-Dcom.redhat.fips=false -Dschedule.diskSpace=false -Dlookup.enabled=${LOOKUP_TABLES_ENABLED} -Dweb-terminal.enabled=${WEB_TERMINAL_ENABLED}"
       SPRING_PROFILES_ACTIVE: monitor
       APP_ID: core-scheduler
       UNIQUE_ID: core-scheduler
@@ -71,7 +71,7 @@ services:
     expose:
       - "8080"
     environment:
-      JDK_JAVA_OPTIONS: "-Dcom.redhat.fips=false -Dschedule.maintenance=false -Dschedule.diskSpace=false -Dlookup.enabled=${LOOKUP_TABLES_ENABLED}"
+      JDK_JAVA_OPTIONS: "-Dcom.redhat.fips=false -Dschedule.maintenance=false -Dschedule.diskSpace=false -Dlookup.enabled=${LOOKUP_TABLES_ENABLED} -Dweb-terminal.enabled=${WEB_TERMINAL_ENABLED}"
     env_file:
       - ${CONFIG_DIR}/common.env
       - ${SECRETS_DIR}/valkey.env
@@ -641,3 +641,30 @@ services:
       retries: 3
       start_period: 10s
       start_interval: 1s
+
+  web-terminal:
+    profiles: ["tui"]
+    image: ${DELTAFI_WEB_TERMINAL}
+    container_name: web-terminal
+    hostname: DeltaFi-WebTerminal
+    volumes:
+      - ${DATA_DIR}:/deltafi/data
+      - ${REPOS_DIR}:/deltafi/repos
+      - ${SITE_DIR}:/deltafi/site
+      - ${CONFIG_DIR}:/deltafi/config
+    environment:
+      - DELTAFI_API_URL=http://deltafi-core:8080
+      - DELTAFI_WEBTERMINAL=true
+      - HOME=/deltafi
+    env_file:
+      - ${CONFIG_DIR}/common.env
+    labels:
+      deltafi-group: deltafi-core
+    networks:
+      - deltafi
+    expose:
+      - 7681
+    restart: unless-stopped
+    tty: true
+    stdin_open: true
+    user: "${USER_ID}:${GROUP_ID}"

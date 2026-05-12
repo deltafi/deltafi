@@ -198,7 +198,21 @@ func LoadConfig() (Config, error) {
 		return config, fmt.Errorf("config.yaml unreadable: %v", err)
 	}
 
+	if os.Getenv("DELTAFI_WEBTERMINAL") == "true" {
+		config.applyWebTerminalOverrides()
+	}
+
 	return config, nil
+}
+
+// applyWebTerminalOverrides replaces directory paths with container-local
+// paths so the mounted host config.yaml is read but not modified.
+func (c *Config) applyWebTerminalOverrides() {
+	tuiPath := TuiPath()
+	c.InstallDirectory = tuiPath
+	c.DataDirectory = filepath.Join(tuiPath, "data")
+	c.SiteDirectory = filepath.Join(tuiPath, "site")
+	c.Development.RepoPath = filepath.Join(tuiPath, "repos")
 }
 
 func LoadConfigOrDefault() Config {
@@ -221,8 +235,13 @@ func loadFromFile(path string, config *Config) error {
 	return nil
 }
 
-// Save saves the current configuration to file
+// Save saves the current configuration to file. In web terminal mode the
+// mounted host config must not be modified, so Save is a no-op.
 func (c *Config) Save() error {
+	if os.Getenv("DELTAFI_WEBTERMINAL") == "true" {
+		return nil
+	}
+
 	// Ensure the config directory exists
 	if err := os.MkdirAll(ConfigPath(), 0755); err != nil {
 		return fmt.Errorf("failed to create config directory: %w", err)

@@ -48,6 +48,7 @@ public class AuthRest {
 
     private static final String X_ORIGINAL_URL = "X-ORIGINAL-URL";
     private static final String ORCHESTRATION_PATH = "/orchestration";
+    private static final String SHELL_PATH = "/shell";
     private static final String VISUALIZATION_PATH = "/visualization";
 
     private final AuthProperties authProperties;
@@ -107,6 +108,10 @@ public class AuthRest {
         }
 
         if (path.startsWith(ORCHESTRATION_PATH)) {
+            return "Admin";
+        }
+
+        if (path.startsWith(SHELL_PATH)) {
             return "Admin";
         }
 

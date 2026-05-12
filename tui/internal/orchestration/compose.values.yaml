@@ -65,6 +65,9 @@ deltafi:
   artifactStorage:
     bucketName: deltafi-artifacts
     url: ""   # empty = use the same endpoint as deltafi.storage (shared s3proxy)
+  webTerminal:
+    enabled: false
+    image: {{.Repo}}/web-terminal:{{.Tag}}
   plugins:
     ssl:
       secret: ssl-secret

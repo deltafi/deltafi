@@ -55,21 +55,24 @@ var (
 func init() {
 	rootCmd.AddCommand(configCmd)
 
-	// Add orchestration mode flags to config command only
-	configCmd.Flags().BoolVar(&composeFlag, "compose", false, "Set orchestration mode to Compose")
-	configCmd.Flags().BoolVar(&kindFlag, "kind", false, "Set orchestration mode to KinD")
-	configCmd.Flags().BoolVar(&kubernetesFlag, "kubernetes", false, "Set orchestration mode to Kubernetes")
-
-	// Add deployment mode flags to config command only
-	configCmd.Flags().BoolVar(&deploymentFlag, "deployment", false, "Set deployment mode to Deployment")
-	configCmd.Flags().BoolVar(&pluginDevelopmentFlag, "plugin-development", false, "Set deployment mode to PluginDevelopment")
-	configCmd.Flags().BoolVar(&coreDevelopmentFlag, "core-development", false, "Set deployment mode to CoreDevelopment")
-	configCmd.Flags().BoolVar(&forceFlag, "force", false, "Force configuration changes without confirmation")
-
 	configCmd.Flags().BoolVar(&jsonFlag, "json", false, "Output configuration in JSON format and exit")
-	configCmd.Flags().BoolVar(&noStartFlag, "no-start", false, "Do not automatically start DeltaFi if it is not running")
-	configCmd.Flags().BoolVarP(&wizardFlag, "wizard", "w", false, "Run the interactive configuration wizard")
-	configCmd.Flags().BoolVar(&migrateConfigFlag, "migrate-config", false, "Migrate config.yaml from ~/.deltafi to the executable-relative config/ directory")
+
+	if !isWebTerminal() {
+		// Add orchestration mode flags to config command only
+		configCmd.Flags().BoolVar(&composeFlag, "compose", false, "Set orchestration mode to Compose")
+		configCmd.Flags().BoolVar(&kindFlag, "kind", false, "Set orchestration mode to KinD")
+		configCmd.Flags().BoolVar(&kubernetesFlag, "kubernetes", false, "Set orchestration mode to Kubernetes")
+
+		// Add deployment mode flags to config command only
+		configCmd.Flags().BoolVar(&deploymentFlag, "deployment", false, "Set deployment mode to Deployment")
+		configCmd.Flags().BoolVar(&pluginDevelopmentFlag, "plugin-development", false, "Set deployment mode to PluginDevelopment")
+		configCmd.Flags().BoolVar(&coreDevelopmentFlag, "core-development", false, "Set deployment mode to CoreDevelopment")
+		configCmd.Flags().BoolVar(&forceFlag, "force", false, "Force configuration changes without confirmation")
+
+		configCmd.Flags().BoolVar(&noStartFlag, "no-start", false, "Do not automatically start DeltaFi if it is not running")
+		configCmd.Flags().BoolVarP(&wizardFlag, "wizard", "w", false, "Run the interactive configuration wizard")
+		configCmd.Flags().BoolVar(&migrateConfigFlag, "migrate-config", false, "Migrate config.yaml from ~/.deltafi to the executable-relative config/ directory")
+	}
 }
 
 var configCmd = &cobra.Command{

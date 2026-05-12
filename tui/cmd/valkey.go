@@ -108,7 +108,9 @@ func execCommand(cmd []string) error {
 }
 
 func init() {
-	rootCmd.AddCommand(valkeyCmd)
+	if !isWebTerminal() {
+		rootCmd.AddCommand(valkeyCmd)
+	}
 	valkeyCmd.AddCommand(valkeyCliCmd)
 	valkeyCmd.AddCommand(valkeyLatencyCmd)
 	valkeyCmd.AddCommand(valkeyMonitorCmd)

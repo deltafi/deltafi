@@ -37,6 +37,9 @@ deltafi:
       #   secret: ssl-secret
   api:
     workers: 8
+  webTerminal:
+    # Web Terminal allows command line TUI interactions in a browser terminal. Only admins will have access.
+    enabled: false
   dirwatcher:
     enabled: true
     workers: 20             # Number of worker threads to process files

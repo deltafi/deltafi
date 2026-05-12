@@ -37,6 +37,7 @@ export interface CommandItem {
   hotkey?: string;
   badge?: () => { visible: boolean; class: string; value: number };
   action?: () => Promise<void>;
+  keywords?: string[];
 }
 
 export interface DeltaFileResult {
@@ -306,7 +307,8 @@ export default function useCommandPalette(): UseCommandPaletteReturn {
     return commandItems.value.filter((cmd) => {
       const nameMatch = fuzzyMatch(cmd.name, query);
       const groupMatch = cmd.group ? fuzzyMatch(cmd.group, query) : false;
-      return nameMatch || groupMatch;
+      const keywordMatch = cmd.keywords?.some((kw) => fuzzyMatch(kw, query)) ?? false;
+      return nameMatch || groupMatch || keywordMatch;
     });
   });
 

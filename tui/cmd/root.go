@@ -50,7 +50,7 @@ var rootCmd = &cobra.Command{
 		return cmd.Help()
 	},
 	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
-		if cmd.Name() != "config" && !app.ConfigExists() {
+		if !isWebTerminal() && cmd.Name() != "config" && !app.ConfigExists() {
 			return bootstrapMissingConfig(cmd, args)
 		}
 		if cmd.Flags().Changed("api-url") {
@@ -59,6 +59,11 @@ var rootCmd = &cobra.Command{
 		}
 		return nil
 	},
+}
+
+// isWebTerminal returns true when running inside the Web Terminal container.
+func isWebTerminal() bool {
+	return os.Getenv("DELTAFI_WEBTERMINAL") == "true"
 }
 
 // bootstrapMissingConfig runs the first-time setup path when no config.yaml
@@ -70,7 +75,7 @@ func bootstrapMissingConfig(cmd *cobra.Command, args []string) error {
 		if err := app.CreateConfig(); err != nil {
 			return fmt.Errorf("failed to create default config: %w", err)
 		}
-		fmt.Printf("No DeltaFi config found; created default at %s\n", filepath.Join(app.ConfigPath(), "config.yaml"))
+		fmt.Fprintf(os.Stderr, "No DeltaFi config found; created default at %s\n", filepath.Join(app.ConfigPath(), "config.yaml"))
 		app.ReloadInstance()
 		return nil
 	}

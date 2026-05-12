@@ -524,7 +524,9 @@ func parseLookupRowsFromCSV(r io.Reader) ([][]graphql.ColumnValueInput, error) {
 
 func init() {
 	rootCmd.AddCommand(lookupCmd)
-	lookupCmd.AddCommand(lookupCliCmd)
+	if !isWebTerminal() {
+		lookupCmd.AddCommand(lookupCliCmd)
+	}
 	lookupCmd.AddCommand(lookupTablesListCmd)
 	lookupCmd.AddCommand(lookupTableImportCmd)
 	lookupTableDeleteCmd.Flags().BoolP("force", "f", false, "Skip confirmation prompt")

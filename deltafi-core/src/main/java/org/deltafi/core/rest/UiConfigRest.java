@@ -40,6 +40,7 @@ public class UiConfigRest {
     private final String authMode;
     private final boolean inCluster;
     private final boolean lookupTablesEnabled;
+    private final boolean webTerminalEnabled;
 
     public UiConfigRest(DeltaFiPropertiesService propertiesService, UiLinkService uiLinkService, Environment environment) {
         this.propertiesService = propertiesService;
@@ -48,6 +49,7 @@ public class UiConfigRest {
         authMode = environment.getProperty("AUTH_MODE");
         inCluster = environment.matchesProfiles("kubernetes");
         lookupTablesEnabled = Boolean.TRUE.equals(environment.getProperty("lookup.enabled", Boolean.class));
+        webTerminalEnabled = Boolean.TRUE.equals(environment.getProperty("web-terminal.enabled", Boolean.class));
     }
 
     @NeedsPermission.UIAccess
@@ -68,6 +70,7 @@ public class UiConfigRest {
         uiConfig.setProperties(properties);
         uiConfig.setLinks(uiLinkService.getLinks());
         uiConfig.setLookupTablesEnabled(lookupTablesEnabled);
+        uiConfig.setWebTerminalEnabled(webTerminalEnabled);
         return uiConfig;
     }
 }

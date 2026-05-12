@@ -32,3 +32,40 @@
     - if: $CI_COMMIT_TAG
       when: never
     - if: $CI_COMMIT_BRANCH
+
+.web-terminal:
+  variables:
+    PROJECT_NAME: tui
+
+"🐳 Publish web terminal (GitLab)":
+  extends:
+    - .web-terminal
+    - .docker
+  needs: []
+  before_script:
+    - cp -rf ${CI_PROJECT_DIR}/orchestration ${CI_PROJECT_DIR}/${PROJECT_NAME}/orchestration
+    - cp -rf ${CI_PROJECT_DIR}/deltafi-docs ${CI_PROJECT_DIR}/${PROJECT_NAME}/deltafi-docs
+    - rm -f ${CI_PROJECT_DIR}/${PROJECT_NAME}/graphql/schema
+    - cp -rf ${CI_PROJECT_DIR}/deltafi-core/src/main/resources/schema ${CI_PROJECT_DIR}/${PROJECT_NAME}/graphql/schema
+    - echo "${CI_COMMIT_TAG:-${CI_COMMIT_BRANCH}}" > ${CI_PROJECT_DIR}/${PROJECT_NAME}/VERSION
+    - tree ${CI_PROJECT_DIR}/${PROJECT_NAME}
+    - cat ${CI_PROJECT_DIR}/${PROJECT_NAME}/VERSION
+  variables:
+    CONTEXT: "${CI_PROJECT_DIR}/${PROJECT_NAME}"
+    DOCKERFILE: "${CI_PROJECT_DIR}/${PROJECT_NAME}/Dockerfile"
+
+"🐳 Publish web terminal (docker.io)":
+  extends:
+    - .web-terminal
+    - .docker-multiarch
+  needs: []
+  before_script:
+    - cp -rf ${CI_PROJECT_DIR}/orchestration ${CI_PROJECT_DIR}/${PROJECT_NAME}/orchestration
+    - cp -rf ${CI_PROJECT_DIR}/deltafi-docs ${CI_PROJECT_DIR}/${PROJECT_NAME}/deltafi-docs
+    - rm -f ${CI_PROJECT_DIR}/${PROJECT_NAME}/graphql/schema
+    - cp -rf ${CI_PROJECT_DIR}/deltafi-core/src/main/resources/schema ${CI_PROJECT_DIR}/${PROJECT_NAME}/graphql/schema
+    - echo "${CI_COMMIT_TAG:-${CI_COMMIT_BRANCH}}" > ${CI_PROJECT_DIR}/${PROJECT_NAME}/VERSION
+    - tree ${CI_PROJECT_DIR}/${PROJECT_NAME}
+  variables:
+    CONTEXT: "${CI_PROJECT_DIR}/${PROJECT_NAME}"
+    DOCKERFILE: "${CI_PROJECT_DIR}/${PROJECT_NAME}/Dockerfile"

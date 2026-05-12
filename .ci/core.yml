@@ -84,13 +84,12 @@ image: ${JAVA_BASE_IMAGE}
     max: 2
     when:
       - script_failure
-  before_script:
+  script:
     - docker buildx inspect
     - docker buildx create --name deltafi-inator --use
     - docker buildx inspect
     - docker login -u ${REGISTRY_USERNAME} -p ${REGISTRY_PASSWORD} ${REGISTRY}
     - docker login -u ${CI_REGISTRY_USER} -p ${CI_JOB_TOKEN} ${CI_REGISTRY}
-  script:
     - >
       echo docker buildx build ${PUSH}
       --cache-to=type=registry,ref=${CI_REGISTRY_IMAGE}/${PROJECT_NAME}:cache,mode=max
@@ -125,14 +124,13 @@ image: ${JAVA_BASE_IMAGE}
     max: 2
     when:
       - script_failure
-  before_script:
+  script:
     - rm -rf extra.sh
     - docker buildx inspect
     - docker buildx create --name deltafi-inator --use
     - docker buildx inspect
     - docker login -u ${REGISTRY_USERNAME} -p ${REGISTRY_PASSWORD} ${REGISTRY}
     - docker login -u ${CI_REGISTRY_USER} -p ${CI_JOB_TOKEN} ${CI_REGISTRY}
-  script:
     - >
       echo docker buildx build ${PUSH} --platform ${DOCKER_PLATFORMS}
       --cache-to=type=registry,ref=${CI_REGISTRY_IMAGE}/${PROJECT_NAME}:cache,mode=max

@@ -58,7 +58,6 @@ var deprecatedComposeCmd = &cobra.Command{
 	DisableFlagParsing: true,
 	GroupID:            "legacy",
 	RunE: func(cmd *cobra.Command, args []string) error {
-
 		if app.GetOrchestrationMode() != orchestration.Compose {
 			return fmt.Errorf("this command is only available in Compose orchestration mode")
 		}
@@ -70,6 +69,8 @@ var deprecatedComposeCmd = &cobra.Command{
 }
 
 func init() {
-	rootCmd.AddCommand(deprecatedCliCmd)
-	rootCmd.AddCommand(deprecatedComposeCmd)
+	if !isWebTerminal() {
+		rootCmd.AddCommand(deprecatedCliCmd)
+		rootCmd.AddCommand(deprecatedComposeCmd)
+	}
 }

@@ -36,6 +36,7 @@ var postgresCmd = &cobra.Command{
 	GroupID:      "deltafi",
 	SilenceUsage: true,
 	RunE: func(cmd *cobra.Command, args []string) error {
+
 		cmd.Help()
 		return fmt.Errorf("subcommand is required")
 	},
@@ -46,6 +47,7 @@ var cliCmd = &cobra.Command{
 	Short: "Start an interactive Postgres CLI session",
 	Long:  "Start an interactive Postgres CLI session",
 	RunE: func(cmd *cobra.Command, args []string) error {
+
 		c, err := app.GetOrchestrator().GetPostgresCmd(args)
 		if err != nil {
 			return err
@@ -64,6 +66,7 @@ var execCmd = &cobra.Command{
 	deltafi postgres eval < query.sql
 	deltafi postgres eval -- -e < query.sql`,
 	RunE: func(cmd *cobra.Command, args []string) error {
+
 		c, err := app.GetOrchestrator().GetPostgresExecCmd(args)
 		if err != nil {
 			return err
@@ -78,6 +81,7 @@ var postgresStatusCmd = &cobra.Command{
 	Short: "Show Postgres instance status and administrative information",
 	Long:  "Display comprehensive information about the Postgres instance including storage usage, table sizes, row counts, connections, and other administrative metrics.",
 	RunE: func(cmd *cobra.Command, args []string) error {
+
 		// SQL queries to gather comprehensive status information
 		queries := map[string]string{
 			"version":         "SELECT version();",
@@ -114,6 +118,7 @@ var postgresMigrationsCmd = &cobra.Command{
 	Short: "Show detailed Flyway migration information",
 	Long:  "Display a comprehensive table of all Flyway migrations with version, description, type, installation details, and execution information.",
 	RunE: func(cmd *cobra.Command, args []string) error {
+
 		RequireRunningDeltaFi()
 
 		// Query to get all Flyway migrations with detailed information
@@ -405,7 +410,9 @@ func parseTableRow(line string) []string {
 }
 
 func init() {
-	rootCmd.AddCommand(postgresCmd)
+	if !isWebTerminal() {
+		rootCmd.AddCommand(postgresCmd)
+	}
 	postgresCmd.AddCommand(cliCmd)
 	postgresCmd.AddCommand(execCmd)
 	postgresCmd.AddCommand(postgresStatusCmd)

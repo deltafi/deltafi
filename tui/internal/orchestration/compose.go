@@ -287,6 +287,7 @@ func (o *ComposeOrchestrator) stopDisabledServices(values map[string]any) {
 		{"deltafi.metrics.enabled", []string{"deltafi-victoriametrics"}},
 		{"deltafi.analytics.enabled", []string{"deltafi-analytics"}},
 		{"deltafi.logviewer.enabled", []string{"dozzle"}},
+		{"deltafi.webTerminal.enabled", []string{"web-terminal"}},
 	}
 
 	var disabled []string
@@ -993,6 +994,7 @@ func (o *ComposeOrchestrator) startupEnvironment() error {
 		"DELTAFI_ANALYTICS":                    o.getValue(values, "deltafi.analytics.image"),
 		"DUCKDB_MEMORY_LIMIT":                  o.getValueOr(values, "deltafi.analytics.duckdbMemoryLimit", "1GB"),
 		"DELTAFI_NODEMONITOR":                  o.getValue(values, "deltafi.nodemonitor.image"),
+		"DELTAFI_WEB_TERMINAL":                 o.getValue(values, "deltafi.webTerminal.image"),
 		"DELTAFI_SECRET_CA_CHAIN":              "certs",
 		"DELTAFI_SECRET_ENTITY_RESOLVER_SSL":   o.getValueOr(values, "deltafi.auth.entityResolver.ssl.secret", "ssl-secret"),
 		"DELTAFI_SECRET_ENTITY_AUTHORIZER_SSL": o.getValueOr(values, "deltafi.auth.entityAuthorizer.ssl.secret", "ssl-secret"),
@@ -1011,6 +1013,7 @@ func (o *ComposeOrchestrator) startupEnvironment() error {
 		"LOGROTATE_AUDIT_MAX_SIZE":             o.getValueOr(values, "deltafi.logs.logrotate.audit_schedule.max_size", "100M"),
 		"DOZZLE":                               o.getValue(values, "dependencies.dozzle"),
 		"LOOKUP_TABLES_ENABLED":                o.getValue(values, "deltafi.lookup.enabled"),
+		"WEB_TERMINAL_ENABLED":                 o.getValue(values, "deltafi.webTerminal.enabled"),
 		"S3PROXY":                              o.getValue(values, "dependencies.s3proxy"),
 		"POSTGRES":                             o.getValue(values, "dependencies.postgres"),
 		"NGINX":                                o.getValue(values, "dependencies.nginx"),
@@ -1044,6 +1047,7 @@ func (o *ComposeOrchestrator) startupEnvironment() error {
 		{"deltafi.metrics.enabled", "victoriametrics"},
 		{"deltafi.analytics.enabled", "analytics"},
 		{"deltafi.logviewer.enabled", "dozzle"},
+		{"deltafi.webTerminal.enabled", "tui"},
 	}
 
 	profiles := []string{}

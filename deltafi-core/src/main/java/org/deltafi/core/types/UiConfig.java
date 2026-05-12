@@ -40,6 +40,7 @@ public class UiConfig {
     private List<Link> deltaFileLinks = new ArrayList<>();
     private List<Link> externalLinks = new ArrayList<>();
     private boolean lookupTablesEnabled;
+    private boolean webTerminalEnabled;
     private boolean leader;
     private String messageOfTheDay;
 

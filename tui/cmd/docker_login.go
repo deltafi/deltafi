@@ -63,7 +63,9 @@ var dockerLoginCmd = &cobra.Command{
 }
 
 func init() {
-	rootCmd.AddCommand(dockerLoginCmd)
+	if !isWebTerminal() {
+		rootCmd.AddCommand(dockerLoginCmd)
+	}
 	dockerLoginCmd.Flags().StringVarP(&username, "username", "u", "", "Registry username")
 	dockerLoginCmd.Flags().StringVar(&password, "password", "", "Registry password (use --password-stdin instead for better security)")
 	dockerLoginCmd.Flags().BoolP("password-stdin", "p", false, "Read password from stdin")

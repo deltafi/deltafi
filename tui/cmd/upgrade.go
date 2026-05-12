@@ -396,7 +396,9 @@ func setIngressEnabled(enabled bool) error {
 }
 
 func init() {
-	rootCmd.AddCommand(upgradeCmd)
+	if !isWebTerminal() {
+		rootCmd.AddCommand(upgradeCmd)
+	}
 	upgradeCmd.AddCommand(listVersionsCmd)
 	upgradeCmd.AddCommand(changelogCmd)
 

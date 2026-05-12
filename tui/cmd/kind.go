@@ -259,7 +259,9 @@ var kindImagesCmd = &cobra.Command{
 }
 
 func init() {
-	rootCmd.AddCommand(kindCmd)
+	if !isWebTerminal() {
+		rootCmd.AddCommand(kindCmd)
+	}
 	kindCmd.AddCommand(kindUpCmd)
 	kindCmd.AddCommand(kindDownCmd)
 	kindCmd.AddCommand(kindDestroyCmd)

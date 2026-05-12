@@ -317,6 +317,7 @@ VERSION=$(deltafi --version)
 # TODO make the data directory configurable
 DATA_DIR="${DELTAFI_DATA_DIR:-${DELTAFI_COMPOSE_PATH}/data}"
 REPOS_DIR="${DELTAFI_REPOS_DIR:-${DELTAFI_PATH}/..}"
+SITE_DIR="${DELTAFI_SITE_DIR:-${DELTAFI_PATH}/../site}"
 SETTINGS_DIR="${DELTAFI_COMPOSE_PATH}/settings"
 SECRETS_DIR="${DELTAFI_SECRETS_DIR:-${SETTINGS_DIR}/secrets}"
 ENV_DIR="${DELTAFI_CONFIG_DIR:-${SETTINGS_DIR}/env}"
@@ -577,6 +578,7 @@ _write_startup_file() {
   _append_startup "CONFIG_DIR" "${CONFIG_DIR}"
   _append_startup "DATA_DIR" "${DATA_DIR}"
   _append_startup "REPOS_DIR" "${REPOS_DIR}"
+  _append_startup "SITE_DIR" "${SITE_DIR}"
   _append_startup "COMPOSE_PROJECT_NAME" "deltafi"
   _append_startup_from_values "DELTAFI_API" ".deltafi.api.image"
   _append_startup_from_values "DELTAFI_ENTITY_RESOLVER" ".deltafi.auth.entityResolver.image"
@@ -591,6 +593,7 @@ _write_startup_file() {
   _append_startup_from_values "DELTAFI_ANALYTICS" ".deltafi.analytics.image"
   _append_startup_from_values "DUCKDB_MEMORY_LIMIT" ".deltafi.analytics.duckdbMemoryLimit"
   _append_startup_from_values "DELTAFI_NODEMONITOR" ".deltafi.nodemonitor.image"
+  _append_startup_from_values "DELTAFI_WEB_TERMINAL" ".deltafi.webTerminal.image"
   _append_startup_from_values "GRAFANA" ".dependencies.grafana"
   _append_startup_from_values "GRAPHITE" ".dependencies.graphite"
   _append_startup_from_values "LOKI" ".dependencies.loki"

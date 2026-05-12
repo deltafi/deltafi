@@ -1,9 +1,31 @@
 plugins {
     id 'license-plain'
+    id 'docker-plain'
 }
 
 license {
     includes(["**/*.go"])
+}
+
+ext.dockerImageName = "deltafi/web-terminal"
+afterEvaluate {
+    docker {
+        name "deltafi/web-terminal:${project.version}"
+        tag "deltafi", "deltafi/web-terminal:${project.version}"
+    }
+}
+
+dockerPrepare {
+    exclude '.go'
+    from('../orchestration') {
+        into 'orchestration'
+    }
+    from('../deltafi-docs') {
+        into 'deltafi-docs'
+    }
+    from('../VERSION') {
+        into '.'
+    }
 }
 
 task tuiClean(type: Exec) {

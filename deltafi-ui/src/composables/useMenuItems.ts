@@ -32,14 +32,15 @@ export interface MenuItem {
   url?: string | ComputedRef<string>;
   children?: MenuItem[];
   visible: boolean | ComputedRef<boolean>;
-  badge?: () => { visible: boolean; class: string; value: number };
+  badge?: () => { visible: boolean; class: string; value: number | string };
   description?: string;
+  keywords?: string[];
 }
 
 export interface MenuBadge {
   visible: boolean;
   class: string;
-  value: number;
+  value: number | string;
 }
 
 export interface FlattenedPage {
@@ -50,6 +51,7 @@ export interface FlattenedPage {
   group?: string;
   badge?: () => MenuBadge;
   visible: boolean | ComputedRef<boolean>;
+  keywords?: string[];
 }
 
 export default function useMenuItems(): {
@@ -333,6 +335,13 @@ export default function useMenuItems(): {
           visible: computed(() => hasPermission("Admin") && !uiConfig.clusterMode),
         },
         {
+          name: "Web Terminal",
+          icon: "fas fa-terminal fa-fw",
+          url: "/shell/",
+          visible: computed(() => hasPermission("Admin") && !!uiConfig.webTerminalEnabled),
+          keywords: ["shell"],
+        },
+        {
           name: "GraphiQL",
           icon: "icomoon graphql",
           url: computed(() => buildURL(undefined, "/graphiql")),
@@ -405,6 +414,7 @@ export default function useMenuItems(): {
             group: item.name,
             badge: child.badge,
             visible: child.visible,
+            keywords: child.keywords,
           });
         }
       } else if (item.path || item.url) {
@@ -416,6 +426,7 @@ export default function useMenuItems(): {
           group: undefined,
           badge: item.badge,
           visible: item.visible,
+          keywords: item.keywords,
         });
       }
     }

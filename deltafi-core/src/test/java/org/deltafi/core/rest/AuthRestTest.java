@@ -47,6 +47,7 @@ class AuthRestTest {
         assertThatCode(() -> authRest.get(ADMIN, response, "https://local.deltafi/")).doesNotThrowAnyException();
         assertThatCode(() -> authRest.get(ADMIN, response, "https://local.deltafi/orchestration/c/main")).doesNotThrowAnyException();
         assertThatCode(() -> authRest.get(ADMIN, response, "https://local.deltafi/visualization/dashboards")).doesNotThrowAnyException();
+        assertThatCode(() -> authRest.get(ADMIN, response, "https://local.deltafi/shell/")).doesNotThrowAnyException();
 
         assertThat(response.getStatus()).isEqualTo(HttpServletResponse.SC_OK);
         assertThat(response.getHeader(USER_NAME_HEADER)).isEqualTo(ADMIN.getUsername());
@@ -63,6 +64,10 @@ class AuthRestTest {
                 .hasMessage("403 FORBIDDEN");
 
         assertThatThrownBy(() -> authRest.verifyPathAccess("/visualization/dashboards", UI_ONLY))
+                .isInstanceOf(ResponseStatusException.class)
+                .hasMessage("403 FORBIDDEN");
+
+        assertThatThrownBy(() -> authRest.verifyPathAccess("/shell/", UI_ONLY))
                 .isInstanceOf(ResponseStatusException.class)
                 .hasMessage("403 FORBIDDEN");
     }

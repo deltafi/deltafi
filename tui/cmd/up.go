@@ -48,7 +48,6 @@ Examples:
 	SilenceErrors: true,
 	GroupID:       "orchestration",
 	RunE: func(cmd *cobra.Command, args []string) error {
-
 		force, _ := cmd.Flags().GetBool("force")
 
 		return Up(force)
@@ -186,6 +185,8 @@ func writeSnapshot(version string, reason string) error {
 }
 
 func init() {
-	rootCmd.AddCommand(upCmd)
+	if !isWebTerminal() {
+		rootCmd.AddCommand(upCmd)
+	}
 	upCmd.Flags().BoolP("force", "f", false, "Skip upgrade confirmation prompts and proceed automatically")
 }

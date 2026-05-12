@@ -169,7 +169,9 @@ func (c *downCommand) View() string {
 }
 
 func init() {
-	rootCmd.AddCommand(downCmd)
+	if !isWebTerminal() {
+		rootCmd.AddCommand(downCmd)
+	}
 	downCmd.Flags().BoolP("force", "f", false, "Skip confirmation prompts and proceed automatically")
 	downCmd.Flags().BoolP("destroy", "d", false, "Remove data directory contents after successful down")
 }
