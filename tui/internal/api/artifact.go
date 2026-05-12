@@ -23,6 +23,7 @@ import (
 	"io"
 	"mime/multipart"
 	"net/http"
+	"net/textproto"
 	"os"
 	"path/filepath"
 	"time"
@@ -141,7 +142,13 @@ func (c *Client) PublishArtifact(
 		_ = writer.WriteField(k, v)
 	}
 
-	part, err := writer.CreateFormFile("file", filepath.Base(filePath))
+	if contentType == "" {
+		contentType = "application/octet-stream"
+	}
+	header := make(textproto.MIMEHeader)
+	header.Set("Content-Disposition", fmt.Sprintf(`form-data; name="file"; filename=%q`, filepath.Base(filePath)))
+	header.Set("Content-Type", contentType)
+	part, err := writer.CreatePart(header)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create form file: %w", err)
 	}

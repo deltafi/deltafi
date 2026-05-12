@@ -131,6 +131,7 @@ Use --all-owners to list artifacts across every owner in a single view.
 		owner, _ := cmd.Flags().GetString("owner")
 		allOwners, _ := cmd.Flags().GetBool("all-owners")
 		plain, _ := cmd.Flags().GetBool("plain")
+		showType, _ := cmd.Flags().GetBool("show-type")
 
 		// --owner is a persistent flag on the parent; MarkFlagsMutuallyExclusive can't see it.
 		if owner != "" && allOwners {
@@ -159,24 +160,10 @@ Use --all-owners to list artifacts across every owner in a single view.
 				rows := [][]string{}
 				for _, resp := range responses {
 					for _, a := range resp.Artifacts {
-						active := a.ActiveVersion
-						if active == "" {
-							active = "(none)"
-						}
-						description := ""
-						if a.ActiveManifest != nil {
-							description = a.ActiveManifest.Description
-						}
-						rows = append(rows, []string{
-							resp.PluginName,
-							a.ArtifactName,
-							active,
-							fmt.Sprintf("%d", a.TotalVersions),
-							description,
-						})
+						rows = append(rows, artifactListRow(a, showType, resp.PluginName))
 					}
 				}
-				t := api.NewTable([]string{"Owner", "Artifact", "Active Version", "Versions", "Description"}, rows)
+				t := api.NewTable(artifactListHeaders(showType, true), rows)
 				renderAsSimpleTable(t, true)
 			} else {
 				// Per-owner tables
@@ -184,22 +171,9 @@ Use --all-owners to list artifacts across every owner in a single view.
 					fmt.Println(styles.InfoStyle.Render(resp.PluginName))
 					rows := [][]string{}
 					for _, a := range resp.Artifacts {
-						active := a.ActiveVersion
-						if active == "" {
-							active = "(none)"
-						}
-						description := ""
-						if a.ActiveManifest != nil {
-							description = a.ActiveManifest.Description
-						}
-						rows = append(rows, []string{
-							a.ArtifactName,
-							active,
-							fmt.Sprintf("%d", a.TotalVersions),
-							description,
-						})
+						rows = append(rows, artifactListRow(a, showType, ""))
 					}
-					t := api.NewTable([]string{"Artifact", "Active Version", "Versions", "Description"}, rows)
+					t := api.NewTable(artifactListHeaders(showType, false), rows)
 					renderAsSimpleTable(t, false)
 				}
 			}
@@ -218,26 +192,53 @@ Use --all-owners to list artifacts across every owner in a single view.
 
 		rows := [][]string{}
 		for _, a := range resp.Artifacts {
-			active := a.ActiveVersion
-			if active == "" {
-				active = "(none)"
-			}
-			description := ""
-			if a.ActiveManifest != nil {
-				description = a.ActiveManifest.Description
-			}
-			rows = append(rows, []string{
-				a.ArtifactName,
-				active,
-				fmt.Sprintf("%d", a.TotalVersions),
-				description,
-			})
+			rows = append(rows, artifactListRow(a, showType, ""))
 		}
 
-		t := api.NewTable([]string{"Artifact", "Active Version", "Versions", "Description"}, rows)
+		t := api.NewTable(artifactListHeaders(showType, false), rows)
 		renderAsSimpleTable(t, plain)
 		return nil
 	},
+}
+
+// artifactListHeaders builds the header row for the list command, optionally
+// prepending an Owner column and/or inserting a Content-Type column.
+func artifactListHeaders(showType, withOwner bool) []string {
+	headers := make([]string, 0, 6)
+	if withOwner {
+		headers = append(headers, "Owner")
+	}
+	headers = append(headers, "Artifact", "Active Version", "Versions")
+	if showType {
+		headers = append(headers, "Content-Type")
+	}
+	headers = append(headers, "Description")
+	return headers
+}
+
+// artifactListRow builds a row for the list command matching artifactListHeaders.
+// Pass owner="" to omit the leading Owner cell.
+func artifactListRow(a api.ArtifactSummary, showType bool, owner string) []string {
+	active := a.ActiveVersion
+	if active == "" {
+		active = "(none)"
+	}
+	description := ""
+	contentType := ""
+	if a.ActiveManifest != nil {
+		description = a.ActiveManifest.Description
+		contentType = a.ActiveManifest.ContentType
+	}
+	row := make([]string, 0, 6)
+	if owner != "" {
+		row = append(row, owner)
+	}
+	row = append(row, a.ArtifactName, active, fmt.Sprintf("%d", a.TotalVersions))
+	if showType {
+		row = append(row, contentType)
+	}
+	row = append(row, description)
+	return row
 }
 
 // ── versions ──────────────────────────────────────────────────────────────────
@@ -928,6 +929,7 @@ func init() {
 	// list / versions
 	artifactsListCmd.Flags().BoolP("plain", "p", false, "Plain output without table borders")
 	artifactsListCmd.Flags().Bool("all-owners", false, "List artifacts across all owners")
+	artifactsListCmd.Flags().Bool("show-type", false, "Include a Content-Type column")
 	artifactsVersionsCmd.Flags().BoolP("plain", "p", false, "Plain output without table borders")
 
 	// download
