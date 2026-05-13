@@ -183,12 +183,14 @@ public class ActionKitAutoConfiguration {
         return new HostnameService(actionsProperties);
     }
 
-    /** Create the service that sends periodic heartbeats to the core.
+    /** Create and start the heartbeat service
      * @return a configured HeartbeatService
      */
     @Bean
-    public HeartbeatService heartbeatService() {
-        return new HeartbeatService();
+    public HeartbeatService heartbeatService(ActionEventQueue actionEventQueue, ActionRunner actionRunner) {
+        HeartbeatService service = new HeartbeatService(actionEventQueue, actionRunner);
+        service.start();
+        return service;
     }
 
     /**

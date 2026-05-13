@@ -19,52 +19,86 @@
 // ABOUTME: Periodically reports action liveness and execution state to Valkey.
 package org.deltafi.actionkit.action.service;
 
+import lombok.extern.slf4j.Slf4j;
 import org.deltafi.actionkit.action.Action;
-import org.deltafi.common.types.ActionExecution;
 import org.deltafi.actionkit.service.ActionEventQueue;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.scheduling.annotation.Scheduled;
+import org.deltafi.common.types.ActionExecution;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Scheduled service that sends action heartbeats and tracks long-running actions in Valkey
  */
-public class HeartbeatService {
-    @Autowired
-    private ActionEventQueue actionEventQueue;
+@Slf4j
+public class HeartbeatService implements AutoCloseable {
 
-    @Autowired
-    private ActionRunner actionRunner;
+    private static final long HEARTBEAT_INTERVAL_MS = 10_000;
+    private static final long LONG_RUNNING_INTERVAL_MS = 5_000;
+
+    private final ActionEventQueue actionEventQueue;
+    private final ActionRunner actionRunner;
+    private final ScheduledExecutorService scheduler;
 
     private List<ActionExecution> runningActions = Collections.emptyList();
 
-    @Scheduled(fixedRate = 10000)
+    public HeartbeatService(ActionEventQueue actionEventQueue, ActionRunner actionRunner) {
+        this.actionEventQueue = actionEventQueue;
+        this.actionRunner = actionRunner;
+        this.scheduler = Executors.newScheduledThreadPool(2, runnable -> {
+            Thread thread = new Thread(runnable, "action-heartbeat");
+            thread.setDaemon(true);
+            return thread;
+        });
+    }
+
+    /** Begin the periodic heartbeat and long-running-task passes. Idempotent within a single instance. */
+    public void start() {
+        scheduler.scheduleAtFixedRate(this::setHeartbeat,
+                HEARTBEAT_INTERVAL_MS, HEARTBEAT_INTERVAL_MS, TimeUnit.MILLISECONDS);
+        scheduler.scheduleAtFixedRate(this::recordRunningTasks,
+                LONG_RUNNING_INTERVAL_MS, LONG_RUNNING_INTERVAL_MS, TimeUnit.MILLISECONDS);
+    }
+
+    @Override
+    public void close() {
+        scheduler.shutdownNow();
+    }
+
     void setHeartbeat() {
-        for (Action<?, ?, ?> action : actionRunner.getAllActions()) {
-            actionEventQueue.setHeartbeat(action.getClassCanonicalName());
+        try {
+            for (Action<?, ?, ?> action : actionRunner.getAllActions()) {
+                actionEventQueue.setHeartbeat(action.getClassCanonicalName());
+            }
+        } catch (Exception e) {
+            log.warn("Failed to set heartbeats", e);
         }
     }
 
-    @Scheduled(fixedRate = 5000)
     void recordRunningTasks() {
-        List<ActionExecution> oldList = new ArrayList<>(runningActions);
-        runningActions = new ArrayList<>();
+        try {
+            List<ActionExecution> oldList = new ArrayList<>(runningActions);
+            runningActions = new ArrayList<>();
 
-        actionRunner.getAllActions().stream()
-                .map(Action::getActionExecution)
-                .filter(Objects::nonNull)
-                .forEach(actionExecution -> {
-                    runningActions.add(actionExecution);
-                    oldList.remove(actionExecution);
-                    actionEventQueue.recordLongRunningTask(actionExecution);
-                });
+            actionRunner.getAllActions().stream()
+                    .map(Action::getActionExecution)
+                    .filter(Objects::nonNull)
+                    .forEach(actionExecution -> {
+                        runningActions.add(actionExecution);
+                        oldList.remove(actionExecution);
+                        actionEventQueue.recordLongRunningTask(actionExecution);
+                    });
 
-        for (ActionExecution actionExecution : oldList) {
-            actionEventQueue.removeLongRunningTask(actionExecution);
+            for (ActionExecution actionExecution : oldList) {
+                actionEventQueue.removeLongRunningTask(actionExecution);
+            }
+        } catch (Exception e) {
+            log.warn("Pushing long-running-task to valkey failed", e);
         }
     }
 }
