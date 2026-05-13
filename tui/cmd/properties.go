@@ -289,7 +289,13 @@ func getProperty(key string) (string, error) {
 	for _, set := range resp.GetPropertySets {
 		for _, prop := range set.Properties {
 			if prop.Key == key {
-				return *prop.Value, nil
+				if prop.Value != nil {
+					return *prop.Value, nil
+				}
+				if prop.DefaultValue != nil {
+					return *prop.DefaultValue, nil
+				}
+				return "", nil
 			}
 		}
 	}
