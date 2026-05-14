@@ -586,61 +586,6 @@ services:
     user: "${USER_ID}:${GROUP_ID}"
     profiles: ["java-ide"]
 
-  vector:
-    profiles: ["logs"]
-    image: ${VECTOR}
-    container_name: deltafi-vector
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock:ro
-      - ${LOGS_DIR}:/logs
-      - ${SETTINGS_DIR}/vector/vector.yaml:/etc/vector/vector.yaml:ro
-    init: true
-    restart: unless-stopped
-    group_add:
-      - ${DOCKER_GID}
-    user: "${USER_ID}:${GROUP_ID}"
-    networks:
-      - deltafi
-    ports:
-      - 8686:8686
-    labels:
-      deltafi-group: deltafi-dependency
-    healthcheck:
-      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider 0.0.0.0:8686/health || exit 1"]
-      interval: 10s
-      timeout: 5s
-      retries: 3
-      start_period: 5s
-
-  # Logrotate container
-  logrotate:
-    profiles: ["logs"]
-    image: ${LOGROTATE}
-    container_name: deltafi-logrotate
-    volumes:
-      - ${LOGS_DIR}:/logs
-    environment:
-      - LOGROTATE_INTERVAL=${LOGROTATE_INTERVAL:-daily}
-      - LOGROTATE_KEEP_DAYS=${LOGROTATE_KEEP_DAYS:-7}
-      - AUDIT_KEEP_DAYS=${LOGROTATE_AUDIT_KEEP_DAYS:-365}
-      - LOGROTATE_MAX_SIZE=${LOGROTATE_MAX_SIZE:-50M}
-      - LOGROTATE_AUDIT_MAX_SIZE=${LOGROTATE_AUDIT_MAX_SIZE:-100M}
-    init: true
-    restart: unless-stopped
-    group_add:
-      - ${DOCKER_GID}
-    user: "${USER_ID}:${GROUP_ID}"
-    networks:
-      - deltafi
-    labels:
-      deltafi-group: deltafi-dependency
-    healthcheck:
-      test: ["CMD-SHELL", "ps aux | grep -v grep | grep -E '(entrypoint.sh|logrotate)' || exit 1"]
-      interval: 60s
-      timeout: 5s
-      retries: 3
-      start_period: 10s
-      start_interval: 1s
 
   web-terminal:
     profiles: ["tui"]

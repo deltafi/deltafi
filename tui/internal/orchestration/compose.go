@@ -335,6 +335,13 @@ func (o *ComposeOrchestrator) dockerCompose(args []string) error {
 		}
 	}
 
+	if values, err := o.getMergedValues(); err == nil {
+		if o.getValueOr(values, "deltafi.logs.enabled", "true") == "true" {
+			logsOverlay := filepath.Join(o.orchestrationPath, "compose", "docker-compose.logs.yml")
+			dockerArgs = append(dockerArgs, "-f", logsOverlay)
+		}
+	}
+
 	if overridesFile, err := o.SiteComposeFile(); err == nil {
 		dockerArgs = append(dockerArgs, "-f", overridesFile)
 	}
@@ -448,6 +455,7 @@ func (o *ComposeOrchestrator) createDataDirs() error {
 		"minio",
 		"postgres",
 		"postgres-lookup",
+		"vector",
 		"victoriametrics",
 	}
 
