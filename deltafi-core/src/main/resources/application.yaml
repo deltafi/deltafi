@@ -9,6 +9,7 @@ spring:
     password: ${POSTGRES_PASSWORD}
     hikari:
       maximum-pool-size: 32
+      minimum-idle: 0
   flyway:
     enabled: false
   jpa:
@@ -37,6 +38,7 @@ lookup:
     password: ${POSTGRES_LOOKUP_PASSWORD}
     hikari:
       maximum-pool-size: 32
+      minimum-idle: 0
 dgs:
   graphql:
     path: "/api/v2/graphql"
