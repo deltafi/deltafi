@@ -32,6 +32,7 @@ import org.deltafi.actionkit.action.parameters.DataSizeDefinitionProvider;
 import org.deltafi.actionkit.action.parameters.EnvVarDefinitionProvider;
 import org.deltafi.actionkit.action.parameters.SchemaGeneratorConfigCustomizer;
 import org.deltafi.actionkit.action.parameters.annotation.Size;
+import org.deltafi.actionkit.action.service.ActionInstanceFactory;
 import org.deltafi.actionkit.action.service.ActionRunner;
 import org.deltafi.actionkit.action.service.HeartbeatService;
 import org.deltafi.actionkit.artifact.ArtifactConfiguration;
@@ -43,6 +44,7 @@ import org.deltafi.actionkit.registration.PluginRegistrar;
 import org.deltafi.actionkit.service.ActionEventQueue;
 import org.deltafi.actionkit.service.HostnameService;
 import org.deltafi.common.action.EventQueueProperties;
+import org.deltafi.common.content.ContentStorageService;
 import org.deltafi.common.graphql.dgs.GraphQLClientFactory;
 import org.deltafi.common.http.HttpService;
 import org.deltafi.common.listener.StartupFailureListener;
@@ -51,6 +53,8 @@ import org.deltafi.actionkit.lookup.LookupTableSupplier;
 import org.deltafi.common.queue.valkey.ValkeyKeyedBlockingQueue;
 import org.deltafi.common.ssl.SslAutoConfiguration;
 import org.deltafi.common.types.BuildInfo;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -166,11 +170,28 @@ public class ActionKitAutoConfiguration {
     /**
      * Create the action runner that polls for and executes actions.
      * Depends on {@code pluginRegistrar} so workers are not constructed until registration succeeds.
+     * The Spring-backed {@link ActionInstanceFactory} clones per-thread instances through the bean
+     * factory so {@code @Autowired} injection and {@code @PostConstruct} fire, and registers each
+     * clone as a named singleton so {@code @PreDestroy} runs at context shutdown.
      */
     @Bean
     @DependsOn({"lookupTableSupplierRunner", "pluginRegistrar"})
-    public ActionRunner actionRunner() {
-        return new ActionRunner();
+    public ActionRunner actionRunner(ActionEventQueue actionEventQueue, ActionsProperties actionsProperties,
+            HostnameService hostnameService, BuildInfo buildInfo, ContentStorageService contentStorageService,
+            List<Action<?, ?, ?>> singletonActions, ConfigurableListableBeanFactory beanFactory,
+            @Value("${APP_NAME:null}") String appName) {
+        ActionInstanceFactory actionInstanceFactory = (actionClass, threadIndex) -> {
+            Action<?, ?, ?> instance = (Action<?, ?, ?>) beanFactory.createBean(actionClass);
+            String beanName = actionClass.getCanonicalName() + "#" + threadIndex;
+            if (!beanFactory.containsBeanDefinition(beanName)) {
+                beanFactory.registerSingleton(beanName, instance);
+            }
+            return instance;
+        };
+        ActionRunner actionRunner = new ActionRunner(actionEventQueue, actionsProperties, hostnameService,
+                buildInfo, contentStorageService, singletonActions, appName, actionInstanceFactory);
+        actionRunner.start();
+        return actionRunner;
     }
 
     /**

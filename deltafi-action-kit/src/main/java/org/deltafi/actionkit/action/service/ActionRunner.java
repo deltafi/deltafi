@@ -19,8 +19,6 @@
 // ABOUTME: Polls the event queue, dispatches actions, and handles results and errors.
 package org.deltafi.actionkit.action.service;
 
-import jakarta.annotation.PostConstruct;
-import jakarta.annotation.PreDestroy;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.deltafi.actionkit.action.Action;
@@ -41,70 +39,69 @@ import org.deltafi.common.types.ActionContext;
 import org.deltafi.common.types.ActionEvent;
 import org.deltafi.common.types.ActionInput;
 import org.deltafi.common.types.BuildInfo;
-import org.jetbrains.annotations.NotNull;
 import org.slf4j.MDC;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
-import org.springframework.context.ApplicationContext;
-import org.springframework.context.ApplicationListener;
-import org.springframework.context.event.ContextClosedEvent;
 
 import java.io.IOException;
 import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.OffsetDateTime;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 /**
- * Manages the lifecycle of action execution threads, polling the event queue and dispatching actions
+ * Manages the lifecycle of action execution threads, polling the event queue and dispatching actions.
+ * Per-thread instance creation is delegated to a caller-supplied {@link ActionInstanceFactory} so
+ * any DI framework can plug in its own creation logic.
  */
 @Slf4j
-public class ActionRunner implements ApplicationListener<ContextClosedEvent> {
-    @Autowired
-    private ActionEventQueue actionEventQueue;
+public class ActionRunner implements AutoCloseable {
 
-    @Autowired
-    private ActionsProperties actionsProperties;
+    private final ActionEventQueue actionEventQueue;
+    private final ActionsProperties actionsProperties;
+    private final HostnameService hostnameService;
+    private final BuildInfo buildInfo;
+    private final ContentStorageService contentStorageService;
+    private final String appName;
+    private final ActionInstanceFactory actionInstanceFactory;
+    private boolean started = false;
 
-    @Autowired
-    private HostnameService hostnameService;
-
-    @Autowired(required = false)
     @Getter
-    private List<Action<?, ?, ?>> singletonActions = Collections.emptyList();
-
-    @Autowired
-    BuildInfo buildInfo;
-
-    @Autowired
-    ContentStorageService contentStorageService;
-
-    @Autowired
-    private ApplicationContext applicationContext;
-
-    @Autowired
-    private ConfigurableListableBeanFactory beanFactory;
-
-    private final ExecutorService executor = Executors.newCachedThreadPool();
+    private final List<Action<?, ?, ?>> singletonActions;
 
     @Getter
     private final List<Action<?, ?, ?>> allActions = new ArrayList<>();
 
-    @Value("${APP_NAME:null}")
-    private String appName;
+    private final ExecutorService executor = Executors.newCachedThreadPool();
 
-    /**
-     * Automatically called after construction to initiate polling for inbound actions to be executed
-     */
-    @PostConstruct
-    private void initialize() {
-        registerAdditionalActions();
-        startActions();
+    public ActionRunner(ActionEventQueue actionEventQueue,
+                        ActionsProperties actionsProperties,
+                        HostnameService hostnameService,
+                        BuildInfo buildInfo,
+                        ContentStorageService contentStorageService,
+                        List<Action<?, ?, ?>> singletonActions,
+                        String appName,
+                        ActionInstanceFactory actionInstanceFactory) {
+        this.actionEventQueue = actionEventQueue;
+        this.actionsProperties = actionsProperties;
+        this.hostnameService = hostnameService;
+        this.buildInfo = buildInfo;
+        this.contentStorageService = contentStorageService;
+        this.singletonActions = singletonActions;
+        this.appName = appName;
+        this.actionInstanceFactory = actionInstanceFactory;
+    }
+
+    /** Expand per-action thread copies and start polling. */
+    public void start() {
+        if (!started) {
+            registerAdditionalActions();
+            startActions();
+            started = true;
+        }
     }
 
     private void registerAdditionalActions() {
@@ -117,14 +114,12 @@ public class ActionRunner implements ApplicationListener<ContextClosedEvent> {
             instances.add(action);
 
             for (int i = 1; i < numThreads; i++) {
-                String beanName = actionName + "#" + i;
-                if (!beanFactory.containsBeanDefinition(beanName)) {
-                    Action<?, ?, ?> newInstance = applicationContext.getAutowireCapableBeanFactory().createBean(action.getClass());
-                    newInstance.setThreadNum(i);
-                    newInstance.setAppName(appName);
-                    beanFactory.registerSingleton(beanName, newInstance);
-                    instances.add(newInstance);
-                }
+                @SuppressWarnings("unchecked")
+                Class<? extends Action<?, ?, ?>> actionClass = (Class<? extends Action<?, ?, ?>>) action.getClass();
+                Action<?, ?, ?> newInstance = actionInstanceFactory.createInstance(actionClass, i);
+                newInstance.setThreadNum(i);
+                newInstance.setAppName(appName);
+                instances.add(newInstance);
             }
             allActions.addAll(instances);
         }
@@ -224,46 +219,31 @@ public class ActionRunner implements ApplicationListener<ContextClosedEvent> {
         }
     }
 
-    /** Gracefully shut down the action executor thread pool */
-    @PreDestroy
-    public void shutdown() {
-        shutdownExecutor();
-    }
-
+    /** Graceful shutdown of the action executor thread pool. */
     @Override
-    public void onApplicationEvent(@NotNull ContextClosedEvent event) {
-        log.info("Shutting down action executor event for event: {}", event);
-        shutdownExecutor();
-    }
-
-    private void shutdownExecutor() {
-        if (!executor.isShutdown()) {
-            log.info("Shutting down action executor...");
-
-            // Stop accepting new tasks
-            executor.shutdown();
-
-            try {
-                // Wait for existing tasks to complete
-                if (!executor.awaitTermination(5, TimeUnit.SECONDS)) {
-                    log.warn("Action executor didn't terminate gracefully, forcing shutdown");
-                    executor.shutdownNow();
-
-                    // Wait again for forced shutdown
-                    if (!executor.awaitTermination(5, TimeUnit.SECONDS)) {
-                        log.error("Action executor didn't terminate after forced shutdown");
-                    }
-                }
-                if (executor.isTerminated()) {
-                    log.info("Action executor shut down successfully");
-                } else {
-                    log.error("Action executor didn't terminate");
-                }
-            } catch (InterruptedException e) {
-                log.warn("Interrupted while waiting for action executor shutdown");
+    public void close() {
+        if (executor.isShutdown()) {
+            return;
+        }
+        log.info("Shutting down action executor...");
+        executor.shutdown();
+        try {
+            if (!executor.awaitTermination(5, TimeUnit.SECONDS)) {
+                log.warn("Action executor didn't terminate gracefully, forcing shutdown");
                 executor.shutdownNow();
-                Thread.currentThread().interrupt();
+                if (!executor.awaitTermination(5, TimeUnit.SECONDS)) {
+                    log.error("Action executor didn't terminate after forced shutdown");
+                }
             }
+            if (executor.isTerminated()) {
+                log.info("Action executor shut down successfully");
+            } else {
+                log.error("Action executor didn't terminate");
+            }
+        } catch (InterruptedException e) {
+            log.warn("Interrupted while waiting for action executor shutdown");
+            executor.shutdownNow();
+            Thread.currentThread().interrupt();
         }
     }
 }
