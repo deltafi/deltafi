@@ -35,7 +35,7 @@ public class RateLimitService {
     @Autowired
     public RateLimitService(JedisPool jedisPool) {
         this(ValkeyBasedProxyManager.builderFor(jedisPool).build());
-        log.info("Initializing RateLimitService with JedisPool: {}", jedisPool);
+        log.info("Initializing RateLimitService (Valkey pool max={})", jedisPool.getMaxTotal());
     }
 
     // Constructor for testing

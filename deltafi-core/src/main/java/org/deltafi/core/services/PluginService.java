@@ -400,7 +400,6 @@ public class PluginService implements Snapshotter {
 
     @Transactional
     public Result register(PluginRegistration pluginRegistration, IntegrationService integrationService) {
-        log.info("{}", pluginRegistration);
         PluginEntity plugin = new PluginEntity(pluginRegistration.toPlugin());
         plugin.setRegistrationHash(hashRegistration(pluginRegistration));
         GroupedFlowPlans groupedFlowPlans = groupPlansByFlowType(pluginRegistration);

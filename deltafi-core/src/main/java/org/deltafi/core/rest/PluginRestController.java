@@ -76,6 +76,7 @@ public class PluginRestController {
             }
         } catch (Exception e) {
             log.error("Failed to register plugin {}", pluginRegistration.getPluginCoordinates(), e);
+            log.error("Registration payload for failed plugin {}: {}", pluginRegistration.getPluginCoordinates(), pluginRegistration);
             return ResponseEntity.badRequest().body("Plugin registration error: %s. See core logs for more details".formatted(e.getMessage()));
         } finally {
             pluginService.releaseUpdateLock();
