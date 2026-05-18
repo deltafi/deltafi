@@ -145,7 +145,8 @@ import static org.mockito.Mockito.times;
 class DeltaFiCoreApplicationTests {
 	@Container
 	public static final PostgreSQLContainer<?> POSTGRES_CONTAINER = new PostgreSQLContainer<>(
-			DockerImageName.parse("deltafi/timescaledb:2.19.0-pg16").asCompatibleSubstituteFor("postgres"));
+			DockerImageName.parse("deltafi/timescaledb:2.19.0-pg16").asCompatibleSubstituteFor("postgres"))
+			.withCommand("postgres", "-c", "timescaledb.enable_job_execution=off");
 
 	@Container
 	public static final PostgreSQLContainer<?> POSTGRES_LOOKUP_CONTAINER = new PostgreSQLContainer<>(
@@ -470,7 +471,7 @@ class DeltaFiCoreApplicationTests {
 		securityContext.setAuthentication(authentication);
 		SecurityContextHolder.setContext(securityContext);
 
-		Mockito.when(systemService.isContentStorageDepleted()).thenReturn(false);
+		Mockito.doReturn(false).when(systemService).isContentStorageDepleted();
 
 		flowDefinitionService.clearCache();
 	}

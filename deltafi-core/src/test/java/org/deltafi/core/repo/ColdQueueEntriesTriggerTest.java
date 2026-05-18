@@ -48,7 +48,8 @@ class ColdQueueEntriesTriggerTest {
 
     @Container
     static final PostgreSQLContainer<?> POSTGRES = new PostgreSQLContainer<>(
-            DockerImageName.parse("deltafi/timescaledb:2.19.0-pg16").asCompatibleSubstituteFor("postgres"));
+            DockerImageName.parse("deltafi/timescaledb:2.19.0-pg16").asCompatibleSubstituteFor("postgres"))
+            .withCommand("postgres", "-c", "timescaledb.enable_job_execution=off");
 
     @DynamicPropertySource
     static void setProperties(DynamicPropertyRegistry registry) {
