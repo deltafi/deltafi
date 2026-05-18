@@ -108,11 +108,13 @@ worker_loop() {
         # Remove successfully deleted items from the database (only if we have some)
         if (( ${#successful_dids[@]} > 0 )); then
             # PostgreSQL returns "DELETE n" where n is the count - extract that number
-            delete_result=$(psql "$PG_URL" -tc "
+            # SQL is piped via stdin to avoid ARG_MAX limits on the IN (...) list
+            delete_result=$(psql "$PG_URL" -t <<SQL
                 DELETE FROM pending_deletes
                 WHERE node = '${NODE_NAME}'
                   AND did IN ($(IFS=,; echo "${successful_dids[*]}"));
-            ")
+SQL
+            )
             # Extract the number from "DELETE n" output
             deleted=$(echo "$delete_result" | grep -oE '[0-9]+' || echo "0")
             _info "$worker_id" "Deleted content for $delete_count deltaFiles"

@@ -19,6 +19,7 @@ spec:
         app: deltafi-node-fastdelete
         group: deltafi-core
     spec:
+      enableServiceLinks: false
       terminationGracePeriodSeconds: 1
       imagePullSecrets:
       - name: docker-secret
