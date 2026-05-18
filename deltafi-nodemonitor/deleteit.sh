@@ -110,7 +110,8 @@ worker_loop() {
             # PostgreSQL returns "DELETE n" where n is the count - extract that number
             delete_result=$(psql "$PG_URL" -tc "
                 DELETE FROM pending_deletes
-                WHERE did IN ($(IFS=,; echo "${successful_dids[*]}"));
+                WHERE node = '${NODE_NAME}'
+                  AND did IN ($(IFS=,; echo "${successful_dids[*]}"));
             ")
             # Extract the number from "DELETE n" output
             deleted=$(echo "$delete_result" | grep -oE '[0-9]+' || echo "0")

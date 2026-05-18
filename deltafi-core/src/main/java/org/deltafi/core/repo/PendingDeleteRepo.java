@@ -34,7 +34,7 @@ public class PendingDeleteRepo {
 
     public void insertPendingDeletes(List<String> nodes, List<UUID> dids, String bucket) {
         jdbcTemplate.batchUpdate(
-                "INSERT INTO pending_deletes (node, did, bucket) VALUES (?, ?, ?)",
+                "INSERT INTO pending_deletes (node, did, bucket) VALUES (?, ?, ?) ON CONFLICT (node, did) DO NOTHING",
                 nodes.stream()
                         .flatMap(node -> dids.stream().map(did -> new Object[]{node, did, bucket}))
                         .toList(),
