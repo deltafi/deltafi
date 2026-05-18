@@ -238,7 +238,16 @@ if (highlight.value && result.value.code == null) {
 }
 
 .foldable-pre .fold-line {
-  white-space: pre;
+  display: flex;
+  align-items: flex-start;
+}
+
+.foldable-pre .fold-line > span:last-child {
+  flex: 1 1 auto;
+  min-width: 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .fold-toggle {
