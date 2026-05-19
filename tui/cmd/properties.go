@@ -305,6 +305,14 @@ func getProperty(key string) (string, error) {
 func setProperty(key string, value string) error {
 	RequireRunningDeltaFi()
 
+	current, err := getProperty(key)
+	if err != nil {
+		return err
+	}
+	if current == value {
+		return nil
+	}
+
 	updates := []graphql.KeyValueInput{{
 		Key:   key,
 		Value: &value,
