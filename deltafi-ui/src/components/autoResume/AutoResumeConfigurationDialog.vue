@@ -48,6 +48,10 @@
           <dd>
             <InputText id="ar-error-substring" v-model="selectedRuleErrorSubstring" :placeholder="autoResumeConfigurationMap.get('errorSubstring').placeholder" :disabled="autoResumeConfigurationMap.get('errorSubstring').disabled" class="inputWidth" />
           </dd>
+          <dt><label for="ar-enabled">{{ autoResumeConfigurationMap.get("enabled").header }}</label></dt>
+          <dd>
+            <ToggleSwitch id="ar-enabled" v-model="selectedRuleEnabled" :disabled="autoResumeConfigurationMap.get('enabled').disabled" />
+          </dd>
           <dt><label for="maxAttemptsId">{{ autoResumeConfigurationMap.get("maxAttempts").header }}<span v-if="autoResumeConfigurationMap.get('maxAttempts').required" class="required-indicator" aria-hidden="true">*</span></label></dt>
           <dd class="mb-0">
             <InputNumber id="maxAttemptsId" v-model="selectedRuleMaxAttempts" aria-describedby="maxAttemptsId-help" :aria-required="autoResumeConfigurationMap.get('maxAttempts').required" show-buttons :min="autoResumeConfigurationMap.get('maxAttempts').min" :max="autoResumeConfigurationMap.get('maxAttempts').max" decrement-button-class="p-button-secondary" increment-button-class="p-button-secondary" increment-button-icon="pi pi-plus" decrement-button-icon="pi pi-minus" :disabled="autoResumeConfigurationMap.get('maxAttempts').disabled" />
@@ -177,6 +181,7 @@ const autoResumeConfigurationMap = new Map([
   ["maxAttempts", { header: "Max Attempts", required: true, placeholder: "A number 2 or greater", type: "number", min: 2, max: null, disabled: viewAutoResumeRule }],
   ["priority", { header: "Priority", placeholder: "A number 0 or greater", type: "number", disabled: viewAutoResumeRule }],
   ["errorSubstring", { header: "Error Substring", placeholder: "Exact substring match; e.g. post failure", type: "string", disabled: viewAutoResumeRule }],
+  ["enabled", { header: "Enabled", type: "boolean", disabled: viewAutoResumeRule }],
   ["delay", { header: "Delay", required: true, placeholder: "A number 0 or greater", type: "number", min: 0, max: null, disabled: viewAutoResumeRule }],
   ["maxDelay", { header: "Max Delay", placeholder: "A number greater than 0", type: "number", min: 0, max: null, disabled: viewAutoResumeRule }],
   ["multiplier", { header: "Multiplier", placeholder: "A number greater than 0", type: "number", min: 0, max: null, disabled: viewAutoResumeRule }],
@@ -188,6 +193,7 @@ const selectedRuleName = ref(_.get(rowData, "name", null));
 const selectedRuleDataSource = ref(_.get(rowData, "dataSource", null));
 const selectedRuleAction = ref(_.get(rowData, "action", null));
 const selectedRuleErrorSubstring = ref(_.get(rowData, "errorSubstring", null));
+const selectedRuleEnabled = ref(_.get(rowData, "enabled", true));
 const selectedRuleMaxAttempts = ref(_.get(rowData, "maxAttempts", 2));
 const selectedPriority = ref(_.get(rowData, "priority", 0));
 const selectedRuleDelay = ref(_.get(rowData, "backOff.delay", 0));
@@ -220,9 +226,9 @@ const createNewRule = () => {
 
   if (ruleId.value) {
     autoResumeRule["id"] = ruleId.value;
-    // Preserve enabled on edit; server treats absent as true, which would silently re-enable a disabled rule.
-    autoResumeRule["enabled"] = rowDataProp.enabled !== false;
   }
+
+  autoResumeRule["enabled"] = selectedRuleEnabled.value;
 
   if (selectedRuleName.value) {
     autoResumeRule["name"] = selectedRuleName.value;
