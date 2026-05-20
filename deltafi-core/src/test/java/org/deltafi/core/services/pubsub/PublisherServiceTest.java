@@ -20,26 +20,14 @@ package org.deltafi.core.services.pubsub;
 import org.assertj.core.api.Assertions;
 import org.deltafi.common.rules.RuleEvaluator;
 import org.deltafi.common.test.time.TestClock;
+import org.deltafi.common.types.*;
 import org.deltafi.core.MockDeltaFiPropertiesService;
 import org.deltafi.core.services.DeltaFiPropertiesService;
 import org.deltafi.core.services.FlowDefinitionService;
 import org.deltafi.core.services.PluginService;
-import org.deltafi.common.types.*;
 import org.deltafi.core.services.analytics.AnalyticEventService;
 import org.deltafi.core.types.*;
-import org.deltafi.common.types.ActionState;
-import org.deltafi.common.types.DefaultBehavior;
-import org.deltafi.common.types.DefaultRule;
-import org.deltafi.common.types.MatchingPolicy;
-import org.deltafi.common.types.PublishRules;
-import org.deltafi.common.types.Publisher;
-import org.deltafi.common.types.Rule;
-import org.deltafi.common.types.Subscriber;
 import org.deltafi.core.util.MockFlowDefinitionService;
-import org.deltafi.core.types.Action;
-import org.deltafi.core.types.DeltaFile;
-import org.deltafi.core.types.DeltaFileFlow;
-import org.deltafi.core.types.TransformFlow;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -54,8 +42,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
-import static org.deltafi.core.services.pubsub.PublisherService.NO_SUBSCRIBERS;
-import static org.deltafi.core.services.pubsub.PublisherService.NO_SUBSCRIBER_CAUSE;
+import static org.deltafi.core.services.pubsub.PublisherService.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 
@@ -70,7 +57,8 @@ class PublisherServiceTest {
     Clock clock = new TestClock();
 
     SubscriberService mockSubscriberService = Mockito.mock(SubscriberService.class);
-    @Spy @SuppressWarnings("unused")
+    @Spy
+    @SuppressWarnings("unused")
     List<SubscriberService> subscriberServices = List.of(mockSubscriberService);
 
     @Spy
@@ -183,7 +171,7 @@ class PublisherServiceTest {
 
         Set<DeltaFileFlow> subscribers = publisherService.publisherSubscribers(publisher, deltaFile, deltaFileFlow);
 
-        Mockito.verify(analyticEventService).recordError(eq(deltaFile), eq(deltaFileFlow.getName()), eq(deltaFileFlow.getType()), eq(NO_SUBSCRIBERS), eq(NO_SUBSCRIBER_CAUSE), any());
+        Mockito.verify(analyticEventService).recordError(eq(deltaFile), eq(deltaFileFlow.getName()), eq(deltaFileFlow.getType()), eq(NO_SUBSCRIBERS), eq(NO_RULES_MATCHED_CAUSE), any());
 
         // null publish rules will result no matches
         Assertions.assertThat(subscribers).isEmpty();
@@ -191,7 +179,7 @@ class PublisherServiceTest {
         Assertions.assertThat(deltaFileFlow.getActions()).hasSize(1);
         Action action = deltaFileFlow.firstAction();
         Assertions.assertThat(action.getState()).isEqualTo(ActionState.ERROR);
-        Assertions.assertThat(action.getErrorCause()).isEqualTo(NO_SUBSCRIBER_CAUSE);
+        Assertions.assertThat(action.getErrorCause()).isEqualTo(NO_RULES_MATCHED_CAUSE);
         Assertions.assertThat(action.getErrorContext()).isNotBlank();
         Assertions.assertThat(action.getFilteredCause()).isNull();
 
@@ -199,7 +187,7 @@ class PublisherServiceTest {
         Assertions.assertThat(deltaFile.getMessages()).hasSize(1);
         Assertions.assertThat(deltaFile.getMessages().getFirst().getSeverity()).isEqualTo(LogSeverity.ERROR);
         Assertions.assertThat(deltaFile.getMessages().getFirst().getSource()).isEqualTo("internal");
-        Assertions.assertThat(deltaFile.getMessages().getFirst().getMessage()).contains(NO_SUBSCRIBER_CAUSE);
+        Assertions.assertThat(deltaFile.getMessages().getFirst().getMessage()).contains(NO_RULES_MATCHED_CAUSE);
     }
 
     @Test
@@ -225,7 +213,8 @@ class PublisherServiceTest {
         Assertions.assertThat(action.getState()).isEqualTo(ActionState.FILTERED);
         Assertions.assertThat(action.getErrorCause()).isNull();
         Assertions.assertThat(action.getErrorContext()).isEmpty();
-        Assertions.assertThat(action.getFilteredCause()).isEqualTo(NO_SUBSCRIBER_CAUSE);
+        Assertions.assertThat(action.getFilteredCause()).isEqualTo(NO_RULES_MATCHED_CAUSE);
+        Assertions.assertThat(action.getFilteredContext()).isNotBlank();
     }
 
     @Test
@@ -266,6 +255,63 @@ class PublisherServiceTest {
         Assertions.assertThat(action.getState()).isEqualTo(ActionState.ERROR);
         Assertions.assertThat(action.getErrorCause()).isEqualTo(NO_SUBSCRIBER_CAUSE);
         Assertions.assertThat(action.getErrorContext()).isNotBlank();
+        Assertions.assertThat(action.getFilteredCause()).isNull();
+    }
+
+    @Test
+    void buildContext() {
+        final String defaultOnly = """
+                No subscribers found from TYPE 'NAME'
+                Default topic: 'DEFAULT' has no subscribers.""";
+
+        final String emptyAndNoDef = """
+                 No publish rules were satisfied from TYPE 'NAME' , and no default topic was configured.
+                Please check the publish rules of the flow.""";
+
+        final String noDefWithSet = """
+                No subscribers found from TYPE 'NAME' listening on matching topics: T1, T2""";
+
+        final String defaultWithSet = """
+                 No subscribers found from TYPE 'NAME' listening on matching topics: T1, T2
+                Default topic: 'DEFAULT' has no subscribers.""";
+
+        Assertions.assertThat(PublisherService.buildContext(
+                        "NAME", "TYPE", Set.of(), "DEFAULT"))
+                .isEqualToIgnoringWhitespace(defaultOnly);
+
+        Assertions.assertThat(PublisherService.buildContext(
+                        "NAME", "TYPE", Set.of(), null))
+                .isEqualToIgnoringWhitespace(emptyAndNoDef);
+
+        Assertions.assertThat(PublisherService.buildContext(
+                        "NAME", "TYPE", Set.of("T1", "T2"), null))
+                .isEqualToIgnoringWhitespace(noDefWithSet);
+
+        Assertions.assertThat(PublisherService.buildContext(
+                        "NAME", "TYPE", Set.of("T1", "T2"), "DEFAULT"))
+                .isEqualToIgnoringWhitespace(defaultWithSet);
+    }
+
+    @Test
+    void subscribers_noRulesMatchFails() {
+        DeltaFile deltaFile = deltaFile();
+        DeltaFileFlow deltaFileFlow = deltaFile.firstFlow();
+        deltaFileFlow.getFlowDefinition().setType(FlowType.TRANSFORM);
+
+        PublishRules publishRules = new PublishRules();
+        publishRules.setRules(new ArrayList<>());
+        publishRules.getRules().add(rule("a", "a"));
+        publishRules.getRules().add(rule("b", "b"));
+        publishRules.getRules().add(rule("c", "c"));
+        Publisher publisher = flow(publishRules, Set.of());
+
+        Set<DeltaFileFlow> subscribers = publisherService.publisherSubscribers(publisher, deltaFile, deltaFileFlow);
+        Assertions.assertThat(subscribers).isEmpty();
+        Assertions.assertThat(deltaFileFlow.getActions()).hasSize(1);
+        Action action = deltaFileFlow.firstAction();
+        Assertions.assertThat(action.getState()).isEqualTo(ActionState.ERROR);
+        Assertions.assertThat(action.getErrorCause()).isEqualTo(NO_RULES_MATCHED_CAUSE);
+        Assertions.assertThat(action.getErrorContext()).doesNotContain("Default topic: ");
         Assertions.assertThat(action.getFilteredCause()).isNull();
     }
 
@@ -416,7 +462,7 @@ class PublisherServiceTest {
         Assertions.assertThat(nextFlow.getState()).isEqualTo(DeltaFileFlowState.PAUSED);
     }
 
-    void  mockRuleEval(String condition, DeltaFileFlow deltaFileFlow, boolean result) {
+    void mockRuleEval(String condition, DeltaFileFlow deltaFileFlow, boolean result) {
         Mockito.when(ruleEvaluator.evaluateCondition(condition, deltaFileFlow.getMetadata(), deltaFileFlow.lastContent())).thenReturn(result);
     }
 

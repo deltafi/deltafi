@@ -164,7 +164,7 @@
           "editorMode": "code",
           "format": "time_series",
           "rawQuery": true,
-          "rawSql": "SELECT\n  time_bucket_gapfill(($__interval_ms || ' ms')::interval, bucket_time) AS time,\n  COALESCE(SUM(error_files), 0) AS error_files\nFROM get_errors_filters_data(\n  '${annotationKey}',\n  ARRAY[$annotationValues],\n  ARRAY[$dataSources],\n  ARRAY[$groups],\n  $__timeFrom(),\n  $__timeTo(),\n  ($__interval_ms || ' ms'),\n  'ERRORS'\n)\nWHERE bucket_time >= $__timeFrom()\nAND bucket_time <= $__timeTo()\nAND ($includeMissingSubscribers = 'TRUE' OR cause != 'No matching subscribers were found')\nGROUP BY time\nORDER BY time",
+          "rawSql": "SELECT\n  time_bucket_gapfill(($__interval_ms || ' ms')::interval, bucket_time) AS time,\n  COALESCE(SUM(error_files), 0) AS error_files\nFROM get_errors_filters_data(\n  '${annotationKey}',\n  ARRAY[$annotationValues],\n  ARRAY[$dataSources],\n  ARRAY[$groups],\n  $__timeFrom(),\n  $__timeTo(),\n  ($__interval_ms || ' ms'),\n  'ERRORS'\n)\nWHERE bucket_time >= $__timeFrom()\nAND bucket_time <= $__timeTo()\nAND ($includeMissingSubscribers = 'TRUE' OR (cause != 'No publish rules were satisfied' AND cause != 'No matching subscribers were found'))\nGROUP BY time\nORDER BY time",
           "refId": "A",
           "sql": {
             "columns": [
@@ -400,7 +400,7 @@
           "editorMode": "code",
           "format": "time_series",
           "rawQuery": true,
-          "rawSql": "SELECT\n  time_bucket_gapfill(($__interval_ms || ' ms')::interval, bucket_time) AS time,\n  annotation_value,\n  COALESCE(SUM(error_files), 0) AS error_files\nFROM get_errors_filters_data(\n  '${annotationKey}',\n  ARRAY[$annotationValues],\n  ARRAY[$dataSources],\n  ARRAY[$groups],\n  $__timeFrom(),\n  $__timeTo(),\n  ($__interval_ms || ' ms'),\n  'ERRORS'\n)\nWHERE bucket_time >= $__timeFrom()\nAND bucket_time <= $__timeTo()\nAND ($includeMissingSubscribers = 'TRUE' OR cause != 'No matching subscribers were found')\nGROUP BY time, annotation_value\nORDER BY time, annotation_value;",
+          "rawSql": "SELECT\n  time_bucket_gapfill(($__interval_ms || ' ms')::interval, bucket_time) AS time,\n  annotation_value,\n  COALESCE(SUM(error_files), 0) AS error_files\nFROM get_errors_filters_data(\n  '${annotationKey}',\n  ARRAY[$annotationValues],\n  ARRAY[$dataSources],\n  ARRAY[$groups],\n  $__timeFrom(),\n  $__timeTo(),\n  ($__interval_ms || ' ms'),\n  'ERRORS'\n)\nWHERE bucket_time >= $__timeFrom()\nAND bucket_time <= $__timeTo()\nAND ($includeMissingSubscribers = 'TRUE' OR (cause != 'No publish rules were satisfied' AND cause != 'No matching subscribers were found'))\nGROUP BY time, annotation_value\nORDER BY time, annotation_value;",
           "refId": "A",
           "sql": {
             "columns": [
@@ -700,7 +700,7 @@
           "editorMode": "code",
           "format": "time_series",
           "rawQuery": true,
-          "rawSql": "SELECT\n  time_bucket_gapfill(($__interval_ms || ' ms')::interval, bucket_time) AS time,\n  cause,\n  COALESCE(SUM(error_files), 0) AS error_files\nFROM get_errors_filters_data(\n  '${annotationKey}',\n  ARRAY[$annotationValues],\n  ARRAY[$dataSources],\n  ARRAY[$groups],\n  $__timeFrom(),\n  $__timeTo(),\n  ($__interval_ms || ' ms'),\n  'ERRORS'\n)\nWHERE bucket_time >= $__timeFrom()\nAND bucket_time <= $__timeTo()\nAND ($includeMissingSubscribers = 'TRUE' OR cause != 'No matching subscribers were found')\nGROUP BY time, cause\nORDER BY time, cause;",
+          "rawSql": "SELECT\n  time_bucket_gapfill(($__interval_ms || ' ms')::interval, bucket_time) AS time,\n  cause,\n  COALESCE(SUM(error_files), 0) AS error_files\nFROM get_errors_filters_data(\n  '${annotationKey}',\n  ARRAY[$annotationValues],\n  ARRAY[$dataSources],\n  ARRAY[$groups],\n  $__timeFrom(),\n  $__timeTo(),\n  ($__interval_ms || ' ms'),\n  'ERRORS'\n)\nWHERE bucket_time >= $__timeFrom()\nAND bucket_time <= $__timeTo()\nAND ($includeMissingSubscribers = 'TRUE' OR (cause != 'No publish rules were satisfied' AND cause != 'No matching subscribers were found'))\nGROUP BY time, cause\nORDER BY time, cause;",
           "refId": "A",
           "sql": {
             "columns": [
@@ -850,7 +850,7 @@
           "editorMode": "code",
           "format": "time_series",
           "rawQuery": true,
-          "rawSql": "SELECT\n  time_bucket_gapfill(($__interval_ms || ' ms')::interval, bucket_time) AS time,\n  group_name AS event_group,\n  COALESCE(SUM(error_files), 0) AS error_files\nFROM get_errors_filters_data(\n  '${annotationKey}',\n  ARRAY[$annotationValues],\n  ARRAY[$dataSources],\n  ARRAY[$groups],\n  $__timeFrom(),\n  $__timeTo(),\n  ($__interval_ms || ' ms'),\n  'ERRORS'\n)\nWHERE bucket_time >= $__timeFrom()\nAND bucket_time <= $__timeTo()\nAND ($includeMissingSubscribers = 'TRUE' OR cause != 'No matching subscribers were found')\nGROUP BY time, group_name\nORDER BY time, event_group;",
+          "rawSql": "SELECT\n  time_bucket_gapfill(($__interval_ms || ' ms')::interval, bucket_time) AS time,\n  group_name AS event_group,\n  COALESCE(SUM(error_files), 0) AS error_files\nFROM get_errors_filters_data(\n  '${annotationKey}',\n  ARRAY[$annotationValues],\n  ARRAY[$dataSources],\n  ARRAY[$groups],\n  $__timeFrom(),\n  $__timeTo(),\n  ($__interval_ms || ' ms'),\n  'ERRORS'\n)\nWHERE bucket_time >= $__timeFrom()\nAND bucket_time <= $__timeTo()\nAND ($includeMissingSubscribers = 'TRUE' OR (cause != 'No publish rules were satisfied' AND cause != 'No matching subscribers were found'))\nGROUP BY time, group_name\nORDER BY time, event_group;",
           "refId": "A",
           "sql": {
             "columns": [
@@ -978,7 +978,7 @@
           "editorMode": "code",
           "format": "table",
           "rawQuery": true,
-          "rawSql": "SELECT\n  datasource_name AS data_source,\n  cause,\n  COALESCE(SUM(error_files), 0) AS frequency\nFROM get_errors_filters_data(\n  '${annotationKey}',\n  ARRAY[$annotationValues],\n  ARRAY[$dataSources],\n  ARRAY[$groups],\n  $__timeFrom(),\n  $__timeTo(),\n  '100 years',\n  'ERRORS'\n)\nWHERE ($includeMissingSubscribers = 'TRUE' OR cause != 'No matching subscribers were found')\nGROUP BY datasource_name, cause\nORDER BY data_source, cause;",
+          "rawSql": "SELECT\n  datasource_name AS data_source,\n  cause,\n  COALESCE(SUM(error_files), 0) AS frequency\nFROM get_errors_filters_data(\n  '${annotationKey}',\n  ARRAY[$annotationValues],\n  ARRAY[$dataSources],\n  ARRAY[$groups],\n  $__timeFrom(),\n  $__timeTo(),\n  '100 years',\n  'ERRORS'\n)\nWHERE ($includeMissingSubscribers = 'TRUE' OR (cause != 'No publish rules were satisfied' AND cause != 'No matching subscribers were found'))\nGROUP BY datasource_name, cause\nORDER BY data_source, cause;",
           "refId": "A",
           "sql": {
             "columns": [
@@ -1109,7 +1109,7 @@
           "editorMode": "code",
           "format": "table",
           "rawQuery": true,
-          "rawSql": "SELECT\n  group_name AS event_group,\n  cause,\n  COALESCE(SUM(error_files), 0) AS frequency\nFROM get_errors_filters_data(\n  '${annotationKey}',\n  ARRAY[$annotationValues],\n  ARRAY[$dataSources],\n  ARRAY[$groups],\n  $__timeFrom(),\n  $__timeTo(),\n  '100 years',\n  'ERRORS'\n)\nWHERE ($includeMissingSubscribers = 'TRUE' OR cause != 'No matching subscribers were found')\nGROUP BY group_name, cause\nORDER BY event_group, cause;",
+          "rawSql": "SELECT\n  group_name AS event_group,\n  cause,\n  COALESCE(SUM(error_files), 0) AS frequency\nFROM get_errors_filters_data(\n  '${annotationKey}',\n  ARRAY[$annotationValues],\n  ARRAY[$dataSources],\n  ARRAY[$groups],\n  $__timeFrom(),\n  $__timeTo(),\n  '100 years',\n  'ERRORS'\n)\nWHERE ($includeMissingSubscribers = 'TRUE' OR (cause != 'No publish rules were satisfied' AND cause != 'No matching subscribers were found'))\nGROUP BY group_name, cause\nORDER BY event_group, cause;",
           "refId": "A",
           "sql": {
             "columns": [
@@ -1241,7 +1241,7 @@
           "editorMode": "code",
           "format": "table",
           "rawQuery": true,
-          "rawSql": "SELECT\n  datasource_name AS data_source,\n  annotation_value,\n  COALESCE(SUM(error_files), 0) AS frequency\nFROM get_errors_filters_data(\n  '${annotationKey}',\n  ARRAY[$annotationValues],\n  ARRAY[$dataSources],\n  ARRAY[$groups],\n  $__timeFrom(),\n  $__timeTo(),\n  '100 years',\n  'ERRORS'\n)\nWHERE ($includeMissingSubscribers = 'TRUE' OR cause != 'No matching subscribers were found')\nGROUP BY datasource_name, annotation_value\nORDER BY data_source, annotation_value;",
+          "rawSql": "SELECT\n  datasource_name AS data_source,\n  annotation_value,\n  COALESCE(SUM(error_files), 0) AS frequency\nFROM get_errors_filters_data(\n  '${annotationKey}',\n  ARRAY[$annotationValues],\n  ARRAY[$dataSources],\n  ARRAY[$groups],\n  $__timeFrom(),\n  $__timeTo(),\n  '100 years',\n  'ERRORS'\n)\nWHERE ($includeMissingSubscribers = 'TRUE' OR (cause != 'No publish rules were satisfied' AND cause != 'No matching subscribers were found'))\nGROUP BY datasource_name, annotation_value\nORDER BY data_source, annotation_value;",
           "refId": "A",
           "sql": {
             "columns": [

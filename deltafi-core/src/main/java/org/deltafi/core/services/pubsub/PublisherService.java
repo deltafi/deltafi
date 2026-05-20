@@ -44,10 +44,10 @@ import static org.deltafi.common.types.FlowType.DATA_SINK;
 @RequiredArgsConstructor
 public class PublisherService {
 
-    private static final DefaultRule ERROR_RULE = new DefaultRule(DefaultBehavior.ERROR);
     public static final String NO_SUBSCRIBERS = "NO_SUBSCRIBERS";
     public static final String NO_SUBSCRIBER_CAUSE = "No matching subscribers were found";
-
+    public static final String NO_RULES_MATCHED_CAUSE = "No publish rules were satisfied";
+    private static final DefaultRule ERROR_RULE = new DefaultRule(DefaultBehavior.ERROR);
     private final RuleEvaluator ruleEvaluator;
     private final List<SubscriberService> subscriberServices;
     private final Clock clock;
@@ -56,13 +56,36 @@ public class PublisherService {
     private final DeltaFiPropertiesService deltaFiPropertiesService;
     private final PluginService pluginService;
 
+    public static String buildContext(String publisherName, String flowType, Set<String> publishTopics, String defaultTopic) {
+        String typeAndName = flowType + " '" + publisherName + "' ";
+        String defaultInfo = "\nDefault topic: '" + defaultTopic + "' has no subscribers.";
+
+        String context = "No subscribers found from " + typeAndName;
+        if (publishTopics.isEmpty()) {
+            if (defaultTopic == null) {
+                context = NO_RULES_MATCHED_CAUSE + " from " + typeAndName
+                        + ", and no default topic was configured."
+                        + "\nPlease check the publish rules of the flow.";
+            } else {
+                context += defaultInfo;
+            }
+        } else {
+            context += "listening on matching topics: " + String.join(", ", publishTopics.stream().sorted().toList());
+            if (defaultTopic != null) {
+                context += defaultInfo;
+            }
+        }
+        return context;
+    }
+
     /**
      * Create new DeltaFileFlows for each subscriber that accepts the Deltafile and return the set.
      * Adds synthetic errors or filter actions based publisher and subscriber rules
      * that are applied. If there are no matching subscribers and no pending actions
      * the DeltaFile will be moved to a terminal state.
-     * @param flow dataSource used to determine what topics to send the DeltaFile to
-     * @param deltaFile that will be sent to the matching topics
+     *
+     * @param flow           dataSource used to determine what topics to send the DeltaFile to
+     * @param deltaFile      that will be sent to the matching topics
      * @param publishingFlow DeltaFileFlow that was completed and now publishing the DeltaFile
      * @return DeltaFileFlows that were added to the DeltaFile based on the matching subscribers
      */
@@ -77,11 +100,10 @@ public class PublisherService {
         }
     }
 
-
     Set<DeltaFileFlow> publisherSubscribers(Publisher publisher, DeltaFile deltaFile, DeltaFileFlow publishingFlow) {
         PublishRules publishRules = publisher.publishRules();
         if (publishRules == null) {
-            errorDeltaFile(deltaFile, publishingFlow, "Flow " + publisher.getName() + " does not have publish rules");
+            errorDeltaFile(deltaFile, publishingFlow, NO_SUBSCRIBER_CAUSE, "Flow " + publisher.getName() + " does not have publish rules");
             return Collections.emptySet();
         }
 
@@ -116,8 +138,9 @@ public class PublisherService {
 
     /**
      * Add a new DeltaFileFlow to the DeltaFile and return it
-     * @param subscriber to create the DeltaFileFlow from
-     * @param deltaFile to add the DeltaFileFlow to
+     *
+     * @param subscriber   to create the DeltaFileFlow from
+     * @param deltaFile    to add the DeltaFileFlow to
      * @param previousFlow used as the input DeltaFileFlow for the new DeltaFileFlow
      * @return DeltaFileFlow that is added to the DeltaFile
      */
@@ -165,7 +188,8 @@ public class PublisherService {
     /**
      * Evaluate the PublishRules to find the matching topics.
      * If no matching mode is present {@link MatchingPolicy#ALL_MATCHING} is used
-     * @param publishRules contains the rules and policies used to find the matching topics
+     *
+     * @param publishRules  contains the rules and policies used to find the matching topics
      * @param deltaFileFlow to match against the PublishRules
      * @return set of the matching topics
      */
@@ -191,10 +215,11 @@ public class PublisherService {
     /**
      * Get the set of topics that match for the subscriber. If there are matches, convert add a new DeltaFileFlow
      * to the DeltaFile and return it. Otherwise, return null.
-     * @param subscriber whose subscribeRules will be matched against the completeDeltaFileFlow
-     * @param deltaFile to add the new DeltaFileFlow to
+     *
+     * @param subscriber            whose subscribeRules will be matched against the completeDeltaFileFlow
+     * @param deltaFile             to add the new DeltaFileFlow to
      * @param completeDeltaFileFlow completed DeltaFileFlow that is publishing the DeltaFile
-     * @param topics that the DeltaFile is published on
+     * @param topics                that the DeltaFile is published on
      * @return new DeltaFileFlow if the subscriber matches otherwise null
      */
     private DeltaFileFlow subscribedDeltaFileFlow(Subscriber subscriber, DeltaFile deltaFile, DeltaFileFlow completeDeltaFileFlow, Set<String> topics) {
@@ -218,6 +243,7 @@ public class PublisherService {
         PublishRules publishRules = publisher.publishRules();
         DefaultRule defaultRule = Objects.requireNonNullElse(publishRules.getDefaultRule(), ERROR_RULE);
         DefaultBehavior defaultBehavior = defaultRule.getDefaultBehavior();
+        String defaultTopic = null;
 
         if (DefaultBehavior.PUBLISH.equals(defaultBehavior)) {
             Set<DeltaFileFlow> subscribers = subscribers(Set.of(defaultRule.getTopic()), deltaFile, completedFlow);
@@ -225,29 +251,29 @@ public class PublisherService {
                 return subscribers;
             }
 
+            if (defaultRule.getTopic() != null && !defaultRule.getTopic().isEmpty()) {
+                defaultTopic = defaultRule.getTopic();
+            }
+
             // Fall back to error mode, the topic either didn't exist, filtered the DeltaFile or did not have subscribers that accepted the DeltaFile
             defaultBehavior = DefaultBehavior.ERROR;
         }
 
-        String context = "No subscribers found from " + completedFlow.getType().getDisplayName() + " '" + publisher.getName() + "' ";
-        if (publishTopics.isEmpty()) {
-            context += "because no topics matched the criteria.";
-        } else {
-            context += "listening on matching topics: " + String.join(", ", publishTopics);
-        }
+        String context = buildContext(publisher.getName(), completedFlow.getType().getDisplayName(), publishTopics, defaultTopic);
         context += "\nWith rules:\n" + publishRules;
+        String cause = context.startsWith(NO_RULES_MATCHED_CAUSE) ? NO_RULES_MATCHED_CAUSE : NO_SUBSCRIBER_CAUSE;
 
         if (DefaultBehavior.FILTER.equals(defaultBehavior)) {
-            filterDeltaFile(deltaFile, completedFlow, context);
+            filterDeltaFile(deltaFile, completedFlow, cause, context);
         } else {
-            errorDeltaFile(deltaFile, completedFlow, context);
+            errorDeltaFile(deltaFile, completedFlow, cause, context);
         }
 
         return Set.of();
     }
 
     private void handleNoMatches(DeltaFile deltaFile, DataSource dataSource, DeltaFileFlow flow) {
-        errorDeltaFile(deltaFile, flow, "No subscribers found for " + dataSource.getType().getDisplayName() + " '" + dataSource.getName() + "'" + " on topic '" + dataSource.getTopic() + "'");
+        errorDeltaFile(deltaFile, flow, NO_SUBSCRIBER_CAUSE, "No subscribers found for " + dataSource.getType().getDisplayName() + " '" + dataSource.getName() + "'" + " on topic '" + dataSource.getTopic() + "'");
     }
 
     private Set<Subscriber> getSubscribers(String topic) {
@@ -261,25 +287,25 @@ public class PublisherService {
         return ruleEvaluator.evaluateCondition(rule.getCondition(), deltaFileFlow.getMetadata(), deltaFileFlow.lastContent().stream().map(c -> new Content(c.getName(), c.getMediaType(), c.getSegments())).toList());
     }
 
-    private void errorDeltaFile(DeltaFile deltaFile, DeltaFileFlow flow, String context) {
+    private void errorDeltaFile(DeltaFile deltaFile, DeltaFileFlow flow, String cause, String context) {
         // grab the last content list to copy into the synthetic error action to make it available for retry
-        List<Content> toCopy =  flow.lastActionContent();
+        List<Content> toCopy = flow.lastActionContent();
         Action action = queueSyntheticAction(flow);
         action.setState(ActionState.ERROR);
-        action.setErrorCause(NO_SUBSCRIBER_CAUSE);
+        action.setErrorCause(cause);
         action.setErrorContext(context);
         action.setContent(toCopy);
         flow.updateState();
         deltaFile.logInternalError(OffsetDateTime.now(clock), action.getErrorCause(), action.getErrorContext());
         deltaFile.updateState(OffsetDateTime.now(clock));
-        analyticEventService.recordError(deltaFile, flow.getName(), flow.getType(), action.getName(), NO_SUBSCRIBER_CAUSE, action.getModified());
+        analyticEventService.recordError(deltaFile, flow.getName(), flow.getType(), action.getName(), action.getErrorCause(), action.getModified());
         analyticEventService.recordProvenance(deltaFile, flow);
     }
 
-    private void filterDeltaFile(DeltaFile deltaFile, DeltaFileFlow flow, String context) {
+    private void filterDeltaFile(DeltaFile deltaFile, DeltaFileFlow flow, String cause, String context) {
         Action action = queueSyntheticAction(flow);
         action.setState(ActionState.FILTERED);
-        action.setFilteredCause(NO_SUBSCRIBER_CAUSE);
+        action.setFilteredCause(cause);
         action.setFilteredContext(context);
         flow.updateState();
         deltaFile.updateState(OffsetDateTime.now(clock));
