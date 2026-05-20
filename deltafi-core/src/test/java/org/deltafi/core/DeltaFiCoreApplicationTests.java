@@ -100,6 +100,7 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.context.jdbc.Sql;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.PostgreSQLContainer;
+import org.testcontainers.containers.wait.strategy.Wait;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
@@ -146,7 +147,9 @@ class DeltaFiCoreApplicationTests {
 	@Container
 	public static final PostgreSQLContainer<?> POSTGRES_CONTAINER = new PostgreSQLContainer<>(
 			DockerImageName.parse("deltafi/timescaledb:2.19.0-pg16").asCompatibleSubstituteFor("postgres"))
-			.withCommand("postgres", "-c", "timescaledb.enable_job_execution=off");
+			.withCommand("postgres",
+					"-c", "timescaledb.enable_job_execution=off",
+					"-c", "timescaledb.max_background_workers=0");
 
 	@Container
 	public static final PostgreSQLContainer<?> POSTGRES_LOOKUP_CONTAINER = new PostgreSQLContainer<>(
@@ -154,7 +157,8 @@ class DeltaFiCoreApplicationTests {
 
 	@Container
 	public static final GenericContainer<?> VALKEY_CONTAINER = new GenericContainer<>("valkey/valkey:9.0.0-alpine")
-			.withExposedPorts(6379);
+			.withExposedPorts(6379)
+			.waitingFor(Wait.forLogMessage(".*Ready to accept connections.*\\n", 1));
 	public static final String SAMPLE_EGRESS_ACTION = "SampleEgressAction";
 	public static final String JOINING_TRANSFORM_ACTION = "JoiningTransformAction";
 	public static final String JOIN_TOPIC = "join-topic";

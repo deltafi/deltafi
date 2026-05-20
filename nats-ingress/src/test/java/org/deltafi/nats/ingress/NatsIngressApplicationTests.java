@@ -33,6 +33,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.testcontainers.containers.GenericContainer;
+import org.testcontainers.containers.wait.strategy.Wait;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
@@ -68,7 +69,9 @@ class NatsIngressApplicationTests {
 
     @Container
     public static final GenericContainer<?> NATS_CONTAINER =
-            new GenericContainer<>(DockerImageName.parse("nats:2.12.6-alpine")).withExposedPorts(4222);
+            new GenericContainer<>(DockerImageName.parse("nats:2.12.6-alpine"))
+                    .withExposedPorts(4222)
+                    .waitingFor(Wait.forLogMessage(".*Server is ready.*\\n", 1));
 
     private static final Map<String, String> TEST_METADATA = Map.of("key-1", "a", "key-2", "b");
 
@@ -85,7 +88,9 @@ class NatsIngressApplicationTests {
 
     @AfterAll
     static void closeConnection() throws InterruptedException {
-        natsConnection.close();
+        if (natsConnection != null) {
+            natsConnection.close();
+        }
     }
 
     @Autowired

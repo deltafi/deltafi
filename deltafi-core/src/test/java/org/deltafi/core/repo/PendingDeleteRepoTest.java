@@ -48,7 +48,9 @@ class PendingDeleteRepoTest {
     @Container
     static final PostgreSQLContainer<?> POSTGRES = new PostgreSQLContainer<>(
             DockerImageName.parse("deltafi/timescaledb:2.19.0-pg16").asCompatibleSubstituteFor("postgres"))
-            .withCommand("postgres", "-c", "timescaledb.enable_job_execution=off");
+            .withCommand("postgres",
+                    "-c", "timescaledb.enable_job_execution=off",
+                    "-c", "timescaledb.max_background_workers=0");
 
     @DynamicPropertySource
     static void setProperties(DynamicPropertyRegistry registry) {
