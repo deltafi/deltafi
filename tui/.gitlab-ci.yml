@@ -1,8 +1,25 @@
+.when-tui-changes:
+  rules:
+    - if: $CI_COMMIT_TAG
+      when: never
+    # dev/main always run — they deploy
+    - if: $CI_COMMIT_BRANCH == "dev" || $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+    # feature branches: only when tui or its embedded inputs changed
+    - if: $CI_COMMIT_BRANCH
+      changes:
+        compare_to: refs/heads/dev
+        paths:
+          - tui/**/*
+          - deltafi-docs/docs/**/*
+          - deltafi-core/src/main/resources/schema/**/*
+          - orchestration/**/*
+
 "TUI Build":
   tags:
     - light
   extends:
     - .golang
+    - .when-tui-changes
   stage: build
   script:
     - |
@@ -10,16 +27,13 @@
       make debug-make build
       popd
       ls -la ../../deltafi
-  rules:
-    - if: $CI_COMMIT_TAG
-      when: never
-    - if: $CI_COMMIT_BRANCH
 
 "TUI Test":
   tags:
     - light
   extends:
     - .golang
+    - .when-tui-changes
   stage: test
   when: manual
   script:
@@ -28,10 +42,6 @@
       make debug-make test
       popd
       ls -la ../../deltafi
-  rules:
-    - if: $CI_COMMIT_TAG
-      when: never
-    - if: $CI_COMMIT_BRANCH
 
 .web-terminal:
   variables:
@@ -50,6 +60,7 @@
   extends:
     - .web-terminal
     - .docker
+    - .when-tui-changes
   needs: []
   variables:
     CONTEXT: "${TUI_DIR}"

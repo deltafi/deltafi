@@ -2,10 +2,22 @@
   variables:
     PROJECT_NAME: deltafi-dirwatcher
 
+.when-dirwatcher-changes:
+  rules:
+    - if: $CI_COMMIT_TAG
+      when: never
+    - if: $CI_COMMIT_BRANCH == "dev" || $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+    - if: $CI_COMMIT_BRANCH
+      changes:
+        compare_to: refs/heads/dev
+        paths:
+          - deltafi-dirwatcher/**/*
+
 "🐳 Publish dirwatcher (GitLab)":
   extends:
     - .dirwatcher
     - .docker
+    - .when-dirwatcher-changes
 
 "🐳 Publish dirwatcher (docker.io)":
   extends:

@@ -2,10 +2,22 @@
   variables:
     PROJECT_NAME: deltafi-egress-sink
 
+.when-egress-sink-changes:
+  rules:
+    - if: $CI_COMMIT_TAG
+      when: never
+    - if: $CI_COMMIT_BRANCH == "dev" || $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+    - if: $CI_COMMIT_BRANCH
+      changes:
+        compare_to: refs/heads/dev
+        paths:
+          - deltafi-egress-sink/**/*
+
 "🐳 Publish egress-sink (GitLab)":
   extends:
     - .egress-sink
     - .docker
+    - .when-egress-sink-changes
 
 "🐳 Publish egress-sink (docker.io)":
   extends:

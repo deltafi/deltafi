@@ -2,10 +2,22 @@
   variables:
     PROJECT_NAME: deltafi-nodemonitor
 
+.when-nodemonitor-changes:
+  rules:
+    - if: $CI_COMMIT_TAG
+      when: never
+    - if: $CI_COMMIT_BRANCH == "dev" || $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+    - if: $CI_COMMIT_BRANCH
+      changes:
+        compare_to: refs/heads/dev
+        paths:
+          - deltafi-nodemonitor/**/*
+
 "🐳 Publish nodemonitor (GitLab)":
   extends:
     - .nodemonitor
     - .docker
+    - .when-nodemonitor-changes
 
 "🐳 Publish nodemonitor (docker.io)":
   extends:
