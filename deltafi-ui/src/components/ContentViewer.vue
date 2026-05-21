@@ -107,6 +107,16 @@ const decoder = new TextDecoder("utf-8");
 const encoder = new TextEncoder("utf-8");
 const prettyPrintFormats = ["json", "xml"];
 
+const partialContent = computed(() => content.value.totalSize > uiConfig.contentPreviewSize);
+
+const mediaSubtype = computed(() => {
+  try {
+    return content.value.mediaType.split("/")[1];
+  } catch {
+    return null;
+  }
+});
+
 watch(contentBuffer, () => processContent());
 
 const processContent = async () => {
@@ -178,22 +188,17 @@ const items = ref([
 ]);
 
 const language = computed(() => {
-  let lang;
-  try {
-    lang = content.value.mediaType.split("/")[1];
-  } catch {
-    lang = null;
+  if (mediaSubtype.value === "xml" || (contentAs.utf8 && contentAs.utf8.slice(0, 5) === "<?xml")) {
+    return "xml";
   }
 
-  if (prettyPrintFormats.includes(lang)) return lang;
-
-  if (contentAs.utf8 && contentAs.utf8.slice(0, 5) === "<?xml") return "xml";
-
-  try {
-    JSON.parse(contentAs.utf8);
-    return "json";
-  } catch {
-    // Not JSON. Do nothing.
+  if (!partialContent.value && contentAs.utf8) {
+    try {
+      JSON.parse(contentAs.utf8);
+      return "json";
+    } catch {
+      // Not a single complete JSON document (NDJSON, truncated, or malformed).
+    }
   }
 
   return "utf8";
@@ -228,16 +233,23 @@ watch(
   () => loadContent()
 );
 
-const partialContent = computed(() => content.value.totalSize > uiConfig.contentPreviewSize);
-
 const embeddedContent = computed(() => "content" in content.value);
 
 const formattedMaxPreviewSize = computed(() => formattedBytes(uiConfig.contentPreviewSize));
 
+const jsonFallback = computed(() => contentLoaded.value && contentBuffer.value.byteLength > 0 && mediaSubtype.value === "json" && language.value === "utf8");
+
 const warnings = computed(() => {
   const warnings = [];
   if (contentLoaded.value && contentBuffer.value.byteLength == 0) warnings.push("No content to display.");
-  if (partialContent.value) warnings.push(`Content size is over the preview limit. Only showing the first ${formattedMaxPreviewSize.value}.`);
+
+  if (partialContent.value && jsonFallback.value) {
+    warnings.push(`Content is over the preview limit and can't be displayed as JSON — showing the first ${formattedMaxPreviewSize.value} as UTF-8.`);
+  } else if (partialContent.value) {
+    warnings.push(`Content size is over the preview limit. Only showing the first ${formattedMaxPreviewSize.value}.`);
+  } else if (jsonFallback.value) {
+    warnings.push("Content cannot be displayed as JSON. Presenting in UTF-8 instead.");
+  }
   return warnings;
 });
 
