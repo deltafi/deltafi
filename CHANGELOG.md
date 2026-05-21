@@ -5,6 +5,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 All [Unreleased] changes can be viewed in GitLab.
 
+## [2.55.2] - 2026-05-21
+
+### Fixed
+- Fixed issue where content viewer shows json parse error for certain json files uploaded.  
+- Tests with test containers had intermittent initialization failures due to startup race
+
+### Tech-Debt/Refactor
+- Remove all spring dependencies from `deltafi-common` moving them to `deltafi-common-spring`. The `deltafi-common` package is now just the type definitions and common logic shared between core and the action-kit.
+- Move `NiFi` specific code out of `deltafi-common` to prevent including it in all java plugins
+
 ## [2.55.1] - 2026-05-20
 
 ### Added
@@ -6274,7 +6284,8 @@ No changes.  UI update only
 ### Security
 - Forced all projects to log4j 2.17.0 to avoid CVEs
 
-[Unreleased]: https://gitlab.com/deltafi/deltafi/-/compare/2.55.1...main
+[Unreleased]: https://gitlab.com/deltafi/deltafi/-/compare/2.55.2...main
+[2.55.2]: https://gitlab.com/deltafi/deltafi/-/compare/2.55.1...2.55.2
 [2.55.1]: https://gitlab.com/deltafi/deltafi/-/compare/2.55.0...2.55.1
 [2.55.0]: https://gitlab.com/deltafi/deltafi/-/compare/2.54.0...2.55.0
 [2.54.0]: https://gitlab.com/deltafi/deltafi/-/compare/2.53.0...2.54.0
