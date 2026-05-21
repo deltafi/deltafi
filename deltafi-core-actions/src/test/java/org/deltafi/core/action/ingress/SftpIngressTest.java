@@ -33,6 +33,7 @@ import org.deltafi.actionkit.action.ingress.IngressResultType;
 import org.deltafi.common.content.ActionContentStorageService;
 import org.deltafi.actionkit.action.parameters.EnvVar;
 import org.deltafi.common.ssl.SslContextProvider;
+import org.deltafi.common.ssl.SslCredentials;
 import org.deltafi.common.test.content.InMemoryContentStorageService;
 import org.deltafi.common.types.ActionContext;
 import org.deltafi.common.types.IngressStatus;
@@ -158,7 +159,7 @@ class SftpIngressTest {
 
     @Test
     void unhealthyStatusWithNoCredentials() {
-        SftpIngress sftpIngress = new SftpIngress(new JSch(), new SslContextProvider(null));
+        SftpIngress sftpIngress = new SftpIngress(new JSch(), SslCredentials.unconfigured());
         SftpIngress.Parameters params = new SftpIngress.Parameters();
         params.setHost("localhost");
         params.setPort(sshServer.getPort());
@@ -241,7 +242,7 @@ class SftpIngressTest {
 
     @Test
     void unhealthyStatusWhenEnvVarNotSet() {
-        SftpIngress sftpIngress = new SftpIngress(new JSch(), new SslContextProvider(null));
+        SftpIngress sftpIngress = new SftpIngress(new JSch(), SslCredentials.unconfigured());
         SftpIngress.Parameters params = new SftpIngress.Parameters();
         params.setHost("localhost");
         params.setPort(sshServer.getPort());
@@ -306,7 +307,8 @@ class SftpIngressTest {
         assertNull(params.resolvePassword());
     }
 
-    private SslContextProvider sslProperties() {
+    @SuppressWarnings("removal")
+    private SslCredentials sslProperties() {
         PemSslBundleProperties properties = new PemSslBundleProperties();
         properties.getKey().setAlias("ssl");
         properties.setProtocol("TLSv1.2");

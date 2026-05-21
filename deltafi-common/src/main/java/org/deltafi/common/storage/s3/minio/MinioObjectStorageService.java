@@ -23,7 +23,7 @@ import io.minio.messages.DeleteError;
 import io.minio.messages.DeleteObject;
 import io.minio.messages.ErrorResponse;
 import io.minio.messages.Item;
-import lombok.RequiredArgsConstructor;
+import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.input.BoundedInputStream;
 import org.deltafi.common.storage.s3.MissingContentException;
@@ -40,7 +40,7 @@ import java.util.List;
 import java.util.Map;
 
 /** {@link ObjectStorageService} implementation backed by MinIO. */
-@RequiredArgsConstructor
+@AllArgsConstructor
 @Slf4j
 public class MinioObjectStorageService implements ObjectStorageService {
 
@@ -48,8 +48,8 @@ public class MinioObjectStorageService implements ObjectStorageService {
     public static final String FAILED_TO_SAVE_INCOMING_OBJECT = "Failed to save incoming object";
     /** The MinIO client used for all storage operations. */
     protected final MinioClient minioClient;
-    /** Configuration properties for MinIO connections. */
-    protected final MinioProperties minioProperties;
+    /** Multipart upload part size in bytes. */
+    protected final long partSize;
 
     @Override
     public InputStream getObject(ObjectReference objectReference) throws ObjectStorageException {
@@ -84,7 +84,7 @@ public class MinioObjectStorageService implements ObjectStorageService {
             ObjectWriteResponse objectWriteResponse = minioClient.putObject(PutObjectArgs.builder()
                     .bucket(objectReference.getBucket())
                     .object(objectReference.getName())
-                    .stream(boundedInputStream, objectReference.getSize(), minioProperties.getPartSize())
+                    .stream(boundedInputStream, objectReference.getSize(), partSize)
                     .build());
 
             if (objectWriteResponse == null) {

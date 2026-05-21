@@ -65,6 +65,6 @@ public class MinioAutoConfiguration {
     @ConditionalOnMissingBean
     public MinioObjectStorageService minioObjectStorageService(MinioClient minioClient,
                                                                MinioProperties minioProperties) {
-        return new MinioObjectStorageService(minioClient, minioProperties);
+        return new MinioObjectStorageService(minioClient, minioProperties.getPartSize());
     }
 }

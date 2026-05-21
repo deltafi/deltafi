@@ -1,0 +1,15 @@
+plugins {
+    id 'java-conventions'
+    id 'maven-publish'
+}
+
+description = 'NiFi FlowFile packaging support for DeltaFi (FlowFile v1/v2/v3 readers and writers)'
+
+dependencies {
+    compileOnly "org.projectlombok:lombok:${lombokVersion}"
+    annotationProcessor "org.projectlombok:lombok:${lombokVersion}"
+
+    api project(':deltafi-common')
+
+    api 'org.apache.nifi:nifi-flowfile-packager:2.5.0'
+}

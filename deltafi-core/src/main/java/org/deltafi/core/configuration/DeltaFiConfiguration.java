@@ -53,7 +53,7 @@ public class DeltaFiConfiguration {
             poolSize++;
         }
 
-        return new ValkeyKeyedBlockingQueue(eventQueueProperties, poolSize);
+        return new ValkeyKeyedBlockingQueue(eventQueueProperties.getUrl(), eventQueueProperties.getPassword(), poolSize);
     }
 
     @Bean
@@ -67,7 +67,7 @@ public class DeltaFiConfiguration {
             poolSize++;
         }
 
-        return ValkeyKeyedBlockingQueue.createJedisPool(eventQueueProperties, poolSize, poolSize);
+        return ValkeyKeyedBlockingQueue.createJedisPool(eventQueueProperties.getUrl(), eventQueueProperties.getPassword(), poolSize, poolSize);
     }
 
     @Bean

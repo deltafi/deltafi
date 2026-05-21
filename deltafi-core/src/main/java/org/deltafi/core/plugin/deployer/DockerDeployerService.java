@@ -25,16 +25,13 @@ import com.github.dockerjava.api.command.InspectContainerResponse.ContainerState
 import com.github.dockerjava.api.model.*;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.deltafi.common.util.ResourceMapper;
+import org.deltafi.common.util.JsonYamlMapper;
 import org.deltafi.core.configuration.SslSecretNames;
 import org.deltafi.core.services.DeltaFiPropertiesService;
 import org.deltafi.core.services.EventService;
 import org.deltafi.core.services.PluginService;
 import org.deltafi.core.types.RegistryAuth;
 import org.deltafi.core.types.Result;
-import org.springframework.core.io.FileSystemResource;
-import org.springframework.core.io.Resource;
-
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -61,7 +58,7 @@ public class DockerDeployerService extends BaseDeployerService implements Deploy
                 .withStartPeriod(5_000_000_000L)
                 .withTimeout(1_000_000_000L);
 
-    private final Resource dockerAuthConfig = new FileSystemResource("/.docker/config.json");
+    private final Path dockerAuthConfig = Path.of("/.docker/config.json");
     private final DockerClient dockerClient;
     private final SslSecretNames sslSecretNames;
     private final EnvironmentVariableHelper environmentVariableHelper;
@@ -331,11 +328,11 @@ public class DockerDeployerService extends BaseDeployerService implements Deploy
      */
     private AuthConfig loadAuthConfig(String image) {
         try {
-            if (!dockerAuthConfig.exists()) {
+            if (!Files.exists(dockerAuthConfig)) {
                 return null;
             }
 
-            DockerConfig dockerConfig = ResourceMapper.readValue(dockerAuthConfig, DockerConfig.class);
+            DockerConfig dockerConfig = JsonYamlMapper.readValue(dockerAuthConfig, DockerConfig.class);
 
             // Extract and normalize registry from image name
             String registry = extractRegistry(image);

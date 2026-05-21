@@ -23,7 +23,6 @@ import okhttp3.OkHttpClient;
 import org.apache.commons.lang3.StringUtils;
 import org.deltafi.common.storage.s3.ObjectStorageService;
 import org.deltafi.common.storage.s3.minio.MinioObjectStorageService;
-import org.deltafi.common.storage.s3.minio.MinioProperties;
 import org.deltafi.core.artifact.ArtifactRegistryBucketInitializer;
 import org.deltafi.core.artifact.ArtifactRegistryStorageService;
 import org.deltafi.core.artifact.ArtifactStorageProperties;
@@ -50,7 +49,7 @@ public class ArtifactStorageConfig {
             ArtifactStorageProperties props) {
         ObjectStorageService oss = StringUtils.isBlank(props.getUrl())
                 ? primaryObjectStorageService
-                : new MinioObjectStorageService(buildMinioClient(props), adaptMinioProperties(props));
+                : new MinioObjectStorageService(buildMinioClient(props), props.getPartSize());
         return new ArtifactRegistryStorageService(oss, props.getBucketName());
     }
 
@@ -74,14 +73,5 @@ public class ArtifactStorageConfig {
             builder.credentials(props.getAccessKey(), props.getSecretKey());
         }
         return builder.build();
-    }
-
-    private MinioProperties adaptMinioProperties(ArtifactStorageProperties props) {
-        MinioProperties mp = new MinioProperties();
-        mp.setUrl(props.getUrl());
-        mp.setAccessKey(props.getAccessKey());
-        mp.setSecretKey(props.getSecretKey());
-        mp.setPartSize(props.getPartSize());
-        return mp;
     }
 }

@@ -20,7 +20,7 @@ package org.deltafi.core.action.s3;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
-import org.deltafi.common.ssl.SslContextProvider;
+import org.deltafi.common.ssl.SslCredentials;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -41,13 +41,13 @@ import java.time.Duration;
 @Component
 @RequiredArgsConstructor
 public class S3ClientProvider {
-    private final SslContextProvider sslContextProvider;
+    private final SslCredentials sslCredentials;
 
     @Cacheable("s3-clients")
     public S3Client getS3Client(S3ClientParams params) {
         params.validate();
 
-        if (params.isEnableSSL() && !sslContextProvider.isConfigured()) {
+        if (params.isEnableSSL() && !sslCredentials.isConfigured()) {
             throw new IllegalStateException("SSL is not configured for this plugin and the S3Params has not disabled SSL");
         }
 
@@ -87,7 +87,7 @@ public class S3ClientProvider {
 
         if (params.isEnableSSL()) {
             builder.httpClientBuilder(ApacheHttpClient.builder()
-                    .socketFactory(new SSLConnectionSocketFactory(sslContextProvider.createSslContext())));
+                    .socketFactory(new SSLConnectionSocketFactory(sslCredentials.createSslContext())));
         }
 
         builder.requestChecksumCalculation(params.isChecksumValidationEnabled() ?

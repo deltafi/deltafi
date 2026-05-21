@@ -17,7 +17,7 @@
  */
 package org.deltafi.common.http;
 
-import org.deltafi.common.ssl.SslContextProvider;
+import org.deltafi.common.ssl.SslCredentials;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mockito;
@@ -38,7 +38,7 @@ class HttpServiceAutoConfigurationTest {
 
     @Test
     void httpClient_sslConfigured() {
-        SslContextProvider provider = Mockito.mock(SslContextProvider.class);
+        SslCredentials provider = Mockito.mock(SslCredentials.class);
         Mockito.when(provider.isConfigured()).thenReturn(true);
         Mockito.when(provider.createSslContext()).thenReturn(Mockito.mock(SSLContext.class));
         autoConfiguration.httpClient(provider);
@@ -47,7 +47,7 @@ class HttpServiceAutoConfigurationTest {
 
     @Test
     void httpClient_sslNotConfigured() {
-        SslContextProvider provider = Mockito.mock(SslContextProvider.class);
+        SslCredentials provider = Mockito.mock(SslCredentials.class);
         Mockito.when(provider.isConfigured()).thenReturn(false);
         autoConfiguration.httpClient(provider);
         Mockito.verify(provider, Mockito.never()).createSslContext();

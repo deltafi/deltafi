@@ -44,7 +44,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class MinioObjectStorageServiceTest {
     private static final String BUCKET = "bucket";
     private final MinioClient minioClient = Mockito.mock(MinioClient.class);
-    private final MinioObjectStorageService minioObjectStorageService = new MinioObjectStorageService(minioClient, new MinioProperties());
+    private final MinioObjectStorageService minioObjectStorageService = new MinioObjectStorageService(minioClient, 5242880L);
     private final AtomicInteger putManyCount = new AtomicInteger(0);
 
     @Test

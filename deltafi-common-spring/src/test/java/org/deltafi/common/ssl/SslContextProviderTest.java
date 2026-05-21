@@ -18,8 +18,10 @@
 package org.deltafi.common.ssl;
 
 import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
 import org.springframework.boot.autoconfigure.ssl.PemSslBundleProperties;
 
+import javax.net.ssl.SSLContext;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
@@ -28,6 +30,7 @@ import java.security.UnrecoverableKeyException;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+@SuppressWarnings("removal")
 class SslContextProviderTest {
 
     @Test
@@ -54,7 +57,7 @@ class SslContextProviderTest {
         SslContextProvider provider = new SslContextProvider(properties);
         assertThat(provider.createSslContext()).isNotNull();
         assertThat(provider.isConfigured()).isTrue();
-        KeyStore keyStore = provider.getBundle().getStores().getKeyStore();
+        KeyStore keyStore = provider.getKeyStore();
         assertThat(keyStore.getKey("my-alias", null)).isNotNull();
     }
 
@@ -95,6 +98,27 @@ class SslContextProviderTest {
         assertThatThrownBy(() -> new SslContextProvider(properties))
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessage("Unable to create key store: Error loading private key file: Error decrypting private key");
+    }
+
+    @Test
+    void backwardCompatibleRawConstructor() {
+        SSLContext sslContext = Mockito.mock(SSLContext.class);
+        KeyStore keyStore = Mockito.mock(KeyStore.class);
+        SslContextProvider provider =
+                new SslContextProvider(sslContext, null, keyStore, "alias", "pw".toCharArray());
+        assertThat(provider.isConfigured()).isTrue();
+        assertThat(provider.createSslContext()).isSameAs(sslContext);
+        assertThat(provider.getKeyStore()).isSameAs(keyStore);
+        assertThat(provider.getBundle()).isNull();
+    }
+
+    @Test
+    void backwardCompatibleUnconfigured() {
+        // Compiles only if unconfigured() statically returns SslContextProvider, not SslCredentials.
+        SslContextProvider provider = SslContextProvider.unconfigured();
+        assertThat(provider.isConfigured()).isFalse();
+        assertThat(provider.createSslContext()).isNull();
+        assertThat(provider.getBundle()).isNull();
     }
 
     @Test

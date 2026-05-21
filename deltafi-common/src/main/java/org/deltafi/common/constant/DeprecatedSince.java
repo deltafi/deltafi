@@ -15,20 +15,18 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package org.deltafi.common.content;
+package org.deltafi.common.constant;
 
-import org.springframework.boot.context.properties.ConfigurationProperties;
+/**
+ * Single source of truth for the {@code @Deprecated(since = ...)} value used by the Spring-removal
+ * (springless) bridge classes. These are all scheduled for removal in 3.0. While this branch is in
+ * flight a new 2.x release may cut before it merges; bump {@link #VERSION_2_55_1} here in one place rather
+ * than editing every annotation. Delete this class along with the bridges in 3.0.
+ */
+public class DeprecatedSince {
 
-/** Configuration properties for content storage.
- * @param bucketName name of the S3 bucket used for content storage */
-@ConfigurationProperties("storage")
-public record StorageProperties(String bucketName) {
-    /** Default bucket name. */
-    public static final String STORAGE = "storage";
-    /** Normalize the bucket name, defaulting to {@link #STORAGE} if blank. */
-    public StorageProperties {
-        if (bucketName == null || bucketName.isBlank()) {
-            bucketName = STORAGE;
-        }
-    }
+    private DeprecatedSince() {}
+
+    /** Release in which the springless bridge classes were deprecated for removal in 3.0. */
+    public static final String VERSION_2_55_1 = "2.55.1";
 }

@@ -21,18 +21,21 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import org.assertj.core.api.Assertions;
 import org.deltafi.common.types.*;
 import org.junit.jupiter.api.Test;
-import org.springframework.core.io.ClassPathResource;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.List;
 
-class ResourceMapperTest {
+class JsonYamlMapperTest {
 
     @Test
     void readTransformFlowPlan() throws IOException {
-        TransformFlowPlan fromJson = ResourceMapper.readValue(new ClassPathResource("test-flows/smoke-test-transform.json"), TransformFlowPlan.class);
-        TransformFlowPlan fromJsonTypRef = ResourceMapper.readValue(new ClassPathResource("test-flows/smoke-test-transform.json"), new TypeReference<>() {});
-        TransformFlowPlan fromYaml = ResourceMapper.readValue(new ClassPathResource("test-flows/smoke-test-transform.yaml"), TransformFlowPlan.class);
+        TransformFlowPlan fromJson = readClasspath("test-flows/smoke-test-transform.json", TransformFlowPlan.class);
+        TransformFlowPlan fromJsonTypRef;
+        try (InputStream in = classpath("test-flows/smoke-test-transform.json")) {
+            fromJsonTypRef = JsonYamlMapper.readValue(in, "smoke-test-transform.json", new TypeReference<>() {});
+        }
+        TransformFlowPlan fromYaml = readClasspath("test-flows/smoke-test-transform.yaml", TransformFlowPlan.class);
 
         Assertions.assertThat(fromJson).isEqualTo(fromYaml).isEqualTo(fromJsonTypRef);
 
@@ -67,12 +70,10 @@ class ResourceMapperTest {
 
     @Test
     void readYamlList() throws IOException {
-        // read a standard yaml and json lists
-        List<Variable> variables = ResourceMapper.readValues(new ClassPathResource("test-flows/variables.yaml"), Variable.class);
-        List<Variable> variablesFromJson = ResourceMapper.readValues(new ClassPathResource("test-flows/variables.json"), Variable.class);
-        // read variables from a list of individual documents inside a single file
-        List<Variable> variableDocs = ResourceMapper.readValues(new ClassPathResource("test-flows/variablesList.yaml"), Variable.class);
-        List<Variable> variablesFromJsonl = ResourceMapper.readValues(new ClassPathResource("test-flows/variablesList.jsonl"), Variable.class);
+        List<Variable> variables = readClasspathList("test-flows/variables.yaml", Variable.class);
+        List<Variable> variablesFromJson = readClasspathList("test-flows/variables.json", Variable.class);
+        List<Variable> variableDocs = readClasspathList("test-flows/variablesList.yaml", Variable.class);
+        List<Variable> variablesFromJsonl = readClasspathList("test-flows/variablesList.jsonl", Variable.class);
 
         Assertions.assertThat(variables).hasSize(4).isEqualTo(variableDocs).isEqualTo(variablesFromJson).isEqualTo(variablesFromJsonl);
         Variable first = variables.getFirst();
@@ -81,5 +82,26 @@ class ResourceMapperTest {
         Assertions.assertThat(first.getDataType()).isEqualTo(VariableDataType.STRING);
         Assertions.assertThat(first.isRequired()).isTrue();
         Assertions.assertThat(first.getDefaultValue()).isEqualTo("http://deltafi-egress-sink-service");
+    }
+
+    private static InputStream classpath(String name) {
+        return JsonYamlMapperTest.class.getClassLoader().getResourceAsStream(name);
+    }
+
+    private static String filename(String classpathName) {
+        int slash = classpathName.lastIndexOf('/');
+        return slash < 0 ? classpathName : classpathName.substring(slash + 1);
+    }
+
+    private static <T> T readClasspath(String name, Class<T> type) throws IOException {
+        try (InputStream in = classpath(name)) {
+            return JsonYamlMapper.readValue(in, filename(name), type);
+        }
+    }
+
+    private static <T> List<T> readClasspathList(String name, Class<T> type) throws IOException {
+        try (InputStream in = classpath(name)) {
+            return JsonYamlMapper.readValues(in, filename(name), type);
+        }
     }
 }

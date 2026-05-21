@@ -27,8 +27,8 @@ import org.bouncycastle.openssl.jcajce.JcaPEMWriter;
 import org.deltafi.actionkit.action.ingress.*;
 import org.deltafi.actionkit.action.parameters.ActionParameters;
 import org.deltafi.actionkit.action.parameters.EnvVar;
-import org.deltafi.common.ssl.SslContextProvider;
-import org.deltafi.common.ssl.SslContextProvider.SslException;
+import org.deltafi.common.ssl.SslCredentials;
+import org.deltafi.common.ssl.SslCredentials.SslException;
 import org.deltafi.common.types.*;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
@@ -86,14 +86,14 @@ public class SftpIngress extends TimedIngressAction<SftpIngress.Parameters> {
     }
 
     private final JSch jSch;
-    private final SslContextProvider sslContextProvider;
+    private final SslCredentials sslCredentials;
 
-    public SftpIngress(JSch jSch, SslContextProvider sslContextProvider) {
+    public SftpIngress(JSch jSch, SslCredentials sslCredentials) {
         super(ActionOptions.builder()
                 .description("Polls an SFTP server for files to ingress.")
                 .build());
         this.jSch = jSch;
-        this.sslContextProvider = sslContextProvider;
+        this.sslCredentials = sslCredentials;
     }
 
     @Override
@@ -104,7 +104,7 @@ public class SftpIngress extends TimedIngressAction<SftpIngress.Parameters> {
             String resolvedPassword = params.resolvePassword();
             if (resolvedPassword != null) {
                 session.setPassword(resolvedPassword);
-            } else if (sslContextProvider.isConfigured()) {
+            } else if (sslCredentials.isConfigured()) {
                 // Use private key extracted from keystore provided in ssl properties
                 jSch.addIdentity(params.getUsername(), getPrivateKey(), null, null);
             } else {
@@ -140,7 +140,7 @@ public class SftpIngress extends TimedIngressAction<SftpIngress.Parameters> {
     }
 
     private byte[] getPrivateKey() throws IOException, SslException {
-        Key privateKey = sslContextProvider.getPrivateKey();
+        Key privateKey = sslCredentials.getPrivateKey();
         StringWriter stringWriter = new StringWriter();
         JcaPEMWriter pemWriter = new JcaPEMWriter(stringWriter);
         pemWriter.writeObject(privateKey);

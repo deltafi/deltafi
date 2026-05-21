@@ -24,12 +24,16 @@ dependencies {
     docs project(path: ':deltafi-core-actions', configuration: 'docs')
 
     implementation project(':deltafi-common')
+    implementation project(':deltafi-common-nifi')
+    implementation project(':deltafi-common-spring')
 
     implementation 'org.apache.commons:commons-collections4:4.5.0'
 
     implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
     implementation 'org.springframework.boot:spring-boot-starter-security'
     implementation 'org.springframework.boot:spring-boot-starter-web'
+    implementation 'org.springframework.retry:spring-retry'
+    implementation 'org.springframework:spring-aspects'
 
     implementation 'com.networknt:json-schema-validator:1.5.9'
 

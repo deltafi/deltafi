@@ -5,6 +5,7 @@ plugins {
 
 dependencies {
     implementation project(':deltafi-action-kit')
+    implementation project(':deltafi-common-nifi')
 
     implementation 'org.apache.commons:commons-compress:1.28.0'
     implementation 'org.apache.activemq:activemq-client:6.1.5'

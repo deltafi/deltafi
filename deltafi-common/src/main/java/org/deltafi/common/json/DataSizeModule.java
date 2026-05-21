@@ -15,7 +15,7 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-// ABOUTME: Jackson module that registers a deserializer for Spring DataSize values.
+// ABOUTME: Jackson module that registers a deserializer for DataSize values.
 // ABOUTME: Allows action parameters to use DataSize fields parsed from strings like "10MB".
 package org.deltafi.common.json;
 
@@ -23,7 +23,7 @@ import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JsonDeserializer;
 import com.fasterxml.jackson.databind.module.SimpleModule;
-import org.springframework.util.unit.DataSize;
+import org.deltafi.common.util.DataSize;
 
 import java.io.IOException;
 

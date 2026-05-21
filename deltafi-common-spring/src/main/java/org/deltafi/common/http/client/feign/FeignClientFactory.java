@@ -24,7 +24,7 @@ import feign.codec.Encoder;
 import feign.jackson.JacksonDecoder;
 import feign.jackson.JacksonEncoder;
 import feign.slf4j.Slf4jLogger;
-import org.deltafi.common.ssl.SslContextProvider;
+import org.deltafi.common.ssl.SslCredentials;
 
 import java.util.List;
 
@@ -93,12 +93,12 @@ public class FeignClientFactory {
      * URI to access.
      *
      * @param clientClass the Feign-annotated interface class
-     * @param sslContextProvider the SslContextProvider used to build an SSL context
+     * @param sslCredentials the SslCredentials used to build an SSL context
      * @param <T> the interface type
      * @return a Feign-generated instance of the provided interface
      */
-    public static <T> T build(Class<T> clientClass, SslContextProvider sslContextProvider) {
-        return build(clientClass, null, null, null, null, sslContextProvider);
+    public static <T> T build(Class<T> clientClass, SslCredentials sslCredentials) {
+        return build(clientClass, null, null, null, null, sslCredentials);
     }
 
     /**
@@ -106,12 +106,12 @@ public class FeignClientFactory {
      *
      * @param clientClass the Feign-annotated interface class
      * @param url the URL the client will access
-     * @param sslContextProvider the SslContextProvider used to build an SSL context
+     * @param sslCredentials the SslCredentials used to build an SSL context
      * @param <T> the interface type
      * @return a Feign-generated instance of the provided interface for accessing the given URL
      */
-    public static <T> T build(Class<T> clientClass, String url, SslContextProvider sslContextProvider) {
-        return build(clientClass, url, null, null, null, sslContextProvider);
+    public static <T> T build(Class<T> clientClass, String url, SslCredentials sslCredentials) {
+        return build(clientClass, url, null, null, null, sslCredentials);
     }
 
     /**
@@ -122,13 +122,13 @@ public class FeignClientFactory {
      * @param encoder the encoder used to encode instances to strings
      * @param decoder the decoder used to decode strings to instances
      * @param retryer the retryer used on failed requests
-     * @param sslContextProvider the SslContextProvider used to build an SSL context
+     * @param sslCredentials the SslCredentials used to build an SSL context
      * @param <T> the interface type
      * @return a Feign-generated instance of the provided interface for accessing the given URL
      */
     public static <T> T build(Class<T> clientClass, String url, Encoder encoder, Decoder decoder, Retryer retryer,
-            SslContextProvider sslContextProvider) {
-        return build(clientClass, url, encoder, decoder, retryer, null, sslContextProvider);
+            SslCredentials sslCredentials) {
+        return build(clientClass, url, encoder, decoder, retryer, null, sslCredentials);
     }
 
     /**
@@ -140,16 +140,16 @@ public class FeignClientFactory {
      * @param decoder the decoder used to decode strings to instances
      * @param retryer the retryer used on failed requests
      * @param options additional options for requests
-     * @param sslContextProvider the SslContextProvider used to build an SSL context
+     * @param sslCredentials the SslCredentials used to build an SSL context
      * @param <T> the interface type
      * @return a Feign-generated instance of the provided interface for accessing the given URL
      */
     public static <T> T build(Class<T> clientClass, String url, Encoder encoder, Decoder decoder, Retryer retryer,
-            Request.Options options, SslContextProvider sslContextProvider) {
+            Request.Options options, SslCredentials sslCredentials) {
         Feign.Builder builder = createBuilder(clientClass, encoder, decoder, retryer, options);
 
-        if (sslContextProvider != null && sslContextProvider.isConfigured()) {
-            builder.client(new Client.Default(sslContextProvider.createSslContext().getSocketFactory(), null));
+        if (sslCredentials != null && sslCredentials.isConfigured()) {
+            builder.client(new Client.Default(sslCredentials.createSslContext().getSocketFactory(), null));
         }
 
         return build(builder, clientClass, url);

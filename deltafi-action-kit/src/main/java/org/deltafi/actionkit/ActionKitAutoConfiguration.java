@@ -102,7 +102,7 @@ public class ActionKitAutoConfiguration {
         // Add a thread for heartbeats
         totalThreads += 1;
 
-        return new ValkeyKeyedBlockingQueue(eventQueueProperties, totalThreads);
+        return new ValkeyKeyedBlockingQueue(eventQueueProperties.getUrl(), eventQueueProperties.getPassword(), totalThreads);
     }
 
     /**
@@ -207,6 +207,9 @@ public class ActionKitAutoConfiguration {
     @Bean
     public SchemaGenerator parametersSchemaGenerator(@Nullable SchemaGeneratorConfigCustomizer schemaGeneratorCustomizer) {
         return SchemaGeneratorFactory.buildSchemaGenerator(schemaGeneratorCustomizer, new DataSizeDefinitionProvider(),
+                // deprecated bridge: schema support for plugin parameter fields still typed
+                // org.springframework.util.unit.DataSize; remove in 3.0
+                new SpringDataSizeDefinitionProvider(),
                 new EnvVarDefinitionProvider());
     }
 

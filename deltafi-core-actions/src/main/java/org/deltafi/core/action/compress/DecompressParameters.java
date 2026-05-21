@@ -21,7 +21,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyDescription;
 import lombok.*;
 import org.deltafi.actionkit.action.parameters.ActionParameters;
-import org.springframework.util.unit.DataSize;
+import org.deltafi.common.util.DataSize;
 
 @Data
 @ToString(callSuper = true)

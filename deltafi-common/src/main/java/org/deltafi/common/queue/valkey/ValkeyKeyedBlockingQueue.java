@@ -25,7 +25,6 @@ import io.valkey.resps.Tuple;
 import io.valkey.util.KeyValue;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
-import org.deltafi.common.action.EventQueueProperties;
 
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -61,34 +60,36 @@ public class ValkeyKeyedBlockingQueue {
     /**
      * Constructs a ValkeyKeyedBlockingQueue with custom connection parameters.
      *
-     * @param eventQueueProperties the queue configuration properties
+     * @param url Valkey connection URL (e.g. {@code valkey://host:6379})
+     * @param password optional password; null or blank for unauthenticated connections
      * @param maxTotal the maximum number of pooled connections
      * @throws URISyntaxException if the URL is invalid
      */
-    public ValkeyKeyedBlockingQueue(EventQueueProperties eventQueueProperties, int maxTotal) throws URISyntaxException {
-        this.jedisPool = createJedisPool(eventQueueProperties, maxTotal, maxTotal / 2);
+    public ValkeyKeyedBlockingQueue(String url, String password, int maxTotal) throws URISyntaxException {
+        this.jedisPool = createJedisPool(url, password, maxTotal, maxTotal / 2);
         log.info("Valkey pool size: {}", maxTotal);
     }
 
     /**
-     * Creates a JedisPool with specified configuration.
+     * Creates a JedisPool with the specified configuration.
      *
-     * @param eventQueueProperties the queue configuration properties
+     * @param url Valkey connection URL (e.g. {@code valkey://host:6379})
+     * @param password optional password; null or blank for unauthenticated connections
      * @param maxTotal the maximum number of pooled connections
      * @param maxIdle the maximum number of idle connections
      * @return the configured JedisPool
      * @throws URISyntaxException if the URL is invalid
      */
-    public static JedisPool createJedisPool(EventQueueProperties eventQueueProperties, int maxTotal, int maxIdle) throws URISyntaxException {
+    public static JedisPool createJedisPool(String url, String password, int maxTotal, int maxIdle) throws URISyntaxException {
         GenericObjectPoolConfig<Jedis> poolConfig = new GenericObjectPoolConfig<>();
         poolConfig.setMaxIdle(maxIdle);
         poolConfig.setMaxTotal(maxTotal);
 
-        URI uri = new URI(eventQueueProperties.getUrl());
+        URI uri = new URI(url);
 
-        return (eventQueueProperties.getPassword() == null || eventQueueProperties.getPassword().isEmpty()) ? 
+        return (password == null || password.isEmpty()) ?
                 new JedisPool(poolConfig, uri) :
-                new JedisPool(poolConfig, uri.getHost(), uri.getPort(), Protocol.DEFAULT_TIMEOUT, eventQueueProperties.getPassword());
+                new JedisPool(poolConfig, uri.getHost(), uri.getPort(), Protocol.DEFAULT_TIMEOUT, password);
     }
 
     /**

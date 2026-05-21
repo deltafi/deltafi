@@ -12,6 +12,7 @@ javadoc {
 dependencies {
     api(platform("org.springframework.boot:spring-boot-dependencies:${springBootVersion}"))
     api project(':deltafi-common')
+    api project(':deltafi-common-spring')
     api 'org.springframework.boot:spring-boot-autoconfigure'
 
     api "com.fasterxml.jackson.datatype:jackson-datatype-jsr310:${jacksonVersion}"

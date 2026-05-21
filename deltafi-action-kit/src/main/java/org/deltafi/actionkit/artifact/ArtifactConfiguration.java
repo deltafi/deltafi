@@ -86,7 +86,7 @@ public class ArtifactConfiguration {
             EventQueueProperties eventQueueProperties,
             ArtifactCacheManager cacheManager,
             ApplicationEventPublisher eventPublisher) throws URISyntaxException {
-        JedisPool subscriberPool = ValkeyKeyedBlockingQueue.createJedisPool(eventQueueProperties, 1, 1);
+        JedisPool subscriberPool = ValkeyKeyedBlockingQueue.createJedisPool(eventQueueProperties.getUrl(), eventQueueProperties.getPassword(), 1, 1);
         return new ArtifactVersionChangeListener(subscriberPool, cacheManager, eventPublisher);
     }
 

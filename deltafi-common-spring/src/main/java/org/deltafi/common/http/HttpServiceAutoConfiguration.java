@@ -20,7 +20,7 @@ package org.deltafi.common.http;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.OkHttpClient;
 import org.deltafi.common.ssl.SslAutoConfiguration;
-import org.deltafi.common.ssl.SslContextProvider;
+import org.deltafi.common.ssl.SslCredentials;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -52,16 +52,16 @@ public class HttpServiceAutoConfiguration {
 
     /**
      * Create a {@link HttpClient} bean configured with SSL and any registered customizers.
-     * @param sslContextProvider provides the SSL context for secure connections
+     * @param sslCredentials provides the SSL context for secure connections
      * @return a configured {@link HttpClient}
      */
     @Bean
-    public HttpClient httpClient(SslContextProvider sslContextProvider) {
+    public HttpClient httpClient(SslCredentials sslCredentials) {
         HttpClient.Builder httpClientBuilder = HttpClient.newBuilder();
         httpClientBuilder.connectTimeout(DEFAULT_CONNECT_TIMEOUT);
 
-        if (sslContextProvider != null && sslContextProvider.isConfigured()) {
-            httpClientBuilder.sslContext(sslContextProvider.createSslContext());
+        if (sslCredentials != null && sslCredentials.isConfigured()) {
+            httpClientBuilder.sslContext(sslCredentials.createSslContext());
         }
 
         if (httpClientCustomizers != null) {
@@ -73,21 +73,21 @@ public class HttpServiceAutoConfiguration {
 
     /**
      * Create an {@link OkHttpClient} bean configured with SSL and any registered customizers.
-     * @param sslContextProvider provides the SSL context for secure connections
+     * @param sslCredentials provides the SSL context for secure connections
      * @return a configured {@link OkHttpClient}
      */
     @Bean
-    public OkHttpClient okHttpClient(SslContextProvider sslContextProvider) {
+    public OkHttpClient okHttpClient(SslCredentials sslCredentials) {
         OkHttpClient.Builder builder = new OkHttpClient.Builder();
         builder.connectTimeout(DEFAULT_CONNECT_TIMEOUT);
-        if (sslContextProvider != null && sslContextProvider.isConfigured()) {
-            TrustManager[] trustManagers = sslContextProvider.getBundle().getManagers().getTrustManagers();
+        if (sslCredentials != null && sslCredentials.isConfigured()) {
+            TrustManager[] trustManagers = sslCredentials.getTrustManagers();
             if (trustManagers == null || trustManagers.length != 1) {
                 throw new IllegalStateException("OKHttp requires a trust manager to be configured to enable SSL");
             }
 
             if (trustManagers[0] instanceof X509TrustManager trustManager) {
-                builder.sslSocketFactory(sslContextProvider.createSslContext().getSocketFactory(), trustManager);
+                builder.sslSocketFactory(sslCredentials.createSslContext().getSocketFactory(), trustManager);
             } else {
                 throw new IllegalStateException("OKHttp requires a trust manager to be configured to enable SSL");
             }

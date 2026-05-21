@@ -29,7 +29,7 @@ public interface HttpClientCustomizer {
 
     /**
      * Customize the HttpClient.Builder used to create HttpClient bean
-     * By default, the builder will add an SSLContext based on {@link org.deltafi.common.ssl.SslContextProvider}
+     * By default, the builder will add an SSLContext based on {@link org.deltafi.common.ssl.SslCredentials}
      * and set the connectTimeout to {@link HttpServiceAutoConfiguration#DEFAULT_CONNECT_TIMEOUT}.
      * @param builder the HttpClient.Builder used to build the HttpClient bean
      */
@@ -37,7 +37,7 @@ public interface HttpClientCustomizer {
 
     /**
      * Customize the OkHttpClient.Builder used to create OkHttpClient bean
-     * By default, the builder will add an SSLContext based on {@link org.deltafi.common.ssl.SslContextProvider}
+     * By default, the builder will add an SSLContext based on {@link org.deltafi.common.ssl.SslCredentials}
      * and set the connectTimeout to {@link HttpServiceAutoConfiguration#DEFAULT_CONNECT_TIMEOUT}.
      * @param builder the OkHttpClient.Builder used to build the OkHttpClient bean
      */

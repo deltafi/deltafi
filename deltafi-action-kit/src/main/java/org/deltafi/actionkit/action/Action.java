@@ -25,6 +25,7 @@ import lombok.Setter;
 import org.deltafi.actionkit.action.error.ErrorResult;
 import org.deltafi.actionkit.action.parameters.ActionParameters;
 import org.deltafi.common.json.DataSizeModule;
+import org.deltafi.common.json.SpringDataSizeModule;
 import org.deltafi.common.types.*;
 import org.jetbrains.annotations.NotNull;
 
@@ -45,6 +46,9 @@ public abstract class Action<I, P extends ActionParameters, R extends ResultType
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper()
             .registerModule(new JavaTimeModule())
             .registerModule(new DataSizeModule())
+            // deprecated bridge: deserialize plugin parameter fields still typed
+            // org.springframework.util.unit.DataSize; remove in 3.0
+            .registerModule(new SpringDataSizeModule())
             .enable(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY);
 
     private final ActionType actionType;

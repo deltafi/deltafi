@@ -31,6 +31,8 @@ import java.util.*;
  * Provides load, save, and delete operations for content stored in object storage.
  */
 public class ContentStorageService {
+    public static final String DEFAULT_BUCKET = "storage";
+
     final ObjectStorageService objectStorageService;
     final String contentBucket;
 
@@ -41,7 +43,7 @@ public class ContentStorageService {
      */
     public ContentStorageService(ObjectStorageService objectStorageService, String bucketName) {
         this.objectStorageService = objectStorageService;
-        this.contentBucket = bucketName == null || bucketName.isBlank() ? StorageProperties.STORAGE : bucketName;
+        this.contentBucket = bucketName == null || bucketName.isBlank() ? DEFAULT_BUCKET : bucketName;
     }
 
     /**

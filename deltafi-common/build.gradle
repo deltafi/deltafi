@@ -16,12 +16,10 @@ dependencies {
     annotationProcessor "org.projectlombok:lombok:${lombokVersion}"
     testCompileOnly "org.projectlombok:lombok:${lombokVersion}"
     testAnnotationProcessor "org.projectlombok:lombok:${lombokVersion}"
+
     api "com.fasterxml.jackson.datatype:jackson-datatype-jsr310:${jacksonVersion}"
     api "com.fasterxml.jackson.core:jackson-databind:${jacksonVersion}"
 
-    api(platform("com.netflix.graphql.dgs:graphql-dgs-platform-dependencies:${dgsVersion}"))
-    api 'com.netflix.graphql.dgs:graphql-dgs-client'
-    api "com.netflix.graphql.dgs.codegen:graphql-dgs-codegen-shared-core:${dgsCodegenVersion}"
     api 'commons-io:commons-io:2.20.0'
     api(platform("io.github.openfeign:feign-bom:${openFeignVersion}"))
     api 'io.github.openfeign:feign-core'
@@ -31,35 +29,22 @@ dependencies {
     api "io.minio:minio:${minioVersion}"
     api 'javax.ws.rs:javax.ws.rs-api:2.1.1'
     api 'org.apache.commons:commons-lang3:3.19.0'
-    api 'org.json:json:20250517'
+    api 'org.apache.commons:commons-text:1.14.0'
 
-    api(platform("org.springframework.boot:spring-boot-dependencies:${springBootVersion}"))
-    api 'org.springframework.boot:spring-boot-starter-aop'
-    api 'org.springframework.boot:spring-boot-starter-logging'
-    api 'org.springframework.boot:spring-boot-autoconfigure'
-
-    api "org.springframework.retry:spring-retry"
-    api 'org.apache.nifi:nifi-flowfile-packager:2.5.0'
-    api 'org.apache.httpcomponents.client5:httpclient5:5.5.1'
     api 'io.valkey:valkey-java:5.4.0'
 
     api "com.github.victools:jsonschema-generator:${jsonschemaGeneratorVersion}"
     api "com.github.victools:jsonschema-module-jackson:${jsonschemaGeneratorVersion}"
 
-    compileOnly 'org.springframework.boot:spring-boot-starter-cache'
-    testImplementation 'org.springframework.boot:spring-boot-starter-cache'
-    compileOnly 'com.github.ben-manes.caffeine:caffeine:3.2.2'
-    testImplementation 'com.github.ben-manes.caffeine:caffeine:3.2.2'
-
     implementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml'
     implementation 'ch.qos.logback:logback-classic:1.5.18'
-    implementation "com.squareup.okhttp3:okhttp:${okhttpVersion}"
     implementation 'net.logstash.logback:logstash-logback-encoder:8.0'
     implementation 'org.apache.maven:maven-artifact:3.9.11'
 
     testImplementation platform("org.junit:junit-bom:${jupiterVersion}")
     testRuntimeOnly platform("org.junit:junit-bom:${jupiterVersion}")
     testImplementation platform("org.assertj:assertj-bom:${assertJVersion}")
+    testImplementation platform('org.mockito:mockito-bom:5.17.0')
     testImplementation project(':deltafi-common-test')
     testImplementation 'org.assertj:assertj-core'
     testImplementation "org.junit.jupiter:junit-jupiter-api"
@@ -67,7 +52,5 @@ dependencies {
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
     testRuntimeOnly "org.junit.jupiter:junit-jupiter-engine"
     testImplementation "org.mockito:mockito-junit-jupiter"
-    testImplementation 'org.springframework.boot:spring-boot-starter-test'
-
-    testImplementation 'org.wiremock:wiremock-standalone:3.13.1'
+    testImplementation "org.hamcrest:hamcrest:${hamcrestVersion}"
 }

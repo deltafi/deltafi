@@ -8,6 +8,7 @@ description = 'DeltaFi Action Kit - Action implementation SDK for DeltaFi action
 
 dependencies {
     api project(':deltafi-common')
+    api project(':deltafi-common-spring')
 
     api 'org.springframework.boot:spring-boot-starter'
 

@@ -8,6 +8,7 @@ description = 'DeltaFi Artemis-ActiveMQ Ingress'
 
 dependencies {
     implementation project(':deltafi-common')
+    implementation project(':deltafi-common-spring')
     implementation project(':deltafi-ingress')
 
     implementation 'org.springframework.boot:spring-boot-starter-artemis'

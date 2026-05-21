@@ -34,7 +34,7 @@ import org.deltafi.actionkit.lookup.LookupTableSupplierRunner;
 import org.deltafi.common.types.*;
 import org.deltafi.common.types.integration.IntegrationTest;
 import org.deltafi.common.util.ClasspathScanner;
-import org.deltafi.common.util.ResourceMapper;
+import org.deltafi.common.util.JsonYamlMapper;
 
 import java.io.IOException;
 import java.net.URL;
@@ -135,7 +135,7 @@ public class PluginRegistrar {
             return Collections.emptyList();
         }
         try {
-            return ResourceMapper.readValues(url, Variable.class);
+            return JsonYamlMapper.readValues(url, Variable.class);
         } catch (IOException e) {
             log.warn("Unable to load variables", e);
             return Collections.emptyList();
@@ -166,7 +166,7 @@ public class PluginRegistrar {
                 continue;
             }
             try {
-                flowPlans.add(ResourceMapper.readValue(url, FlowPlan.class));
+                flowPlans.add(JsonYamlMapper.readValue(url, FlowPlan.class));
             } catch (IOException e) {
                 log.warn("Unable to load flow plan ({})", filename, e);
             }
@@ -187,7 +187,7 @@ public class PluginRegistrar {
                 continue;
             }
             try {
-                tests.add(ResourceMapper.readValue(url, IntegrationTest.class));
+                tests.add(JsonYamlMapper.readValue(url, IntegrationTest.class));
             } catch (IOException e) {
                 log.warn("Unable to load test ({})", filename, e);
             }

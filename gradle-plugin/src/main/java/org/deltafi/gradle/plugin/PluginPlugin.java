@@ -24,12 +24,11 @@ import org.deltafi.common.types.*;
 import org.deltafi.common.types.integration.IntegrationTest;
 import org.deltafi.common.util.ParameterTemplateException;
 import org.deltafi.common.util.ParameterUtil;
-import org.deltafi.common.util.ResourceMapper;
+import org.deltafi.common.util.JsonYamlMapper;
 import org.gradle.api.DefaultTask;
 import org.gradle.api.GradleException;
 import org.gradle.api.Project;
 import org.gradle.api.tasks.TaskAction;
-import org.springframework.core.io.FileSystemResource;
 
 import java.io.File;
 import java.io.IOException;
@@ -97,7 +96,7 @@ public class PluginPlugin implements org.gradle.api.Plugin<Project> {
             }
 
             try {
-                ResourceMapper.readValues(new FileSystemResource(variablesFile), Variable.class);
+                JsonYamlMapper.readValues(variablesFile.toPath(), Variable.class);
             } catch (IOException e) {
                 throw new GradleException("Unable to load variables: " + e.getMessage(), e);
             }
@@ -128,7 +127,7 @@ public class PluginPlugin implements org.gradle.api.Plugin<Project> {
             List<String> errors = new ArrayList<>();
             for (File flowFile : flowFiles) {
                 try {
-                    FlowPlan flow = ResourceMapper.readValue(flowFile, FlowPlan.class);
+                    FlowPlan flow = JsonYamlMapper.readValue(flowFile, FlowPlan.class);
                     String errorMessage = validateConditions(flow, flowFile.getName());
                     if (errorMessage != null) {
                         errors.add(errorMessage);
@@ -178,7 +177,7 @@ public class PluginPlugin implements org.gradle.api.Plugin<Project> {
 
             for (File testFile : testFiles) {
                 try {
-                    ResourceMapper.readValue(testFile, IntegrationTest.class);
+                    JsonYamlMapper.readValue(testFile, IntegrationTest.class);
                 } catch (IOException e) {
                     throw new GradleException("Unable to load test (" + testFile + "): " + e.getMessage(), e);
                 }

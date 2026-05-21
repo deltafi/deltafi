@@ -32,7 +32,7 @@ import org.deltafi.test.asserters.ErrorResultAssert;
 import org.deltafi.test.asserters.TransformResultAssert;
 import org.deltafi.test.content.DeltaFiTestRunner;
 import org.junit.jupiter.api.Test;
-import org.springframework.util.unit.DataSize;
+import org.deltafi.common.util.DataSize;
 
 import javax.ws.rs.core.MediaType;
 import java.util.HashMap;
