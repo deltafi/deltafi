@@ -25,6 +25,7 @@ import org.deltafi.test.asserters.TransformResultAssert;
 import org.deltafi.test.content.DeltaFiTestRunner;
 import org.junit.jupiter.api.Test;
 
+import javax.ws.rs.core.MediaType;
 import java.util.List;
 import java.util.Map;
 
@@ -117,5 +118,22 @@ class ModifyMediaTypeTest {
                 .hasContentMatchingAt(2, input.content(2).getName(), "text/plain", input.content(2).loadBytes())
                 .hasContentMatchingAt(3, input.content(3).getName(), "application/xml", input.content(3).loadBytes())
                 .hasContentMatchingAt(4, input.content(4).getName(), "application/octet-stream", input.content(4).loadBytes());
+    }
+
+    @Test
+    void autodetectsPlainTextTypes() {
+        ModifyMediaTypeParameters params = new ModifyMediaTypeParameters();
+        params.setAutodetectPlainTextTypes(true);
+
+        String content = """
+                { "a": "1", "b": {"c": "2", "d": "3"}}
+                """;
+        TransformInput input = TransformInput.builder()
+                .content(List.of(runner.saveContent(content, "name", MediaType.TEXT_PLAIN))).build();
+
+        TransformResultType result = action.transform(runner.actionContext(), params, input);
+
+        TransformResultAssert.assertThat(result)
+                .hasContentMatchingAt(0, input.content(0).getName(), "application/x-ndjson", input.content(0).loadBytes());
     }
 }

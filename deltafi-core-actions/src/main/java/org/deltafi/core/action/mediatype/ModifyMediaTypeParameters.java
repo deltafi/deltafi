@@ -46,4 +46,8 @@ public class ModifyMediaTypeParameters extends ActionParameters {
     @JsonProperty(defaultValue = "false")
     @JsonPropertyDescription("If true, restrict autodetection by name only. Otherwise, detect by file content and name.")
     private boolean autodetectByNameOnly = false;
+
+    @JsonProperty(defaultValue = "false")
+    @JsonPropertyDescription("If true, scan plain text content during autodetection to determine more specific type (e.g., application/x-ndjson).")
+    private boolean autodetectPlainTextTypes = false;
 }

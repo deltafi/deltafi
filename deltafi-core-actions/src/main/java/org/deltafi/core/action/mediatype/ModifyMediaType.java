@@ -21,11 +21,13 @@ import org.apache.tika.Tika;
 import org.deltafi.actionkit.action.content.ActionContent;
 import org.deltafi.actionkit.action.error.ErrorResult;
 import org.deltafi.actionkit.action.transform.*;
+import org.deltafi.common.json.NdjsonDetector;
 import org.deltafi.common.types.ActionContext;
 import org.deltafi.common.types.ActionOptions;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
 
+import javax.ws.rs.core.MediaType;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
@@ -97,6 +99,11 @@ public class ModifyMediaType extends TransformAction<ModifyMediaTypeParameters> 
                 } else {
                     try {
                         mediaType = TIKA.detect(content.loadInputStream(), content.getName());
+
+                        if (params.isAutodetectPlainTextTypes() && mediaType.equals(MediaType.TEXT_PLAIN) &&
+                                NdjsonDetector.isNdjson(content.loadInputStream())) {
+                            mediaType = "application/x-ndjson";
+                        }
                     } catch (IOException ignored) {
                         // do not set the mediaType if there is an exception, but continue processing
                     }
