@@ -56,7 +56,7 @@ type valuesData struct {
 	VectorContainer          string `default:"deltafi/vector:0.54.0-alpine-0"`
 	DozzleContainer          string `default:"deltafi/dozzle:v10.3.1-0"`
 	S3ProxyContainer         string `default:"deltafi/s3proxy:3.1.0-0"`
-	NginxContainer           string `default:"deltafi/nginx:1.29.8-alpine3.23-0"`
+	NginxContainer           string `default:"deltafi/nginx:1.31.0-alpine-0"`
 	ValkeyContainer          string `default:"deltafi/valkey:9.0.3-1"`
 	PostgresContainer        string `default:"deltafi/timescaledb:2.19.3-pg16-10"`
 	PostgresLookupContainer  string `default:"deltafi/postgres:16.13-1"`
