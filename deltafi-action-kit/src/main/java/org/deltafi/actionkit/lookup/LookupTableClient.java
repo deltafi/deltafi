@@ -29,8 +29,6 @@ import org.deltafi.actionkit.generated.types.*;
 import org.deltafi.common.graphql.dgs.GraphQLExecutor;
 import org.deltafi.common.http.HttpService;
 import org.deltafi.common.lookup.LookupTable;
-import org.springframework.cache.annotation.CacheEvict;
-import org.springframework.cache.annotation.Cacheable;
 
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
@@ -187,7 +185,6 @@ public class LookupTableClient {
      * @return a List of Maps matching the query, with each Map representing the column/value pairs for a row
      * @throws Exception if the GraphQL query fails
      */
-    @Cacheable("lookup-table-client-cache")
     public LookupResults lookup(String lookupTableName, LookupOptions lookupOptions) throws Exception {
         LookupGraphQLQuery.Builder builder = new LookupGraphQLQuery.Builder()
                 .lookupTableName(lookupTableName);
@@ -252,8 +249,7 @@ public class LookupTableClient {
                 .toList();
     }
 
-    /** Evict all entries from the lookup table query cache */
-    @CacheEvict(value = "lookup-table-client-cache", allEntries = true)
+    /** Evict all entries from the lookup table query cache. No-op in this non-caching client. */
     public void clearCache() {}
 
     /**

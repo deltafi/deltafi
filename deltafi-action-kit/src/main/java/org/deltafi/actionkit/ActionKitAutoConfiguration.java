@@ -255,6 +255,6 @@ public class ActionKitAutoConfiguration {
     public LookupTableClient lookupTableClient(Environment environment, GraphQLClient graphQLClient,
             HttpService httpService) {
         String coreUrl = buildCoreUrl(environment);
-        return new LookupTableClient(coreUrl + "/lookup", graphQLClient, httpService);
+        return new CachingLookupTableClient(coreUrl + "/lookup", graphQLClient, httpService);
     }
 }

@@ -68,7 +68,7 @@ class LookupTableClientTest {
         @Bean
         public LookupTableClient lookupTableClient(Environment environment, GraphQLClient graphQLClient,
                 HttpService httpService) {
-            return new LookupTableClient("unused", graphQLClient, httpService);
+            return new CachingLookupTableClient("unused", graphQLClient, httpService);
         }
     }
 
