@@ -1,8 +1,11 @@
+ARG BUILDPLATFORM
+
 FROM --platform=$BUILDPLATFORM node:22-alpine3.19 AS deltafi-ui-build-stage
 WORKDIR /ui
 # Cache package installation
 RUN npm config set fetch-timeout 600000 && npm config set fetch-retry-mintimeout 20000 && npm config set fetch-retry-maxtimeout 120000 && npm config set fetch-retries 5
 COPY ui/package.json ui/package-lock.json ./
+ARG BUILDPLATFORM
 ENV CACHE_BUST=1
 RUN --mount=type=cache,target=/root/.npm,id=npm-${BUILDPLATFORM} npm install
 COPY ui ./
@@ -13,6 +16,7 @@ WORKDIR /docs
 # Cache package installation
 RUN npm config set fetch-timeout 600000 && npm config set fetch-retry-mintimeout 20000 && npm config set fetch-retry-maxtimeout 120000 && npm config set fetch-retries 5
 COPY docs/package.json ./
+ARG BUILDPLATFORM
 ENV CACHE_BUST=1
 RUN --mount=type=cache,target=/root/.npm,id=npm-${BUILDPLATFORM} npm install
 COPY docs ./
@@ -24,6 +28,7 @@ WORKDIR /graphiql
 # Cache package installation
 RUN yarn config set network-timeout 60000
 COPY graphiql/package.json /graphiql/package.json
+ARG BUILDPLATFORM
 RUN --mount=type=cache,target=/root/.cache/yarn,id=yarn-${BUILDPLATFORM} yarn install --network-timeout 60000
 COPY graphiql .
 RUN yarn build

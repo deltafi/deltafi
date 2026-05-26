@@ -29,7 +29,7 @@ RUN --mount=type=cache,target=/go/pkg/mod \
     CGO_ENABLED=0 go build -ldflags "-X main.Version=${VERSION} -w -s" -o /deltafi main.go
 
 # Final stage
-FROM alpine:3.23
+FROM alpine:latest
 
 RUN apk add -U --no-cache \
     ttyd \
