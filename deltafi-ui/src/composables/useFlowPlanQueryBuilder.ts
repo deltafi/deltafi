@@ -17,12 +17,18 @@
 */
 
 import useGraphQL from "./useGraphQL";
-import { EnumType } from "json-to-graphql-query";
-import _ from "lodash";
+import { jsonToGraphQLQuery } from "json-to-graphql-query";
 import { transformFlow, transformFlowPlan, dataSink, dataSinkPlan } from "./useFlowPlanQueryVariables";
 
+// Render a json-to-graphql-query field tree as a bare GraphQL selection set string.
+// Wraps in a sentinel root, serializes, then strips the wrapper.
+const renderSelectionSet = (fields: Record<string, any>): string => {
+  const wrapped = jsonToGraphQLQuery({ _root: fields }, { pretty: false });
+  return wrapped.slice(wrapped.indexOf("{") + 1, wrapped.lastIndexOf("}")).trim();
+};
+
 export default function useFlowQueryBuilder() {
-  const { response, queryGraphQL } = useGraphQL();
+  const { response, queryGraphQL, sendGraphQLQueryWithVariables } = useGraphQL();
 
   // Get all flows (no grouping)
   const getAllFlowPlans = () => {
@@ -41,41 +47,12 @@ export default function useFlowQueryBuilder() {
 
   // Save a TransformFlowPlan
   const saveTransformFlowPlan = (flowPlan: Object) => {
-    let newObject: any = null;
-    const enumKeysToKey = ["matchingPolicy", "defaultBehavior"];
-    // Function to convert certain keys values to enums
-    function graphqlQueryObjectConverter(queryObject: any) {
-      for (const [key, value] of Object.entries(queryObject)) {
-        if (_.isArray(value)) {
-          continue;
-        }
-
-        if (_.isObject(value)) {
-          graphqlQueryObjectConverter(value);
-        }
-
-        if (enumKeysToKey.includes(key)) {
-          queryObject[key] = new EnumType(value as any);
-        } else {
-          continue;
-        }
+    const mutation = `
+      mutation saveTransformFlowPlan($transformFlowPlan: TransformFlowPlanInput!) {
+        saveTransformFlowPlan(transformFlowPlan: $transformFlowPlan) { ${renderSelectionSet(transformFlow)} }
       }
-      newObject = queryObject;
-    }
-
-    graphqlQueryObjectConverter(flowPlan);
-
-    const formattedQuery = newObject;
-
-    const query = {
-      saveTransformFlowPlan: {
-        __args: {
-          transformFlowPlan: formattedQuery,
-        },
-        ...transformFlow,
-      },
-    };
-    return sendGraphQLQuery(query, "saveTransformFlowPlan", "mutation", true);
+    `;
+    return sendGraphQLQueryWithVariables(mutation, { transformFlowPlan: flowPlan }, "saveTransformFlowPlan");
   };
 
   // Remove an TransformFlowPlan
@@ -92,15 +69,12 @@ export default function useFlowQueryBuilder() {
 
   // Save a DataSinkPlan
   const saveDataSinkPlan = (flowPlan: Object) => {
-    const query = {
-      saveDataSinkPlan: {
-        __args: {
-          dataSinkPlan: flowPlan,
-        },
-        ...dataSink,
-      },
-    };
-    return sendGraphQLQuery(query, "saveDataSinkPlan", "mutation", true);
+    const mutation = `
+      mutation saveDataSinkPlan($dataSinkPlan: DataSinkPlanInput!) {
+        saveDataSinkPlan(dataSinkPlan: $dataSinkPlan) { ${renderSelectionSet(dataSink)} }
+      }
+    `;
+    return sendGraphQLQueryWithVariables(mutation, { dataSinkPlan: flowPlan }, "saveDataSinkPlan");
   };
 
   // Remove a DataSinkPlan

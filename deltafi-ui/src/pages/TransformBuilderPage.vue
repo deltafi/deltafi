@@ -260,6 +260,7 @@ import useFlowPlanQueryBuilder from "@/composables/useFlowPlanQueryBuilder";
 import useFlowQueryBuilder from "@/composables/useFlowQueryBuilder";
 import useNotifications from "@/composables/useNotifications";
 import useTopics from "@/composables/useTopics";
+import { compactSparseArray } from "@/utils/arrayUtils";
 import { computed, nextTick, onBeforeMount, onMounted, onBeforeUnmount, provide, ref, watch } from "vue";
 import { StorageSerializers, useClipboard, useMagicKeys, useResizeObserver, useStorage } from "@vueuse/core";
 import { useRouter } from "vue-router";
@@ -617,6 +618,8 @@ const clearEmptyObjects = (queryObj) => {
       delete queryObj[objKey];
     }
   }
+
+  if (_.isArray(queryObj)) compactSparseArray(queryObj);
 
   return queryObj;
 };

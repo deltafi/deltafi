@@ -134,6 +134,7 @@ import useFlows from "@/composables/useFlows";
 import useDataSource from "@/composables/useDataSource";
 import useFlowActions from "@/composables/useFlowActions";
 import useTopics from "@/composables/useTopics";
+import { compactSparseArray } from "@/utils/arrayUtils";
 import { useMounted } from "@vueuse/core";
 import { computed, inject, nextTick, onMounted, onBeforeMount, onUnmounted, provide, reactive, ref } from "vue";
 
@@ -381,6 +382,9 @@ const clearEmptyObjects = (queryObj) => {
       delete queryObj[objKey];
     }
   }
+
+  if (_.isArray(queryObj)) compactSparseArray(queryObj);
+
   return queryObj;
 };
 

@@ -18,10 +18,9 @@
 
 import useGraphQL from "./useGraphQL";
 import { EnumType } from "json-to-graphql-query";
-import _ from "lodash";
 
 export default function useDataSink() {
-  const { response, errors, queryGraphQL, loaded, loading } = useGraphQL();
+  const { response, errors, queryGraphQL, sendGraphQLQueryWithVariables, loaded, loading } = useGraphQL();
 
   const getAllDataSinks = () => {
     const query = {
@@ -146,41 +145,12 @@ export default function useDataSink() {
   };
 
   const saveDataSinkPlan = (dataSinkPlan: Object) => {
-    let newObject: any = null;
-    const enumKeysToKey = ["matchingPolicy", "defaultBehavior"];
-    // Function to convert certain keys values to enums
-    function graphqlQueryObjectConverter(queryObject: any) {
-      for (const [key, value] of Object.entries(queryObject)) {
-        if (_.isArray(value)) {
-          continue;
-        }
-
-        if (_.isObject(value)) {
-          graphqlQueryObjectConverter(value);
-        }
-
-        if (enumKeysToKey.includes(key)) {
-          queryObject[key] = new EnumType(value as any);
-        } else {
-          continue;
-        }
+    const mutation = `
+      mutation saveDataSinkPlan($dataSinkPlan: DataSinkPlanInput!) {
+        saveDataSinkPlan(dataSinkPlan: $dataSinkPlan) { name }
       }
-      newObject = queryObject;
-    }
-
-    graphqlQueryObjectConverter(dataSinkPlan);
-
-    const formattedQuery = newObject;
-
-    const query = {
-      saveDataSinkPlan: {
-        __args: {
-          dataSinkPlan: formattedQuery,
-        },
-        name: true,
-      },
-    };
-    return sendGraphQLQuery(query, "saveDataSinkPlan", "mutation");
+    `;
+    return sendGraphQLQueryWithVariables(mutation, { dataSinkPlan }, "saveDataSinkPlan");
   };
 
   const removeDataSinkPlan = (flowName: string) => {

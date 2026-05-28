@@ -20,7 +20,7 @@ import useGraphQL from "./useGraphQL";
 import { EnumType } from "json-to-graphql-query";
 
 export default function useDataSource() {
-  const { response, errors, queryGraphQL, loaded, loading } = useGraphQL();
+  const { response, errors, queryGraphQL, sendGraphQLQueryWithVariables, loaded, loading } = useGraphQL();
 
   const defaultDataSourceFields = {
     name: true,
@@ -227,59 +227,33 @@ export default function useDataSource() {
   };
 
   const saveTimedDataSourcePlan = (timedDataSourceFlowPlan: Object) => {
-    const query = {
-      saveTimedDataSourcePlan: {
-        __args: {
-          dataSourcePlan: {
-            type: "TIMED_DATA_SOURCE",
-            ...timedDataSourceFlowPlan,
-          },
-        },
-        name: true,
-      },
-    };
-    return sendGraphQLQuery(query, "saveTimedDataSourcePlan", "mutation");
+    const mutation = `
+      mutation saveTimedDataSourcePlan($dataSourcePlan: TimedDataSourcePlanInput!) {
+        saveTimedDataSourcePlan(dataSourcePlan: $dataSourcePlan) { name }
+      }
+    `;
+    const dataSourcePlan = { type: "TIMED_DATA_SOURCE", ...timedDataSourceFlowPlan };
+    return sendGraphQLQueryWithVariables(mutation, { dataSourcePlan }, "saveTimedDataSourcePlan");
   };
 
   const saveRestDataSourcePlan = (restDataSourceFlowPlan: Object) => {
-    const query = {
-      saveRestDataSourcePlan: {
-        __args: {
-          dataSourcePlan: {
-            type: "REST_DATA_SOURCE",
-            ...restDataSourceFlowPlan,
-          },
-        },
-        name: true,
-      },
-    };
-    return sendGraphQLQuery(query, "saveRestDataSourcePlan", "mutation");
+    const mutation = `
+      mutation saveRestDataSourcePlan($dataSourcePlan: RestDataSourcePlanInput!) {
+        saveRestDataSourcePlan(dataSourcePlan: $dataSourcePlan) { name }
+      }
+    `;
+    const dataSourcePlan = { type: "REST_DATA_SOURCE", ...restDataSourceFlowPlan };
+    return sendGraphQLQueryWithVariables(mutation, { dataSourcePlan }, "saveRestDataSourcePlan");
   };
 
   const saveOnErrorDataSourcePlan = (onErrorDataSourceFlowPlan: Object) => {
-    if (onErrorDataSourceFlowPlan.hasOwnProperty("sourceFilters")) {
-      (onErrorDataSourceFlowPlan as any).sourceFilters = (onErrorDataSourceFlowPlan as any).sourceFilters.map((filter: any) => {
-        if (filter.flowType) {
-          return {
-            ...filter,
-            flowType: new EnumType(filter.flowType),
-          };
-        }
-        return filter;
-      });
-    }
-    const query = {
-      saveOnErrorDataSourcePlan: {
-        __args: {
-          dataSourcePlan: {
-            type: "ON_ERROR_DATA_SOURCE",
-            ...onErrorDataSourceFlowPlan,
-          },
-        },
-        name: true,
-      },
-    };
-    return sendGraphQLQuery(query, "saveOnErrorDataSourcePlan", "mutation");
+    const mutation = `
+      mutation saveOnErrorDataSourcePlan($dataSourcePlan: OnErrorDataSourcePlanInput!) {
+        saveOnErrorDataSourcePlan(dataSourcePlan: $dataSourcePlan) { name }
+      }
+    `;
+    const dataSourcePlan = { type: "ON_ERROR_DATA_SOURCE", ...onErrorDataSourceFlowPlan };
+    return sendGraphQLQueryWithVariables(mutation, { dataSourcePlan }, "saveOnErrorDataSourcePlan");
   };
 
   const removeDataSourcePlan = (name: string, dataSourceType: string) => {

@@ -156,5 +156,23 @@ export default function useGraphQL() {
     }
   };
 
-  return { response, loading, loaded, queryGraphQL, queryGraphQLWithVariables, errors };
+  // Convenience wrapper for queryGraphQLWithVariables that:
+  //   - strips null-valued keys and empty objects from the variables payload
+  //     (matching the implicit cleanup the inline-literal path performed via
+  //     removeEmptyKeyValues + clearEmptyObjects), so form templates with null
+  //     scaffolding fields don't reach the GraphQL layer
+  //   - returns the response body on success or GraphQL-level errors, and
+  //     undefined on HTTP/network failures
+  const sendGraphQLQueryWithVariables = async (mutation: string, variables: Record<string, any>, operationName: string) => {
+    const cleanedVariables = removeEmptyKeyValues(variables);
+    clearEmptyObjects(cleanedVariables);
+    try {
+      await queryGraphQLWithVariables(mutation, cleanedVariables, operationName);
+      return response.value;
+    } catch (e: any) {
+      return e?.value;
+    }
+  };
+
+  return { response, loading, loaded, queryGraphQL, queryGraphQLWithVariables, sendGraphQLQueryWithVariables, errors };
 }
