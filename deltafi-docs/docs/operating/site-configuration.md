@@ -138,7 +138,8 @@ deltafi:
       value: "DEBUG"
 ```
 
-After changing `pluginEnv`, run `deltafi up` to apply. In Compose mode, installed plugins are automatically redeployed with the updated environment.
+After changing `pluginEnv`, run `deltafi up` to load the variables into `deltafi-core` so future plugin deployments will get the environment variables injected. Existing plugins need to be redeployed to pick up the new environment variables.
+
 
 ::: tip
 Administrators can view the currently applied plugin environment variables via the GraphQL API by querying `pluginEnvVars` on the `Plugin` type. This field requires Admin permission.
