@@ -5,6 +5,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 All [Unreleased] changes can be viewed in GitLab.
 
+## [2.55.3] - 2026-05-28
+
+### Tech-Debt/Refactor
+- Refactored the deltafi-action-kit LookupTableClient so spring related code can be isolated to a new module
+
+### Upgrade and Migration
+- Patch updates to Java dependencies to deal with Critical CVEs
+- Upgrade nginx to deltafi/nginx:1.31.0-alpine-0
+
 ## [2.55.2] - 2026-05-21
 
 ### Fixed
@@ -6284,7 +6293,8 @@ No changes.  UI update only
 ### Security
 - Forced all projects to log4j 2.17.0 to avoid CVEs
 
-[Unreleased]: https://gitlab.com/deltafi/deltafi/-/compare/2.55.2...main
+[Unreleased]: https://gitlab.com/deltafi/deltafi/-/compare/2.55.3...main
+[2.55.3]: https://gitlab.com/deltafi/deltafi/-/compare/2.55.2...2.55.3
 [2.55.2]: https://gitlab.com/deltafi/deltafi/-/compare/2.55.1...2.55.2
 [2.55.1]: https://gitlab.com/deltafi/deltafi/-/compare/2.55.0...2.55.1
 [2.55.0]: https://gitlab.com/deltafi/deltafi/-/compare/2.54.0...2.55.0
