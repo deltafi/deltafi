@@ -2108,6 +2108,10 @@ public class DeltaFilesService {
     public void requeue() {
         Integer numFound = null;
         while (numFound == null || numFound == REQUEUE_BATCH_SIZE) {
+            if (resultQueueBackedUp()) {
+                log.info("Result queue exceeds requeueBacklogThreshold; deferring requeue until it drains");
+                break;
+            }
             OffsetDateTime modified = OffsetDateTime.now(clock);
             Set<UUID> longRunningDids = coreEventQueue.getLongRunningTasks().stream().map(ActionExecution::did).collect(Collectors.toSet());
             Set<String> skipActions = queueManagementService.coldQueueActions();
@@ -2357,11 +2361,26 @@ public class DeltaFilesService {
             return null;
         }
 
+        // Re-driven work is dispatched with a null return address so results distribute across all
+        // workers via the shared queue. Affinity to the dispatching instance is worthless here: these
+        // files are past the requeue duration (long since evicted from any cache) or cold-queued, and
+        // pinning them to one instance funnels the entire backlog onto a single result queue.
         if (deltaFile.getJoinId() != null) {
-            return deltaFile.buildActionInput(actionConfiguration, flow, deltaFile.getParentDids(), action, getProperties().getSystemName(), identityService.getUniqueId(), null);
+            return deltaFile.buildActionInput(actionConfiguration, flow, deltaFile.getParentDids(), action, getProperties().getSystemName(), null, null);
         }
 
-        return deltaFile.buildActionInput(actionConfiguration, flow, action, getProperties().getSystemName(), identityService.getUniqueId(), null);
+        return deltaFile.buildActionInput(actionConfiguration, flow, action, getProperties().getSystemName(), null, null);
+    }
+
+    /**
+     * True when the shared result-return queue has grown past the configured threshold. Re-drive
+     * operations (requeue and cold-to-warm) pause while this holds so the queue can drain rather
+     * than re-dispatching work faster than the cluster can process it.
+     *
+     * @return true if re-drive should be deferred
+     */
+    public boolean resultQueueBackedUp() {
+        return coreEventQueue.sharedResultQueueSize() >= getProperties().getRequeueBacklogThreshold();
     }
 
     public void autoResume() {

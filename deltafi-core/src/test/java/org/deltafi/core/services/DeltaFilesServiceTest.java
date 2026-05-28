@@ -1499,6 +1499,19 @@ class DeltaFilesServiceTest {
     private void verifyRequeuedInput(List<WrappedActionInput> input) {
         assertThat(input).hasSize(1);
         assertThat(input.getFirst().getActionContext().getActionName()).isEqualTo("someAction");
+        // re-driven work is dispatched with no return address so results spread across all workers
+        assertThat(input.getFirst().getReturnAddress()).isNull();
+    }
+
+    @Test
+    void requeue_deferredWhenResultQueueBackedUp() {
+        mockDeltaFiPropertiesService.getDeltaFiProperties().setRequeueBacklogThreshold(5000);
+        Mockito.when(coreEventQueue.sharedResultQueueSize()).thenReturn(5000L);
+
+        deltaFilesService.requeue();
+
+        verify(deltaFileRepo, Mockito.never()).findForRequeue(any(), any(), any(), any(), anyBoolean(), anyInt());
+        verify(coreEventQueue, Mockito.never()).putActions(any(), anyBoolean());
     }
 
     @Test

@@ -345,6 +345,9 @@ public class DeltaFiProperties {
     @PropertyInfo(group = PropertyGroup.PERFORMANCE_CONTROLS, description = "Maximum size for in memory action queues before tasks are moved to on-disk queues", defaultValue = "5000", dataType = VariableDataType.NUMBER)
     private int inMemoryQueueSize = 5000;
 
+    @PropertyInfo(group = PropertyGroup.PERFORMANCE_CONTROLS, description = "Maximum depth of the shared result-return queue before requeue and cold-to-warm scheduling pause, allowing the queue to drain rather than re-dispatching work faster than the cluster can process it", defaultValue = "5000", dataType = VariableDataType.NUMBER)
+    private int requeueBacklogThreshold = 5000;
+
     @PropertyInfo(group = PropertyGroup.DATA_FLOW_CONTROLS, description = "The maximum number of flows a DeltaFile may traverse", defaultValue = "32", dataType = VariableDataType.NUMBER)
     private int maxFlowDepth = 32;
 
@@ -490,6 +493,11 @@ public class DeltaFiProperties {
     public void setInMemoryQueueSize(int inMemoryQueueSize) {
         minCheck(inMemoryQueueSize, 10, "inMemoryQueueSize");
         this.inMemoryQueueSize = inMemoryQueueSize;
+    }
+
+    public void setRequeueBacklogThreshold(int requeueBacklogThreshold) {
+        minCheck(requeueBacklogThreshold, 10, "requeueBacklogThreshold");
+        this.requeueBacklogThreshold = requeueBacklogThreshold;
     }
 
     public void setMaxFlowDepth(int maxFlowDepth) {

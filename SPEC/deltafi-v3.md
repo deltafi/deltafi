@@ -165,6 +165,43 @@ minio>=7.0.0
 boto3>=1.26.0
 ```
 
+## DGS Naming Deprecations
+
+The action result queue naming and several user-facing strings reference "dgs", a leftover from the Netflix DGS GraphQL framework. These names leak into queue metrics, monitor/health checks, logs, and documentation. The queue naming convention is unrelated to GraphQL and should be renamed to something descriptive (e.g. `core` or `core-results`). Removing these is a breaking change because plugins/SDKs and core must agree on the queue name.
+
+### Queue Names
+
+| Deprecated | Replacement | Notes |
+|------------|-------------|-------|
+| `dgs` (non-affinitized result queue) | e.g. `core` | Base result-queue topic |
+| `dgs-{returnAddress}` (affinitized result queue) | e.g. `core-{returnAddress}` | Per-instance result queue; appears in queue metrics and orphan-queue warnings |
+
+### Code
+
+| Deprecated | Location | Notes |
+|------------|----------|-------|
+| `CoreEventQueue.DGS_QUEUE = "dgs"` | `deltafi-core` `services/CoreEventQueue.java` | Rename constant and value |
+| `EventQueueProperties.DGS_QUEUE = "dgs"` | `deltafi-common-spring` `action/EventQueueProperties.java` | Duplicated constant; keep in sync with core |
+| `HeartbeatService` heartbeat keys `dgs` / `dgs-{id}` | `deltafi-core` `services/HeartbeatService.java` | Rename heartbeat topic |
+| `ActionEventQueue` result queue construction | `deltafi-action-kit` `service/ActionEventQueue.java` | `"dgs"` / `"dgs-{returnAddress}"` |
+| `getOldDgsQueues()` | `deltafi-common` `queue/valkey/ValkeyKeyedBlockingQueue.java` | Rename method and the orphan-detection prefix match |
+| `"Dropping orphaned DGS queues"` log message | `deltafi-core` `services/CoreEventQueue.java` | User-facing log string |
+| Orphan-queue detection prefix | `deltafi-core` `monitor/checks/ActionQueueCheck.java` | Matches `dgs-*` queues |
+
+### SDKs
+
+| Deprecated | Location | Notes |
+|------------|----------|-------|
+| `topic = 'dgs'` / `'dgs-{return_address}'` | `deltafi-python/src/deltafi/plugin.py` | Python SDK result queue |
+| `resultQueueName` → `dgs` / `dgs-{addr}` | `deltafi-go-action-kit/worker.go` | Go SDK result queue |
+
+### Documentation
+
+| Deprecated | Location | Notes |
+|------------|----------|-------|
+| "DeltaFi uses Netflix DGS to expose a GraphQL API..." | `deltafi-docs/docs/api/graphql/index.md` | Reword to not depend on DGS framing |
+| `queue_name` examples showing `dgs` | `deltafi-docs/docs/operating/metrics.md` | Update example queue names |
+
 ## Migration Steps for v3
 
 1. **Environment variables:** Update all plugins to use new environment variable names
@@ -177,3 +214,5 @@ boto3>=1.26.0
 8. **Python code:** Update SDK to use new env var names
 9. **Python dependencies:** Replace `minio` with `boto3`
 10. **Documentation:** Remove any remaining "minio" references
+11. **Queue names:** Rename the `dgs` / `dgs-{returnAddress}` result queues across core, action-kit, and the Python and Go SDKs in lockstep (constants, heartbeats, and orphan-queue detection)
+12. **Documentation:** Remove any remaining user-facing "dgs" references (GraphQL docs, metrics examples, log messages)

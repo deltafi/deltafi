@@ -149,6 +149,17 @@ public class CoreEventQueue {
         return valkeyKeyedBlockingQueue.sortedSetSize(key);
     }
 
+    /**
+     * Size of the shared result-return queue that re-driven actions are dispatched to. Every core
+     * instance consumes this queue, so its depth reflects the cluster-wide backlog of results
+     * waiting to be processed.
+     *
+     * @return the number of pending results in the shared queue
+     */
+    public long sharedResultQueueSize() {
+        return valkeyKeyedBlockingQueue.sortedSetSize(DGS_QUEUE);
+    }
+
     public Map<String, Long> sizes(Collection<String> keys) {
         return valkeyKeyedBlockingQueue.sortedSetSizes(keys);
     }

@@ -180,6 +180,35 @@ class QueueManagementServiceTest {
     }
 
     @Test
+    void testColdToWarmDefersWhenResultQueueBackedUp() {
+        queueManagementService.getCheckedQueues().set(true);
+        when(deltaFileFlowRepo.distinctColdQueuedActions()).thenReturn(List.of(QUEUE_NAME));
+        when(deltaFilesService.resultQueueBackedUp()).thenReturn(true);
+        when(env.getProperty("schedule.maintenance")).thenReturn("true");
+
+        queueManagementService.scheduleColdToWarm();
+
+        verify(deltaFilesService, never()).requeueColdQueueActions(anyString(), anyInt());
+    }
+
+    @Test
+    void testRateLimitedColdToWarmDefersWhenResultQueueBackedUp() {
+        String flowName = "test-data-sink";
+        queueManagementService.getCheckedQueues().set(true);
+        when(deltaFileFlowRepo.distinctRateLimitedColdQueuedDataSinks()).thenReturn(List.of(flowName));
+        when(deltaFilesService.resultQueueBackedUp()).thenReturn(true);
+        when(env.getProperty("schedule.maintenance")).thenReturn("true");
+
+        queueManagementService.scheduleRateLimitedColdToWarm();
+
+        // saturated shared queue: no tokens consumed and nothing warmed
+        verify(rateLimitService, never()).consume(anyString(), anyLong(), anyLong(), any());
+        verify(deltaFilesService, never()).requeueRateLimitedColdQueueActions(anyString(), anyInt());
+        verify(deltaFilesService, never()).requeueSpecificRateLimitedFiles(anyString(), any());
+        verifyNoInteractions(dataSinkService);
+    }
+
+    @Test
     void testRateLimitedColdToWarmWithoutCheckedQueues() {
         queueManagementService.getCheckedQueues().set(false);
         queueManagementService.scheduleRateLimitedColdToWarm();

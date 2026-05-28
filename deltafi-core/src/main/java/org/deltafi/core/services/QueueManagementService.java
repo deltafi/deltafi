@@ -186,6 +186,10 @@ public class QueueManagementService {
 
         // for each of these, if there is space in the warm queue, grab the oldest entries and shift to warm
         for (String queueName : coldQueuedActions) {
+            if (deltaFilesService.resultQueueBackedUp()) {
+                // the shared result queue is saturated; stop warming until it drains
+                break;
+            }
             long queueSize = allQueues.getOrDefault(queueName, 0L);
             int maxQueueSize = maxQueueSize();
             if (queueSize < maxQueueSize * 0.9) {
@@ -208,6 +212,10 @@ public class QueueManagementService {
         OffsetDateTime now = OffsetDateTime.now();
 
         for (String flowName : rateLimitedDataSinks) {
+            if (deltaFilesService.resultQueueBackedUp()) {
+                // shared result queue is saturated; stop warming until it drains, before consuming any tokens
+                break;
+            }
             if (!sinkReadyForRateLimitedCheck(flowName, now)) {
                 continue;
             }
