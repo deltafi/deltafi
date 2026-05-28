@@ -5,6 +5,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 All [Unreleased] changes can be viewed in GitLab.
 
+## [2.55.4] - 2026-05-28
+
+### Added
+- Added detection of the application/x-ndjson media type to the ModifyMediaType action
+- New `requeueBacklogThreshold` property (Performance Controls, default 5000): when the shared result queue exceeds this depth, requeue and cold-to-warm scheduling pause until it drains, preventing the queue from outrunning what the cluster can process.
+
+### Changed
+- Requeued and cold-to-warm work is now distributed across all core workers instead of being routed back to the instance that scheduled it, removing a single-instance bottleneck during recovery.
+
+### Fixed
+- Removed the automatic redeployment of plugins after `deltafi up` to prevent utilization spikes on systems with a large number of scaled up plugins
+- Fixed a feedback loop where a large action backlog caused the scheduler to repeatedly re-dispatch work and hammer the database, growing the queue instead of recovering.
+
 ## [2.55.3] - 2026-05-28
 
 ### Tech-Debt/Refactor
@@ -6293,7 +6306,8 @@ No changes.  UI update only
 ### Security
 - Forced all projects to log4j 2.17.0 to avoid CVEs
 
-[Unreleased]: https://gitlab.com/deltafi/deltafi/-/compare/2.55.3...main
+[Unreleased]: https://gitlab.com/deltafi/deltafi/-/compare/2.55.4...main
+[2.55.4]: https://gitlab.com/deltafi/deltafi/-/compare/2.55.3...2.55.4
 [2.55.3]: https://gitlab.com/deltafi/deltafi/-/compare/2.55.2...2.55.3
 [2.55.2]: https://gitlab.com/deltafi/deltafi/-/compare/2.55.1...2.55.2
 [2.55.1]: https://gitlab.com/deltafi/deltafi/-/compare/2.55.0...2.55.1
