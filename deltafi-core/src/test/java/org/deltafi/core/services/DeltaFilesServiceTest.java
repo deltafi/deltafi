@@ -47,6 +47,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.*;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.core.env.Environment;
+import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionStatus;
 import org.springframework.transaction.support.TransactionTemplate;
@@ -1550,6 +1551,50 @@ class DeltaFilesServiceTest {
         Mockito.when(dataSinkService.isEgressAction("egressAction")).thenReturn(true);
         deltaFilesService.requeueColdQueueActions("egressAction", 1);
         verifyNoInteractions(deltaFileRepo);
+    }
+
+    @Test
+    void coldToWarm_degradesToPerFileWhenBatchSaveConflicts() {
+        // Three cold-queued files. The batch save fails on an optimistic lock (a concurrent writer advanced
+        // one of them), so the scheduler falls back to saving each file on its own. With the conflicted file
+        // in the middle, this also proves a single per-file failure does not abort the rest: the files before
+        // and after it are still warmed and dispatched, while the conflicted one is skipped for the next cycle.
+        OffsetDateTime now = OffsetDateTime.now();
+
+        DeltaFile firstClean = coldQueuedTransform(new UUID(0, 1), now);
+        DeltaFile staleFile = coldQueuedTransform(new UUID(0, 2), now);
+        DeltaFile lastClean = coldQueuedTransform(new UUID(0, 3), now);
+
+        Mockito.when(deltaFileRepo.findColdQueuedForRequeue("a.b.c", 100))
+                .thenReturn(List.of(firstClean, staleFile, lastClean));
+        Mockito.when(transformFlowService.findRunningActionConfig(firstClean.getFlow(1).getName(), "someAction"))
+                .thenReturn(new ActionConfiguration());
+        // the batch save fails, and the middle file still conflicts when retried on its own
+        Mockito.when(deltaFileRepo.saveAll(any())).thenThrow(new OptimisticLockingFailureException("batch conflict"));
+        Mockito.when(deltaFileRepo.save(staleFile)).thenThrow(new OptimisticLockingFailureException("still stale"));
+
+        deltaFilesService.requeueColdQueueActions("a.b.c", 100);
+
+        // every file was attempted individually - the middle failure did not stop the loop
+        verify(deltaFileRepo).save(firstClean);
+        verify(deltaFileRepo).save(staleFile);
+        verify(deltaFileRepo).save(lastClean);
+        // both clean files were dispatched; the conflicted one was not
+        ArgumentCaptor<List<WrappedActionInput>> dispatched = ArgumentCaptor.forClass(List.class);
+        verify(coreEventQueue, times(2)).putActions(dispatched.capture(), eq(true));
+        List<UUID> dispatchedDids = dispatched.getAllValues().stream()
+                .flatMap(List::stream)
+                .map(input -> input.getActionContext().getDid())
+                .toList();
+        assertThat(dispatchedDids).containsExactlyInAnyOrder(new UUID(0, 1), new UUID(0, 3));
+    }
+
+    private DeltaFile coldQueuedTransform(UUID did, OffsetDateTime now) {
+        DeltaFile deltaFile = fullFlowExemplarService.postTransformDeltaFile(did);
+        DeltaFileFlow transform = deltaFile.getFlow(1);
+        transform.setState(DeltaFileFlowState.IN_FLIGHT);
+        transform.queueAction("someAction", "a.b.c", ActionType.TRANSFORM, true, now);
+        return deltaFile;
     }
 
     @Test

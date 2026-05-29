@@ -47,6 +47,7 @@ import org.deltafi.core.services.analytics.AnalyticEventService;
 import org.deltafi.core.types.Flow;
 import org.deltafi.core.types.*;
 import org.deltafi.core.util.ParameterResolver;
+import org.hibernate.StaleStateException;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.context.event.EventListener;
 import org.springframework.core.env.Environment;
@@ -2159,11 +2160,10 @@ public class DeltaFilesService {
             });
 
             if (!filesToSave.isEmpty()) {
-                deltaFileRepo.saveAll(filesToSave);
-            }
-            if (!actionInputs.isEmpty()) {
-                log.warn("{} actions exceeded requeue duration of {}, requeuing now", actionInputs.size(), getProperties().getRequeueDuration());
-                enqueueActions(actionInputs, true);
+                if (!actionInputs.isEmpty()) {
+                    log.warn("{} actions exceeded requeue duration of {}, requeuing now", actionInputs.size(), getProperties().getRequeueDuration());
+                }
+                saveAndEnqueueRequeued(filesToSave, actionInputs, true);
             }
         }
     }
@@ -2186,8 +2186,7 @@ public class DeltaFilesService {
 
         if (!actionInputs.isEmpty()) {
             log.info("Moving {} from the cold to warm queue", actionInputs.size());
-            deltaFileRepo.saveAll(filesToRequeue);
-            enqueueActions(actionInputs, true);
+            saveAndEnqueueRequeued(filesToRequeue, actionInputs, true);
         }
     }
 
@@ -2227,8 +2226,7 @@ public class DeltaFilesService {
 
         if (!actionInputs.isEmpty()) {
             log.info("Moving {} rate-limited actions from cold to warm queue for data sink '{}'", actionInputs.size(), flowName);
-            deltaFileRepo.saveAll(filesToRequeue);
-            enqueueActions(actionInputs, true);
+            saveAndEnqueueRequeued(filesToRequeue, actionInputs, true);
         }
     }
 
@@ -2264,6 +2262,39 @@ public class DeltaFilesService {
         });
 
         return actionInputs;
+    }
+
+    /**
+     * Persist requeued DeltaFiles and dispatch their action inputs. A single batch save is attempted for
+     * efficiency. If that batch fails because a concurrent writer advanced one of the files - common for
+     * forking DeltaFiles whose sibling flow is processed while another flow is requeued - the save is
+     * retried one file at a time so a single stale file cannot block the rest of the batch from being
+     * dispatched. Files that still conflict are left untouched and picked up on the next requeue cycle.
+     */
+    private void saveAndEnqueueRequeued(Collection<DeltaFile> filesToSave, List<WrappedActionInput> actionInputs, boolean checkUnique) {
+        try {
+            deltaFileRepo.saveAll(filesToSave);
+            enqueueActions(actionInputs, checkUnique);
+        } catch (OptimisticLockingFailureException | StaleStateException e) {
+            log.warn("Batch requeue save of {} DeltaFiles failed on an optimistic lock; retrying one file at a time", filesToSave.size());
+            Map<UUID, List<WrappedActionInput>> inputsByDid = actionInputs.stream()
+                    .collect(Collectors.groupingBy(input -> input.getActionContext().getDid()));
+            Set<UUID> processed = new HashSet<>();
+            for (DeltaFile deltaFile : filesToSave) {
+                if (!processed.add(deltaFile.getDid())) {
+                    continue;
+                }
+                try {
+                    deltaFileRepo.save(deltaFile);
+                    List<WrappedActionInput> fileInputs = inputsByDid.get(deltaFile.getDid());
+                    if (fileInputs != null && !fileInputs.isEmpty()) {
+                        enqueueActions(fileInputs, checkUnique);
+                    }
+                } catch (OptimisticLockingFailureException | StaleStateException perFile) {
+                    log.warn("Skipping requeue of DeltaFile {} due to a concurrent update; it will be retried on the next cycle", deltaFile.getDid());
+                }
+            }
+        }
     }
 
     public void requeuePausedFlows() {
@@ -2316,14 +2347,12 @@ public class DeltaFilesService {
                 log.info("Unpausing {} DeltaFile flows", inputs.size());
                 List<WrappedActionInput> actionInputs = stateMachine.advance(inputs);
 
-                // Save directly to DB (bypass cache) so any worker can process results
-                deltaFileRepo.saveAll(deltaFiles);
-                // Clear cache entries to avoid stale data
-                deltaFileCacheService.removeAll(updatedDids);
                 // Clear returnAddress so results distribute across all workers
                 actionInputs.forEach(input -> input.setReturnAddress(null));
-
-                enqueueActions(actionInputs, false);
+                // Save directly to DB (bypass cache) so any worker can process results
+                saveAndEnqueueRequeued(deltaFiles, actionInputs, false);
+                // Clear cache entries to avoid stale data
+                deltaFileCacheService.removeAll(updatedDids);
             }
         }
     }
