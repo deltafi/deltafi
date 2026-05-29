@@ -24,6 +24,7 @@ import org.deltafi.actionkit.action.error.ErrorResultException;
 import org.deltafi.actionkit.action.parameters.ActionParameters;
 import org.deltafi.actionkit.action.transform.*;
 import org.deltafi.common.types.ActionContext;
+import org.deltafi.common.types.ActionOptions;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
 import software.amazon.awssdk.services.s3.S3Client;
@@ -51,7 +52,16 @@ public class S3DeleteObject extends TransformAction<S3DeleteObject.Parameters> {
     private final S3ClientProvider s3ClientProvider;
 
     public S3DeleteObject(S3ClientProvider s3ClientProvider) {
-        super("Deletes objects from an S3 store. Content is passed through this action.");
+        super(ActionOptions.builder()
+                .description("Deletes objects from an S3 store.")
+                .outputSpec(ActionOptions.OutputSpec.builder()
+                        .passthrough(true)
+                        .build())
+                .errors("On failure to delete the object from the S3 store")
+                .notes("""
+                        This action may be used after data is ingressed with S3Ingress to prevent duplicates on
+                        system failures.""")
+                .build());
         this.s3ClientProvider = s3ClientProvider;
     }
 

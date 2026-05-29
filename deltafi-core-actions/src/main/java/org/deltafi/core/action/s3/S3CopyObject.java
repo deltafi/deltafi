@@ -24,6 +24,7 @@ import org.deltafi.actionkit.action.error.ErrorResultException;
 import org.deltafi.actionkit.action.parameters.ActionParameters;
 import org.deltafi.actionkit.action.transform.*;
 import org.deltafi.common.types.ActionContext;
+import org.deltafi.common.types.ActionOptions;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
 import software.amazon.awssdk.core.exception.SdkException;
@@ -73,7 +74,18 @@ public class S3CopyObject extends TransformAction<S3CopyObject.Parameters> {
     private final S3ClientProvider s3ClientProvider;
 
     public S3CopyObject(S3ClientProvider s3ClientProvider) {
-        super("Copies objects within an S3 store. Content is passed through this action.");
+        super(ActionOptions.builder()
+                .description("Copies objects within an S3 store.")
+                .outputSpec(ActionOptions.OutputSpec.builder()
+                        .passthrough(true)
+                        .build())
+                .errors("On source bucket and key equal to destination bucket and key",
+                        "On multi-upload enabled and unable to get content length from S3 store",
+                        "On failure to copy object in the S3 store")
+                .notes("""
+                        This action may be used after data is ingressed with S3Ingress and before it's deleted with
+                        S3DeleteObject to keep a copy in the S3 store.""")
+                .build());
         this.s3ClientProvider = s3ClientProvider;
     }
 

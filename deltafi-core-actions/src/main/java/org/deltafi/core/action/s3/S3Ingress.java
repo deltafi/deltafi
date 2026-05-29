@@ -71,6 +71,10 @@ public class S3Ingress extends TimedIngressAction<S3Ingress.Parameters> {
     public S3Ingress(S3ClientProvider s3ClientProvider, Clock clock) {
         super(ActionOptions.builder()
                 .description("Polls an S3 bucket for objects to ingress")
+                .notes("""
+                        Under normal circumstances, this action will only ingress objects that were added or modified
+                        since its last poll. It is recommended, however, that an S3DeleteObject action be used in the
+                        subscribing transform to prevent duplicates when system failures occur.""")
                 .build());
         this.s3ClientProvider = s3ClientProvider;
         this.clock = clock;

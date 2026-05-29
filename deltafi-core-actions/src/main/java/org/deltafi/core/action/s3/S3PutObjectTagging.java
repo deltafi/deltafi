@@ -24,6 +24,7 @@ import org.deltafi.actionkit.action.error.ErrorResultException;
 import org.deltafi.actionkit.action.parameters.ActionParameters;
 import org.deltafi.actionkit.action.transform.*;
 import org.deltafi.common.types.ActionContext;
+import org.deltafi.common.types.ActionOptions;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
 import software.amazon.awssdk.services.s3.S3Client;
@@ -68,7 +69,13 @@ public class S3PutObjectTagging extends TransformAction<S3PutObjectTagging.Param
     private final S3ClientProvider s3ClientProvider;
 
     public S3PutObjectTagging(S3ClientProvider s3ClientProvider) {
-        super("Tags objects in an S3 store. Content is passed through this action.");
+        super(ActionOptions.builder()
+                .description("Tags objects in an S3 store.")
+                .outputSpec(ActionOptions.OutputSpec.builder()
+                        .passthrough(true)
+                        .build())
+                .errors("On failure to put object tagging in the S3 store")
+                .build());
         this.s3ClientProvider = s3ClientProvider;
     }
 

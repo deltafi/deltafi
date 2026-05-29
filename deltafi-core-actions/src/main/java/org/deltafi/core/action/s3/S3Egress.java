@@ -62,7 +62,7 @@ public class S3Egress extends EgressAction<S3Egress.Parameters> {
     private final S3ClientProvider clientProvider;
 
     public S3Egress(S3ClientProvider clientProvider) {
-        super("Writes the content to an S3 store");
+        super("Writes the content to an S3 store.");
         this.clientProvider = clientProvider;
     }
 

@@ -20,6 +20,7 @@ package org.deltafi.core.action.s3;
 import org.deltafi.actionkit.action.error.ErrorResultException;
 import org.deltafi.actionkit.action.transform.*;
 import org.deltafi.common.types.ActionContext;
+import org.deltafi.common.types.ActionOptions;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
 import software.amazon.awssdk.core.ResponseInputStream;
@@ -27,8 +28,7 @@ import software.amazon.awssdk.eventnotifications.s3.model.S3EventNotification;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.*;
 
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 @Component
 public class S3GetObjectsFromEvent extends TransformAction<S3ClientParams> {
@@ -38,7 +38,20 @@ public class S3GetObjectsFromEvent extends TransformAction<S3ClientParams> {
     private final S3ClientProvider s3ClientProvider;
 
     public S3GetObjectsFromEvent(S3ClientProvider s3ClientProvider) {
-        super("Gets objects from an S3 store from S3 event notifications and saves them as content");
+        super(ActionOptions.builder()
+                .description("Gets objects from an S3 store from an S3 event notification, creating DeltaFiles for each.")
+                .inputSpec(ActionOptions.InputSpec.builder()
+                        .contentSummary("A single content containing a JSON S3 event notification")
+                        .build())
+                .outputSpec(ActionOptions.OutputSpec.builder()
+                        .contentSummary("""
+                                New DeltaFiles are created for records in the event notification that have the following
+                                event names: s3:ObjectCreated:Put, s3:ObjectCreated:Copy, s3:ObjectCreated:Post, and
+                                s3:ObjectCreated:CompleteMultipartUpload.""")
+                        .metadataSummary("Each DeltaFile will have bucket, key, and size in its metadata.")
+                        .build())
+                .errors("On failure to copy the S3 object to local storage")
+                .build());
         this.s3ClientProvider = s3ClientProvider;
     }
 
