@@ -19,7 +19,7 @@
 const generateData = () => {
   const data = {
     getFlowNames: {
-      restDataSource: ["devFlow1", "devFlow2"],
+      restDataSource: ["devFlow1", "devFlow2", "worlds-longest-data-source-name-so-long-i-had-to-type-it-twice"],
       timedDataSource: ["devFlow4", "devFlow3"],
       onErrorDataSource: ["devFlow5", "devFlow6"],
     },

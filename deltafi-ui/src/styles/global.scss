@@ -613,6 +613,41 @@ a {
   }
 }
 
+/* Prevent MultiSelect (and Select) overlays from extending past the viewport
+   when an option label is long. PrimeVue gives overlays min-width: 100% with
+   no max-width and renders options with white-space: nowrap, so long labels
+   make the panel wider than the screen. Hovering an option then fires
+   scrollIntoView({ inline: 'nearest' }), which scrolls the page horizontally
+   on every mouse move. Capping at the viewport and truncating long option
+   labels eliminates the runaway scroll. */
+.p-multiselect-overlay,
+.p-select-overlay {
+  max-width: calc(100vw - 2rem);
+
+  .p-multiselect-option,
+  .p-select-option {
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+}
+
+/* Let chips in a chip-display MultiSelect wrap onto new lines instead of
+   overflowing to the right. Without this the label is a single-line flex row
+   (PrimeVue default), so a long chip plus any subsequent selections push past
+   the input edge and clip off-screen. */
+.p-multiselect.p-multiselect-display-chip .p-multiselect-label {
+  flex-wrap: wrap;
+  row-gap: 0.25rem;
+}
+
+/* When chips wrap onto multiple lines, the input must grow vertically. Our
+   .deltafi-input-field rule pins height to 32px, which clips wrapped chips.
+   Relax to min-height so the field grows as chips wrap. */
+.p-multiselect.p-multiselect-display-chip.deltafi-input-field {
+  height: auto;
+  min-height: 32px;
+}
+
 .p-toast {
   width: unset !important;
   max-width: 50rem;

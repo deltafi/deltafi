@@ -56,10 +56,14 @@
       <div class="desktop-nav">
         <template v-for="item in visibleMenuItems" :key="item.path || item.name">
           <!-- eslint-disable-next-line vuejs-accessibility/no-static-element-interactions -- navigation dropdown wrapper with mouse/focus event delegation -->
-          <div v-if="item.children && hasVisibleChildren(item)" class="nav-item-wrapper" role="navigation" @mouseenter="openDropdown = item.name" @mouseleave="closeDropdown" @focusin="openDropdown = item.name" @focusout="closeDropdown">
+          <div v-if="item.children && hasVisibleChildren(item)" class="nav-item-wrapper" role="navigation" @mouseenter="openDropdown = item.name" @mouseleave="closeDropdown" @focusin="openDropdown = item.name" @focusout="onWrapperFocusOut">
             <button
               class="nav-item nav-item-button"
               :class="{ active: isActive(item), open: openDropdown === item.name }"
+              :aria-expanded="openDropdown === item.name"
+              aria-haspopup="true"
+              @mousedown.prevent
+              @keydown.escape="closeDropdown"
             >
               <i v-if="item.icon" :class="item.icon" class="mr-2" />
               <span>{{ item.name }}</span>
@@ -233,6 +237,15 @@ const isActive = (item: MenuItem): boolean => {
 
 const closeDropdown = () => {
   openDropdown.value = null;
+};
+
+const onWrapperFocusOut = (event: FocusEvent) => {
+  const wrapper = event.currentTarget as HTMLElement | null;
+  const next = event.relatedTarget as Node | null;
+  if (wrapper && next && wrapper.contains(next)) {
+    return;
+  }
+  closeDropdown();
 };
 
 const toggleMobileMenu = (event: MouseEvent) => {

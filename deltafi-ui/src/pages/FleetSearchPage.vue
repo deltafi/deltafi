@@ -455,6 +455,12 @@ const getStatusSeverity = (status) => {
         flex: none;
         margin: 0;
         margin-bottom: 1rem;
+        /* min-width: 0 disarms the default min-content constraint; max-width
+           pins the column to the sidebar's width. Without this, a wide
+           MultiSelect chip row pushes the column past the sidebar edge
+           before the chip-row wrap rule can kick in. */
+        min-width: 0;
+        max-width: 100%;
       }
 
       .responsive-width {
@@ -464,6 +470,11 @@ const getStatusSeverity = (status) => {
 
       .min-width {
         width: 100%;
+        /* PrimeVue's MultiSelect is display: flex with min-width: auto, which
+           in a flex chain resolves to min-content — wide chips then push the
+           input past the sidebar edge before the chip-row wrap rule can kick
+           in. Forcing min-width: 0 lets it shrink to width: 100% so chips wrap. */
+        min-width: 0;
       }
 
       .size-container {

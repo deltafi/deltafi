@@ -32,7 +32,7 @@
               </span>
             </span>
             <InputText v-if="_.isEqual(formInfo.componentType, 'InputText')" :id="`${formInfo.field}` + 'Id'" :model-value="modelValue[formInfo.field]" :placeholder="formInfo.placeholder" :class="formInfo.class" @update:model-value="updateField(formInfo.field, $event)" />
-            <MultiSelect v-if="_.isEqual(formInfo.componentType, 'MultiSelect')" :id="`${formInfo.field}` + 'Id'" :model-value="modelValue[formInfo.field]" :options="formInfo.options" :placeholder="formInfo.placeholder" :option-group-label="formInfo.optionGroupLabel" :option-group-children="formInfo.optionGroupChildren" :option-label="formInfo.optionLabel" :option-value="formInfo.optionValue" :filter="formInfo.filter" :class="formInfo.class" display="chip" @update:model-value="updateField(formInfo.field, $event)" />
+            <MultiSelectWithSelectedGroup v-if="_.isEqual(formInfo.componentType, 'MultiSelect')" :id="`${formInfo.field}` + 'Id'" :model-value="modelValue[formInfo.field]" :options="formInfo.options" :placeholder="formInfo.placeholder" :option-group-label="formInfo.optionGroupLabel" :option-group-children="formInfo.optionGroupChildren" :option-label="formInfo.optionLabel" :option-value="formInfo.optionValue" :filter="formInfo.filter" :class="formInfo.class" display="chip" @update:model-value="updateField(formInfo.field, $event)" />
             <div v-if="_.isEqual(formInfo.componentType, 'SizeUnit')" class="size-container">
               <Select :model-value="modelValue.sizeType" :options="sizeTypesOptions" aria-label="Size type" style="width: 8rem" class="deltafi-input-field mr-2" @update:model-value="updateField('sizeType', $event)" />
               <InputNumber :model-value="modelValue.sizeMin" class="p-inputnumber input-area-height" :input-style="{ width: '4rem' }" placeholder="Min" @update:model-value="updateField('sizeMin', $event)" /> -
@@ -86,8 +86,9 @@ import Chip from "primevue/chip";
 import Select from "primevue/select";
 import InputNumber from "primevue/inputnumber";
 import InputText from "primevue/inputtext";
-import MultiSelect from "primevue/multiselect";
 import Popover from "primevue/popover";
+
+import MultiSelectWithSelectedGroup from "@/components/MultiSelectWithSelectedGroup.vue";
 
 import MarkdownIt from "markdown-it";
 
@@ -207,6 +208,15 @@ When performing a search using annotations, the following options are supported:
   .p-multiselect.p-multiselect-chip .p-multiselect-token {
     padding-bottom: 1px;
     padding-top: 1px;
+  }
+
+  /* Prevent long selected values from overflowing the input and the sidebar.
+     A wide chip used to push the input wider than the sidebar, breaking layout. */
+  .p-multiselect .p-multiselect-chip-item .p-chip-label {
+    max-width: 18rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .input-area-height {
