@@ -52,7 +52,7 @@ Parameter templating pulls information out of the current `ActionInput` being se
 
 The following fields are available to use in a parameter template.
 
-| Field | Description | 
+| Field | Description |
 |-------|-------------|
 | `{{ deltaFileName }}` | The name of the DeltaFile |
 | `{{ did }}` | The did of the DeltaFile |
@@ -60,7 +60,80 @@ The following fields are available to use in a parameter template.
 | `{{ content }}` | The content list from the first DeltaFileMessage |
 | `{{ actionContext }}` | The current ActionContext (see [Action Contex](actions#context) for information about the subfields) |
 | `{{ deltaFileMessages }}` | The full list of DeltaFileMessages, useful for joins |
-| `{{ now() }}` | Helper method to get the current timestamp |
+
+#### Helper Methods
+
+In addition to the fields above, the following helper methods are available inside `{{ }}` templates. All helpers are null-safe: passing a missing metadata value (e.g. `metadata['absent']`) returns `null` rather than throwing. Helpers may be composed (e.g. `{{ sha256(base64Decode(metadata['signed'])) }}`).
+
+**Time & identity**
+
+| Method | Returns | Description |
+|--------|---------|-------------|
+| `now()` | String | Current timestamp in ISO-8601 format |
+| `timestamp()` | String | Current time as epoch milliseconds |
+| `uuid()` | String | A new random (v4) UUID |
+
+**Encoding / decoding**
+
+| Method | Returns | Description |
+|--------|---------|-------------|
+| `base64Encode(value)` | String | Standard Base64 encoding of the UTF-8 bytes |
+| `base64Decode(value)` | String | Decode standard Base64 to a UTF-8 string |
+| `base64UrlEncode(value)` | String | URL-safe Base64 encoding, no padding |
+| `base64UrlDecode(value)` | String | Decode URL-safe Base64 to a UTF-8 string |
+| `hexEncode(value)` | String | Lowercase hex encoding of the UTF-8 bytes |
+| `hexDecode(value)` | String | Decode hex to a UTF-8 string (errors on invalid hex) |
+| `urlEncode(value)` | String | Percent-encode for inclusion in a URL |
+| `urlDecode(value)` | String | Decode a percent-encoded URL string |
+
+**Hashing (hex output)**
+
+| Method | Returns | Description |
+|--------|---------|-------------|
+| `sha256(value)` | String | Lowercase hex SHA-256 digest |
+| `sha512(value)` | String | Lowercase hex SHA-512 digest |
+| `sha1(value)` | String | Lowercase hex SHA-1 digest |
+| `md5(value)` | String | Lowercase hex MD5 digest |
+
+**Escaping**
+
+| Method | Returns | Description |
+|--------|---------|-------------|
+| `escapeJson(value)` | String | Escape characters for safe embedding in JSON string literals |
+| `escapeXml(value)` | String | Escape characters for safe embedding in XML/HTML content |
+| `escapeHtml(value)` | String | Escape characters for safe embedding in HTML |
+
+**String fallbacks**
+
+| Method | Returns | Description |
+|--------|---------|-------------|
+| `defaultIfBlank(value, fallback)` | String | Returns `value` if it is non-blank, otherwise `fallback` |
+| `coalesce(v1, v2, ...)` | String | Returns the first non-blank argument, or `null` if all are blank |
+
+Example - hash a customer id, base64-encode a metadata value, fall back through a chain of optional keys
+
+```yaml
+---
+name: hash-and-encode
+type: TRANSFORM
+description: Demonstrates the SpEL helper methods
+subscribe:
+  - topic: incoming
+transformActions:
+  - name: TagMetadata
+    type: org.deltafi.core.action.metadata.ModifyMetadata
+    parameters:
+      addOrModifyMetadata:
+        customer_hash: "{{ sha256(metadata['customer_id']) }}"
+        url_safe_name: "{{ urlEncode(metadata['display_name']) }}"
+        decoded_token: "{{ base64Decode(metadata['signed_token']) }}"
+        tracking_id:   "{{ uuid() }}"
+        category:      "{{ coalesce(metadata['category'], metadata['legacy_category'], 'uncategorized') }}"
+        json_payload:  "{{ escapeJson(metadata['user_message']) }}"
+publish:
+  rules:
+    - topic: tagged
+```
 
 Example - use templating to pull out various pieces of information about the DeltaFile being sent to an action
 

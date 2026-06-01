@@ -95,23 +95,11 @@ public class ParameterResolver {
         Expression expression = expressionCache.computeIfAbsent(text, ParameterUtil::newExpression);
         ActionContext actionContext = actionInput.getActionContext();
         DeltaFileMessage message = actionInput.getDeltaFileMessages().getFirst();
-        Map<String, CoercibleString> coercibleMetadata = message.getMetadata().entrySet().stream()
-                .collect(Collectors.toMap(Entry::getKey, e -> new CoercibleString(e.getValue())));
+        Map<String, CoercibleString> coercibleMetadata = message.getMetadata().entrySet().stream().collect(Collectors.toMap(Entry::getKey, e -> new CoercibleString(e.getValue())));
 
-        ExpressionInput expressionInput = ExpressionInput.builder()
-                .did(actionContext.getDid())
-                .deltaFileName(actionContext.getDeltaFileName())
-                .metadata(coercibleMetadata)
-                .content(message.getContentList())
-                .actionContext(actionContext)
-                .deltaFileMessages(actionInput.getDeltaFileMessages())
-                .build();
+        ExpressionInput expressionInput = ExpressionInput.builder().did(actionContext.getDid()).deltaFileName(actionContext.getDeltaFileName()).metadata(coercibleMetadata).content(message.getContentList()).actionContext(actionContext).deltaFileMessages(actionInput.getDeltaFileMessages()).build();
 
-        EvaluationContext context = SimpleEvaluationContext
-                .forReadOnlyDataBinding()
-                .withRootObject(expressionInput)
-                .withInstanceMethods()
-                .build();
+        EvaluationContext context = SimpleEvaluationContext.forReadOnlyDataBinding().withRootObject(expressionInput).withInstanceMethods().build();
 
 
         try {
@@ -123,14 +111,97 @@ public class ParameterResolver {
 
     @Builder
     @SuppressWarnings("unused")
-    private record ExpressionInput(UUID did, String deltaFileName, Map<String, CoercibleString> metadata, List<Content> content, ActionContext actionContext, List<DeltaFileMessage> deltaFileMessages) {
+    private record ExpressionInput(UUID did, String deltaFileName, Map<String, CoercibleString> metadata,
+                                   List<Content> content, ActionContext actionContext,
+                                   List<DeltaFileMessage> deltaFileMessages) {
 
         /**
          * Helper method to get the current timestamp as a string
+         *
          * @return current time as a string
          */
         public String now() {
             return OffsetDateTime.now().toString();
+        }
+
+        // ---- Encoding / decoding ----
+        public String base64Encode(CharSequence value) {
+            return ExpressionHelpers.base64Encode(value);
+        }
+
+        public String base64Decode(CharSequence value) {
+            return ExpressionHelpers.base64Decode(value);
+        }
+
+        public String base64UrlEncode(CharSequence value) {
+            return ExpressionHelpers.base64UrlEncode(value);
+        }
+
+        public String base64UrlDecode(CharSequence value) {
+            return ExpressionHelpers.base64UrlDecode(value);
+        }
+
+        public String hexEncode(CharSequence value) {
+            return ExpressionHelpers.hexEncode(value);
+        }
+
+        public String hexDecode(CharSequence value) {
+            return ExpressionHelpers.hexDecode(value);
+        }
+
+        public String urlEncode(CharSequence value) {
+            return ExpressionHelpers.urlEncode(value);
+        }
+
+        public String urlDecode(CharSequence value) {
+            return ExpressionHelpers.urlDecode(value);
+        }
+
+        // ---- Hashing (hex output) ----
+        public String sha256(CharSequence value) {
+            return ExpressionHelpers.sha256(value);
+        }
+
+        public String sha512(CharSequence value) {
+            return ExpressionHelpers.sha512(value);
+        }
+
+        public String sha1(CharSequence value) {
+            return ExpressionHelpers.sha1(value);
+        }
+
+        public String md5(CharSequence value) {
+            return ExpressionHelpers.md5(value);
+        }
+
+        // ---- Escaping ----
+        public String escapeJson(CharSequence value) {
+            return ExpressionHelpers.escapeJson(value);
+        }
+
+        public String escapeXml(CharSequence value) {
+            return ExpressionHelpers.escapeXml(value);
+        }
+
+        public String escapeHtml(CharSequence value) {
+            return ExpressionHelpers.escapeHtml(value);
+        }
+
+        // ---- Utility ----
+        public String uuid() {
+            return ExpressionHelpers.uuid();
+        }
+
+        public String timestamp() {
+            return ExpressionHelpers.timestamp();
+        }
+
+        public String coalesce(CharSequence... values) {
+            return ExpressionHelpers.coalesce(values);
+        }
+
+        public String defaultIfBlank(CharSequence v, CharSequence fallback) {
+            return ExpressionHelpers.defaultIfBlank(v, fallback);
         }
     }
 }

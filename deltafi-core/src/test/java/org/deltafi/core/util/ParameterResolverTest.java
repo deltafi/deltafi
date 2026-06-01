@@ -110,6 +110,40 @@ class ParameterResolverTest {
     }
 
     @Test
+    @SneakyThrows
+    void testResolve_expressionHelpers() {
+        // Exercise the helpers exposed on ExpressionInput end-to-end through SpEL substitution.
+        // metadata['dataSink'] = "my-data-sink", metadata['keyholder'] = "extracted-key-name".
+        Map<String, Object> params = new HashMap<>();
+        params.put("metadataKey", "{{ sha256(metadata['dataSink']) }}");
+        params.put("url", "https://api/{{ urlEncode(metadata['keyholder']) }}/{{ base64Encode(metadata['dataSink']) }}");
+        params.put("mapField", Map.of(
+                "hexed", "{{ hexEncode(metadata['dataSink']) }}",
+                "decoded", "{{ base64Decode(base64Encode(metadata['dataSink'])) }}",
+                "fallback", "{{ defaultIfBlank(metadata['missing'], 'fallback-value') }}",
+                "picked", "{{ coalesce(metadata['missing'], metadata['dataSink']) }}",
+                "jsonSafe", "{{ escapeJson('she said \"hi\"') }}"
+        ));
+        ActionInput input = actionInput(params);
+
+        resolver.resolve(input);
+
+        Map<String, Object> after = input.getActionParams();
+        Assertions.assertThat(after)
+                .containsEntry("metadataKey", ExpressionHelpers.sha256("my-data-sink"))
+                .containsEntry("url", "https://api/extracted-key-name/" + ExpressionHelpers.base64Encode("my-data-sink"));
+
+        @SuppressWarnings("unchecked")
+        Map<String, String> mapField = (Map<String, String>) after.get("mapField");
+        Assertions.assertThat(mapField)
+                .containsEntry("hexed", "6d792d646174612d73696e6b")
+                .containsEntry("decoded", "my-data-sink")
+                .containsEntry("fallback", "fallback-value")
+                .containsEntry("picked", "my-data-sink")
+                .containsEntry("jsonSafe", "she said \\\"hi\\\"");
+    }
+
+    @Test
     void testResolve_unknownSpelProperty() {
         Map<String, Object> params = new HashMap<>();
         params.put("metadataKey", "{{metadata['keyholder'] + '-' + metadata['dataSink']}}");

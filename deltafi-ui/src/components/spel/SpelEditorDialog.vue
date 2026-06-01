@@ -39,7 +39,7 @@
     :aria-label="dialogHeader"
     modal
     :style="{ width: '70vw', maxWidth: '900px' }"
-    :content-style="{ overflow: 'visible' }"
+    :content-style="{ maxHeight: 'calc(90vh - 10rem)', overflowY: 'auto' }"
   >
     <SpelExpressionEditor
       v-model="localValue"

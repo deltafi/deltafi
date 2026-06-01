@@ -30,6 +30,7 @@ import org.deltafi.core.generated.types.SpelContentInput;
 import org.deltafi.core.generated.types.SpelExpressionMode;
 import org.deltafi.core.generated.types.SpelTestDataInput;
 import org.deltafi.core.generated.types.SpelTestResult;
+import org.deltafi.core.util.ExpressionHelpers;
 import org.springframework.expression.Expression;
 import org.springframework.expression.ParseException;
 import org.springframework.expression.spel.standard.SpelExpressionParser;
@@ -59,11 +60,7 @@ public class SpelTestService {
     // Pattern to extract media types from hasMediaType('type') calls
     private static final Pattern MEDIA_TYPE_PATTERN = Pattern.compile("hasMediaType\\s*\\(\\s*['\"]([^'\"]*)['\"]\\s*\\)");
     // Default test content to ensure content-related expressions can be evaluated
-    private static final SpelContentInput DEFAULT_CONTENT = SpelContentInput.newBuilder()
-            .name("test.dat")
-            .mediaType("application/octet-stream")
-            .size(100L)
-            .build();
+    private static final SpelContentInput DEFAULT_CONTENT = SpelContentInput.newBuilder().name("test.dat").mediaType("application/octet-stream").size(100L).build();
 
     /**
      * Validate a SpEL expression by parsing it and validating each sub-expression
@@ -84,11 +81,7 @@ public class SpelTestService {
         try {
             parsed = PARSER.parseExpression(expression);
         } catch (ParseException e) {
-            return SpelTestResult.newBuilder()
-                    .valid(false)
-                    .errorMessage(e.getMessage())
-                    .errorPosition(e.getPosition())
-                    .build();
+            return SpelTestResult.newBuilder().valid(false).errorMessage(e.getMessage()).errorPosition(e.getPosition()).build();
         }
 
         // If not a SpelExpression (unlikely with SpelExpressionParser), fall back to simple validation
@@ -108,9 +101,7 @@ public class SpelTestService {
             }
         }
 
-        return SpelTestResult.newBuilder()
-                .valid(true)
-                .build();
+        return SpelTestResult.newBuilder().valid(true).build();
     }
 
     /**
@@ -143,35 +134,22 @@ public class SpelTestService {
         metadataKeys.addAll(extractMetadataKeys(expression));
         metadataKeys.addAll(extractContainsKeyKeys(expression));
 
-        List<KeyValue> testMetadata = metadataKeys.stream()
-                .map(key -> new KeyValue(key, "0"))
-                .toList();
+        List<KeyValue> testMetadata = metadataKeys.stream().map(key -> new KeyValue(key, "0")).toList();
 
         Set<String> mediaTypes = extractMediaTypes(expression);
         List<SpelContentInput> testContent = new ArrayList<>();
         testContent.add(DEFAULT_CONTENT);
         for (String mediaType : mediaTypes) {
-            testContent.add(SpelContentInput.newBuilder()
-                    .name("test.dat")
-                    .mediaType(mediaType)
-                    .size(100L)
-                    .build());
+            testContent.add(SpelContentInput.newBuilder().name("test.dat").mediaType(mediaType).size(100L).build());
         }
 
-        SpelTestDataInput testData = SpelTestDataInput.newBuilder()
-                .metadata(testMetadata)
-                .content(testContent)
-                .build();
+        SpelTestDataInput testData = SpelTestDataInput.newBuilder().metadata(testMetadata).content(testContent).build();
 
         // For validation, evaluate without type coercion to catch method errors
         // without failing on valid expressions that return non-boolean types
         SpelTestResult result = validateExpressionEvaluation(expression, testData);
 
-        return SpelTestResult.newBuilder()
-                .valid(result.getValid())
-                .errorMessage(cleanErrorMessage(result.getErrorMessage()))
-                .errorPosition(result.getErrorPosition())
-                .build();
+        return SpelTestResult.newBuilder().valid(result.getValid()).errorMessage(cleanErrorMessage(result.getErrorMessage())).errorPosition(result.getErrorPosition()).build();
     }
 
     /**
@@ -237,16 +215,9 @@ public class SpelTestService {
                 return testTemplate(expression, testData);
             }
         } catch (ParseException e) {
-            return SpelTestResult.newBuilder()
-                    .valid(false)
-                    .errorMessage(e.getMessage())
-                    .errorPosition(e.getPosition())
-                    .build();
+            return SpelTestResult.newBuilder().valid(false).errorMessage(e.getMessage()).errorPosition(e.getPosition()).build();
         } catch (Exception e) {
-            return SpelTestResult.newBuilder()
-                    .valid(false)
-                    .errorMessage(e.getMessage())
-                    .build();
+            return SpelTestResult.newBuilder().valid(false).errorMessage(e.getMessage()).build();
         }
     }
 
@@ -259,34 +230,19 @@ public class SpelTestService {
             Map<String, CoercibleString> metadata = toCoercibleMetadataMap(testData);
             List<Content> content = toContentList(testData);
 
-            ConditionContext context = new ConditionContext(
-                    Collections.unmodifiableMap(metadata),
-                    content.stream().map(Content::copy).toList()
-            );
+            ConditionContext context = new ConditionContext(Collections.unmodifiableMap(metadata), content.stream().map(Content::copy).toList());
 
-            SimpleEvaluationContext evalContext = SimpleEvaluationContext.forReadOnlyDataBinding()
-                    .withRootObject(context)
-                    .withInstanceMethods()
-                    .build();
+            SimpleEvaluationContext evalContext = SimpleEvaluationContext.forReadOnlyDataBinding().withRootObject(context).withInstanceMethods().build();
 
             Expression exp = PARSER.parseExpression(expression);
             // Evaluate without type coercion - we just want to verify the expression is valid
             exp.getValue(evalContext);
 
-            return SpelTestResult.newBuilder()
-                    .valid(true)
-                    .build();
+            return SpelTestResult.newBuilder().valid(true).build();
         } catch (ParseException e) {
-            return SpelTestResult.newBuilder()
-                    .valid(false)
-                    .errorMessage(e.getMessage())
-                    .errorPosition(e.getPosition())
-                    .build();
+            return SpelTestResult.newBuilder().valid(false).errorMessage(e.getMessage()).errorPosition(e.getPosition()).build();
         } catch (Exception e) {
-            return SpelTestResult.newBuilder()
-                    .valid(false)
-                    .errorMessage(e.getMessage())
-                    .build();
+            return SpelTestResult.newBuilder().valid(false).errorMessage(e.getMessage()).build();
         }
     }
 
@@ -294,52 +250,30 @@ public class SpelTestService {
         Map<String, CoercibleString> metadata = toCoercibleMetadataMap(testData);
         List<Content> content = toContentList(testData);
 
-        ConditionContext context = new ConditionContext(
-                Collections.unmodifiableMap(metadata),
-                content.stream().map(Content::copy).toList()
-        );
+        ConditionContext context = new ConditionContext(Collections.unmodifiableMap(metadata), content.stream().map(Content::copy).toList());
 
         // Use SimpleEvaluationContext to match RuleEvaluator behavior
         // CoercibleString handles numeric comparisons in its equals() method
-        SimpleEvaluationContext evalContext = SimpleEvaluationContext.forReadOnlyDataBinding()
-                .withRootObject(context)
-                .withInstanceMethods()
-                .build();
+        SimpleEvaluationContext evalContext = SimpleEvaluationContext.forReadOnlyDataBinding().withRootObject(context).withInstanceMethods().build();
 
         Expression exp = PARSER.parseExpression(expression);
         Boolean result = exp.getValue(evalContext, Boolean.class);
 
-        return SpelTestResult.newBuilder()
-                .valid(true)
-                .result(String.valueOf(result))
-                .build();
+        return SpelTestResult.newBuilder().valid(true).result(String.valueOf(result)).build();
     }
 
     private SpelTestResult testTemplate(String expression, SpelTestDataInput testData) {
         Map<String, CoercibleString> metadata = toCoercibleMetadataMap(testData);
         List<Content> content = toContentList(testData);
 
-        TemplateContext context = TemplateContext.builder()
-                .did(testData != null && testData.getDid() != null ?
-                        UUID.fromString(testData.getDid()) : UUID.randomUUID())
-                .deltaFileName(testData != null && testData.getDeltaFileName() != null ?
-                        testData.getDeltaFileName() : "test-file.dat")
-                .metadata(metadata)
-                .content(content)
-                .build();
+        TemplateContext context = TemplateContext.builder().did(testData != null && testData.getDid() != null ? UUID.fromString(testData.getDid()) : UUID.randomUUID()).deltaFileName(testData != null && testData.getDeltaFileName() != null ? testData.getDeltaFileName() : "test-file.dat").metadata(metadata).content(content).build();
 
-        SimpleEvaluationContext evalContext = SimpleEvaluationContext.forReadOnlyDataBinding()
-                .withRootObject(context)
-                .withInstanceMethods()
-                .build();
+        SimpleEvaluationContext evalContext = SimpleEvaluationContext.forReadOnlyDataBinding().withRootObject(context).withInstanceMethods().build();
 
         Expression exp = ParameterUtil.newExpression(expression);
         String result = exp.getValue(evalContext, String.class);
 
-        return SpelTestResult.newBuilder()
-                .valid(true)
-                .result(result)
-                .build();
+        return SpelTestResult.newBuilder().valid(true).result(result).build();
     }
 
     private Map<String, CoercibleString> toCoercibleMetadataMap(SpelTestDataInput testData) {
@@ -378,18 +312,96 @@ public class SpelTestService {
     }
 
     /**
-     * Context for template expressions (matches ExpressionInput in ParameterResolver)
+     * Context for template expressions (matches ExpressionInput in ParameterResolver). Helper methods
+     * here must stay in sync with ParameterResolver.ExpressionInput so validation through the UI's SpEL
+     * test panel resolves the same methods that resolve at runtime.
      */
     @Builder
     @SuppressWarnings("unused")
-    public record TemplateContext(
-            UUID did,
-            String deltaFileName,
-            Map<String, CoercibleString> metadata,
-            List<Content> content
-    ) {
+    public record TemplateContext(UUID did, String deltaFileName, Map<String, CoercibleString> metadata,
+                                  List<Content> content) {
         public String now() {
             return OffsetDateTime.now().toString();
+        }
+
+        // ---- Encoding / decoding ----
+        public String base64Encode(CharSequence value) {
+            return ExpressionHelpers.base64Encode(value);
+        }
+
+        public String base64Decode(CharSequence value) {
+            return ExpressionHelpers.base64Decode(value);
+        }
+
+        public String base64UrlEncode(CharSequence value) {
+            return ExpressionHelpers.base64UrlEncode(value);
+        }
+
+        public String base64UrlDecode(CharSequence value) {
+            return ExpressionHelpers.base64UrlDecode(value);
+        }
+
+        public String hexEncode(CharSequence value) {
+            return ExpressionHelpers.hexEncode(value);
+        }
+
+        public String hexDecode(CharSequence value) {
+            return ExpressionHelpers.hexDecode(value);
+        }
+
+        public String urlEncode(CharSequence value) {
+            return ExpressionHelpers.urlEncode(value);
+        }
+
+        public String urlDecode(CharSequence value) {
+            return ExpressionHelpers.urlDecode(value);
+        }
+
+        // ---- Hashing (hex output) ----
+        public String sha256(CharSequence value) {
+            return ExpressionHelpers.sha256(value);
+        }
+
+        public String sha512(CharSequence value) {
+            return ExpressionHelpers.sha512(value);
+        }
+
+        public String sha1(CharSequence value) {
+            return ExpressionHelpers.sha1(value);
+        }
+
+        public String md5(CharSequence value) {
+            return ExpressionHelpers.md5(value);
+        }
+
+        // ---- Escaping ----
+        public String escapeJson(CharSequence value) {
+            return ExpressionHelpers.escapeJson(value);
+        }
+
+        public String escapeXml(CharSequence value) {
+            return ExpressionHelpers.escapeXml(value);
+        }
+
+        public String escapeHtml(CharSequence value) {
+            return ExpressionHelpers.escapeHtml(value);
+        }
+
+        // ---- Utility ----
+        public String uuid() {
+            return ExpressionHelpers.uuid();
+        }
+
+        public String timestamp() {
+            return ExpressionHelpers.timestamp();
+        }
+
+        public String coalesce(CharSequence... values) {
+            return ExpressionHelpers.coalesce(values);
+        }
+
+        public String defaultIfBlank(CharSequence v, CharSequence fallback) {
+            return ExpressionHelpers.defaultIfBlank(v, fallback);
         }
     }
 }
