@@ -17,6 +17,7 @@
  */
 package org.deltafi.core.action.mediatype;
 
+import lombok.extern.slf4j.Slf4j;
 import org.apache.tika.Tika;
 import org.deltafi.actionkit.action.content.ActionContent;
 import org.deltafi.actionkit.action.error.ErrorResult;
@@ -29,10 +30,14 @@ import org.springframework.stereotype.Component;
 
 import javax.ws.rs.core.MediaType;
 import java.io.IOException;
-import java.util.List;
-import java.util.Map;
+import java.io.InputStream;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.regex.Pattern;
+import java.util.stream.Stream;
 
 @Component
+@Slf4j
 public class ModifyMediaType extends TransformAction<ModifyMediaTypeParameters> {
     public ModifyMediaType() {
         super(ActionOptions.builder()
@@ -97,15 +102,21 @@ public class ModifyMediaType extends TransformAction<ModifyMediaTypeParameters> 
                 if (params.isAutodetectByNameOnly()) {
                     mediaType = TIKA.detect(content.getName());
                 } else {
-                    try {
-                        mediaType = TIKA.detect(content.loadInputStream(), content.getName());
+                    try (InputStream inputStream = content.loadInputStream()) {
+                        mediaType = TIKA.detect(inputStream, content.getName());
+                    } catch (IOException e) {
+                        log.warn("Unable to detect media type", e);
+                    }
 
-                        if (params.isAutodetectPlainTextTypes() && mediaType.equals(MediaType.TEXT_PLAIN) &&
-                                NdjsonDetector.isNdjson(content.loadInputStream())) {
-                            mediaType = "application/x-ndjson";
+                    if (params.isAutodetectPlainTextTypes() &&
+                            ((mediaType != null) && mediaType.equals(MediaType.TEXT_PLAIN))) {
+                        try (InputStream inputStream = content.loadInputStream()) {
+                            if (NdjsonDetector.isNdjson(inputStream)) {
+                                mediaType = "application/x-ndjson";
+                            }
+                        } catch (IOException e) {
+                            log.warn("Unable to detect plain text media type", e);
                         }
-                    } catch (IOException ignored) {
-                        // do not set the mediaType if there is an exception, but continue processing
                     }
                 }
             }
@@ -118,8 +129,15 @@ public class ModifyMediaType extends TransformAction<ModifyMediaTypeParameters> 
         return result;
     }
 
+    private static final ConcurrentHashMap<String, Pattern> PATTERN_MAP = new ConcurrentHashMap<>();
+
     private boolean matchesPattern(final String value, final String pattern) {
-        String regexPattern = pattern.replace("*", ".*");
-        return value.matches(regexPattern);
+        Pattern p = PATTERN_MAP.computeIfAbsent(pattern, this::createPattern);
+        return p.matcher(value).matches();
+    }
+
+    private Pattern createPattern(String patternString) {
+        String[] parts = patternString.split("\\*", -1);
+        return Pattern.compile(String.join(".*", Stream.of(parts).map(Pattern::quote).toArray(String[]::new)));
     }
 }

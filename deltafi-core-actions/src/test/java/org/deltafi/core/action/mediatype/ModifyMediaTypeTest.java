@@ -40,7 +40,8 @@ class ModifyMediaTypeTest {
     @Test
     void modifiesMediaTypes() {
         ModifyMediaTypeParameters params = new ModifyMediaTypeParameters();
-        params.setMediaTypeMap(Map.of("image/*", "image/png", "video/mp4", "override/me"));
+        params.setMediaTypeMap(Map.of("image/*", "image/png", "video/mp4", "override/me",
+                "application/vnd.api+json", "special-chars"));
         params.setIndexMediaTypeMap(Map.of(1, "video/mp4", 5, "ignore/me"));
         params.setErrorOnMissingIndex(false);
 
@@ -48,7 +49,8 @@ class ModifyMediaTypeTest {
                 .content(List.of(
                         runner.saveEmptyContent("file1.jpg", "image/jpeg"),
                         runner.saveEmptyContent("file2.mp4", "video/mp4"),
-                        runner.saveEmptyContent("file3.png", "image/png")))
+                        runner.saveEmptyContent("file3.png", "image/png"),
+                        runner.saveEmptyContent("file4.vnd", "application/vnd.api+json")))
                 .build();
 
         ResultType result = action.transform(context, params, input);
@@ -59,6 +61,7 @@ class ModifyMediaTypeTest {
         assertEquals("image/png", transformResult.getContent().get(0).getMediaType());
         assertEquals("video/mp4", transformResult.getContent().get(1).getMediaType());
         assertEquals("image/png", transformResult.getContent().get(2).getMediaType());
+        assertEquals("special-chars", transformResult.getContent().get(3).getMediaType());
     }
 
     @Test
