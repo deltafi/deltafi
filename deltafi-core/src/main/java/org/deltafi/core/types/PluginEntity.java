@@ -212,6 +212,16 @@ public class PluginEntity {
     }
 
     /**
+     * Queue an operator-initiated redeploy. State and lastStateChange update only;
+     * version/registrationHash/installAttempts are preserved since image/version aren't changing.
+     */
+    public void transitionToRedeploying() {
+        this.installState = PluginState.REDEPLOYING;
+        this.installError = null;
+        this.lastStateChange = OffsetDateTime.now();
+    }
+
+    /**
      * Reset to PENDING state for retry.
      */
     public void transitionToPending() {

@@ -45,7 +45,7 @@ import Ripple from "primevue/ripple";
 
 const vRipple = Ripple;
 
-const emit = defineEmits(["reloadPlugins", "pluginRemovalErrors", "retry", "rollback", "enable", "disable"]);
+const emit = defineEmits(["reloadPlugins", "pluginRemovalErrors", "retry", "rollback", "enable", "disable", "redeploy"]);
 const hasPermission = inject("hasPermission");
 const editingPlugin = inject("isEditingPlugin");
 const menu = ref();
@@ -93,6 +93,14 @@ const items = computed(() => [
     visible: !data.value.disabled && data.value.installState === "INSTALLED" && hasPermission("PluginUninstall"),
     command: () => {
       emit("disable", data.value);
+    },
+  },
+  {
+    label: "Redeploy Plugin",
+    icon: "text-muted pi pi-replay",
+    visible: data.value.installState === "INSTALLED" && !data.value.disabled && hasPermission("Admin"),
+    command: () => {
+      emit("redeploy", data.value);
     },
   },
   {

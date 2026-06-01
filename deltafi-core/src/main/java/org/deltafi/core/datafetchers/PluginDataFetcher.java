@@ -176,6 +176,13 @@ public class PluginDataFetcher {
         return deployerService.redeployAllPlugins();
     }
 
+    @DgsMutation
+    @NeedsPermission.PluginInstall
+    public Result redeployPlugin(@InputArgument PluginCoordinates pluginCoordinates) {
+        auditLogger.audit("redeployed plugin {}", pluginCoordinates);
+        return deployerService.redeployPlugin(pluginCoordinates);
+    }
+
     @DgsData(parentType = "Plugin", field = "pluginEnvVars")
     @NeedsPermission.Admin
     public List<KeyValue> pluginEnvVars(DgsDataFetchingEnvironment dfe) {

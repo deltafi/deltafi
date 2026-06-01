@@ -39,7 +39,7 @@
                     {{ getPluginDisplayName(data) }}
                     <i v-if="data.imageName" class="fa-brands fa-docker docker-icon small" v-tooltip.top="getImageName(data)"></i>
                   </div>
-                  <PluginActionMenu v-if="!data.readOnly && $hasSomePermissions('PluginInstall', 'PluginUninstall')" :row-data-prop="data" @reload-plugins="loadPlugins()" @plugin-removal-errors="pluginRemovalErrors" @retry="retryInstall" @rollback="rollback" @enable="enable" @disable="disable" />
+                  <PluginActionMenu v-if="!data.readOnly && $hasSomePermissions('PluginInstall', 'PluginUninstall')" :row-data-prop="data" @reload-plugins="loadPlugins()" @plugin-removal-errors="pluginRemovalErrors" @retry="retryInstall" @rollback="rollback" @enable="enable" @disable="disable" @redeploy="redeploy" />
                 </div>
               </template>
             </Column>
@@ -74,6 +74,7 @@
       </Splitter>
     </Panel>
   </div>
+  <ConfirmDialog group="redeployPlugin" />
   <Dialog v-model:visible="errorOverlayDialog" :style="{ width: '750px' }" header="Errors" :modal="true" @hide="hideErrorsDialog()">
     <Message severity="error" :sticky="true" class="mb-2 mt-0" :closable="false">
       <ul>
@@ -102,8 +103,10 @@ import _ from "lodash";
 
 import Button from "primevue/button";
 import Column from "primevue/column";
+import ConfirmDialog from "primevue/confirmdialog";
 import DataTable from "primevue/datatable";
 import Dialog from "primevue/dialog";
+import { useConfirm } from "primevue/useconfirm";
 import Message from "primevue/message";
 import Panel from "primevue/panel";
 import Splitter from "primevue/splitter";
@@ -129,7 +132,8 @@ const errorOverlayDialog = ref(false);
 const route = useRoute();
 const router = useRouter();
 const notify = useNotifications();
-const { data: plugins, fetch: fetchPlugins, loading, loaded, retryPluginInstall, rollbackPlugin, disablePlugin, enablePlugin } = usePlugins();
+const confirm = useConfirm();
+const { data: plugins, fetch: fetchPlugins, loading, loaded, retryPluginInstall, rollbackPlugin, disablePlugin, enablePlugin, redeployPlugin } = usePlugins();
 
 const showLoading = computed(() => !loaded.value && loading.value);
 
@@ -157,7 +161,7 @@ const loadPlugins = async () => {
 };
 
 const autoRefreshInterval = ref(null);
-const IN_PROGRESS_STATES = ["PENDING", "INSTALLING", "REMOVING"];
+const IN_PROGRESS_STATES = ["PENDING", "INSTALLING", "REMOVING", "REDEPLOYING"];
 
 const hasInProgressPlugins = computed(() => {
   if (!plugins.value?.plugins) return false;
@@ -279,6 +283,8 @@ const getStateLabel = (plugin) => {
       return "Failed";
     case "REMOVING":
       return "Removing";
+    case "REDEPLOYING":
+      return "Redeploying";
     default:
       return plugin.installState;
   }
@@ -297,6 +303,8 @@ const getStateSeverity = (plugin) => {
       return "danger";
     case "REMOVING":
       return "warn";
+    case "REDEPLOYING":
+      return "info";
     default:
       return "secondary";
   }
@@ -345,6 +353,31 @@ const enable = async (plugin) => {
     loadPlugins();
   } else {
     notify.error("Enable Failed", `Could not enable ${plugin.displayName}`);
+  }
+};
+
+const redeploy = (plugin) => {
+  confirm.require({
+    position: "center",
+    group: "redeployPlugin",
+    message: `Redeploy ${plugin.displayName} Plugin?`,
+    acceptLabel: "Redeploy",
+    rejectLabel: "Cancel",
+    icon: "pi pi-exclamation-triangle",
+    accept: () => confirmedRedeploy(plugin),
+    reject: () => { },
+  });
+};
+
+const confirmedRedeploy = async (plugin) => {
+  const coords = plugin.pluginCoordinates;
+  const result = await redeployPlugin(coords.groupId, coords.artifactId, coords.version);
+  if (result?.redeployPlugin?.success) {
+    notify.info("Redeploy Queued", `${plugin.displayName} is being redeployed`);
+    loadPlugins();
+  } else {
+    const errors = result?.redeployPlugin?.errors || [];
+    notify.error("Redeploy Failed", errors.length ? errors.join("; ") : `Could not redeploy ${plugin.displayName}`);
   }
 };
 

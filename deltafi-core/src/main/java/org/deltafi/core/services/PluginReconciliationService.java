@@ -101,7 +101,14 @@ public class PluginReconciliationService {
             case INSTALLED -> handleInstalled(plugin);
             case FAILED -> handleFailed(plugin);
             case REMOVING -> handleRemoving(plugin);
+            case REDEPLOYING -> handleRedeploying(plugin);
         }
+    }
+
+    private void handleRedeploying(PluginEntity plugin) {
+        log.info("Redeploying plugin {} with current environment", plugin.getPluginCoordinates());
+        pluginService.markInstalling(plugin.getPluginCoordinates(), false);
+        startInstall(plugin);
     }
 
     private void handlePending(PluginEntity plugin) {

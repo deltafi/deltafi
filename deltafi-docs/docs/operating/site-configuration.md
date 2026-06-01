@@ -138,7 +138,11 @@ deltafi:
       value: "DEBUG"
 ```
 
-After changing `pluginEnv`, run `deltafi up` to load the variables into `deltafi-core` so future plugin deployments will get the environment variables injected. Existing plugins need to be redeployed to pick up the new environment variables.
+After changing `pluginEnv`, run `deltafi up` to load the variables into `deltafi-core` so future plugin deployments will get the environment variables injected. Existing plugins need to be redeployed to pick up the new environment variables. The plugins can be redeployed from the web app Plugins page or via the command line with:
+
+```bash
+deltafi plugin redeploy <pluginName>
+```
 
 
 ::: tip

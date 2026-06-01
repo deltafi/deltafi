@@ -173,6 +173,7 @@ Switch modes with `deltafi config --wizard` (interactive) or by passing the appr
       - [list](#plugin-list)
       - [install](#plugin-install)
       - [uninstall](#plugin-uninstall)
+      - [redeploy](#plugin-redeploy)
       - [describe](#plugin-describe)
       - [generate](#plugin-generate)
       - [lint](#plugin-lint)
@@ -922,6 +923,10 @@ Manage plugins in DeltaFi.
 - `uninstall [names...]`: Uninstall one or more plugins
   ```bash
   deltafi plugin uninstall <name>
+  ```
+- `redeploy <pluginName>`: Queue a plugin for redeploy so it picks up the current `pluginEnv` and other deployment settings. The plugin enters the `REDEPLOYING` state and the reconciler rebuilds the deployment on its next tick. System plugins (`system-plugin`, `deltafi-core-actions`) cannot be redeployed.
+  ```bash
+  deltafi plugin redeploy <name>
   ```
 - `describe [pluginName]`: Describe a plugin and its actions
   ```bash

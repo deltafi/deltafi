@@ -118,23 +118,42 @@ public abstract class BaseDeployerService implements DeployerService {
 
     @Override
     public List<Result> redeployAllPlugins() {
-        List<InstallDetails> installDetails = pluginService.getPlugins().stream()
+        List<PluginEntity> redeployable = pluginService.getPlugins().stream()
                 .filter(this::isRedeployable)
-                .map(this::toInstallDetails)
                 .toList();
-        if (installDetails.isEmpty()) {
+        if (redeployable.isEmpty()) {
             return List.of();
         }
-        log.info("Redeploying {} plugin(s) with updated environment", installDetails.size());
-        return installOrUpgradePlugins(installDetails);
+        log.info("Queueing redeploy for {} plugin(s)", redeployable.size());
+        return redeployable.stream()
+                .map(plugin -> {
+                    pluginService.markRedeploying(plugin.getPluginCoordinates());
+                    return (Result) Result.builder().success(true)
+                            .info(List.of("Plugin queued for redeploy: " + plugin.getPluginCoordinates()))
+                            .build();
+                })
+                .toList();
+    }
+
+    @Override
+    public Result redeployPlugin(PluginCoordinates pluginCoordinates) {
+        PluginEntity plugin = pluginService.getPlugin(pluginCoordinates).orElse(null);
+        if (plugin == null) {
+            return Result.builder().success(false)
+                    .errors(List.of("Plugin not found: " + pluginCoordinates)).build();
+        }
+        if (!isRedeployable(plugin)) {
+            return Result.builder().success(false)
+                    .errors(List.of("Plugin cannot be redeployed: " + pluginCoordinates)).build();
+        }
+        log.info("Queueing redeploy for plugin {}", pluginCoordinates);
+        pluginService.markRedeploying(pluginCoordinates);
+        return Result.builder().success(true)
+                .info(List.of("Plugin queued for redeploy")).build();
     }
 
     private boolean isRedeployable(PluginEntity plugin) {
         return isNotSystemOrCore(plugin) && StringUtils.isNotBlank(plugin.getImageName());
-    }
-
-    private InstallDetails toInstallDetails(PluginEntity plugin) {
-        return InstallDetails.from(plugin.imageAndTag(), plugin.getImagePullSecret());
     }
 
     @Override

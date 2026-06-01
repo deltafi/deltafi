@@ -705,6 +705,64 @@ Examples:
 	},
 }
 
+var redeployCmd = &cobra.Command{
+	Use:   "redeploy <name>",
+	Short: "Redeploy a plugin with the current environment",
+	Long: `Redeploy a plugin to pick up changes to pluginEnv or other deployment settings.
+
+The plugin's deployment will be recreated with the currently configured plugin
+environment variables. System plugins (system-plugin, deltafi-core-actions)
+cannot be redeployed.
+
+Examples:
+  deltafi plugin redeploy my-plugin`,
+	Args: cobra.ExactArgs(1),
+	ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+		resp, err := graphql.GetPlugins()
+		if err != nil {
+			return nil, cobra.ShellCompDirectiveError
+		}
+		var values []string
+		for _, plugin := range resp.Plugins {
+			if plugin.DisplayName != "System Plugin" && plugin.DisplayName != "deltafi-core-actions" && !slices.Contains(args, plugin.DisplayName) {
+				values = append(values, plugin.DisplayName)
+			}
+		}
+		return escapedCompletions(values, toComplete)
+	},
+	RunE: func(cmd *cobra.Command, args []string) error {
+		RequireRunningDeltaFi()
+
+		pluginName := args[0]
+		plugin, err := findPluginByName(pluginName)
+		if err != nil {
+			return err
+		}
+
+		resp, err := graphql.RedeployPlugin(plugin.PluginCoordinates.GroupId, plugin.PluginCoordinates.ArtifactId, plugin.PluginCoordinates.Version)
+		if err != nil {
+			fmt.Println(styles.RenderError(err))
+			fmt.Println(styles.FAIL(pluginName))
+			os.Exit(1)
+		}
+
+		if !resp.RedeployPlugin.Success {
+			errorStrings := make([]string, 0, len(resp.RedeployPlugin.Errors))
+			for _, e := range resp.RedeployPlugin.Errors {
+				if e != nil {
+					errorStrings = append(errorStrings, *e)
+				}
+			}
+			fmt.Println(styles.RenderErrorStringsWithContext(errorStrings, fmt.Sprintf("Unable to redeploy %s", pluginName)))
+			fmt.Println(styles.FAIL(pluginName))
+			os.Exit(1)
+		}
+
+		fmt.Println(styles.OK(pluginName + " queued for redeploy"))
+		return nil
+	},
+}
+
 var retryCmd = &cobra.Command{
 	Use:   "retry <name>",
 	Short: "Retry a failed plugin installation",
@@ -761,6 +819,7 @@ func init() {
 	pluginCmd.AddCommand(enableCmd)
 	pluginCmd.AddCommand(rollbackCmd)
 	pluginCmd.AddCommand(retryCmd)
+	pluginCmd.AddCommand(redeployCmd)
 
 	listCmd.Flags().BoolP("plain", "p", false, "Plain output, omitting table borders")
 

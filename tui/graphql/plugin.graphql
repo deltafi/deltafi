@@ -121,3 +121,11 @@ mutation RollbackPlugin($groupId: String!, $artifactId: String!, $version: Strin
 mutation RetryPluginInstall($groupId: String!, $artifactId: String!, $version: String!) {
   retryPluginInstall(pluginCoordinates: { groupId: $groupId, artifactId: $artifactId, version: $version })
 }
+
+mutation RedeployPlugin($groupId: String!, $artifactId: String!, $version: String!) {
+  redeployPlugin(pluginCoordinates: { groupId: $groupId, artifactId: $artifactId, version: $version }) {
+    success
+    info
+    errors
+  }
+}

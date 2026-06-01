@@ -50,6 +50,7 @@ enum PluginState {
     INSTALLED
     FAILED
     REMOVING
+    REDEPLOYING
 }
 
 """
@@ -291,4 +292,7 @@ extend type Mutation {
 
     "Redeploy all installed plugins with the current environment variables"
     redeployAllPlugins: [Result!]!
+
+    "Queue a single plugin for redeploy with the current environment variables"
+    redeployPlugin(pluginCoordinates: PluginCoordinatesInput!): Result!
 }

@@ -162,6 +162,24 @@ export default function usePlugins() {
     return sendGraphQLQuery(query, "enablePlugin", "mutation");
   };
 
+  const redeployPlugin = async (groupId: String, artifactId: String, version: String) => {
+    const query = {
+      redeployPlugin: {
+        __args: {
+          pluginCoordinates: {
+            groupId: groupId,
+            artifactId: artifactId,
+            version: version,
+          },
+        },
+        success: true,
+        info: true,
+        errors: true,
+      },
+    };
+    return sendGraphQLQuery(query, "redeployPlugin", "mutation");
+  };
+
   const sendGraphQLQuery = async (query: any, operationName: string, queryType?: string) => {
     try {
       await queryGraphQL(query, operationName, queryType);
@@ -184,6 +202,7 @@ export default function usePlugins() {
     rollbackPlugin,
     disablePlugin,
     enablePlugin,
+    redeployPlugin,
     fetch,
     setPluginVariableValues,
   };

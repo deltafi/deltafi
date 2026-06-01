@@ -52,5 +52,12 @@ public enum PluginState {
      * Plugin is being removed.
      * The reconciler is actively stopping and removing the container/pod.
      */
-    REMOVING
+    REMOVING,
+
+    /**
+     * Plugin is queued for an operator-initiated redeploy.
+     * The image/version is unchanged; the reconciler will rebuild the deployment
+     * to pick up current environment (e.g. updated pluginEnv) and transition to INSTALLING.
+     */
+    REDEPLOYING
 }

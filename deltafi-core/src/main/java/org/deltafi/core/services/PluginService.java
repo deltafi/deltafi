@@ -1024,6 +1024,18 @@ public class PluginService implements Snapshotter {
     }
 
     /**
+     * Queue an operator-initiated redeploy. The reconciler will pick this up and
+     * transition the plugin through INSTALLING via startInstall.
+     */
+    @Transactional
+    public void markRedeploying(PluginCoordinates pluginCoordinates) {
+        getPluginByKey(pluginCoordinates).ifPresent(plugin -> {
+            plugin.transitionToRedeploying();
+            pluginRepo.save(plugin);
+        });
+    }
+
+    /**
      * Get summary of plugin states for health status.
      */
     public PluginStateSummary getInstallSummary() {

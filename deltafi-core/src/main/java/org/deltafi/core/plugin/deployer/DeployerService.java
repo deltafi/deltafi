@@ -85,6 +85,14 @@ public interface DeployerService extends Snapshotter {
     List<Result> redeployAllPlugins();
 
     /**
+     * Queue a single plugin for redeploy. The reconciler will pick the plugin up
+     * and rebuild the deployment with the current environment variables.
+     * @param pluginCoordinates coordinates of the plugin to redeploy
+     * @return result indicating the plugin was queued (or why it was rejected)
+     */
+    Result redeployPlugin(PluginCoordinates pluginCoordinates);
+
+    /**
      * Install the list of plugins using the install details
      * @param installDetails list of plugin install details to deploy
      * @return merged results from each install
