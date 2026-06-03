@@ -133,7 +133,6 @@ const confirm = useConfirm();
 const editing = inject("isEditing");
 const emit = defineEmits(["reloadDataSinks", "updateRateLimit"]);
 const flowData = ref({});
-const flowDataByPlugin = ref({});
 const menu = ref();
 const selectedPlugin = ref(null);
 const confirming = ref(false);
@@ -185,7 +184,6 @@ const filteredFlowDataByPlugin = computed(() => {
 
 onBeforeMount(async () => {
   flowData.value = props.flowDataProp;
-  flowDataByPlugin.value = props.flowDataByPluginProp;
   filters.value["global"].value = props.filterFlowsTextProp;
 });
 
@@ -233,7 +231,7 @@ const confirmAllFlows = (runType, message) => {
       outlined: true,
     },
     acceptProps: {
-      label: `${runType} ${message} all <b>${selectedPlugin.value}</b> data sinks?`,
+      label: runType,
     },
     accept: () => runForAllFlowsForPlugin(runType),
     reject: () => {},
@@ -241,7 +239,8 @@ const confirmAllFlows = (runType, message) => {
 };
 
 const runForAllFlowsForPlugin = async (runType) => {
-  const pluginFlows = flowDataByPlugin.value[selectedPlugin.value];
+  const pluginFlows = props.flowDataByPluginProp[selectedPlugin.value];
+  if (!pluginFlows) return;
   for (const element of pluginFlows) {
     if (runType === "Start") {
       notify.info("Starting All Data Sinks", `Starting all <b>${selectedPlugin.value}</b> data sinks.`, 3000);

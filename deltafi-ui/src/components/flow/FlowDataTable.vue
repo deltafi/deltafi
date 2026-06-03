@@ -130,7 +130,6 @@ const confirm = useConfirm();
 const autoRefresh = null;
 const emit = defineEmits(["reloadTransforms"]);
 const flowData = ref({});
-const flowDataByPlugin = ref({});
 
 const { startTransformFlowByName, stopTransformFlowByName, enableTestTransformFlowByName, disableTestTransformFlowByName } = useFlowQueryBuilder();
 const menu = ref();
@@ -191,7 +190,8 @@ const props = defineProps({
 });
 
 const runForAllFlowsForPlugin = (runType) => {
-  const pluginFlows = flowDataByPlugin.value[selectedPlugin.value];
+  const pluginFlows = props.flowDataByPluginProp[selectedPlugin.value];
+  if (!pluginFlows) return;
   pluginFlows.forEach(async (element) => {
     if (runType === "Start") {
       notify.info("Starting All Transforms", `Starting all <b>${selectedPlugin.value}</b> transforms.`, 3000);
@@ -237,7 +237,6 @@ onUnmounted(() => {
 
 onBeforeMount(async () => {
   flowData.value = props.flowDataProp;
-  flowDataByPlugin.value = props.flowDataByPluginProp;
   filters.value["global"].value = props.filterFlowsTextProp;
 });
 
@@ -276,7 +275,7 @@ const confirmAllFlows = (runType, message) => {
       outlined: true,
     },
     acceptProps: {
-      label: `${runType} ${message} all <b>${selectedPlugin.value}</b> transforms?`,
+      label: runType,
     },
     accept: () => {
       runForAllFlowsForPlugin(runType);

@@ -223,6 +223,7 @@ import StatusBadge from "@/components/dataSources/StatusBadge.vue";
 import Timestamp from "@/components/Timestamp.vue";
 import TopicSubscribers from "@/components/topics/TopicSubscribers.vue";
 import useDataSource from "@/composables/useDataSource";
+import useFlows from "@/composables/useFlows";
 import useNotifications from "@/composables/useNotifications";
 import { computed, inject, onBeforeMount, ref } from "vue";
 
@@ -242,7 +243,6 @@ const confirm = useConfirm();
 const editing = inject("isEditing");
 const emit = defineEmits(["reloadDataSources", "updateRateLimit"]);
 const flowData = ref({});
-const flowDataByPlugin = ref({});
 const menu = ref();
 const selectedPlugin = ref(null);
 const confirming = ref(false);
@@ -251,12 +251,6 @@ const {
   setRestDataSourceMaxErrors,
   setTimedDataSourceMaxErrors,
   setOnErrorDataSourceMaxErrors,
-  startRestDataSourceFlowByName,
-  stopRestDataSourceFlowByName,
-  startTimedDataSourceFlowByName,
-  stopTimedDataSourceFlowByName,
-  startOnErrorDataSourceFlowByName,
-  stopOnErrorDataSourceFlowByName,
   enableTestRestDataSourceFlowByName,
   disableTestRestDataSourceFlowByName,
   enableTestTimedDataSourceFlowByName,
@@ -264,6 +258,7 @@ const {
   enableTestOnErrorDataSourceFlowByName,
   disableTestOnErrorDataSourceFlowByName,
 } = useDataSource();
+const { setFlowState } = useFlows();
 
 const props = defineProps({
   flowDataProp: {
@@ -305,7 +300,6 @@ const filteredFlowDataByPlugin = computed(() => {
 
 onBeforeMount(async () => {
   flowData.value = props.flowDataProp;
-  flowDataByPlugin.value = props.flowDataByPluginProp;
   filters.value["global"].value = props.filterFlowsTextProp;
 });
 
@@ -372,23 +366,11 @@ const confirmAllFlows = (runType, message) => {
       outlined: true,
     },
     acceptProps: {
-      label: `${runType} ${message} all <b>${selectedPlugin.value}</b> data sources?`,
+      label: runType,
     },
     accept: () => runForAllFlowsForPlugin(runType),
     reject: () => {},
   });
-};
-
-const startMethods = {
-  REST_DATA_SOURCE: startRestDataSourceFlowByName,
-  TIMED_DATA_SOURCE: startTimedDataSourceFlowByName,
-  ON_ERROR_DATA_SOURCE: startOnErrorDataSourceFlowByName,
-};
-
-const stopMethods = {
-  REST_DATA_SOURCE: stopRestDataSourceFlowByName,
-  TIMED_DATA_SOURCE: stopTimedDataSourceFlowByName,
-  ON_ERROR_DATA_SOURCE: stopOnErrorDataSourceFlowByName,
 };
 
 const enableTestMethods = {
@@ -404,15 +386,16 @@ const disableTestMethods = {
 };
 
 const runForAllFlowsForPlugin = async (runType) => {
-  const pluginFlows = flowDataByPlugin.value[selectedPlugin.value];
+  const pluginFlows = props.flowDataByPluginProp[selectedPlugin.value];
+  if (!pluginFlows) return;
   for (const element of pluginFlows) {
     const type = element.dataSourceType;
     if (runType === "Start") {
       notify.info("Starting All Data Sources", `Starting all <b>${selectedPlugin.value}</b> data sources.`, 3000);
-      await startMethods[type](element.name);
+      await setFlowState(type, element.name, "RUNNING");
     } else if (runType === "Stop") {
       notify.info("Stopping All Data Sources", `Stopping all <b>${selectedPlugin.value}</b> data sources.`, 3000);
-      await stopMethods[type](element.name);
+      await setFlowState(type, element.name, "STOPPED");
     } else if (runType === "Enable") {
       notify.info("Enabling Test Mode", `Enabling Test Mode for all <b>${selectedPlugin.value}</b> data sources.`, 3000);
       await enableTestMethods[type](element.name);
