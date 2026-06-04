@@ -8,11 +8,15 @@ description = 'DeltaFi gradle plugin'
 
 license {
     exclude("OrgDeltafiPluginConventionPlugin.java")
+    exclude("OrgDeltafiTestSummaryPlugin.java")
+    exclude("OrgDeltafiGitVersionPlugin.java")
 }
 
 javadoc {
     source = sourceSets.main.allJava.matching {
         exclude 'OrgDeltafiPluginConventionPlugin.java'
+        exclude 'OrgDeltafiTestSummaryPlugin.java'
+        exclude 'OrgDeltafiGitVersionPlugin.java'
     }
 }
 
@@ -20,11 +24,10 @@ dependencies {
     implementation project(':deltafi-common')
     implementation project(':deltafi-common-spring')
 
-    implementation "org.deltafi.git-version:git-version:2.0.1"
     implementation "org.springframework.boot:spring-boot-gradle-plugin:${springBootVersion}"
 }
 
-group 'org.deltafi.gradle-plugin'
+group = 'org.deltafi.gradle-plugin'
 
 gradlePlugin {
     website = 'https://deltafi.org'
@@ -55,6 +58,16 @@ pluginDescriptors {
                 declaration.setDisplayName("DeltaFi Plugin Convention")
                 declaration.setDescription("Convention used for a DeltaFi plugin")
                 declaration.getTags().set(['deltafi', 'DeltaFi', 'normalization'])
+            }
+            if (declaration.getId() == "org.deltafi.test-summary") {
+                declaration.setDisplayName("DeltaFi Test Summary")
+                declaration.setDescription("Pretty-prints a boxed summary of test results across all subprojects after the build finishes")
+                declaration.getTags().set(['deltafi', 'DeltaFi', 'testing'])
+            }
+            if (declaration.getId() == "org.deltafi.git-version") {
+                declaration.setDisplayName("DeltaFi Git Version")
+                declaration.setDescription("Derives the project version from the latest git tag (`git describe --tags`)")
+                declaration.getTags().set(['deltafi', 'DeltaFi', 'versioning'])
             }
         }
     }

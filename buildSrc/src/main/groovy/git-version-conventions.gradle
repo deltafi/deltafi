@@ -1,0 +1,59 @@
+import javax.inject.Inject
+import org.gradle.process.ExecOperations
+
+abstract class GitVersionExecHelper {
+    @Inject
+    abstract ExecOperations getExecOperations()
+}
+
+if (!rootProject.ext.has('reckonedVersion')) {
+    def helper = rootProject.objects.newInstance(GitVersionExecHelper)
+    def sout = new ByteArrayOutputStream()
+    def serr = new ByteArrayOutputStream()
+    def execResult = helper.execOperations.exec {
+        commandLine 'git', 'describe', '--tags'
+        ignoreExitValue = true
+        standardOutput = sout
+        errorOutput = serr
+    }
+    def gitDescribeVersion = execResult.exitValue == 0 ? sout.toString().trim() : ""
+    def reckonedVersion = gitDescribeVersion
+
+    if (!gitDescribeVersion) {
+        reckonedVersion = "0.0.0-SNAPSHOT"
+    } else {
+        def rcMatcher = gitDescribeVersion =~ /(\d+)\.(\d+)-(alpha|beta|rc)(\d*)-.*/
+        def snapshotMatcher = gitDescribeVersion =~ /(\d+)\.(\d+)\.(\d+)-(\d+)-([0-9a-z]+).*/
+        if (rcMatcher.size() > 0) {
+            def major = rcMatcher[0][1]
+            def minor = rcMatcher[0][2]
+            def rc = rcMatcher[0][3]
+            def num = rcMatcher[0][4] == "" ? 0 : rcMatcher[0][4] as Integer
+            num++
+            reckonedVersion = "${major}.${minor}-${rc}${num}-SNAPSHOT"
+        } else if (snapshotMatcher.size() > 0) {
+            def major = snapshotMatcher[0][1]
+            def minor = snapshotMatcher[0][2] as Integer
+            def patch = (snapshotMatcher[0][3] as Integer) + 1
+            reckonedVersion = "${major}.${minor}.${patch}-SNAPSHOT"
+        }
+    }
+
+    rootProject.ext.gitDescribeVersion = gitDescribeVersion
+    rootProject.ext.reckonedVersion = reckonedVersion
+}
+
+allprojects {
+    version = rootProject.ext.reckonedVersion
+}
+
+if (rootProject.tasks.findByName('version') == null) {
+    rootProject.tasks.register('version') {
+        doLast {
+            println ""
+            println "Git version is: " + rootProject.ext.gitDescribeVersion
+            println "Resolved Java version is: " + rootProject.ext.reckonedVersion
+            println ""
+        }
+    }
+}

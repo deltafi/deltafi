@@ -7,8 +7,7 @@ buildscript {
 }
 
 plugins {
-    id 'org.deltafi.test-summary' version '1.0'
-    id 'org.deltafi.git-version' version '2.0.1'
+    id 'git-version-conventions'
     id 'io.github.gradle-nexus.publish-plugin' version '2.0.0'
     id "de.undercouch.download" version "5.6.0"
 }
@@ -1242,7 +1241,7 @@ task cleanDist(type: Delete) {
 }
 
 allprojects { project ->
-    group 'org.deltafi'
+    group = 'org.deltafi'
 
     ext {
         isReleaseVersion = !version.endsWith("SNAPSHOT")
@@ -1311,8 +1310,8 @@ subprojects {
                 repositories {
                     if (project.hasProperty('gitLabTokenType') && project.hasProperty('gitLabToken')) {
                         maven {
-                            name "Gitlab"
-                            url projectMavenRepo
+                            name = "Gitlab"
+                            url = projectMavenRepo
                             credentials(HttpHeaderCredentials) {
                                 // the following variables reside in ~/.gradle/gradle.properties
                                 name = gitLabTokenType
@@ -1373,7 +1372,7 @@ subprojects {
             install.dependsOn 'publishToMavenLocal'
 
             signing {
-                required { isSignable }
+                required = { isSignable }
             }
 
             if (project.name != 'gradle-plugin') {
@@ -1446,14 +1445,14 @@ class TimingsListener implements TaskExecutionListener, BuildListener {
 
 // Cache all dependencies to maven local directory
 task cacheToMavenLocal(type: Copy) {
-    duplicatesStrategy DuplicatesStrategy.EXCLUDE
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
     from new File(gradle.gradleUserHomeDir, 'caches/modules-2/files-2.1')
         into repositories.mavenLocal().url
         eachFile {
             List<String> parts = it.path.split('/')
                 it.path = parts[0].replace('.','/') + '/' + parts[1] + '/' + parts[2] + '/' + parts[4]
         }
-    includeEmptyDirs false
+    includeEmptyDirs = false
     subprojects.each { dependsOn("${it.name}:resolveDeps") }
     dependsOn tasks.resolveDeps
 }

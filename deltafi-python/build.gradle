@@ -1,6 +1,19 @@
+import org.gradle.process.ExecOperations
+
+import javax.inject.Inject
+
 plugins {
     id 'license-plain'
 }
+
+abstract class ExecHelper {
+    @Inject
+    abstract ExecOperations getExecOperations()
+}
+
+ext.execHelper = objects.newInstance(ExecHelper)
+
+def uvAvailable = isUvInstalled()
 
 license {
     includes(["**/*.py"])
@@ -14,20 +27,16 @@ task copyTemplate(type: Copy) {
 licenseLocal.dependsOn copyTemplate
 
 task checkUvInstallation {
-    description = 'Checks if uv is installed, prompts for installation if missing'
+    description = 'Reports whether uv is installed; python tasks self-skip when it is not'
     group = 'verification'
 
     doLast {
-        def uvInstalled = isUvInstalled()
-
-        if (uvInstalled) {
+        if (uvAvailable) {
             println "✓ uv is already installed and available"
-            return
+        } else {
+            println "✗ uv is not installed or not in PATH — :deltafi-python tasks will be skipped"
+            printInstallationInstructions()
         }
-
-        println "✗ uv is not installed or not in PATH"
-        printInstallationInstructions()
-        throw new GradleException("uv is required but not installed")
     }
 }
 
@@ -36,7 +45,7 @@ task uvVirtualEnvironment(type: Exec) {
     workingDir 'src'
     def venvDir = file('src/.venv')
     onlyIf {
-        !venvDir.exists()
+        uvAvailable && !venvDir.exists()
     }
     commandLine 'uv', 'venv', '--system-site-packages'
 }
@@ -44,6 +53,7 @@ task uvVirtualEnvironment(type: Exec) {
 task uvVersion(type: Exec) {
     dependsOn copyTemplate, uvVirtualEnvironment
     workingDir 'src'
+    onlyIf { uvAvailable }
     String pythonVersion = version.replaceAll('-.*', "rc${new Date().format('yyyyMMddHHmmss')}")
     commandLine 'uv', 'version', '--frozen', "${pythonVersion}"
 }
@@ -59,24 +69,28 @@ task cleanVirtualEnvironment(type: Delete) {
 task uvDependencies(type: Exec) {
     dependsOn uvVersion
     workingDir 'src'
+    onlyIf { uvAvailable }
     commandLine 'uv', 'pip', 'install', '-e', '.[test]'
 }
 
 task verifyDependencies(type: Exec) {
     dependsOn uvDependencies
     workingDir 'src'
+    onlyIf { uvAvailable }
     commandLine 'uv', 'run', '--frozen', 'python', '-c', 'import redis, minio, pydantic; print("Dependencies installed successfully")'
 }
 
 task uvBuild(type: Exec) {
     dependsOn uvVersion
     workingDir 'src'
+    onlyIf { uvAvailable }
     commandLine 'uv', 'build'
 }
 
 task test(type: Exec) {
     dependsOn verifyDependencies
     workingDir 'src'
+    onlyIf { uvAvailable }
     commandLine 'uv', 'run', '--frozen', 'pytest', '--junit-xml=../build/test-results/test/TEST-results.xml'
 }
 
@@ -92,7 +106,7 @@ assemble.dependsOn uvBuild
 
 def isUvInstalled() {
     try {
-        def result = exec {
+        def result = project.execHelper.execOperations.exec {
             commandLine 'uv', '--version'
             ignoreExitValue = true
             standardOutput = new ByteArrayOutputStream()
@@ -135,7 +149,7 @@ def printInstallationInstructions() {
 
 def isHomebrewAvailable() {
     try {
-        def result = exec {
+        def result = project.execHelper.execOperations.exec {
             commandLine 'brew', '--version'
             ignoreExitValue = true
             standardOutput = new ByteArrayOutputStream()

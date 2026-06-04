@@ -1,0 +1,46 @@
+import groovy.time.TimeCategory
+import org.gradle.api.tasks.testing.TestResult
+import org.gradle.api.tasks.testing.logging.TestExceptionFormat
+import org.gradle.api.tasks.testing.logging.TestLogEvent
+
+if (!rootProject.ext.has('testSummaryInitialized')) {
+    rootProject.ext.testSummaryInitialized = true
+    rootProject.ext.testsResults = []
+    gradle.buildFinished {
+        def allResults = rootProject.ext.testsResults
+        if (!allResults.isEmpty()) {
+            def maxLength = allResults*.readLines().flatten().collect { it.length() }.max()
+            println "┌${"${"─" * maxLength}"}┐"
+            println allResults.collect {
+                it.readLines().collect {
+                    "│" + it + " " * (maxLength - it.length()) + "│"
+                }.join("\n")
+            }.join("\n├${"${"─" * maxLength}"}┤\n")
+            println "└${"${"─" * maxLength}"}┘"
+        }
+    }
+}
+
+tasks.withType(Test).configureEach { testTask ->
+    testTask.testLogging { logging ->
+        events = [TestLogEvent.FAILED, TestLogEvent.SKIPPED, TestLogEvent.STANDARD_OUT, TestLogEvent.STANDARD_ERROR] as Set
+        exceptionFormat = TestExceptionFormat.FULL
+        showExceptions = true
+        showCauses = true
+        showStackTraces = true
+    }
+    testTask.ignoreFailures = false
+    testTask.afterSuite { desc, result ->
+        if (desc.parent) return
+        String summary = "${testTask.project.name}:${testTask.name} results: ${result.resultType} " +
+                "(${result.testCount} tests, ${result.successfulTestCount} successes, " +
+                "${result.failedTestCount} failures, ${result.skippedTestCount} skipped) " +
+                "in ${TimeCategory.minus(new Date(result.endTime), new Date(result.startTime))}" +
+                "\nReport file: ${testTask.reports.html.entryPoint}"
+        if (result.resultType == TestResult.ResultType.SUCCESS) {
+            rootProject.testsResults.add(0, summary)
+        } else {
+            rootProject.testsResults += summary
+        }
+    }
+}

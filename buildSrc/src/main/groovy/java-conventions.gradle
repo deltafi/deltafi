@@ -2,6 +2,7 @@ plugins {
     id 'license-conventions'
     id 'java-library'
     id 'jacoco'
+    id 'test-summary-conventions'
 }
 
 java {

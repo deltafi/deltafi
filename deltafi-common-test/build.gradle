@@ -3,7 +3,7 @@ plugins {
     id 'maven-publish'
 }
 
-description "Common test library for DeltaFi"
+description = "Common test library for DeltaFi"
 
 dependencies {
     implementation project(':deltafi-common')

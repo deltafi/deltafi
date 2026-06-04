@@ -3,7 +3,7 @@ plugins {
 }
 
 docker {
-    name "${project.name}:${project.version}"
+    name = "${project.name}:${project.version}"
     tag "deltafi", "deltafi/${project.name}:${project.version}"
 }
 

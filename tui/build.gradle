@@ -10,7 +10,7 @@ license {
 ext.dockerImageName = "deltafi/web-terminal"
 afterEvaluate {
     docker {
-        name "deltafi/web-terminal:${project.version}"
+        name = "deltafi/web-terminal:${project.version}"
         tag "deltafi", "deltafi/web-terminal:${project.version}"
     }
 }

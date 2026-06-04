@@ -3,7 +3,7 @@ plugins {
 }
 
 license {
-    header(rootProject.file('HEADER'))
+    header = rootProject.file('HEADER')
     ext.year = 2026
     // Excludes are relative to source sets directories
     excludes(["**/*.xml", "**/generated/**/*.java", "**/*.MockMaker", "**/*.jks", "**/*.p12",
@@ -13,7 +13,7 @@ license {
               "**/*.drawio", "**/.dockerignore", "**/.go",
               "**/plugin-templates/**", "**/node_modules/**", "**/venv/**", "**/virtualenv/**",
               "**/db/migration/**", "**/db/lookup/migration/**"])
-    strictCheck true
+    strictCheck = true
     mapping("java", "SLASHSTAR_STYLE")
     mapping("graphql", "SCRIPT_STYLE")
     mapping("go", "SLASHSTAR_STYLE")
