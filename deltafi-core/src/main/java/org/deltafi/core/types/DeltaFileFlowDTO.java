@@ -43,14 +43,19 @@ public class DeltaFileFlowDTO {
     private DeltaFileFlowState state;
     private OffsetDateTime created;
     private OffsetDateTime modified;
+    @Builder.Default
     private DeltaFileFlowInput input = new DeltaFileFlowInput();
+    @Builder.Default
     private List<Action> actions = new ArrayList<>();
+    @Builder.Default
     private List<String> publishTopics = new ArrayList<>();
     private int depth;
+    @Builder.Default
     private List<String> pendingAnnotations = new ArrayList<>();
     private boolean testMode;
     private String testModeReason;
     private UUID joinId;
+    @Builder.Default
     private List<String> pendingActions = new ArrayList<>();
     private OffsetDateTime errorAcknowledged;
     private String errorAcknowledgedReason;

@@ -10,6 +10,12 @@ license {
     exclude("OrgDeltafiPluginConventionPlugin.java")
 }
 
+javadoc {
+    source = sourceSets.main.allJava.matching {
+        exclude 'OrgDeltafiPluginConventionPlugin.java'
+    }
+}
+
 dependencies {
     implementation project(':deltafi-common')
     implementation project(':deltafi-common-spring')

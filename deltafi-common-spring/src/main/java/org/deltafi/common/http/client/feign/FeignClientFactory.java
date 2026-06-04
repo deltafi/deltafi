@@ -149,7 +149,7 @@ public class FeignClientFactory {
         Feign.Builder builder = createBuilder(clientClass, encoder, decoder, retryer, options);
 
         if (sslCredentials != null && sslCredentials.isConfigured()) {
-            builder.client(new Client.Default(sslCredentials.createSslContext().getSocketFactory(), null));
+            builder.client(new DefaultClient(sslCredentials.createSslContext().getSocketFactory(), null));
         }
 
         return build(builder, clientClass, url);
@@ -160,7 +160,7 @@ public class FeignClientFactory {
         return Feign.builder()
                 .encoder(encoder == null ? new JacksonEncoder(List.of(new JavaTimeModule())) : encoder)
                 .decoder(decoder == null ? new JacksonDecoder(List.of(new JavaTimeModule())) : decoder)
-                .retryer(retryer == null ? new Retryer.Default(1000, 5000, 5) : retryer)
+                .retryer(retryer == null ? new DefaultRetryer(1000, 5000, 5) : retryer)
                 .options(options == null ? new Request.Options() : options)
                 .logger(new Slf4jLogger(clientClass))
                 .logLevel(Logger.Level.FULL);

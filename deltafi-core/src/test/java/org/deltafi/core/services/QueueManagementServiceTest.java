@@ -36,6 +36,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.quality.Strictness;
 import org.springframework.core.env.Environment;
 
 import java.time.Duration;
@@ -673,12 +674,12 @@ class QueueManagementServiceTest {
     private DeltaFile createDeltaFileWithFlow(String flowName, long contentSize) {
         UUID did = UUID.randomUUID();
 
-        DeltaFileFlow flow = mock(DeltaFileFlow.class, withSettings().lenient());
+        DeltaFileFlow flow = mock(DeltaFileFlow.class, withSettings().strictness(Strictness.LENIENT));
         when(flow.getName()).thenReturn(flowName);
         when(flow.getState()).thenReturn(DeltaFileFlowState.IN_FLIGHT);
         when(flow.lastContentSize()).thenReturn(contentSize);
 
-        DeltaFile deltaFile = mock(DeltaFile.class, withSettings().lenient());
+        DeltaFile deltaFile = mock(DeltaFile.class, withSettings().strictness(Strictness.LENIENT));
         when(deltaFile.getDid()).thenReturn(did);
         when(deltaFile.getFlows()).thenReturn(new LinkedHashSet<>(List.of(flow)));
 

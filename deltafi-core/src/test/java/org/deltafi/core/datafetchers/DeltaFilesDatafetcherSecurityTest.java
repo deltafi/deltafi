@@ -79,6 +79,7 @@ class DeltaFilesDatafetcherSecurityTest {
         }
     }
 
+    @SuppressWarnings("deprecation") // includes the deprecated sourceMetadataUnion query in the security sweep
     List<Callable<?>> allMethods() {
         List<Callable<?>> callables = new ArrayList<>();
         callables.add(() -> deltaFilesDatafetcher.deltaFile(DID));

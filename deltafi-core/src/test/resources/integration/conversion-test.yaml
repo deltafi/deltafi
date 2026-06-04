@@ -11,7 +11,7 @@ transformationFlows:
 dataSinks:
   - e
 inputs:
-  - flow: ds
+  - dataSource: ds
     ingressFileName: fn
     base64Encoded: false
     data: "data"

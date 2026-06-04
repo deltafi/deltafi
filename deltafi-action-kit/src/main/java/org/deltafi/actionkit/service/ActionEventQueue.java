@@ -24,6 +24,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.StreamReadConstraints;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.json.JsonMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -47,11 +48,13 @@ public class ActionEventQueue {
 
     private static final ObjectMapper OBJECT_MAPPER;
     static {
-        ObjectMapper temp = new ObjectMapper()
-                .setSerializationInclusion(JsonInclude.Include.NON_NULL)
+        ObjectMapper temp = JsonMapper.builder()
+                .defaultPropertyInclusion(JsonInclude.Value.construct(
+                        JsonInclude.Include.NON_NULL, JsonInclude.Include.NON_NULL))
                 .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
                 .configure(DeserializationFeature.USE_LONG_FOR_INTS, true)
-                .registerModule(new JavaTimeModule());
+                .addModule(new JavaTimeModule())
+                .build();
         StreamReadConstraints streamReadConstraints = StreamReadConstraints
                 .builder()
                 .maxStringLength(16 * 1024 * 1024)

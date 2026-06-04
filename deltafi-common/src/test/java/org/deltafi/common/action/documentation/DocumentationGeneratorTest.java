@@ -162,6 +162,7 @@ public class DocumentationGeneratorTest {
     }
 
     @Test
+    @SuppressWarnings({"deprecation", "removal"}) // verifies the migration shim for the deprecated description field
     void isBackwardCompatible() throws IOException {
         ActionDescriptor actionDescriptor = ActionDescriptor.builder()
                 .name("TestAction")

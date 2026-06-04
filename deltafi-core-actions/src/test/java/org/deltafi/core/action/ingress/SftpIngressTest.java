@@ -49,6 +49,7 @@ import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+@SuppressWarnings("deprecation") // exercises the deprecated password field fallback in SftpIngress.Parameters
 class SftpIngressTest {
     private static final ActionContentStorageService CONTENT_STORAGE_SERVICE =
             new InMemoryContentStorageService();

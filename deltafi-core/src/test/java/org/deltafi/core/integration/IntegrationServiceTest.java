@@ -81,7 +81,7 @@ class IntegrationServiceTest {
                 "6fqvsu4Y1L9K17/Q/xj2VW9B/wAAAAAAAAAAAAAwWXcwyxBtACgAAA==";
 
         TestCaseIngress ingress1 = TestCaseIngress.builder()
-                .flow("unarchive-passthrough-rest-data-source")
+                .dataSource("unarchive-passthrough-rest-data-source")
                 .ingressFileName("three-files.tar.gz")
                 .base64Encoded(true)
                 .data(data)
@@ -95,7 +95,7 @@ class IntegrationServiceTest {
         assertEquals(Map.of("KEY1", "VALUE1", "KEY2", "VALUE2"),
                 ingress1.metadataToMap());
 
-        assertEquals("unarchive-passthrough-rest-data-source", testCase.getInputs().getFirst().getFlow());
+        assertEquals("unarchive-passthrough-rest-data-source", testCase.getInputs().getFirst().getDataSource());
         assertEquals(3, testCase.getExpectedDeltaFiles().getFirst().getChildCount());
 
         KeyValueChecks keyValCheck = testCase.getExpectedDeltaFiles().getFirst().getAnnotations();
@@ -142,6 +142,19 @@ class IntegrationServiceTest {
 
         assertEquals(3, testCase.getExpectedDeltaFiles().get(0).getChildCount());
         assertEquals(1, testCase.getExpectedDeltaFiles().get(1).getChildCount());
+    }
+
+    @Test
+    @SneakyThrows
+    void testDeprecatedFlowFieldDeserializes() {
+        String yaml = """
+                flow: my-data-source
+                ingressFileName: input.txt
+                base64Encoded: false
+                data: "hello"
+                """;
+        TestCaseIngress ingress = YAML_MAPPER.readValue(yaml, TestCaseIngress.class);
+        assertEquals("my-data-source", ingress.getDataSource());
     }
 
     @Test

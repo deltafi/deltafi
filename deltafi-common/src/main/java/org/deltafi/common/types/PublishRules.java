@@ -20,7 +20,7 @@ package org.deltafi.common.types;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
+import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -36,9 +36,11 @@ import java.util.Objects;
 @NoArgsConstructor
 @AllArgsConstructor
 public class PublishRules {
-    private static final ObjectMapper YAML_MAPPER = new ObjectMapper(new YAMLFactory())
-            .setSerializationInclusion(JsonInclude.Include.NON_NULL)
-            .registerModule(new JavaTimeModule());
+    private static final ObjectMapper YAML_MAPPER = YAMLMapper.builder()
+            .defaultPropertyInclusion(JsonInclude.Value.construct(
+                    JsonInclude.Include.NON_NULL, JsonInclude.Include.NON_NULL))
+            .addModule(new JavaTimeModule())
+            .build();
     private static final DefaultRule ERROR_RULE = new DefaultRule(DefaultBehavior.ERROR);
 
     private MatchingPolicy matchingPolicy;

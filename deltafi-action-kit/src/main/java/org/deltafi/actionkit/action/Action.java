@@ -43,6 +43,7 @@ import java.util.Map;
  */
 @Getter
 public abstract class Action<I, P extends ActionParameters, R extends ResultType> {
+    @SuppressWarnings("removal")
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper()
             .registerModule(new JavaTimeModule())
             .registerModule(new DataSizeModule())

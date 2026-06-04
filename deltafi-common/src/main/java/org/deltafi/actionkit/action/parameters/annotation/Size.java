@@ -17,17 +17,19 @@
  */
 package org.deltafi.actionkit.action.parameters.annotation;
 
+import org.deltafi.common.constant.DeprecatedSince;
+
 import java.lang.annotation.*;
 
 /**
  * Apply this annotation to a field to generate minLength and maxLength properties for the field in the generated JSON
  * schema. Currently, the maxLength property is used by the user interface to determine if the field should accept
  * single (&lt;= 80) or multi-line (&gt; 80) input.
- * @deprecated Use {{@link org.deltafi.common.json.Size} instead}
+ * @deprecated Use {{@link org.deltafi.common.json.Size} instead}. Will be removed in 3.0.
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.FIELD)
-@Deprecated
+@Deprecated(since = DeprecatedSince.VERSION_2_55_1, forRemoval = true)
 public @interface Size {
     /**
      * Minimum string length for this field in the generated JSON schema.

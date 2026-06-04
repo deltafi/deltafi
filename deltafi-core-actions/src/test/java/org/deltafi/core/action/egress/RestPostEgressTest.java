@@ -30,6 +30,7 @@ import javax.ws.rs.core.MediaType;
 import java.util.Map;
 import java.util.UUID;
 
+@SuppressWarnings("deprecation") // exercises the deprecated RestPostEgress action; remove with the action
 class RestPostEgressTest {
     private static final String CONTENT = "This is the test content.";
 

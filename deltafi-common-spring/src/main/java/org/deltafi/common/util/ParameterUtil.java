@@ -29,9 +29,7 @@ import org.springframework.expression.common.TemplateParserContext;
 import org.springframework.expression.spel.standard.SpelExpressionParser;
 
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.Map;
-import java.util.Map.Entry;
 
 /**
  * Utilities for resolving SpEL templates in action parameters.
@@ -77,9 +75,7 @@ public class ParameterUtil {
         boolean hasTemplate = false;
         if (node.isObject()) {
             ObjectNode objectNode = (ObjectNode) node;
-            Iterator<Entry<String, JsonNode>> fields = objectNode.fields();
-            while (fields.hasNext()) {
-                Map.Entry<String, JsonNode> field = fields.next();
+            for (Map.Entry<String, JsonNode> field : objectNode.properties()) {
                 hasTemplate |= hasTemplate(field.getValue());
             }
         } else if (node.isArray()) {

@@ -266,8 +266,6 @@ public class FederatedErrorService {
         ErrorSummaryFilter summaryFilter = new ErrorSummaryFilter();
         if (filter != null) {
             summaryFilter.setErrorAcknowledged(filter.getErrorAcknowledged());
-            summaryFilter.setModifiedAfter(filter.getModifiedAfter());
-            summaryFilter.setModifiedBefore(filter.getModifiedBefore());
             summaryFilter.setErrorCause(filter.getErrorCause());
             if (filter.getDataSources() != null && filter.getDataSources().size() == 1) {
                 summaryFilter.setFlow(filter.getDataSources().get(0));

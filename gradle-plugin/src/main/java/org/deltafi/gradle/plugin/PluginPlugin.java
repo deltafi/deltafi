@@ -59,11 +59,13 @@ import java.util.Objects;
  */
 public class PluginPlugin implements org.gradle.api.Plugin<Project> {
 
+    /** Configuration extension for the DeltaFi gradle plugin. */
     public static class DeltafiPluginExtension {
         String flowsDir;
         String testsDir;
     }
 
+    /** Gradle task that validates flow plans, variables, and integration tests for a DeltaFi plugin. */
     @Setter
     public static class CheckDeltafiPluginTask extends DefaultTask {
         private PluginPlugin.DeltafiPluginExtension deltafiPluginExtension;

@@ -19,7 +19,7 @@ package org.deltafi.core.integration;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
+import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.netflix.graphql.dgs.DgsComponent;
 import com.netflix.graphql.dgs.DgsMutation;
@@ -42,9 +42,11 @@ import java.util.Optional;
 @RequiredArgsConstructor
 public class IntegrationDataFetcher {
 
-    private static final ObjectMapper YAML_MAPPER = new ObjectMapper(new YAMLFactory())
-            .setSerializationInclusion(JsonInclude.Include.NON_NULL)
-            .registerModule(new JavaTimeModule());
+    private static final ObjectMapper YAML_MAPPER = YAMLMapper.builder()
+            .defaultPropertyInclusion(JsonInclude.Value.construct(
+                    JsonInclude.Include.NON_NULL, JsonInclude.Include.NON_NULL))
+            .addModule(new JavaTimeModule())
+            .build();
 
     private final CoreAuditLogger auditLogger;
     private final IntegrationService integrationService;

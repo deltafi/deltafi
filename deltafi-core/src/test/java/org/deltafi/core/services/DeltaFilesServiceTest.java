@@ -384,6 +384,7 @@ class DeltaFilesServiceTest {
     }
 
     @Test
+    @SuppressWarnings("deprecation") // exercises the deprecated sourceMetadataUnion query
     void testSourceMetadataUnion() {
         DeltaFile deltaFile1 = utilService.buildDeltaFile(UUID.randomUUID(), List.of(), Map.of("k1", "1a", "k2", "val2"));
         DeltaFile deltaFile2 = utilService.buildDeltaFile(UUID.randomUUID(), List.of(), Map.of("k1", "1b", "k3", "val3"));
@@ -706,6 +707,7 @@ class DeltaFilesServiceTest {
     }
 
     @Test
+    @SuppressWarnings("deprecation") // exercises the deprecated errorMetadataUnion query
     void testErrorMetadataUnion() {
         DeltaFile deltaFile1 = utilService.buildDeltaFile(UUID.randomUUID(), List.of());
         DeltaFileFlow deltaFileFlow1 = deltaFile1.firstFlow();

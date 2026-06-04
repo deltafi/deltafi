@@ -4499,7 +4499,7 @@ class DeltaFiCoreApplicationTests {
 		integrationTestRepo.deleteAll();
 
 		TestCaseIngress ingress1 = TestCaseIngress.builder()
-				.flow("ds")
+				.dataSource("ds")
 				.ingressFileName("fn")
 				.base64Encoded(false)
 				.data("data")
@@ -4665,7 +4665,7 @@ class DeltaFiCoreApplicationTests {
 		GraphQLQueryRequest graphQLQueryRequest = new GraphQLQueryRequest(
 				new ErrorSummaryByFlowGraphQLQuery.Builder()
 						.limit(5)
-						.filter(ErrorSummaryFilter.builder().modifiedBefore(plusTwo).build())
+						.filter(ErrorSummaryFilter.builder().build())
 						.direction(DeltaFileDirection.DESC)
 						.build(),
 				ERRORS_BY_FLOW_PROJECTION_ROOT
@@ -4870,7 +4870,7 @@ class DeltaFiCoreApplicationTests {
 		GraphQLQueryRequest graphQLQueryRequest = new GraphQLQueryRequest(
 				new ErrorSummaryByMessageGraphQLQuery.Builder()
 						.limit(5)
-						.filter(ErrorSummaryFilter.builder().modifiedBefore(plusTwo).build())
+						.filter(ErrorSummaryFilter.builder().build())
 						.direction(DeltaFileDirection.DESC)
 						.build(),
 				ERRORS_BY_MESSAGE_PROJECTION_ROOT
@@ -4899,7 +4899,7 @@ class DeltaFiCoreApplicationTests {
 		GraphQLQueryRequest graphQLQueryRequest = new GraphQLQueryRequest(
 				new FilteredSummaryByFlowGraphQLQuery.Builder()
 						.limit(5)
-						.filter(FilteredSummaryFilter.builder().modifiedBefore(plusTwo).build())
+						.filter(FilteredSummaryFilter.builder().build())
 						.direction(DeltaFileDirection.DESC)
 						.build(),
 				FILTERED_BY_FlOW_PROJECTION_ROOT
@@ -4933,7 +4933,7 @@ class DeltaFiCoreApplicationTests {
 		GraphQLQueryRequest graphQLQueryRequest = new GraphQLQueryRequest(
 				new FilteredSummaryByMessageGraphQLQuery.Builder()
 						.limit(5)
-						.filter(FilteredSummaryFilter.builder().modifiedBefore(plusTwo).build())
+						.filter(FilteredSummaryFilter.builder().build())
 						.direction(DeltaFileDirection.DESC)
 						.build(),
 				FILTERED_BY_MESSAGE_PROJECTION_ROOT

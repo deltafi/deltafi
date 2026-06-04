@@ -534,7 +534,7 @@ class PluginServiceTest {
 
     IntegrationTest makeIntegrationTest() {
         TestCaseIngress ingress1 = TestCaseIngress.builder()
-                .flow("ds")
+                .dataSource("ds")
                 .ingressFileName("fn")
                 .base64Encoded(false)
                 .data("data")

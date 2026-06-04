@@ -31,6 +31,9 @@ import java.util.Map;
 public class SchemaGeneratorFactory {
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
+    // fallback resolvers read the deprecated org.deltafi.actionkit.action.parameters.annotation.Size
+    // annotation so plugins built against it still emit minLength/maxLength; remove in 3.0 with the annotation.
+    @SuppressWarnings("removal")
     public static SchemaGenerator buildSchemaGenerator(SchemaGeneratorConfigCustomizer schemaGeneratorCustomizer,
             CustomDefinitionProviderV2... customDefinitionProviders) {
         SchemaGeneratorConfigBuilder configBuilder =

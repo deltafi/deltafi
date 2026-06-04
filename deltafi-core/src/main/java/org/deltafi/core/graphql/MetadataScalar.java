@@ -20,19 +20,21 @@ package org.deltafi.core.graphql;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import graphql.GraphQLContext;
+import graphql.execution.CoercedVariables;
 import graphql.language.*;
-import graphql.scalars.util.Kit;
 import graphql.schema.*;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 
 public class MetadataScalar implements Coercing<Map<String, String>, Object> {
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
     @Override
-    public Object serialize(@NotNull Object dataFetcherResult) throws CoercingSerializeException {
+    public Object serialize(@NotNull Object dataFetcherResult, @NotNull GraphQLContext graphQLContext, @NotNull Locale locale) throws CoercingSerializeException {
         if (dataFetcherResult instanceof Map) {
             return dataFetcherResult;
         } else {
@@ -42,17 +44,13 @@ public class MetadataScalar implements Coercing<Map<String, String>, Object> {
 
     @NotNull
     @Override
-    public Map<String, String> parseValue(@NotNull Object input) throws CoercingParseValueException {
+    public Map<String, String> parseValue(@NotNull Object input, @NotNull GraphQLContext graphQLContext, @NotNull Locale locale) throws CoercingParseValueException {
         return OBJECT_MAPPER.convertValue(input, new TypeReference<>() {});
     }
 
     @NotNull
     @Override
-    public Map<String, String> parseLiteral(@NotNull Object input) throws CoercingParseLiteralException {
-        if (!(input instanceof Value)) {
-            throw new CoercingParseLiteralException("Expected AST type 'Value' but was '" + Kit.typeName(input) + "'.");
-        }
-
+    public Map<String, String> parseLiteral(@NotNull Value<?> input, @NotNull CoercedVariables variables, @NotNull GraphQLContext graphQLContext, @NotNull Locale locale) throws CoercingParseLiteralException {
         if (input instanceof StringValue) {
             try {
                 return OBJECT_MAPPER.readValue(((StringValue) input).getValue(), new TypeReference<>() {});

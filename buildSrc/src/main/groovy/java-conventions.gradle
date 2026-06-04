@@ -21,16 +21,22 @@ tasks.register('allDeps', DependencyReportTask)
 
 javadoc {
     exclude '**/generated/**'
+    options.addBooleanOption('Xdoclint:all,-missing', true)
+    options.tags = [
+            'apiNote:a:API Note:',
+            'implSpec:a:Implementation Requirements:',
+            'implNote:a:Implementation Note:'
+    ]
 }
 
 compileJava {
     options.encoding = 'UTF-8'
-    options.compilerArgs << '-parameters'
+    options.compilerArgs << '-parameters' << '-Xlint:deprecation'
 }
 
 compileTestJava {
     options.encoding = 'UTF-8'
-    options.compilerArgs << '-parameters'
+    options.compilerArgs << '-parameters' << '-Xlint:deprecation'
 }
 
 test {

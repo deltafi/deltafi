@@ -44,8 +44,10 @@ public class DocumentationGenerator {
      * @param actionDescriptor the ActionDescriptor describing the action
      * @return the generated Markdown documentation
      */
+    // promotes the deprecated ActionDescriptor.description into actionOptions for descriptors
+    // emitted by older plugins; remove in 3.0 with the description field.
+    @SuppressWarnings({"deprecation", "removal"})
     public static String generateActionDocs(ActionDescriptor actionDescriptor) {
-        // Maintain backward compatibility
         if (actionDescriptor.getActionOptions() == null) {
             if (actionDescriptor.getDescription() == null) {
                 return null;
@@ -170,7 +172,7 @@ public class DocumentationGenerator {
         Map<String, PropertyType> defs = new HashMap<>();
         JsonNode defsNode = schemaNode.get("$defs");
         if (defsNode != null) {
-            defsNode.fields().forEachRemaining(
+            defsNode.properties().forEach(
                     fieldEntry -> defs.put(fieldEntry.getKey(), getPropertyType(fieldEntry.getValue())));
         }
 
@@ -186,7 +188,7 @@ public class DocumentationGenerator {
                     requiredProperties.add(requiredPropertyJsonNode.textValue()));
         }
 
-        propertiesNode.fields().forEachRemaining(fieldEntry -> {
+        propertiesNode.properties().forEach(fieldEntry -> {
             PropertyInfo propertyInfo = new PropertyInfo();
             propertyInfo.setName(fieldEntry.getKey());
             JsonNode fieldSchema = fieldEntry.getValue();

@@ -15,7 +15,7 @@ transformationFlows:
 dataSinks:
   - passthrough-egress
 inputs:
-  - flow: unarchive-passthrough-rest-data-source
+  - dataSource: unarchive-passthrough-rest-data-source
     ingressFileName: three-files.tar.gz
     metadata:
       - key: KEY1

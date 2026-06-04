@@ -19,6 +19,7 @@ package org.deltafi.common.types;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.*;
+import org.deltafi.common.constant.DeprecatedSince;
 
 import java.util.Map;
 
@@ -29,7 +30,8 @@ import java.util.Map;
 @Builder
 public class ActionDescriptor {
   private String name;
-  @Deprecated
+  /** @deprecated Use {@link ActionOptions#getDescription()}. Will be removed in 3.0. */
+  @Deprecated(since = DeprecatedSince.VERSION_2_55_1, forRemoval = true)
   private String description;
   private ActionType type;
   private boolean supportsJoin;

@@ -74,10 +74,8 @@ public class ParameterResolver {
     private JsonNode replacePlaceholders(JsonNode node, ActionInput actionInput) throws ParameterTemplateException {
         if (node.isObject()) {
             ObjectNode objectNode = (ObjectNode) node;
-            Iterator<Entry<String, JsonNode>> fields = objectNode.fields();
-            while (fields.hasNext()) {
-                Map.Entry<String, JsonNode> field = fields.next();
-                objectNode.set(field.getKey(), replacePlaceholders(field.getValue(), actionInput));
+            for (Map.Entry<String, JsonNode> field : objectNode.properties()) {
+                field.setValue(replacePlaceholders(field.getValue(), actionInput));
             }
             return objectNode;
         } else if (node.isArray() && node instanceof ArrayNode arrayNode) {

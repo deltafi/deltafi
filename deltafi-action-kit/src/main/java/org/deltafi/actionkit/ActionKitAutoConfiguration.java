@@ -205,6 +205,7 @@ public class ActionKitAutoConfiguration {
      * @return a configured SchemaGenerator
      */
     @Bean
+    @SuppressWarnings("removal")
     public SchemaGenerator parametersSchemaGenerator(@Nullable SchemaGeneratorConfigCustomizer schemaGeneratorCustomizer) {
         return SchemaGeneratorFactory.buildSchemaGenerator(schemaGeneratorCustomizer, new DataSizeDefinitionProvider(),
                 // deprecated bridge: schema support for plugin parameter fields still typed

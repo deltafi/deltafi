@@ -20,6 +20,7 @@ package org.deltafi.core.plugin.generator;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.databind.json.JsonMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.compress.archivers.ArchiveOutputStream;
 import org.apache.commons.compress.archivers.zip.UnixStat;
@@ -55,10 +56,12 @@ public class JavaPluginGenerator {
     private static final String SRC_MAIN_JAVA = "/src/main/java/";
     private static final String SRC_TEST_JAVA = "/src/test/java/";
     private static final String JAVA_EXT = ".java";
-    private static final PropertyPlaceholderHelper PLACEHOLDER_HELPER = new PropertyPlaceholderHelper("{{", "}}", null, false);
-    private static final ObjectMapper objectMapper = new ObjectMapper()
+    private static final PropertyPlaceholderHelper PLACEHOLDER_HELPER = new PropertyPlaceholderHelper("{{", "}}", null, null, false);
+    private static final ObjectMapper objectMapper = JsonMapper.builder()
             .enable(SerializationFeature.INDENT_OUTPUT)
-            .setSerializationInclusion(JsonInclude.Include.NON_NULL);
+            .defaultPropertyInclusion(JsonInclude.Value.construct(
+                    JsonInclude.Include.NON_NULL, JsonInclude.Include.NON_NULL))
+            .build();
 
     private final EnumMap<ActionType, String> actionTemplateMap;
     private final Map<String, String> topLevelTemplateMap;
