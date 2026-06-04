@@ -164,7 +164,7 @@ const annotateDialog = ref();
 const hasPermission = inject("hasPermission");
 const hasSomePermissions = inject("hasSomePermissions");
 
-const uuidRegex = new RegExp(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-5][0-9a-f]{3}-[089ab][0-9a-f]{3}-[0-9a-f]{12}$/i);
+const uuidRegex = new RegExp(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i);
 const route = useRoute();
 const router = useRouter();
 const uiConfig = inject("uiConfig");
