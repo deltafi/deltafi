@@ -92,11 +92,19 @@ git pull
 git checkout -b feature/my-feature
 ```
 
-When submitting changes, create a changelog entry:
+### Changelogs
+
+When you make functional changes on a feature branch, add a changelog entry:
 ```bash
 bin/changelog
 ```
-This creates `CHANGELOG/unreleased/<branch-name>.md`. Keep all section headers in the generated file even if empty (Added, Changed, Fixed, etc.). Note: Do NOT use `-e` flag as it opens an interactive editor.
+This creates `CHANGELOG/unreleased/<branch-name>.md` with a skeleton of section headers (Added, Changed, Fixed, Removed, Deprecated, Security, Tech-Debt/Refactor, Upgrade and Migration). Fill in the section(s) that apply and leave the others as empty headers — do not delete them. Do NOT use the `-e` flag (it opens an interactive editor).
+
+**Rules:**
+- **Never edit `CHANGELOG.md` directly.** It is regenerated at release time from the per-branch files via `bin/changelog -r <version>`.
+- **Never create a changelog on `dev`.** If the user asks for a changelog update while on `dev`, stop and tell them a feature branch is required first; do not run `bin/changelog` against `dev`.
+- **Keep entries concise and user-facing.** Describe the functional change a user would notice (new behavior, fixed bug, changed default, deprecation) — not implementation details (refactors, file moves, internal renames) unless they affect downstream consumers like plugin authors.
+- **Update the changelog whenever functional changes are made to the branch.** Each meaningful change merits a bullet; don't accumulate work silently and write one vague catch-all at the end.
 
 ## API
 
