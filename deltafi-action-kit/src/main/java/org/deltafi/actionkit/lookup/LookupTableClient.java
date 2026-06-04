@@ -20,8 +20,8 @@
 package org.deltafi.actionkit.lookup;
 
 import com.jayway.jsonpath.TypeRef;
-import com.netflix.graphql.dgs.client.GraphQLClient;
-import com.netflix.graphql.dgs.client.GraphQLResponse;
+import com.netflix.graphql.dgs.client.DgsGraphQLClient;
+import com.netflix.graphql.dgs.client.DgsGraphQLResponse;
 import com.netflix.graphql.dgs.client.codegen.GraphQLQueryRequest;
 import lombok.RequiredArgsConstructor;
 import org.deltafi.actionkit.generated.client.*;
@@ -43,7 +43,7 @@ import java.util.*;
 @SuppressWarnings("unused")
 public class LookupTableClient {
     private final String lookupUrl;
-    private final GraphQLClient graphQLClient;
+    private final DgsGraphQLClient graphQLClient;
     private final HttpService httpService;
 
     /**
@@ -67,7 +67,7 @@ public class LookupTableClient {
                         .lastRefresh()
         );
 
-        GraphQLResponse response = GraphQLExecutor.executeQuery(graphQLClient, graphQLQueryRequest);
+        DgsGraphQLResponse response = GraphQLExecutor.executeQuery(graphQLClient, graphQLQueryRequest);
 
         return response.extractValueAsObject(graphQLQueryRequest.getQuery().getOperationName(), new TypeRef<>() {});
     }
@@ -99,7 +99,7 @@ public class LookupTableClient {
                         .success()
         );
 
-        GraphQLResponse response = GraphQLExecutor.executeQuery(graphQLClient, graphQLQueryRequest);
+        DgsGraphQLResponse response = GraphQLExecutor.executeQuery(graphQLClient, graphQLQueryRequest);
 
         return response.extractValueAsObject(graphQLQueryRequest.getQuery().getOperationName(), Result.class);
     }
@@ -139,7 +139,7 @@ public class LookupTableClient {
                         .success()
         );
 
-        GraphQLResponse response = GraphQLExecutor.executeQuery(graphQLClient, graphQLQueryRequest);
+        DgsGraphQLResponse response = GraphQLExecutor.executeQuery(graphQLClient, graphQLQueryRequest);
 
         return response.extractValueAsObject(graphQLQueryRequest.getQuery().getOperationName(), Result.class);
     }
@@ -172,7 +172,7 @@ public class LookupTableClient {
                         .success()
         );
 
-        GraphQLResponse response = GraphQLExecutor.executeQuery(graphQLClient, graphQLQueryRequest);
+        DgsGraphQLResponse response = GraphQLExecutor.executeQuery(graphQLClient, graphQLQueryRequest);
 
         return response.extractValueAsObject(graphQLQueryRequest.getQuery().getOperationName(), Result.class);
     }
@@ -225,7 +225,7 @@ public class LookupTableClient {
                         .value()
         );
 
-        GraphQLResponse response = GraphQLExecutor.executeQuery(graphQLClient, graphQLQueryRequest);
+        DgsGraphQLResponse response = GraphQLExecutor.executeQuery(graphQLClient, graphQLQueryRequest);
 
         org.deltafi.actionkit.generated.types.LookupResults lookupResults = response.extractValueAsObject(
                 graphQLQueryRequest.getQuery().getOperationName(),
@@ -272,7 +272,7 @@ public class LookupTableClient {
                         .success()
         );
 
-        GraphQLResponse response = GraphQLExecutor.executeQuery(graphQLClient, graphQLQueryRequest);
+        DgsGraphQLResponse response = GraphQLExecutor.executeQuery(graphQLClient, graphQLQueryRequest);
 
         return response.extractValueAsObject(graphQLQueryRequest.getQuery().getOperationName(), Result.class);
     }

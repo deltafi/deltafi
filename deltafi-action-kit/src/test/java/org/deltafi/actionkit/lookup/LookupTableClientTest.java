@@ -17,8 +17,10 @@
  */
 package org.deltafi.actionkit.lookup;
 
-import com.netflix.graphql.dgs.client.GraphQLClient;
-import com.netflix.graphql.dgs.client.GraphQLResponse;
+import com.netflix.graphql.dgs.client.DefaultDgsGraphQLResponse;
+import com.netflix.graphql.dgs.client.DgsGraphQLClient;
+import com.netflix.graphql.dgs.client.DgsGraphQLResponse;
+import com.netflix.graphql.dgs.client.Jackson2DgsJsonMapperAdapter;
 import org.deltafi.actionkit.ActionKitAutoConfiguration;
 import org.deltafi.actionkit.generated.types.Result;
 import org.deltafi.common.http.HttpService;
@@ -51,12 +53,12 @@ class LookupTableClientTest {
         }
     }
 
-    private static final GraphQLClient GRAPH_QL_CLIENT = Mockito.mock(GraphQLClient.class);
+    private static final DgsGraphQLClient GRAPH_QL_CLIENT = Mockito.mock(DgsGraphQLClient.class);
 
     @Configuration
     public static class Config {
         @Bean
-        public GraphQLClient graphQLClient() {
+        public DgsGraphQLClient graphQLClient() {
             return GRAPH_QL_CLIENT;
         }
 
@@ -66,7 +68,7 @@ class LookupTableClientTest {
         }
 
         @Bean
-        public LookupTableClient lookupTableClient(Environment environment, GraphQLClient graphQLClient,
+        public LookupTableClient lookupTableClient(Environment environment, DgsGraphQLClient graphQLClient,
                 HttpService httpService) {
             return new CachingLookupTableClient("unused", graphQLClient, httpService);
         }
@@ -75,7 +77,7 @@ class LookupTableClientTest {
     @Autowired
     private LookupTableClient lookupTableClient;
 
-    private static final GraphQLResponse LOOKUP_RESPONSE = new GraphQLResponse("""
+    private static final DgsGraphQLResponse LOOKUP_RESPONSE = new DefaultDgsGraphQLResponse("""
             {
               "data": {
                 "lookup": {
@@ -114,7 +116,7 @@ class LookupTableClientTest {
                   "totalCount": 25
                 }
               }
-            }""");
+            }""", Map.of(), Jackson2DgsJsonMapperAdapter.fromOptions());
 
     @BeforeEach
     void setUp() {
@@ -246,7 +248,7 @@ class LookupTableClientTest {
 
     @Test
     void batchesUpserts() throws Exception {
-        GraphQLResponse graphQLResponse = Mockito.mock(GraphQLResponse.class);
+        DgsGraphQLResponse graphQLResponse = Mockito.mock(DgsGraphQLResponse.class);
         Mockito.when(graphQLResponse.hasErrors()).thenReturn(false);
         Mockito.when(graphQLResponse.extractValueAsObject("upsertLookupTableRows", Result.class))
                 .thenReturn(Result.newBuilder().success(true).build());

@@ -19,7 +19,7 @@
 // ABOUTME: Overrides only lookup() and clearCache() with cache annotations; everything else delegates.
 package org.deltafi.actionkit.lookup;
 
-import com.netflix.graphql.dgs.client.GraphQLClient;
+import com.netflix.graphql.dgs.client.DgsGraphQLClient;
 import org.deltafi.common.http.HttpService;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
@@ -30,7 +30,7 @@ import org.springframework.cache.annotation.Cacheable;
  */
 public class CachingLookupTableClient extends LookupTableClient {
 
-    public CachingLookupTableClient(String lookupUrl, GraphQLClient graphQLClient, HttpService httpService) {
+    public CachingLookupTableClient(String lookupUrl, DgsGraphQLClient graphQLClient, HttpService httpService) {
         super(lookupUrl, graphQLClient, httpService);
     }
 
