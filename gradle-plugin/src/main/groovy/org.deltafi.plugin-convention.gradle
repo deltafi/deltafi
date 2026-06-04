@@ -21,7 +21,7 @@ plugins {
     id 'java'
     id 'jacoco'
     id 'org.springframework.boot'
-    id 'com.palantir.docker'
+    id 'org.deltafi.docker'
 }
 
 dependencies {

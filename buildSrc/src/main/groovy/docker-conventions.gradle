@@ -1,5 +1,5 @@
 plugins {
-    id 'com.palantir.docker'
+    id 'org.deltafi.docker'
 }
 
 docker {
