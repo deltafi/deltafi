@@ -110,11 +110,20 @@ public class ValkeyKeyedBlockingQueue {
      * @return true if the pattern exists
      */
     public boolean exists(String key, String search) {
-        ScanParams scanParams = new ScanParams().match(search);
+        // ZSCAN applies MATCH after reading each batch, so a single cursor=0 call almost never sees a
+        // specific match in a deep set. The cursor must be looped until it returns "0" to scan the whole set.
+        ScanParams scanParams = new ScanParams().match(search).count(1000);
 
         try (Jedis jedis = jedisPool.getResource()) {
-            ScanResult<Tuple> scanResult = jedis.zscan(key, ScanParams.SCAN_POINTER_START, scanParams);
-            return !scanResult.getResult().isEmpty();
+            String cursor = ScanParams.SCAN_POINTER_START;
+            do {
+                ScanResult<Tuple> scanResult = jedis.zscan(key, cursor, scanParams);
+                if (!scanResult.getResult().isEmpty()) {
+                    return true;
+                }
+                cursor = scanResult.getCursor();
+            } while (!ScanParams.SCAN_POINTER_START.equals(cursor));
+            return false;
         }
     }
 
