@@ -113,6 +113,7 @@ Manage flows, topics, and flow configurations.
 | `disable_test_mode` | Disable test mode |
 | `load_flow` | Create or update a flow from JSON |
 | `validate_flow` | Validate flow configuration and action parameters |
+| `delete_flow` | Delete a system flow by name and type (stop it first; plugin flows are removed with their plugin) |
 
 **Example:** "Show me why the s3-egress data sink is invalid"
 

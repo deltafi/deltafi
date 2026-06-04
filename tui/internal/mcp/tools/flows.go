@@ -87,6 +87,18 @@ func init() {
 		Tags:    []string{"flows"},
 	})
 
+	// delete_flow - Delete a flow
+	reg.Register(registry.Tool{
+		Definition: mcp.NewTool("delete_flow",
+			mcp.WithDescription("Delete a system flow by name and type. The flow must be stopped first. Only system flows (created via load_flow or the UI) can be deleted; plugin flows are removed by uninstalling or upgrading their plugin."),
+			mcp.WithDestructiveHintAnnotation(true),
+			mcp.WithString("name", mcp.Required(), mcp.Description("Flow name")),
+			mcp.WithString("type", mcp.Required(), mcp.Description("Flow type: transform, rest-data-source, timed-data-source, on-error-data-source, data-sink")),
+		),
+		Handler: deleteFlow,
+		Tags:    []string{"flows"},
+	})
+
 	// list_topics - List all pub/sub topics
 	reg.Register(registry.Tool{
 		Definition: mcp.NewTool("list_topics",
@@ -310,6 +322,65 @@ func stopFlow(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult
 
 func pauseFlow(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	return setFlowState(req, graphql.FlowStatePaused, "paused")
+}
+
+func deleteFlow(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+	name, err := req.RequireString("name")
+	if err != nil {
+		return registry.ErrorResult("name parameter is required"), nil
+	}
+
+	flowTypeStr, err := req.RequireString("type")
+	if err != nil {
+		return registry.ErrorResult("type parameter is required"), nil
+	}
+
+	var removed bool
+	switch flowTypeStr {
+	case "transform":
+		resp, err := graphql.DeleteTransform(name)
+		if err != nil {
+			return registry.ErrorResultFromErr(err), nil
+		}
+		removed = resp.RemoveTransformFlowPlan
+
+	case "rest-data-source":
+		resp, err := graphql.DeleteRestDataSource(name)
+		if err != nil {
+			return registry.ErrorResultFromErr(err), nil
+		}
+		removed = resp.RemoveRestDataSourcePlan
+
+	case "timed-data-source":
+		resp, err := graphql.DeleteTimedDataSource(name)
+		if err != nil {
+			return registry.ErrorResultFromErr(err), nil
+		}
+		removed = resp.RemoveTimedDataSourcePlan
+
+	case "on-error-data-source":
+		resp, err := graphql.DeleteOnErrorDataSource(name)
+		if err != nil {
+			return registry.ErrorResultFromErr(err), nil
+		}
+		removed = resp.RemoveOnErrorDataSourcePlan
+
+	case "data-sink":
+		resp, err := graphql.DeleteDataSink(name)
+		if err != nil {
+			return registry.ErrorResultFromErr(err), nil
+		}
+		removed = resp.RemoveDataSinkPlan
+
+	default:
+		return registry.ErrorResult(fmt.Sprintf("unknown flow type: %s (valid: transform, rest-data-source, timed-data-source, on-error-data-source, data-sink)", flowTypeStr)), nil
+	}
+
+	if !removed {
+		return registry.ErrorResult(fmt.Sprintf("failed to delete %s %s: not found among system flows (plugin flows are removed by uninstalling or upgrading their plugin)", flowTypeStr, name)), nil
+	}
+
+	return mcp.NewToolResultText(fmt.Sprintf("Successfully deleted %s %s", flowTypeStr, name)), nil
 }
 
 func setFlowState(req mcp.CallToolRequest, state graphql.FlowState, action string) (*mcp.CallToolResult, error) {
