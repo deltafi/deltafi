@@ -23,7 +23,7 @@ dependencies {
     implementation "com.squareup.okhttp3:okhttp:${okhttpVersion}"
 
     compileOnly 'org.springframework.boot:spring-boot-starter-cache'
-    compileOnly 'com.github.ben-manes.caffeine:caffeine:3.2.2'
+    compileOnly "com.github.ben-manes.caffeine:caffeine:${caffeineVersion}"
 
     testImplementation platform("org.junit:junit-bom:${jupiterVersion}")
     testRuntimeOnly platform("org.junit:junit-bom:${jupiterVersion}")
@@ -37,6 +37,6 @@ dependencies {
     testImplementation "org.mockito:mockito-junit-jupiter"
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testImplementation 'org.springframework.boot:spring-boot-starter-cache'
-    testImplementation 'com.github.ben-manes.caffeine:caffeine:3.2.2'
+    testImplementation "com.github.ben-manes.caffeine:caffeine:${caffeineVersion}"
     testImplementation 'org.wiremock:wiremock-standalone:3.13.1'
 }

@@ -1,7 +1,7 @@
 plugins {
     id 'groovy-gradle-plugin'
     id 'java-conventions'
-    id 'com.gradle.plugin-publish' version '1.2.1'
+    id 'com.gradle.plugin-publish' version '2.1.1'
 }
 
 description = 'DeltaFi gradle plugin'

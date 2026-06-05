@@ -42,27 +42,27 @@ dependencies {
     implementation 'com.netflix.graphql.dgs:dgs-starter'
     implementation 'com.netflix.graphql.dgs:graphql-dgs-extended-scalars'
     implementation 'com.netflix.graphql.dgs:graphql-dgs-spring-graphql-starter'
-    implementation 'org.apache.commons:commons-text:1.14.0'
-    implementation 'io.dropwizard.metrics:metrics-core:4.2.37'
-    implementation 'io.fabric8:kubernetes-client:6.14.0'
-    implementation 'com.github.docker-java:docker-java-core:3.6.0'
-    implementation 'com.github.docker-java:docker-java-transport-httpclient5:3.6.0'
+    implementation "org.apache.commons:commons-text:${commonsTextVersion}"
+    implementation 'io.dropwizard.metrics:metrics-core:4.2.39'
+    implementation 'io.fabric8:kubernetes-client:7.7.0'
+    implementation "com.github.docker-java:docker-java-core:${dockerJavaVersion}"
+    implementation "com.github.docker-java:docker-java-transport-httpclient5:${dockerJavaVersion}"
     implementation 'org.lz4:lz4-java:1.8.1'
     implementation 'org.postgresql:postgresql:42.7.11'
     implementation 'io.hypersistence:hypersistence-utils-hibernate-63:3.11.0'
-    implementation 'com.fasterxml.uuid:java-uuid-generator:5.1.1'
-    implementation 'org.flywaydb:flyway-core:11.13.2'
-    implementation 'org.flywaydb:flyway-database-postgresql:11.13.2'
-    implementation 'jakarta.annotation:jakarta.annotation-api:1.2.2.1-jre17'
-    implementation 'com.bucket4j:bucket4j_jdk17-jedis:8.14.0'
+    implementation "com.fasterxml.uuid:java-uuid-generator:${javaUuidGeneratorVersion}"
+    implementation "org.flywaydb:flyway-core:${flywayVersion}"
+    implementation "org.flywaydb:flyway-database-postgresql:${flywayVersion}"
+    implementation 'jakarta.annotation:jakarta.annotation-api'
+    implementation 'com.bucket4j:bucket4j_jdk17-jedis:8.19.0'
     implementation "com.fasterxml.jackson.dataformat:jackson-dataformat-csv:${jacksonVersion}"
 
-    compileOnly 'com.github.spotbugs:spotbugs-annotations:4.9.4'
+    compileOnly 'com.github.spotbugs:spotbugs-annotations:4.9.8'
 
     testImplementation project(':deltafi-common-test')
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testImplementation 'org.springframework.security:spring-security-test'
-    testImplementation 'org.apache.nifi:nifi-flowfile-packager:2.4.0'
+    testImplementation "org.apache.nifi:nifi-flowfile-packager:${nifiPackagerVersion}"
     testImplementation "com.github.victools:jsonschema-generator:${jsonschemaGeneratorVersion}"
     testImplementation "com.github.victools:jsonschema-module-jackson:${jsonschemaGeneratorVersion}"
 

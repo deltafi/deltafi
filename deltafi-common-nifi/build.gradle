@@ -11,5 +11,5 @@ dependencies {
 
     api project(':deltafi-common')
 
-    api 'org.apache.nifi:nifi-flowfile-packager:2.5.0'
+    api "org.apache.nifi:nifi-flowfile-packager:${nifiPackagerVersion}"
 }

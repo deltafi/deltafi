@@ -29,9 +29,9 @@ dependencies {
     implementation "org.deltafi:deltafi-action-kit:${deltafiVersion}"
 
     compileOnly "org.projectlombok:lombok"
-    annotationProcessor "org.projectlombok:lombok:1.18.42"
+    annotationProcessor "org.projectlombok:lombok:1.18.46"
     testCompileOnly "org.projectlombok:lombok"
-    testAnnotationProcessor "org.projectlombok:lombok:1.18.42"
+    testAnnotationProcessor "org.projectlombok:lombok:1.18.46"
 
     testImplementation "org.deltafi:deltafi-action-kit-test:${deltafiVersion}"
     testImplementation 'org.hamcrest:hamcrest:2.2'
