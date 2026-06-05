@@ -103,7 +103,7 @@ public class SftpIngress extends TimedIngressAction<SftpIngress.Parameters> {
             session.setConfig("StrictHostKeyChecking", "no");
             String resolvedPassword = params.resolvePassword();
             if (resolvedPassword != null) {
-                session.setPassword(resolvedPassword);
+                session.setPassword(resolvedPassword.getBytes(java.nio.charset.StandardCharsets.UTF_8));
             } else if (sslCredentials.isConfigured()) {
                 // Use private key extracted from keystore provided in ssl properties
                 jSch.addIdentity(params.getUsername(), getPrivateKey(), null, null);
