@@ -1,4 +1,6 @@
 import java.util.concurrent.TimeUnit
+import javax.inject.Inject
+import org.gradle.process.ExecOperations
 
 buildscript {
     dependencies {
@@ -10,7 +12,15 @@ plugins {
     id 'git-version-conventions'
     id 'io.github.gradle-nexus.publish-plugin' version '2.0.0'
     id "de.undercouch.download" version "5.7.0"
+    id 'com.adarshr.test-logger' version '4.0.0'
 }
+
+abstract class ExecHelper {
+    @Inject
+    abstract ExecOperations getExecOperations()
+}
+
+ext.execHelper = objects.newInstance(ExecHelper)
 
 // Distribution configuration
 
@@ -253,7 +263,7 @@ task checkDockerInstallation {
         description = 'Checks if docker is installed'
         group = 'verification'
         def command = "command -v docker"
-        def result = exec {
+        def result = execHelper.execOperations.exec {
             ignoreExitValue = true
             executable "bash"
             args "-l", "-c", command
@@ -414,7 +424,7 @@ deltafi versions --plain --brief | awk '{ print \$3 }' | grep -v '^Image\$'
         
         def versionsOutput = new ByteArrayOutputStream()
         def versionsError = new ByteArrayOutputStream()
-        def versionsResult = exec {
+        def versionsResult = execHelper.execOperations.exec {
             ignoreExitValue = true
             executable "bash"
             args scriptFile.absolutePath
@@ -443,7 +453,7 @@ deltafi versions --plain --brief | awk '{ print \$3 }' | grep -v '^Image\$'
         println ""
         
         // Check if grype is available locally or via Docker
-        def checkResult = exec {
+        def checkResult = execHelper.execOperations.exec {
             ignoreExitValue = true
             executable "bash"
             args "-c", "command -v grype"
@@ -457,7 +467,7 @@ deltafi versions --plain --brief | awk '{ print \$3 }' | grep -v '^Image\$'
         
         if (useContainer) {
             // Check if docker is available
-            def dockerCheck = exec {
+            def dockerCheck = execHelper.execOperations.exec {
                 ignoreExitValue = true
                 executable "bash"
                 args "-c", "command -v docker"
@@ -488,7 +498,7 @@ deltafi versions --plain --brief | awk '{ print \$3 }' | grep -v '^Image\$'
         
         // Update grype database once
         println "Updating grype database..."
-        exec {
+        execHelper.execOperations.exec {
             executable grypeCmd
             args buildGrypeArgs(["db", "update"])
         }
@@ -506,7 +516,7 @@ deltafi versions --plain --brief | awk '{ print \$3 }' | grep -v '^Image\$'
             // Run grype with JSON output
             def jsonOutput = new ByteArrayOutputStream()
             def jsonError = new ByteArrayOutputStream()
-            def jsonResult = exec {
+            def jsonResult = execHelper.execOperations.exec {
                 ignoreExitValue = true
                 executable grypeCmd
                 args buildGrypeArgs([imageName, "--output", "json"])
@@ -515,7 +525,7 @@ deltafi versions --plain --brief | awk '{ print \$3 }' | grep -v '^Image\$'
             }
             
             // Run grype with table output for user to see
-            exec {
+            execHelper.execOperations.exec {
                 ignoreExitValue = true
                 executable grypeCmd
                 args buildGrypeArgs([imageName])
@@ -839,7 +849,7 @@ deltafi versions --plain --brief | awk '{ print \$3 }' | grep -v '^Image\$'
         
         def versionsOutput = new ByteArrayOutputStream()
         def versionsError = new ByteArrayOutputStream()
-        def versionsResult = exec {
+        def versionsResult = execHelper.execOperations.exec {
             ignoreExitValue = true
             executable "bash"
             args scriptFile.absolutePath
@@ -868,7 +878,7 @@ deltafi versions --plain --brief | awk '{ print \$3 }' | grep -v '^Image\$'
         println ""
 
         // Check if trivy is available locally or via Docker
-        def checkResult = exec {
+        def checkResult = execHelper.execOperations.exec {
             ignoreExitValue = true
             executable "bash"
             args "-c", "command -v trivy"
@@ -882,7 +892,7 @@ deltafi versions --plain --brief | awk '{ print \$3 }' | grep -v '^Image\$'
         
         if (useContainer) {
             // Check if docker is available
-            def dockerCheck = exec {
+            def dockerCheck = execHelper.execOperations.exec {
                 ignoreExitValue = true
                 executable "bash"
                 args "-c", "command -v docker"
@@ -923,7 +933,7 @@ deltafi versions --plain --brief | awk '{ print \$3 }' | grep -v '^Image\$'
             // Run trivy with JSON output
             def jsonOutput = new ByteArrayOutputStream()
             def jsonError = new ByteArrayOutputStream()
-            def jsonResult = exec {
+            def jsonResult = execHelper.execOperations.exec {
                 ignoreExitValue = true
                 executable trivyCmd
                 args buildTrivyArgs(["--format", "json", imageName])
@@ -932,7 +942,7 @@ deltafi versions --plain --brief | awk '{ print \$3 }' | grep -v '^Image\$'
             }
             
             // Run trivy with table output for user to see
-            exec {
+            execHelper.execOperations.exec {
                 ignoreExitValue = true
                 executable trivyCmd
                 args buildTrivyArgs([imageName])
@@ -1268,6 +1278,13 @@ subprojects {
     }
 
     apply plugin: 'signing'
+    apply plugin: 'com.adarshr.test-logger'
+    testlogger {
+        theme 'standard'
+        logLevel 'quiet'
+        showStackTraces false
+        slowThreshold 10000
+    }
 
     afterEvaluate {
         // Configure grypeReport to depend on this project's grype task if it exists
