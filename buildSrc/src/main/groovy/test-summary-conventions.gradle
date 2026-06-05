@@ -23,6 +23,7 @@ if (!rootProject.ext.has('testSummaryInitialized')) {
 }
 
 tasks.withType(Test).configureEach { testTask ->
+    def testProjectName = project.name
     testTask.testLogging { logging ->
         events = [TestLogEvent.FAILED, TestLogEvent.SKIPPED, TestLogEvent.STANDARD_OUT, TestLogEvent.STANDARD_ERROR] as Set
         exceptionFormat = TestExceptionFormat.FULL
@@ -35,7 +36,7 @@ tasks.withType(Test).configureEach { testTask ->
             beforeSuite: { desc -> },
             afterSuite: { desc, result ->
                 if (desc.parent) return
-                String summary = "${testTask.project.name}:${testTask.name} results: ${result.resultType} " +
+                String summary = "${testProjectName}:${testTask.name} results: ${result.resultType} " +
                         "(${result.testCount} tests, ${result.successfulTestCount} successes, " +
                         "${result.failedTestCount} failures, ${result.skippedTestCount} skipped) " +
                         "in ${TimeCategory.minus(new Date(result.endTime), new Date(result.startTime))}" +

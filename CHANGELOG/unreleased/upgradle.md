@@ -24,4 +24,4 @@ Document any changes on this branch here.
 - Updated gradle scripts for all Gradle 9.0 deprecations
 
 ### Upgrade and Migration
-- Bumped Gradle from 8.5 to 8.14.5
+- Bumped Gradle from 8.5 to 9.5.1
