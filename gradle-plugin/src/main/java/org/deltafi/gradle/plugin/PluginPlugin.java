@@ -29,6 +29,7 @@ import org.gradle.api.DefaultTask;
 import org.gradle.api.GradleException;
 import org.gradle.api.Project;
 import org.gradle.api.tasks.TaskAction;
+import org.gradle.work.DisableCachingByDefault;
 
 import java.io.File;
 import java.io.IOException;
@@ -67,6 +68,7 @@ public class PluginPlugin implements org.gradle.api.Plugin<Project> {
 
     /** Gradle task that validates flow plans, variables, and integration tests for a DeltaFi plugin. */
     @Setter
+    @DisableCachingByDefault(because = "Validates plugin configuration files; produces no cacheable outputs")
     public static class CheckDeltafiPluginTask extends DefaultTask {
         private PluginPlugin.DeltafiPluginExtension deltafiPluginExtension;
 
