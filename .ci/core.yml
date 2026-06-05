@@ -1,10 +1,10 @@
 
 variables:
   PYTHON_BASE_IMAGE: deltafi/python:3.13.12-0
-  JAVA_BASE_IMAGE: deltafi/deltafi-build:jdk21.0.11-python3.13.12-0
+  JAVA_BASE_IMAGE: deltafi/deltafi-build:jdk21.0.11-python3.13.12-1
   GO_BASE_IMAGE: deltafi/deltafi-build:jdk21.0.10_7-golang1.26.0-alpine-0
   BUILDX_BASE_IMAGE: deltafi/docker-with-buildx:28.5.1-alpine3.22-0.29.1-0
-  GRADLE_VERSION: 8.14.5
+  GRADLE_VERSION: 9.5.1
 
   PROJECT_NAME: ${CI_PROJECT_NAME}
   CORE_PROJECT_ID: 45043636

@@ -7,10 +7,12 @@ stages:
   - integration-test
 
 variables:
-  PYTHON_BASE_IMAGE: deltafi/python:3.13.9-3
-  JAVA_BASE_IMAGE: deltafi/deltafi-build:jdk21.0.9-python3.13.9-0
-  GO_BASE_IMAGE: deltafi/deltafi-build:jdk21.0.9_10-golang1.25.4-alpine-0
+  PYTHON_BASE_IMAGE: deltafi/python:3.13.12-0
+  JAVA_BASE_IMAGE: deltafi/deltafi-build:jdk21.0.11-python3.13.12-1
+  GO_BASE_IMAGE: deltafi/deltafi-build:jdk21.0.10_7-golang1.26.0-alpine-0
   BUILDX_BASE_IMAGE: deltafi/docker-with-buildx:28.5.1-alpine3.22-0.29.1-0
+
+  GRADLE_VERSION: 9.5.1
 
   PROJECT_NAME: ${CI_PROJECT_NAME}
   CORE_PROJECT_ID: 45043636
@@ -31,7 +33,7 @@ default:
   variables:
     GRADLE_USER_HOME: /cache/.gradle.${CI_CONCURRENT_ID}
     GRADLE_OPTS: "-Dorg.gradle.daemon=false"
-    GRADLE: "./gradlew -s --no-daemon --build-cache -PgitLabTokenType=Job-Token -PgitLabToken=${CI_JOB_TOKEN}"
+    GRADLE: "gradle -s --parallel --no-daemon -PgitLabTokenType=Job-Token -PgitLabToken=${CI_JOB_TOKEN}"
 
 .gradle-build:
   variables:
@@ -40,6 +42,7 @@ default:
     - .gradle
   stage: build
   script:
+    - sdk install gradle ${GRADLE_VERSION}
     - ${GRADLE} --rerun-tasks ${GRADLE_TASKS}
   artifacts:
     when: always

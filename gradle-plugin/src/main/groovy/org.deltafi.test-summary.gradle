@@ -16,6 +16,7 @@
  *    limitations under the License.
  */
 import groovy.time.TimeCategory
+import org.gradle.api.tasks.testing.TestListener
 import org.gradle.api.tasks.testing.TestResult
 import org.gradle.api.tasks.testing.logging.TestExceptionFormat
 import org.gradle.api.tasks.testing.logging.TestLogEvent
@@ -47,17 +48,22 @@ tasks.withType(Test).configureEach { testTask ->
         showStackTraces = true
     }
     testTask.ignoreFailures = false
-    testTask.afterSuite { desc, result ->
-        if (desc.parent) return
-        String summary = "${testTask.project.name}:${testTask.name} results: ${result.resultType} " +
-                "(${result.testCount} tests, ${result.successfulTestCount} successes, " +
-                "${result.failedTestCount} failures, ${result.skippedTestCount} skipped) " +
-                "in ${TimeCategory.minus(new Date(result.endTime), new Date(result.startTime))}" +
-                "\nReport file: ${testTask.reports.html.entryPoint}"
-        if (result.resultType == TestResult.ResultType.SUCCESS) {
-            rootProject.testsResults.add(0, summary)
-        } else {
-            rootProject.testsResults += summary
-        }
-    }
+    testTask.addTestListener([
+            beforeSuite: { desc -> },
+            afterSuite: { desc, result ->
+                if (desc.parent) return
+                String summary = "${testTask.project.name}:${testTask.name} results: ${result.resultType} " +
+                        "(${result.testCount} tests, ${result.successfulTestCount} successes, " +
+                        "${result.failedTestCount} failures, ${result.skippedTestCount} skipped) " +
+                        "in ${TimeCategory.minus(new Date(result.endTime), new Date(result.startTime))}" +
+                        "\nReport file: ${testTask.reports.html.entryPoint}"
+                if (result.resultType == TestResult.ResultType.SUCCESS) {
+                    rootProject.testsResults.add(0, summary)
+                } else {
+                    rootProject.testsResults += summary
+                }
+            },
+            beforeTest: { desc -> },
+            afterTest: { desc, result -> }
+    ] as TestListener)
 }
