@@ -59,7 +59,7 @@ class EntityAuthorizationResolverTest {
         @SuppressWarnings("unchecked")
         HttpResponse<String> httpResponse = mock(HttpResponse.class);
         when(httpResponse.body()).thenReturn("{\"authorized\":true,\"reason\":null}");
-        when(httpClient.send(any(HttpRequest.class), any(HttpResponse.BodyHandler.class))).thenReturn(httpResponse);
+        when(httpClient.send(any(HttpRequest.class), Mockito.<HttpResponse.BodyHandler<String>>any())).thenReturn(httpResponse);
 
         try (MockedStatic<DeltaFiUserService> mockedStatic = Mockito.mockStatic(DeltaFiUserService.class)) {
             mockedStatic.when(DeltaFiUserService::currentUsername).thenReturn("testUser");
@@ -77,7 +77,7 @@ class EntityAuthorizationResolverTest {
         @SuppressWarnings("unchecked")
         HttpResponse<String> httpResponse = mock(HttpResponse.class);
         when(httpResponse.body()).thenReturn("{\"authorized\":false,\"reason\":\"insufficient clearance\"}");
-        when(httpClient.send(any(HttpRequest.class), any(HttpResponse.BodyHandler.class))).thenReturn(httpResponse);
+        when(httpClient.send(any(HttpRequest.class), Mockito.<HttpResponse.BodyHandler<String>>any())).thenReturn(httpResponse);
 
         try (MockedStatic<DeltaFiUserService> mockedStatic = Mockito.mockStatic(DeltaFiUserService.class)) {
             mockedStatic.when(DeltaFiUserService::currentUsername).thenReturn("testUser");
@@ -93,7 +93,7 @@ class EntityAuthorizationResolverTest {
     void isAuthorized_whenHttpCallFails_returnsDenied() throws Exception {
         EntityAuthorizationResolver resolver = new EntityAuthorizationResolver(httpClient, "http://localhost:8080/api/v1/authorize", true);
 
-        when(httpClient.send(any(HttpRequest.class), any(HttpResponse.BodyHandler.class))).thenThrow(new IOException("Connection refused"));
+        when(httpClient.send(any(HttpRequest.class), Mockito.<HttpResponse.BodyHandler<String>>any())).thenThrow(new IOException("Connection refused"));
 
         try (MockedStatic<DeltaFiUserService> mockedStatic = Mockito.mockStatic(DeltaFiUserService.class)) {
             mockedStatic.when(DeltaFiUserService::currentUsername).thenReturn("testUser");
@@ -108,7 +108,7 @@ class EntityAuthorizationResolverTest {
     void isAuthorized_whenInterrupted_returnsDeniedAndReinterrupts() throws Exception {
         EntityAuthorizationResolver resolver = new EntityAuthorizationResolver(httpClient, "http://localhost:8080/api/v1/authorize", true);
 
-        when(httpClient.send(any(HttpRequest.class), any(HttpResponse.BodyHandler.class))).thenThrow(new InterruptedException("interrupted"));
+        when(httpClient.send(any(HttpRequest.class), Mockito.<HttpResponse.BodyHandler<String>>any())).thenThrow(new InterruptedException("interrupted"));
 
         try (MockedStatic<DeltaFiUserService> mockedStatic = Mockito.mockStatic(DeltaFiUserService.class)) {
             mockedStatic.when(DeltaFiUserService::currentUsername).thenReturn("testUser");
@@ -130,7 +130,7 @@ class EntityAuthorizationResolverTest {
         @SuppressWarnings("unchecked")
         HttpResponse<String> httpResponse = mock(HttpResponse.class);
         when(httpResponse.body()).thenReturn("not valid json");
-        when(httpClient.send(any(HttpRequest.class), any(HttpResponse.BodyHandler.class))).thenReturn(httpResponse);
+        when(httpClient.send(any(HttpRequest.class), Mockito.<HttpResponse.BodyHandler<String>>any())).thenReturn(httpResponse);
 
         try (MockedStatic<DeltaFiUserService> mockedStatic = Mockito.mockStatic(DeltaFiUserService.class)) {
             mockedStatic.when(DeltaFiUserService::currentUsername).thenReturn("testUser");

@@ -248,7 +248,7 @@ class HttpServiceTest {
 
     private void verifyResponse(String contentType, String method, HttpResponse<InputStream> httpResponse, HttpResponse<InputStream> testResponse) throws IOException, InterruptedException {
         ArgumentCaptor<HttpRequest> httpRequestArgumentCaptor = ArgumentCaptor.forClass(HttpRequest.class);
-        Mockito.verify(httpClient).send(httpRequestArgumentCaptor.capture(), Mockito.any(HttpResponse.BodyHandler.class));
+        Mockito.verify(httpClient).send(httpRequestArgumentCaptor.capture(), Mockito.<HttpResponse.BodyHandler<InputStream>>any());
 
         HttpRequest httpRequest = httpRequestArgumentCaptor.getValue();
         assertEquals(method, httpRequest.method());

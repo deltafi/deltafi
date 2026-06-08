@@ -34,6 +34,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.io.IOException;
@@ -257,7 +258,7 @@ class FederatedErrorServiceTest {
 
             when(httpResponse.statusCode()).thenReturn(200);
             when(httpResponse.body()).thenReturn(successResponse);
-            when(httpClient.send(any(HttpRequest.class), any(HttpResponse.BodyHandler.class)))
+            when(httpClient.send(any(HttpRequest.class), Mockito.<HttpResponse.BodyHandler<String>>any()))
                     .thenReturn(httpResponse);
 
             DeltaFiles leaderResults = createDeltaFiles(10);
@@ -278,13 +279,13 @@ class FederatedErrorServiceTest {
             assertEquals(0, response.membersFailed());
 
             // Verify HTTP requests were made to both members
-            verify(httpClient, times(2)).send(any(HttpRequest.class), any(HttpResponse.BodyHandler.class));
+            verify(httpClient, times(2)).send(any(HttpRequest.class), Mockito.<HttpResponse.BodyHandler<String>>any());
         }
 
         @Test
         void searchErrors_memberHttpError_marksAsUnreachable() throws IOException, InterruptedException {
             when(httpResponse.statusCode()).thenReturn(500);
-            when(httpClient.send(any(HttpRequest.class), any(HttpResponse.BodyHandler.class)))
+            when(httpClient.send(any(HttpRequest.class), Mockito.<HttpResponse.BodyHandler<String>>any()))
                     .thenReturn(httpResponse);
 
             DeltaFiles leaderResults = createDeltaFiles(10);
@@ -324,7 +325,7 @@ class FederatedErrorServiceTest {
 
             when(httpResponse.statusCode()).thenReturn(200);
             when(httpResponse.body()).thenReturn(successResponse);
-            when(httpClient.send(any(HttpRequest.class), any(HttpResponse.BodyHandler.class)))
+            when(httpClient.send(any(HttpRequest.class), Mockito.<HttpResponse.BodyHandler<String>>any()))
                     .thenReturn(httpResponse);
 
             when(deltaFiProperties.getMemberConfigs()).thenReturn(List.of(
@@ -359,7 +360,7 @@ class FederatedErrorServiceTest {
 
             when(httpResponse.statusCode()).thenReturn(200);
             when(httpResponse.body()).thenReturn(successResponse);
-            when(httpClient.send(any(HttpRequest.class), any(HttpResponse.BodyHandler.class)))
+            when(httpClient.send(any(HttpRequest.class), Mockito.<HttpResponse.BodyHandler<String>>any()))
                     .thenReturn(httpResponse);
 
             when(deltaFiProperties.getMemberConfigs()).thenReturn(List.of(
@@ -394,7 +395,7 @@ class FederatedErrorServiceTest {
 
             when(httpResponse.statusCode()).thenReturn(200);
             when(httpResponse.body()).thenReturn(memberResponse);
-            when(httpClient.send(any(HttpRequest.class), any(HttpResponse.BodyHandler.class)))
+            when(httpClient.send(any(HttpRequest.class), Mockito.<HttpResponse.BodyHandler<String>>any()))
                     .thenReturn(httpResponse);
 
             List<AcknowledgeResult> localResults = List.of(
@@ -432,7 +433,7 @@ class FederatedErrorServiceTest {
 
             when(httpResponse.statusCode()).thenReturn(200);
             when(httpResponse.body()).thenReturn(memberResponse);
-            when(httpClient.send(any(HttpRequest.class), any(HttpResponse.BodyHandler.class)))
+            when(httpClient.send(any(HttpRequest.class), Mockito.<HttpResponse.BodyHandler<String>>any()))
                     .thenReturn(httpResponse);
 
             List<RetryResult> localResults = List.of(createRetryResult(true), createRetryResult(true));
@@ -461,7 +462,7 @@ class FederatedErrorServiceTest {
 
             when(httpResponse.statusCode()).thenReturn(200);
             when(httpResponse.body()).thenReturn(memberResponse);
-            when(httpClient.send(any(HttpRequest.class), any(HttpResponse.BodyHandler.class)))
+            when(httpClient.send(any(HttpRequest.class), Mockito.<HttpResponse.BodyHandler<String>>any()))
                     .thenReturn(httpResponse);
 
             List<RetryResult> localResults = List.of(createRetryResult(true));
@@ -490,7 +491,7 @@ class FederatedErrorServiceTest {
 
             when(httpResponse.statusCode()).thenReturn(200);
             when(httpResponse.body()).thenReturn(memberResponse);
-            when(httpClient.send(any(HttpRequest.class), any(HttpResponse.BodyHandler.class)))
+            when(httpClient.send(any(HttpRequest.class), Mockito.<HttpResponse.BodyHandler<String>>any()))
                     .thenReturn(httpResponse);
 
             List<ReplayAndAcknowledgeResult> localResults = List.of(createReplayAndAcknowledgeResult(true));
@@ -540,7 +541,7 @@ class FederatedErrorServiceTest {
 
             when(httpResponse.statusCode()).thenReturn(200);
             when(httpResponse.body()).thenReturn(memberResponse);
-            when(httpClient.send(any(HttpRequest.class), any(HttpResponse.BodyHandler.class)))
+            when(httpClient.send(any(HttpRequest.class), Mockito.<HttpResponse.BodyHandler<String>>any()))
                     .thenReturn(httpResponse);
 
             when(deltaFiProperties.getMemberConfigs()).thenReturn(List.of(
@@ -567,7 +568,7 @@ class FederatedErrorServiceTest {
         @Test
         void executeAction_memberHttpError_marksAsFailed() throws IOException, InterruptedException {
             when(httpResponse.statusCode()).thenReturn(500);
-            when(httpClient.send(any(HttpRequest.class), any(HttpResponse.BodyHandler.class)))
+            when(httpClient.send(any(HttpRequest.class), Mockito.<HttpResponse.BodyHandler<String>>any()))
                     .thenReturn(httpResponse);
 
             List<AcknowledgeResult> localResults = List.of(createAcknowledgeResult(true));
@@ -610,7 +611,7 @@ class FederatedErrorServiceTest {
             when(httpResponse.body())
                     .thenReturn(limitNotSupportedResponse)
                     .thenReturn(successResponse);
-            when(httpClient.send(any(HttpRequest.class), any(HttpResponse.BodyHandler.class)))
+            when(httpClient.send(any(HttpRequest.class), Mockito.<HttpResponse.BodyHandler<String>>any()))
                     .thenReturn(httpResponse);
 
             List<AcknowledgeResult> localResults = List.of(createAcknowledgeResult(true));
@@ -635,7 +636,7 @@ class FederatedErrorServiceTest {
             assertEquals(0, response.membersFailed());
 
             // Verify two HTTP requests were made (first with limit, second without)
-            verify(httpClient, times(2)).send(any(HttpRequest.class), any(HttpResponse.BodyHandler.class));
+            verify(httpClient, times(2)).send(any(HttpRequest.class), Mockito.<HttpResponse.BodyHandler<String>>any());
         }
 
         @Test
@@ -681,7 +682,7 @@ class FederatedErrorServiceTest {
                     """;
             when(httpResponse.statusCode()).thenReturn(200);
             when(httpResponse.body()).thenReturn(memberResponse);
-            when(httpClient.send(any(HttpRequest.class), any(HttpResponse.BodyHandler.class)))
+            when(httpClient.send(any(HttpRequest.class), Mockito.<HttpResponse.BodyHandler<String>>any()))
                     .thenReturn(httpResponse);
 
             when(deltaFiProperties.getMemberConfigs()).thenReturn(List.of(
@@ -735,7 +736,7 @@ class FederatedErrorServiceTest {
                     """;
             when(httpResponse.statusCode()).thenReturn(200);
             when(httpResponse.body()).thenReturn(memberResponse);
-            when(httpClient.send(any(HttpRequest.class), any(HttpResponse.BodyHandler.class)))
+            when(httpClient.send(any(HttpRequest.class), Mockito.<HttpResponse.BodyHandler<String>>any()))
                     .thenReturn(httpResponse);
 
             when(deltaFiProperties.getMemberConfigs()).thenReturn(List.of(
@@ -788,7 +789,7 @@ class FederatedErrorServiceTest {
                     .thenReturn(localSummary);
 
             when(httpResponse.statusCode()).thenReturn(500);
-            when(httpClient.send(any(HttpRequest.class), any(HttpResponse.BodyHandler.class)))
+            when(httpClient.send(any(HttpRequest.class), Mockito.<HttpResponse.BodyHandler<String>>any()))
                     .thenReturn(httpResponse);
 
             when(deltaFiProperties.getMemberConfigs()).thenReturn(List.of(
@@ -815,7 +816,7 @@ class FederatedErrorServiceTest {
 
             when(httpResponse.statusCode()).thenReturn(200);
             when(httpResponse.body()).thenReturn(successResponse);
-            when(httpClient.send(requestCaptor.capture(), any(HttpResponse.BodyHandler.class)))
+            when(httpClient.send(requestCaptor.capture(), Mockito.<HttpResponse.BodyHandler<String>>any()))
                     .thenReturn(httpResponse);
 
             DeltaFiles leaderResults = createDeltaFiles(10);
@@ -851,7 +852,7 @@ class FederatedErrorServiceTest {
 
             when(httpResponse.statusCode()).thenReturn(200);
             when(httpResponse.body()).thenReturn(memberResponse);
-            when(httpClient.send(requestCaptor.capture(), any(HttpResponse.BodyHandler.class)))
+            when(httpClient.send(requestCaptor.capture(), Mockito.<HttpResponse.BodyHandler<String>>any()))
                     .thenReturn(httpResponse);
 
             FederatedActionRequest request = FederatedActionRequest.builder()
@@ -878,7 +879,7 @@ class FederatedErrorServiceTest {
 
             when(httpResponse.statusCode()).thenReturn(200);
             when(httpResponse.body()).thenReturn(memberResponse);
-            when(httpClient.send(requestCaptor.capture(), any(HttpResponse.BodyHandler.class)))
+            when(httpClient.send(requestCaptor.capture(), Mockito.<HttpResponse.BodyHandler<String>>any()))
                     .thenReturn(httpResponse);
 
             // Reason with newlines, tabs, and other control characters
@@ -906,7 +907,7 @@ class FederatedErrorServiceTest {
 
             when(httpResponse.statusCode()).thenReturn(200);
             when(httpResponse.body()).thenReturn(successResponse);
-            when(httpClient.send(requestCaptor.capture(), any(HttpResponse.BodyHandler.class)))
+            when(httpClient.send(requestCaptor.capture(), Mockito.<HttpResponse.BodyHandler<String>>any()))
                     .thenReturn(httpResponse);
 
             // Skip leader
@@ -934,7 +935,7 @@ class FederatedErrorServiceTest {
 
             when(httpResponse.statusCode()).thenReturn(200);
             when(httpResponse.body()).thenReturn(successResponse);
-            when(httpClient.send(requestCaptor.capture(), any(HttpResponse.BodyHandler.class)))
+            when(httpClient.send(requestCaptor.capture(), Mockito.<HttpResponse.BodyHandler<String>>any()))
                     .thenReturn(httpResponse);
 
             // Skip leader
@@ -951,7 +952,7 @@ class FederatedErrorServiceTest {
             federatedErrorService.acknowledgeErrors(request);
 
             // Verify request was made
-            verify(httpClient).send(any(HttpRequest.class), any(HttpResponse.BodyHandler.class));
+            verify(httpClient).send(any(HttpRequest.class), Mockito.<HttpResponse.BodyHandler<String>>any());
         }
     }
 

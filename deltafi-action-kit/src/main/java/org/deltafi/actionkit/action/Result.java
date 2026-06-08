@@ -80,9 +80,9 @@ public abstract class Result<T extends Result<T>> implements ResultType {
      * @param metric Metric object to add to the list of custom metrics in the result
      * @return this instance of Result base class
      */
+    @SuppressWarnings("unchecked") // CRTP: T is bound to the concrete subclass via Result<T extends Result<T>>
     public T add(@NotNull Metric metric) {
         metrics.add(metric);
-        //noinspection unchecked
         return (T) this;
     }
 
@@ -92,6 +92,7 @@ public abstract class Result<T extends Result<T>> implements ResultType {
      * @param message the informational message to be added
      * @return this instance of Result base class
      */
+    @SuppressWarnings("unchecked") // CRTP: T is bound to the concrete subclass via Result<T extends Result<T>>
     public T logInfo(@NotNull String message) {
         messages.add(LogMessage.createInfo(context.getActionName(), message));
         return (T) this;
@@ -103,6 +104,7 @@ public abstract class Result<T extends Result<T>> implements ResultType {
      * @param message the warning message to be added
      * @return this instance of Result base class
      */
+    @SuppressWarnings("unchecked") // CRTP: T is bound to the concrete subclass via Result<T extends Result<T>>
     public T logWarning(@NotNull String message) {
         messages.add(LogMessage.createWarning(context.getActionName(), message));
         return (T) this;
@@ -114,6 +116,7 @@ public abstract class Result<T extends Result<T>> implements ResultType {
      * @param message the error message to be added
      * @return this instance of Result base class
      */
+    @SuppressWarnings("unchecked") // CRTP: T is bound to the concrete subclass via Result<T extends Result<T>>
     protected T logError(@NotNull String message) {
         messages.add(LogMessage.createError(context.getActionName(), message));
         return (T) this;

@@ -645,7 +645,9 @@ class QueueManagementServiceTest {
                 .durationSeconds(1)
                 .build());
 
-        when(deltaFileFlowRepo.distinctRateLimitedColdQueuedDataSinks()).thenReturn(List.of(), List.of(flowName));
+        when(deltaFileFlowRepo.distinctRateLimitedColdQueuedDataSinks())
+                .thenReturn(List.<String>of())
+                .thenReturn(List.of(flowName));
         when(env.getProperty("schedule.maintenance")).thenReturn("true");
         when(dataSinkService.getFlowOrThrow(flowName)).thenReturn(dataSink);
         when(rateLimitService.getAvailableTokens(bucketName)).thenReturn(1L);

@@ -32,5 +32,7 @@ import org.deltafi.test.action.TestCaseBase;
 @Data
 @SuperBuilder
 @EqualsAndHashCode(callSuper = true)
+// Lombok @SuperBuilder generates a builder() override whose return type loses the parent's A type parameter
+@SuppressWarnings("unchecked")
 public class EgressActionTestCase extends TestCaseBase<EgressAction<? extends ActionParameters>> {
 }

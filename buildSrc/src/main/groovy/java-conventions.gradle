@@ -32,12 +32,12 @@ javadoc {
 
 compileJava {
     options.encoding = 'UTF-8'
-    options.compilerArgs << '-parameters' << '-Xlint:deprecation'
+    options.compilerArgs << '-parameters' << '-Xlint:deprecation' << '-Xlint:unchecked'
 }
 
 compileTestJava {
     options.encoding = 'UTF-8'
-    options.compilerArgs << '-parameters' << '-Xlint:deprecation'
+    options.compilerArgs << '-parameters' << '-Xlint:deprecation' << '-Xlint:unchecked'
 }
 
 test {

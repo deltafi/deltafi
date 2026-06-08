@@ -182,7 +182,7 @@ class AnalyticEventServiceTest {
         analyticEventService.queueAnnotations(did, inputAnnotations, creationTime);
 
         // Verify the collector receives filtered annotations
-        ArgumentCaptor<Map<String, String>> captor = ArgumentCaptor.forClass(Map.class);
+        ArgumentCaptor<Map<String, String>> captor = ArgumentCaptor.captor();
         verify(analyticsClient).queueAnnotations(eq(did), captor.capture(), eq(creationTime));
 
         Map<String, String> sentAnnotations = captor.getValue();

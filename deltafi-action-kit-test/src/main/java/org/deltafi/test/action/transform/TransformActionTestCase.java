@@ -36,6 +36,8 @@ import java.util.List;
 @Data
 @EqualsAndHashCode(callSuper = true)
 @SuperBuilder
+// Lombok @SuperBuilder generates a builder() override whose return type loses the parent's A type parameter
+@SuppressWarnings("unchecked")
 public class TransformActionTestCase extends TestCaseBase<TransformAction<? extends ActionParameters>> {
 
     /**

@@ -1582,7 +1582,7 @@ class DeltaFilesServiceTest {
         verify(deltaFileRepo).save(staleFile);
         verify(deltaFileRepo).save(lastClean);
         // both clean files were dispatched; the conflicted one was not
-        ArgumentCaptor<List<WrappedActionInput>> dispatched = ArgumentCaptor.forClass(List.class);
+        ArgumentCaptor<List<WrappedActionInput>> dispatched = ArgumentCaptor.captor();
         verify(coreEventQueue, times(2)).putActions(dispatched.capture(), eq(true));
         List<UUID> dispatchedDids = dispatched.getAllValues().stream()
                 .flatMap(List::stream)

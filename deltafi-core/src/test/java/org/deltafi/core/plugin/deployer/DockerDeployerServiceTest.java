@@ -109,7 +109,7 @@ class DockerDeployerServiceTest {
 
         dockerDeployerService.removePlugin("registry.example.com/my-plugin:2.0.0");
 
-        ArgumentCaptor<Set<String>> filterCaptor = ArgumentCaptor.forClass(Set.class);
+        ArgumentCaptor<Set<String>> filterCaptor = ArgumentCaptor.captor();
         verify(listContainersCmd).withNameFilter(filterCaptor.capture());
 
         assertThat(filterCaptor.getValue()).containsExactly("^/my-plugin$");
