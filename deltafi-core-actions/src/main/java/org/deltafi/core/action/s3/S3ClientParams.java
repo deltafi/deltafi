@@ -29,7 +29,8 @@ import software.amazon.awssdk.core.retry.RetryMode;
 import java.net.URI;
 
 @Data
-@EqualsAndHashCode(callSuper = true)
+// callSuper = true caused equality to always return false despite the param values being equal
+@EqualsAndHashCode(callSuper = false)
 @ToString(callSuper = true)
 public class S3ClientParams extends ActionParameters {
 
