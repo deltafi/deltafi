@@ -1,7 +1,9 @@
 # TestAction
-#### <font color='#888'>Type: TestAction</font>
+`TestAction`
+
 The description
 
 ## Parameters
-None
+
+_No parameters._
 

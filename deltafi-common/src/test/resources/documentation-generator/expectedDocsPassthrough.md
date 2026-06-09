@@ -1,9 +1,13 @@
 # TestAction
-#### <font color='#888'>Type: TestAction</font>
+`TestAction`
+
 The description
 
 ## Parameters
-None
+
+_No parameters._
 
 ## Output
-Content is passed through unchanged.
+
+_Content is passed through unchanged._
+

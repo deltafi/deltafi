@@ -162,6 +162,180 @@ public class DocumentationGeneratorTest {
     }
 
     @Test
+    void generatesDocsForPolymorphicListParameter() throws IOException {
+        // a discriminated-union list parameter has items defined via anyOf with no top-level items.type;
+        // the generator must not NPE and should describe the parameter as an object list
+        String schemaJson = """
+                {
+                  "type": "object",
+                  "properties": {
+                    "operations": {
+                      "description": "Ordered list of operations",
+                      "type": "array",
+                      "items": {
+                        "anyOf": [
+                          { "type": "object", "properties": { "type": { "const": "ADD" }, "amount": { "type": "integer", "description": "How much to add" } }, "required": ["type"] },
+                          { "type": "object", "properties": { "type": { "const": "DELETE" }, "key": { "type": "string", "description": "Key to delete" } }, "required": ["type"] }
+                        ]
+                      }
+                    }
+                  },
+                  "additionalProperties": false
+                }
+                """;
+        Map<String, Object> schema = OBJECT_MAPPER.readValue(schemaJson, new TypeReference<>() {});
+
+        ActionDescriptor actionDescriptor = ActionDescriptor.builder()
+                .name("org.deltafi.core.action.test.PolymorphicAction")
+                .type(ActionType.TRANSFORM)
+                .schema(schema)
+                .actionOptions(ActionOptions.builder().description("The description").build())
+                .build();
+
+        String docs = DocumentationGenerator.generateActionDocs(actionDescriptor);
+
+        Assertions.assertTrue(docs.contains("`operations`"), "expected the operations parameter to be documented");
+        // the parameter links into the Types section, where each variant is keyed by its discriminator value
+        Assertions.assertTrue(docs.contains("[`[operations]`](#operations)"),
+                "expected the polymorphic list parameter to link to its type card");
+        Assertions.assertTrue(docs.contains("## Types") && docs.contains("### operations"),
+                "expected the union detailed in the Types section");
+        Assertions.assertTrue(docs.contains("**ADD**"), "expected the ADD variant");
+        Assertions.assertTrue(docs.contains("**DELETE**"), "expected the DELETE variant");
+        Assertions.assertTrue(docs.contains("`amount`") && docs.contains("How much to add"),
+                "expected the ADD variant's fields");
+        Assertions.assertTrue(docs.contains("`key`") && docs.contains("Key to delete"),
+                "expected the DELETE variant's fields");
+        // the const 'type' discriminator selects the variant; it is not repeated as a field row
+        Assertions.assertFalse(docs.contains("`type`"), "the discriminator should not appear as a field");
+    }
+
+    @Test
+    void generatesDocsForNestedObjectParameter() throws IOException {
+        String schemaJson = """
+                {
+                  "type": "object",
+                  "properties": {
+                    "endpoint": {
+                      "description": "Connection settings",
+                      "type": "object",
+                      "properties": {
+                        "host": { "type": "string", "description": "Host name" },
+                        "port": { "type": "integer", "description": "Port number" }
+                      },
+                      "required": ["host"]
+                    }
+                  },
+                  "additionalProperties": false
+                }
+                """;
+        Map<String, Object> schema = OBJECT_MAPPER.readValue(schemaJson, new TypeReference<>() {});
+
+        ActionDescriptor actionDescriptor = ActionDescriptor.builder()
+                .name("org.deltafi.core.action.test.NestedAction")
+                .type(ActionType.TRANSFORM)
+                .schema(schema)
+                .actionOptions(ActionOptions.builder().description("The description").build())
+                .build();
+
+        String docs = DocumentationGenerator.generateActionDocs(actionDescriptor);
+
+        Assertions.assertTrue(docs.contains("## Types") && docs.contains("### endpoint"),
+                "expected the nested object detailed in the Types section");
+        Assertions.assertTrue(docs.contains("[`endpoint`](#endpoint)"),
+                "expected the parameter to link to its type card");
+        Assertions.assertTrue(docs.contains("`host`") && docs.contains("`string`"),
+                "expected the host field with its type");
+        Assertions.assertTrue(docs.contains("`port`") && docs.contains("`integer`"),
+                "expected the port field with its type");
+    }
+
+    private static int countOccurrences(String haystack, String needle) {
+        int count = 0;
+        for (int i = haystack.indexOf(needle); i != -1; i = haystack.indexOf(needle, i + needle.length())) {
+            count++;
+        }
+        return count;
+    }
+
+    @Test
+    void rendersNamedTypesOnceInTypesSection() throws IOException {
+        // Structure2 and Structure1 are referenced from multiple parameters (mirrors HelloWorldTransformParameters).
+        // Each named type is defined once in the Types section and linked by name, so reused types are not duplicated.
+        String schemaJson = """
+                {
+                  "type": "object",
+                  "properties": {
+                    "structure1": { "description": "Structure 1 instance", "$ref": "#/$defs/Structure1" },
+                    "structure2": { "description": "Structure 2 instance", "$ref": "#/$defs/Structure2" },
+                    "structure3List": { "description": "Structure3 List", "type": "array", "items": { "$ref": "#/$defs/Structure3" } }
+                  },
+                  "$defs": {
+                    "Structure1": { "type": "object", "properties": {
+                      "s1Boolean": { "type": "boolean", "description": "Description of s1Boolean" } } },
+                    "Structure2": { "type": "object", "properties": {
+                      "s2StringList": { "type": "array", "items": { "type": "string" }, "description": "Description of s2StringList" } } },
+                    "Structure3": { "type": "object", "properties": {
+                      "s2InstanceInS3": { "description": "Description of s2InstanceInS3", "$ref": "#/$defs/Structure2" },
+                      "s1ListInS3": { "description": "Description of s1ListInS3", "type": "array", "items": { "$ref": "#/$defs/Structure1" } } } }
+                  }
+                }
+                """;
+        Map<String, Object> schema = OBJECT_MAPPER.readValue(schemaJson, new TypeReference<>() {});
+
+        ActionDescriptor actionDescriptor = ActionDescriptor.builder()
+                .name("org.deltafi.core.action.test.ReusedTypesAction")
+                .type(ActionType.TRANSFORM)
+                .schema(schema)
+                .actionOptions(ActionOptions.builder().description("The description").build())
+                .build();
+
+        String docs = DocumentationGenerator.generateActionDocs(actionDescriptor);
+
+        // the parameter table links the referenced type rather than showing a bare "object"
+        Assertions.assertTrue(docs.contains("[`[Structure3]`](#structure3)"), "expected the table to link the list element type");
+
+        // each named type is defined once in the Types section, linked by name from where it is used
+        Assertions.assertEquals(1, countOccurrences(docs, "### Structure2\n"), "Structure2 should be defined once, not duplicated per use");
+        Assertions.assertTrue(docs.contains("[`Structure2`](#structure2)"), "expected a by-name link to Structure2");
+        Assertions.assertTrue(docs.contains("[`[Structure1]`](#structure1)"), "expected a by-name list link to Structure1");
+        Assertions.assertTrue(docs.contains("`[string]`"), "expected the compact list type notation");
+        // field descriptions are carried in the table's Description column
+        Assertions.assertTrue(docs.contains("Description of s2StringList"), "expected the field description in the type table");
+    }
+
+    @Test
+    void terminatesOnRecursiveTypes() throws IOException {
+        // a self-referential type is defined once and references itself by name - no infinite expansion
+        String schemaJson = """
+                {
+                  "type": "object",
+                  "properties": {
+                    "root": { "description": "Tree root", "$ref": "#/$defs/Node" }
+                  },
+                  "$defs": {
+                    "Node": { "type": "object", "properties": {
+                      "name": { "type": "string", "description": "Node name" },
+                      "children": { "description": "Child nodes", "type": "array", "items": { "$ref": "#/$defs/Node" } } } }
+                  }
+                }
+                """;
+        Map<String, Object> schema = OBJECT_MAPPER.readValue(schemaJson, new TypeReference<>() {});
+
+        ActionDescriptor actionDescriptor = ActionDescriptor.builder()
+                .name("org.deltafi.core.action.test.RecursiveAction")
+                .type(ActionType.TRANSFORM)
+                .schema(schema)
+                .actionOptions(ActionOptions.builder().description("The description").build())
+                .build();
+
+        String docs = DocumentationGenerator.generateActionDocs(actionDescriptor);
+
+        Assertions.assertEquals(1, countOccurrences(docs, "### Node\n"), "the recursive type should be defined exactly once");
+        Assertions.assertTrue(docs.contains("[`[Node]`](#node)"), "expected the recursive child to link to Node instead of expanding forever");
+    }
+
+    @Test
     @SuppressWarnings({"deprecation", "removal"}) // verifies the migration shim for the deprecated description field
     void isBackwardCompatible() throws IOException {
         ActionDescriptor actionDescriptor = ActionDescriptor.builder()
