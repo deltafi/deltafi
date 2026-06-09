@@ -16,8 +16,13 @@ COPY deltafi-docs/public ./public
 
 # Copy files from outside deltafi-docs that the build references via relative paths
 COPY CHANGELOG.md /build/CHANGELOG.md
-COPY deltafi-core-actions/src/main/resources/docs/ /build/deltafi-core-actions/src/main/resources/docs/
 COPY deltafi-core/src/main/resources/permissions.csv /build/deltafi-core/src/main/resources/permissions.csv
+
+# Generated core-action docs (Core Build produces these via generateDocs / dockerPrepare).
+# copyDocs() in config.js copies these per-action .md pages into the docs tree. The build
+# context must contain deltafi-core-actions/build/docs — produce it locally with:
+#   ./gradlew :deltafi-core-actions:generateDocs
+COPY deltafi-core-actions/build/docs/ /build/deltafi-core-actions/build/docs/
 
 RUN npm run build
 

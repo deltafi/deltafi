@@ -1,2 +1,6 @@
 **/build
+# but keep the generated core-action docs Markdown (consumed by the docs image build)
+!deltafi-core-actions/build
+!deltafi-core-actions/build/docs
+!deltafi-core-actions/build/docs/**
 tui/.go/

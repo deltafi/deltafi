@@ -21,7 +21,6 @@
     - .docs
     - .docker
     - .when-docs-changes
-  needs: []
 
 "🐳 Publish docs (docker.io)":
   variables:
@@ -30,4 +29,3 @@
   extends:
     - .docs
     - .docker-multiarch
-  needs: []

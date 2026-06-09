@@ -36,7 +36,11 @@ ext {
         [source: 'LICENSE', destination: '.'],
         [source: 'deltafi-cli/', destination: 'deltafi-cli'],
         [source: 'orchestration/', destination: 'orchestration'],
-        [source: 'deltafi-docs/public/docs/', destination: 'docs']
+        // The markdown docs browsed by `deltafi docs`: the committed source tree plus the
+        // generated core-action pages (produced by :deltafi-core-actions:generateDocs). core-actions
+        // is excluded from the source tree so it comes only from the freshly generated output.
+        [source: 'deltafi-docs/docs/', destination: 'docs', exclude: ['core-actions/**', 'CHANGELOG.md']],
+        [source: 'deltafi-core-actions/build/docs/', destination: 'docs/core-actions']
     ]
 
     // Paths to exclude from all distributions
@@ -1179,6 +1183,8 @@ archDistroContents.each { arch, archFiles ->
     def archTask = tasks.create(name: "dist-${arch}", type: Tar) {
         dependsOn 'distBinaries'
         dependsOn 'decompressDistBinaries'
+        // generate the core-action docs so deltafi-core-actions/build/docs is populated before packaging
+        dependsOn ':deltafi-core-actions:generateDocs'
         group = 'distribution'
         description = "Creates distribution archive for ${arch}"
 
@@ -1201,6 +1207,9 @@ archDistroContents.each { arch, archFiles ->
                     details -> excludePaths.any { pattern ->
                         details.relativePath.pathString.startsWith(pattern.replace('**', ''))
                     }
+                }
+                if (item.exclude != null) {
+                    exclude item.exclude
                 }
             }
         }

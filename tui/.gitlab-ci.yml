@@ -51,6 +51,9 @@
     - cp -rf ${CI_PROJECT_DIR}/orchestration ${TUI_DIR}/orchestration
     - mkdir -p ${TUI_DIR}/deltafi-docs
     - cp -rf ${CI_PROJECT_DIR}/deltafi-docs/docs ${TUI_DIR}/deltafi-docs/docs
+    # bundle the freshly generated core-action docs (from the Core Build artifact)
+    - mkdir -p ${TUI_DIR}/deltafi-docs/docs/core-actions
+    - cp -f ${CI_PROJECT_DIR}/deltafi-core-actions/build/docs/*.md ${TUI_DIR}/deltafi-docs/docs/core-actions/ 2>/dev/null || true
     - rm -f ${TUI_DIR}/graphql/schema
     - cp -rf ${CI_PROJECT_DIR}/deltafi-core/src/main/resources/schema ${TUI_DIR}/graphql/schema
     - echo "${CI_COMMIT_TAG:-${CI_COMMIT_BRANCH}}" > ${TUI_DIR}/VERSION
@@ -61,7 +64,6 @@
     - .web-terminal
     - .docker
     - .when-tui-changes
-  needs: []
   variables:
     CONTEXT: "${TUI_DIR}"
     DOCKERFILE: "${TUI_DIR}/Dockerfile"
@@ -70,7 +72,6 @@
   extends:
     - .web-terminal
     - .docker-multiarch
-  needs: []
   variables:
     CONTEXT: "${TUI_DIR}"
     DOCKERFILE: "${TUI_DIR}/Dockerfile"
