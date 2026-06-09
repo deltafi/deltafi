@@ -21,6 +21,7 @@ import (
 	"fmt"
 
 	"github.com/deltafi/tui/internal/app"
+	"github.com/deltafi/tui/internal/types"
 	"github.com/spf13/cobra"
 
 	"io/fs"
@@ -43,8 +44,32 @@ var docsCmd = &cobra.Command{
 	Short: "DeltaFi documentation browser",
 	Long:  `DeltaFi documentation browser`,
 	Run: func(cmd *cobra.Command, args []string) {
+		// Fail clearly here, before entering the alt-screen (where a later error would be wiped on exit).
+		basePath := resolveDocsBasePath()
+		if _, err := os.Stat(basePath); os.IsNotExist(err) {
+			fmt.Fprintf(os.Stderr, "Documentation directory not found: %s\n", basePath)
+			os.Exit(1)
+		}
 		runProgram(NewDocsCommand())
 	},
+}
+
+// resolveDocsBasePath returns the documentation directory. It prefers the standard
+// <distroPath>/docs (present in a normal install) and, when that is absent in Core Development
+// mode, falls back to the docs source under the repo (<distroPath>/deltafi-docs/docs).
+func resolveDocsBasePath() string {
+	standard := filepath.Join(app.GetDistroPath(), "docs")
+	if _, err := os.Stat(standard); err == nil {
+		return standard
+	}
+	if app.GetInstance().GetConfig().DeploymentMode == types.CoreDevelopment {
+		repoDocs := filepath.Join(app.GetDistroPath(), "deltafi-docs", "docs")
+		if _, err := os.Stat(repoDocs); err == nil {
+			return repoDocs
+		}
+	}
+	// Nothing found; return the standard path so callers report a consistent not-found error.
+	return standard
 }
 
 func init() {
@@ -287,9 +312,6 @@ func (c *DocsCommand) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (c *DocsCommand) Init() tea.Cmd {
-	fmt.Printf("Initializing...\r\n")
-	basePath := filepath.Join(app.GetDistroPath(), "docs")
-	fmt.Printf("Working directory: %s\r\n", basePath)
 	return tea.Sequence(
 		tea.EnterAltScreen,
 		c.initDocs,
@@ -298,10 +320,7 @@ func (c *DocsCommand) Init() tea.Cmd {
 
 func (c *DocsCommand) initDocs() tea.Msg {
 	docs := []Document{}
-	basePath := filepath.Join(app.GetDistroPath(), "docs")
-
-	// Print the working directory
-	fmt.Printf("Working directory: %s\r\n", basePath)
+	basePath := resolveDocsBasePath()
 
 	// Check if docs directory exists
 	if _, err := os.Stat(basePath); os.IsNotExist(err) {
@@ -357,7 +376,8 @@ func (c *DocsCommand) initDocs() tea.Msg {
 		return fmt.Errorf("no documentation files found in %s", basePath)
 	}
 
-	// Build the document tree
+	// Build the document tree. Parent holds each entry's directory relative to basePath
+	// ("" at the root), so a directory's own relative path is filepath.Join(Parent, Name).
 	rootDocs := []Document{}
 	for _, doc := range docs {
 		if doc.Parent == "" {
@@ -379,12 +399,15 @@ func (c *DocsCommand) initDocs() tea.Msg {
 	return rootDocs
 }
 
-func getChildren(docs []Document, parent string) []Document {
+// getChildren returns the documents directly under parentRel, the parent directory's path relative
+// to the docs root (e.g. "core-actions"). It matches on each entry's Parent field rather than the
+// absolute path so nested directories at any depth resolve correctly.
+func getChildren(docs []Document, parentRel string) []Document {
 	children := []Document{}
 	for _, doc := range docs {
-		if filepath.Dir(doc.Path) == filepath.Join("docs", parent) {
+		if doc.Parent == parentRel {
 			if doc.IsDir {
-				doc.Children = getChildren(docs, doc.Name)
+				doc.Children = getChildren(docs, filepath.Join(parentRel, doc.Name))
 			}
 			children = append(children, doc)
 		}
