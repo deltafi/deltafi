@@ -28,12 +28,18 @@ import java.util.*;
 @EqualsAndHashCode(callSuper = true)
 @NoArgsConstructor
 public class ModifyMetadataParameters extends ActionParameters {
-    @JsonPropertyDescription("Key value pairs of metadata to be added or modified")
+    @JsonPropertyDescription("Key value pairs of metadata to be added or modified (applied first before other operations)")
     private Map<String, String> addOrModifyMetadata = new HashMap<>();
 
-    @JsonPropertyDescription("Map of old metadata key names to new metadata key names to copy. The new metadata key names can be a comma-separated list to make multiple copies.")
+    @JsonPropertyDescription("Map of old metadata key names to new metadata key names to copy. The new metadata key names can be a comma-separated list to make multiple copies. This is applied after addOrModifyMetadata but before the operations list.")
     private Map<String, String> copyMetadata = new HashMap<>();
 
-    @JsonPropertyDescription("List of metadata keys to delete")
+    @JsonPropertyDescription("List of metadata keys to delete. This is applied after addOrModifyMetadata and copyMetadata but before the operations list.")
     private List<String> deleteMetadataKeys = new ArrayList<>();
+
+    @JsonPropertyDescription("""
+            Ordered metadata operations applied as a pipeline over a working copy: the first sees the input
+            metadata, each operation after sees the prior result. The convenience fields above run first. Types: ADD_OR_MODIFY,
+            COPY, DELETE_KEYS, DELETE_MATCHING, REPLACE_KEY, REPLACE_VALUE.""")
+    private List<MetadataOperation> operations = new ArrayList<>();
 }

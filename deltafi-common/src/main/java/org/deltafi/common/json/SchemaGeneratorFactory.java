@@ -42,7 +42,6 @@ public class SchemaGeneratorFactory {
                         .with(Option.FORBIDDEN_ADDITIONAL_PROPERTIES_BY_DEFAULT)
                         .with(Option.INLINE_ALL_SCHEMAS)
                         .with(new JacksonModule(JacksonOption.RESPECT_JSONPROPERTY_REQUIRED,
-                                JacksonOption.IGNORE_TYPE_INFO_TRANSFORM,
                                 JacksonOption.FLATTENED_ENUMS_FROM_JSONPROPERTY));
 
         configBuilder.forFields()

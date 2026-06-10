@@ -267,8 +267,9 @@ public class DocumentationGenerator {
             }
         } else if (typeNode.textValue().equals("array")) {
             JsonNode itemsNode = defJsonNode.get("items");
-            JsonNode itemsTypeNode = itemsNode.get("type");
-            propertyType.setArrayType(itemsTypeNode.textValue());
+            JsonNode itemsTypeNode = itemsNode == null ? null : itemsNode.get("type");
+            // polymorphic list items (anyOf/oneOf of subtypes) have no items.type
+            propertyType.setArrayType(itemsTypeNode != null ? itemsTypeNode.textValue() : "object");
         } else if (typeNode.textValue().equals("object")) {
             JsonNode additionalPropertiesNode = defJsonNode.get("additionalProperties");
             if (additionalPropertiesNode != null) {

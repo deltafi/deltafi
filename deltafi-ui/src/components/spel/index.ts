@@ -20,5 +20,6 @@
 
 export { default as SpelExpressionEditor } from './SpelExpressionEditor.vue';
 export { default as SpelEditorDialog } from './SpelEditorDialog.vue';
+export { default as SpelEditButton } from './SpelEditButton.vue';
 export { default as SpelReference } from './SpelReference.vue';
 export { default as SpelTestPanel } from './SpelTestPanel.vue';

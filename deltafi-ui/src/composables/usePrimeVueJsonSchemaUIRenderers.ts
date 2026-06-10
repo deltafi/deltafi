@@ -29,8 +29,9 @@ import StringRenderer from '../components/jsonSchemaRenderers/defaultRenderers/S
 import PublishStringRenderer from '../components/jsonSchemaRenderers/publishRenderers/StringRenderer.vue';
 import SubscribeStringRenderer from '../components/jsonSchemaRenderers/subscribeRenderers/StringRenderer.vue';
 import AdditionalPropertiesStringRenderer from '../components/jsonSchemaRenderers/defaultRenderers/AdditionalPropertiesStringRenderer.vue';
+import CombinatorRenderer from '../components/jsonSchemaRenderers/defaultRenderers/CombinatorRenderer.vue';
 import { vanillaRenderers } from "@jsonforms/vue-vanilla";
-import { rankWith, isObjectControl, isBooleanControl, isStringControl, isIntegerControl, schemaTypeIs, JsonSchema, UISchemaElement, isControl } from "@jsonforms/core";
+import { rankWith, isObjectControl, isBooleanControl, isStringControl, isIntegerControl, schemaTypeIs, isAnyOfControl, isOneOfControl, or, JsonSchema, UISchemaElement, isControl } from "@jsonforms/core";
 
 // Custom tester for EnvVar type
 // Detected via x-deltafi-type property in the field's schema
@@ -81,6 +82,7 @@ export default function usePrimeVueJsonSchemaUIRenderers() {
     { tester: rankWith(3, isBooleanControl), renderer: BooleanRenderer },
     { tester: rankWith(3, schemaTypeIs("array")), renderer: ArrayListRenderer },
     { tester: rankWith(3, schemaTypeIs("additionalPropertyString")), renderer: AdditionalPropertiesStringRenderer },
+    { tester: rankWith(5, or(isAnyOfControl, isOneOfControl)), renderer: CombinatorRenderer },
   ];
 
   const publishRenderList = [

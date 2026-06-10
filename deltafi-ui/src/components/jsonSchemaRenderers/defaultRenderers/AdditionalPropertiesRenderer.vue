@@ -31,7 +31,10 @@
         </div>
         <span class="additional-properties-equals">=</span>
         <div class="additional-properties-value">
-          <InputText v-if="isSimpleStringType" :model-value="element.value ?? ''" class="value-input" :disabled="!jsonSchema.control.enabled" placeholder="value" @update:model-value="updatePropertyValue(index, $event)" />
+          <div v-if="isSimpleStringType" class="p-inputgroup value-input-group">
+            <InputText :model-value="element.value ?? ''" class="value-input" :disabled="!jsonSchema.control.enabled" placeholder="value" @update:model-value="updatePropertyValue(index, $event)" />
+            <SpelEditButton :model-value="element.value ?? ''" :disabled="!jsonSchema.control.enabled" @update:model-value="updatePropertyValue(index, $event)" />
+          </div>
           <dispatch-renderer v-else-if="element.schema && element.uischema" :visible="jsonSchema.control.visible" :enabled="jsonSchema.control.enabled" :schema="element.schema" :uischema="element.uischema" :path="element.path" :renderers="jsonSchema.control.renderers" :cells="jsonSchema.control.cells" />
         </div>
         <Button v-if="jsonSchema.control.enabled" v-tooltip.bottom="'Remove'" icon="pi pi-times" aria-label="Remove property" text size="small" rounded severity="danger" class="remove-btn" @click="removeProperty(index)" />
@@ -52,6 +55,7 @@ import Ajv, { ValidateFunction } from "ajv";
 
 import _ from "lodash";
 
+import { SpelEditButton } from "@/components/spel";
 import Button from "primevue/button";
 import InputText from "primevue/inputtext";
 
@@ -425,6 +429,10 @@ const noData = computed(() => {
 
 .key-input,
 .value-input {
+  width: 100%;
+}
+
+.value-input-group {
   width: 100%;
 }
 
