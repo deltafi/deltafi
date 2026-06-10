@@ -179,7 +179,7 @@ const deleteRateLimit = async () => {
 }
 
 .summary {
-  background: var(--surface-100);
+  background: var(--df-subtle-bg-alt);
   border-radius: 6px;
   padding: 0.75rem 1rem;
   color: var(--text-color-secondary);

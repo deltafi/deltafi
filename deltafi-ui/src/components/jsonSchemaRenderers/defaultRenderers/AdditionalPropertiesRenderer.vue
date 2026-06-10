@@ -437,7 +437,7 @@ const noData = computed(() => {
 }
 
 .key-input:disabled {
-  background-color: var(--surface-100);
+  background-color: var(--df-subtle-bg-alt);
   opacity: 1;
 }
 

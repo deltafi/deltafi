@@ -317,7 +317,8 @@ watch(() => props.mode, () => {
   gap: 0.25rem;
   margin-top: 0.75rem;
   padding: 0.5rem;
-  background: var(--surface-50);
+  background: var(--df-input-bg);
+  border: 1px solid var(--df-input-border);
   border-radius: 4px;
 }
 

@@ -1061,7 +1061,7 @@ onMounted(async () => {
 }
 
 .plugin-expansion {
-  background: var(--surface-50);
+  background: var(--df-subtle-bg);
 }
 
 .text-success {
@@ -1100,7 +1100,7 @@ onMounted(async () => {
   justify-content: space-between;
   align-items: center;
   padding: 0.75rem 1rem;
-  background: var(--surface-100);
+  background: var(--df-subtle-bg-alt);
   border-radius: 6px;
 }
 
@@ -1132,11 +1132,11 @@ onMounted(async () => {
 .diff-table td {
   padding: 0.5rem 0.75rem;
   text-align: left;
-  border-bottom: 1px solid var(--surface-200);
+  border-bottom: 1px solid var(--df-border-color);
 }
 
 .diff-table th {
-  background: var(--surface-100);
+  background: var(--df-subtle-bg-alt);
   font-weight: 600;
   color: var(--text-color-secondary);
   text-transform: uppercase;
@@ -1145,7 +1145,7 @@ onMounted(async () => {
 }
 
 .diff-table tbody tr:hover {
-  background: var(--surface-50);
+  background: var(--df-subtle-bg);
 }
 
 /* Column widths */
@@ -1232,7 +1232,7 @@ onMounted(async () => {
 .json-content {
   font-family: monospace;
   font-size: 0.85rem;
-  background: var(--surface-50);
+  background: var(--df-subtle-bg);
   padding: 1rem;
   border-radius: 4px;
   overflow: auto;

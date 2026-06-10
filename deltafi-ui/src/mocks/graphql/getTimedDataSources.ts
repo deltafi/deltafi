@@ -25,9 +25,15 @@ const generateData = () => {
         description: "Create DeltaFiles of random mediaTypes",
         maxErrors: -1,
         flowStatus: {
-          state: "RUNNING",
-          valid: true,
-          errors: [],
+          state: "INVALID",
+          valid: false,
+          errors: [
+            {
+              configName: "gen-data",
+              errorType: "UNRESOLVED_VARIABLE",
+              message: "Could not resolve placeholder 'notFound' in value \"${notFound}\"",
+            },
+          ],
           testMode: false
         },
         sourcePlugin: {

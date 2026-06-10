@@ -990,6 +990,15 @@ html.dark-mode {
     border-top-color: var(--df-border-color);
   }
 
+  /* Error rows: Bootstrap's light-pink .table-danger is unreadable against
+     light dark-mode text, so use a dark-red background with light text. */
+  .table-danger,
+  .table-danger > th,
+  .table-danger > td {
+    background-color: var(--red-900);
+    color: var(--df-body-color);
+  }
+
   .modal-content {
     background-color: var(--surface-card);
     border-color: var(--df-border-color);

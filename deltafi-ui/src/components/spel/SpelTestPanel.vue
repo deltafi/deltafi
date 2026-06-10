@@ -396,7 +396,7 @@ watch(testData, () => {
 }
 
 .test-data-section {
-  border: 1px solid var(--surface-200);
+  border: 1px solid var(--df-border-color);
   border-radius: 4px;
   padding: 0.75rem;
 }
@@ -441,7 +441,7 @@ watch(testData, () => {
   font-size: 0.75rem;
   color: var(--text-color-secondary);
   padding-bottom: 0.25rem;
-  border-bottom: 1px solid var(--surface-200);
+  border-bottom: 1px solid var(--df-border-color);
   margin-bottom: 0.25rem;
 }
 
@@ -504,7 +504,7 @@ watch(testData, () => {
 
 .test-result.loading,
 .test-result.empty {
-  background: var(--surface-100);
+  background: var(--df-subtle-bg-alt);
   color: var(--text-color-secondary);
   display: flex;
   align-items: center;

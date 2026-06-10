@@ -659,7 +659,7 @@ const typeIcon = computed(() => {
 }
 
 .queue-indicator-bg {
-  fill: var(--surface-0);
+  fill: var(--surface-card);
   stroke: var(--surface-400);
   stroke-width: 1;
 }

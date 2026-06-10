@@ -1454,7 +1454,7 @@ onUnmounted(() => {
 }
 
 .action-queue-bubble {
-  background: var(--surface-0);
+  background: var(--surface-card);
   border: 1px solid var(--surface-400);
   border-radius: 12px;
   padding: 0.25rem 0.6rem;

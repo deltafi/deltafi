@@ -240,7 +240,7 @@ const examples = computed(() =>
 }
 
 .spel-reference code {
-  background: var(--surface-100);
+  background: var(--df-subtle-bg-alt);
   padding: 0.15rem 0.35rem;
   border-radius: 3px;
   font-family: 'Fira Code', 'Monaco', 'Menlo', monospace;
@@ -255,7 +255,7 @@ const examples = computed(() =>
 
 .example-item {
   padding: 0.75rem;
-  background: var(--surface-50);
+  background: var(--df-subtle-bg);
   border-radius: 4px;
 }
 
@@ -283,7 +283,7 @@ const examples = computed(() =>
 }
 
 .example-item.clickable:hover {
-  background: var(--surface-100);
+  background: var(--df-subtle-bg-alt);
 }
 
 .example-item.clickable:hover code {
@@ -297,7 +297,7 @@ const examples = computed(() =>
   font-size: 0.8rem;
   color: var(--text-color-secondary);
   text-align: center;
-  border-top: 1px solid var(--surface-200);
+  border-top: 1px solid var(--df-border-color);
 }
 
 .click-hint i {
