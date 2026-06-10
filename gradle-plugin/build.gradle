@@ -10,6 +10,7 @@ license {
     exclude("OrgDeltafiPluginConventionPlugin.java")
     exclude("OrgDeltafiTestSummaryPlugin.java")
     exclude("OrgDeltafiGitVersionPlugin.java")
+    exclude("OrgDeltafiLicenseConventionPlugin.java")
 }
 
 javadoc {
@@ -17,6 +18,7 @@ javadoc {
         exclude 'OrgDeltafiPluginConventionPlugin.java'
         exclude 'OrgDeltafiTestSummaryPlugin.java'
         exclude 'OrgDeltafiGitVersionPlugin.java'
+        exclude 'OrgDeltafiLicenseConventionPlugin.java'
     }
 }
 
@@ -48,6 +50,13 @@ gradlePlugin {
             description = 'Tasks used to build Docker images for DeltaFi projects'
             tags.set(['deltafi', 'DeltaFi', 'docker'])
         }
+        licensePlugin {
+            id = 'org.deltafi.license'
+            implementationClass = 'org.deltafi.gradle.license.LicensePlugin'
+            displayName = 'DeltaFi License Tasks'
+            description = 'Inserts and verifies the project license header on source files'
+            tags.set(['deltafi', 'DeltaFi', 'license'])
+        }
     }
 }
 
@@ -68,6 +77,11 @@ pluginDescriptors {
                 declaration.setDisplayName("DeltaFi Git Version")
                 declaration.setDescription("Derives the project version from the latest git tag (`git describe --tags`)")
                 declaration.getTags().set(['deltafi', 'DeltaFi', 'versioning'])
+            }
+            if (declaration.getId() == "org.deltafi.license-convention") {
+                declaration.setDisplayName("DeltaFi License Convention")
+                declaration.setDescription("Applies the DeltaFi license header conventions (mappings, excludes, strict check) to a project")
+                declaration.getTags().set(['deltafi', 'DeltaFi', 'license'])
             }
         }
     }

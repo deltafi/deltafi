@@ -1,17 +1,16 @@
 plugins {
-    id 'com.github.hierynomus.license'
+    id 'org.deltafi.license'
 }
 
 license {
     header = rootProject.file('HEADER')
-    ext.year = 2026
-    // Excludes are relative to source sets directories
+    year = 2026
     excludes(["**/*.xml", "**/generated/**/*.java", "**/*.MockMaker", "**/*.jks", "**/*.p12",
               "**/*.yaml", "**/*.yml", "**/*.properties", "**/*.tar", "**/*.gz", "**/*.Z", "**/*.zip", "**/*.xz", "**/*.ar",
               "**/*.txt", "**/*.html", "**/*.json", "**/test/resources/**",
               "**/*.md", "**/*.png", "**/*.ico", "**/*.jar", "**/*.MF", "**/.gitkeep", "**/Dockerfile",
               "**/*.drawio", "**/.dockerignore", "**/.go",
-              "**/plugin-templates/**", "**/node_modules/**", "**/venv/**", "**/virtualenv/**",
+              "**/plugin-templates/**", "**/node_modules/**", "**/.venv/**", "**/venv/**", "**/virtualenv/**",
               "**/db/migration/**", "**/db/lookup/migration/**"])
     strictCheck = true
     mapping("java", "SLASHSTAR_STYLE")

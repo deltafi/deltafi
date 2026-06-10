@@ -8,22 +8,15 @@ repositories {
     gradlePluginPortal()
 }
 
-dependencies {
-    implementation "com.github.hierynomus.license:com.github.hierynomus.license.gradle.plugin:0.16.1"
-    constraints {
-        implementation('org.springframework:spring-core') {
-            version {
-                require '6.2.10'
-            }
-        }
-    }
-}
-
 gradlePlugin {
     plugins {
         dockerPlugin {
             id = 'org.deltafi.docker'
             implementationClass = 'org.deltafi.gradle.docker.DockerPlugin'
+        }
+        licensePlugin {
+            id = 'org.deltafi.license'
+            implementationClass = 'org.deltafi.gradle.license.LicensePlugin'
         }
     }
 }

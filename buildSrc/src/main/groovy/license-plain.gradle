@@ -2,12 +2,12 @@ plugins {
     id 'license-conventions'
 }
 
-task licenseLocal(type: com.hierynomus.gradle.license.tasks.LicenseCheck) {
+task licenseLocal(type: org.deltafi.gradle.license.LicenseCheckTask) {
     source = fileTree(dir: ".").exclude("build")
 }
 tasks.license.dependsOn licenseLocal
 
-task licenseFormatLocal(type: com.hierynomus.gradle.license.tasks.LicenseFormat) {
+task licenseFormatLocal(type: org.deltafi.gradle.license.LicenseFormatTask) {
     source = fileTree(dir: ".").exclude("build")
 }
 tasks.licenseFormat.dependsOn licenseFormatLocal

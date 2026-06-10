@@ -83,7 +83,6 @@ systemProp.org.gradle.internal.http.socketTimeout=120000
 systemProp.org.gradle.internal.http.connectionTimeout=120000
 
 deltafiVersion=0.100.0
-hierynomusLicenseVersion=0.16.1
 
 deltafiMavenRepo=https://gitlab.com/api/v4/projects/25005502/packages/maven
 projectMavenRepo=https://gitlab.com/api/v4/projects/34705336/packages/maven

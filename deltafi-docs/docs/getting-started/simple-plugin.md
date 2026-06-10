@@ -242,7 +242,6 @@ dependency to `example-plugin/build.gradle`:
 
 ```gradle
 plugins {
-    id "com.github.hierynomus.license" version "${hierynomusLicenseVersion}"
     id 'org.deltafi.plugin-convention' version "${deltafiVersion}"
     id 'org.deltafi.test-summary' version "1.0"
 }
@@ -255,15 +254,6 @@ dependencies {
     // Added post 'deltafi plugin generate'
     // Needed for com.fasterxml.jackson.dataformat.yaml.YAMLFactory
     implementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml'
-}
-
-license {
-    header(rootProject.file('HEADER'))
-    excludes(["**/*.xml", "**/generated/**/*.java", "**/*.MockMaker", "**/*.jks", "**/*.p12", "**/*.yaml", "**/*.tar",
-              "**/*.gz", "**/*.Z", "**/*.zip", "**/*.xz", "**/*.ar", "**/*.txt", "**/*.xml", "**/*.html", "**/*.json",
-              "**/test/resources/**", "**/node_modules/**"])
-    strictCheck true
-    mapping('java', 'SLASHSTAR_STYLE')
 }
 ```
 
