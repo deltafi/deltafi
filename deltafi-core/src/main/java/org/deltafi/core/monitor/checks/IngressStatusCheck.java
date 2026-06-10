@@ -90,7 +90,7 @@ public class IngressStatusCheck extends StatusCheck {
     }
 
     private void doCheckForStorageDisabledIngress(ResultBuilder resultBuilder) throws StorageCheckException {
-        if (propertiesService.isExternalContent()) {
+        if (propertiesService.isContentStorageUnmanaged()) {
             return;
         }
 

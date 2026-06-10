@@ -44,13 +44,25 @@ public class StorageConfigurationService {
 
     @PostConstruct
     public void ensureBucket() throws ObjectStorageException {
-        if (!bucketExists(storageProperties.bucketName())) {
-            createBucket(storageProperties.bucketName());
-        }
+        ensureBucketExists();
         trySetExpiration();
     }
 
     private boolean lifecycleSupported = true;
+
+    /**
+     * Verify the storage bucket exists and recreate it if missing.
+     * Called at startup and periodically when using in-memory storage where
+     * s3proxy loses buckets on restart. Resets lifecycle state when a bucket
+     * is recreated so that age-off rules are re-applied.
+     */
+    public void ensureBucketExists() throws ObjectStorageException {
+        if (!bucketExists(storageProperties.bucketName())) {
+            createBucket(storageProperties.bucketName());
+            lifecycleSupported = true;
+            expirationDayCache = null;
+        }
+    }
 
     private void trySetExpiration() {
         try {

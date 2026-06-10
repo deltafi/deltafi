@@ -22,24 +22,27 @@ import org.deltafi.common.content.StorageProperties;
 import org.deltafi.core.repo.PendingDeleteRepo;
 import org.deltafi.core.schedulers.PendingDeleteCleanupScheduler;
 import org.deltafi.core.services.DeltaFiPropertiesService;
-import org.deltafi.core.services.LocalContentStorageService;
+import org.deltafi.core.services.FastDeleteService;
 import org.deltafi.core.services.StorageConfigurationService;
 import org.deltafi.core.services.SystemService;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
 @ConditionalOnProperty(name = "local.storage.content", havingValue = "true", matchIfMissing = true)
-public class LocalStorageConfig {
+public class StorageConfig {
 
     @Bean
-    public LocalContentStorageService localContentStorageService(PendingDeleteRepo pendingDeleteRepo, SystemService systemService, StorageProperties storageProperties) {
-        return new LocalContentStorageService(pendingDeleteRepo, systemService, storageProperties);
+    @ConditionalOnProperty(name = "storage.in-memory", havingValue = "false", matchIfMissing = true)
+    public FastDeleteService fastDeleteService(PendingDeleteRepo pendingDeleteRepo, SystemService systemService, StorageProperties storageProperties) {
+        return new FastDeleteService(pendingDeleteRepo, systemService, storageProperties);
     }
 
     @Bean
     @ConditionalOnProperty(value = "schedule.maintenance", havingValue = "true", matchIfMissing = true)
+    @ConditionalOnBean(FastDeleteService.class)
     public PendingDeleteCleanupScheduler pendingDeleteCleanupScheduler(SystemService systemService, PendingDeleteRepo pendingDeleteRepo) {
         return new PendingDeleteCleanupScheduler(systemService, pendingDeleteRepo);
     }

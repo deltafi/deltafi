@@ -43,11 +43,11 @@ import java.util.stream.Collectors;
 @Slf4j
 public class DeltaFiPropertiesService implements Snapshotter {
 
-    protected static final Set<String> DISABLED_FOR_EXTERNAL_STORAGE = Set.of("diskSpacePercentThreshold", "ingressDiskSpaceRequirementInMb",
+    protected static final Set<String> DISABLED_STORAGE_PROPERTIES = Set.of("diskSpacePercentThreshold", "ingressDiskSpaceRequirementInMb",
             "checkContentStoragePercentThreshold", "checkDeleteLagErrorThreshold", "checkDeleteLagWarningThreshold");
     private static final String AGE_OFF_META_ONLY = "Number of days that a DeltaFile metadata should live, any records older will be removed. " +
-            "The externally stored content will not be removed by this setting.";
-    private static final String DISABLED_DESCRIPTION = "Disabled due to using external storage.  ";
+            "Content stored outside of DeltaFi will not be removed by this setting.";
+    private static final String DISABLED_DESCRIPTION = "Not applicable for this storage configuration.  ";
     private static final String ENV_DISABLED_DESCRIPTION = "Disabled by configuration.  ";
     private static final Set<String> allowedProperties;
     private static final List<Property> defaultProperties;
@@ -77,23 +77,25 @@ public class DeltaFiPropertiesService implements Snapshotter {
     private final DeltaFiPropertiesRepo deltaFiPropertiesRepo;
     private final ApplicationEventPublisher eventPublisher;
     private final LocalStorageProperties localStorageProperties;
+    private final boolean inMemoryStorage;
     private final Map<String, String> envDisabledProperties;
     private Set<String> disabledProperties;
     private DeltaFiProperties cachedDeltaFiProperties;
     private List<Property> properties;
 
     public DeltaFiPropertiesService(DeltaFiPropertiesRepo deltaFiPropertiesRepo, ApplicationEventPublisher eventPublisher,
-                                    LocalStorageProperties localStorageProperties, boolean isScheduler) {
-        this(deltaFiPropertiesRepo, eventPublisher, localStorageProperties, isScheduler,
+                                    LocalStorageProperties localStorageProperties, boolean isScheduler, boolean inMemoryStorage) {
+        this(deltaFiPropertiesRepo, eventPublisher, localStorageProperties, isScheduler, inMemoryStorage,
                 buildDisabledProperties(deltaFiPropertiesRepo));
     }
 
     DeltaFiPropertiesService(DeltaFiPropertiesRepo deltaFiPropertiesRepo, ApplicationEventPublisher eventPublisher,
                              LocalStorageProperties localStorageProperties, boolean isScheduler,
-                             Map<String, String> envDisabledProperties) {
+                             boolean inMemoryStorage, Map<String, String> envDisabledProperties) {
         this.deltaFiPropertiesRepo = deltaFiPropertiesRepo;
         this.eventPublisher = eventPublisher;
         this.localStorageProperties = localStorageProperties;
+        this.inMemoryStorage = inMemoryStorage;
         this.envDisabledProperties = envDisabledProperties;
         this.disabledProperties = new HashSet<>();
         if (isScheduler) {
@@ -159,8 +161,8 @@ public class DeltaFiPropertiesService implements Snapshotter {
             dataTypes[i] = prop.getDataType().name();
             editables[i] = prop.isEditable();
 
-            if (isExternalContent()) {
-                applyExternalStorageOverrides(keys[i], descriptions, editables, defaultValues, i);
+            if (isContentStorageUnmanaged()) {
+                applyStorageOverrides(keys[i], descriptions, editables, defaultValues, i);
             }
             if (envDisabledProperties.containsKey(keys[i])) {
                 editables[i] = false;
@@ -204,8 +206,8 @@ public class DeltaFiPropertiesService implements Snapshotter {
         }
     }
 
-    private void applyExternalStorageOverrides(String key, String[] descriptions, Boolean[] editables, String[] defaultValues, int i) {
-        if (DISABLED_FOR_EXTERNAL_STORAGE.contains(key)) {
+    private void applyStorageOverrides(String key, String[] descriptions, Boolean[] editables, String[] defaultValues, int i) {
+        if (DISABLED_STORAGE_PROPERTIES.contains(key)) {
             editables[i] = false;
             descriptions[i] = DISABLED_DESCRIPTION + descriptions[i];
         } else if (key.equals("ageOffDays")) {
@@ -431,8 +433,8 @@ public class DeltaFiPropertiesService implements Snapshotter {
         }
     }
 
-    public boolean isExternalContent() {
-        return !this.localStorageProperties.content();
+    public boolean isContentStorageUnmanaged() {
+        return !this.localStorageProperties.content() || this.inMemoryStorage;
     }
 
     private boolean refresh(boolean changed) {

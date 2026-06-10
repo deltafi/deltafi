@@ -82,6 +82,7 @@ deltafi:
   storage:
     bucketName: storage
     url: http://deltafi-s3proxy:9000
+    inMemory: false
   artifactStorage:
     bucketName: deltafi-artifacts
     url: ""     # empty = use the same endpoint as deltafi.storage (shared s3proxy)

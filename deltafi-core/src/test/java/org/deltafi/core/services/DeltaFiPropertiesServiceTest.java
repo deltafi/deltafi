@@ -20,7 +20,9 @@ package org.deltafi.core.services;
 import org.assertj.core.api.Assertions;
 import org.deltafi.common.types.KeyValue;
 import org.deltafi.common.types.VariableDataType;
+import org.deltafi.core.configuration.DeltaFiProperties;
 import org.deltafi.core.configuration.LocalStorageProperties;
+import org.deltafi.core.configuration.PropertyInfo;
 import org.deltafi.core.repo.DeltaFiPropertiesRepo;
 import org.deltafi.core.types.Property;
 import org.deltafi.core.types.snapshot.Snapshot;
@@ -31,15 +33,20 @@ import org.mockito.*;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.ApplicationEventPublisher;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
-import static org.deltafi.core.services.DeltaFiPropertiesService.DISABLED_FOR_EXTERNAL_STORAGE;
+import static org.deltafi.core.services.DeltaFiPropertiesService.DISABLED_STORAGE_PROPERTIES;
 import static org.junit.Assert.assertEquals;
 
 @ExtendWith(MockitoExtension.class)
 class DeltaFiPropertiesServiceTest {
+
+    private static final int PROPERTY_COUNT = (int) Arrays.stream(DeltaFiProperties.class.getDeclaredFields())
+            .filter(f -> f.isAnnotationPresent(PropertyInfo.class))
+            .count();
 
     DeltaFiPropertiesService deltaFiPropertiesService;
 
@@ -58,7 +65,7 @@ class DeltaFiPropertiesServiceTest {
         MockitoAnnotations.openMocks(this);
         Mockito.when(deltaFiPropertiesRepo.isTimescaleDbInstalled()).thenReturn(true);
         deltaFiPropertiesService = new DeltaFiPropertiesService(
-                deltaFiPropertiesRepo, eventPublisher, localStorageProperties, true);
+                deltaFiPropertiesRepo, eventPublisher, localStorageProperties, true, false);
     }
 
     @Test
@@ -68,7 +75,7 @@ class DeltaFiPropertiesServiceTest {
         Mockito.when(deltaFiPropertiesRepo.findAll()).thenReturn(List.of(property));
 
         // An invalid property will prevent startup -- this can only happen if a migration was missed or a value is hand-jammed in the DB
-        assertThatThrownBy(() -> new DeltaFiPropertiesService(deltaFiPropertiesRepo, eventPublisher, new LocalStorageProperties(true, true), true));
+        assertThatThrownBy(() -> new DeltaFiPropertiesService(deltaFiPropertiesRepo, eventPublisher, new LocalStorageProperties(true, true), true, false));
     }
 
     @Test
@@ -91,7 +98,7 @@ class DeltaFiPropertiesServiceTest {
     void testModifyForExternalStorage() {
         Mockito.reset(deltaFiPropertiesRepo);
         Mockito.when(deltaFiPropertiesRepo.isTimescaleDbInstalled()).thenReturn(true);
-        DeltaFiPropertiesService propsWithExternalStorage = new DeltaFiPropertiesService(deltaFiPropertiesRepo, eventPublisher, new LocalStorageProperties(false, true), true);
+        DeltaFiPropertiesService propsWithExternalStorage = new DeltaFiPropertiesService(deltaFiPropertiesRepo, eventPublisher, new LocalStorageProperties(false, true), true, false);
         ArgumentCaptor<Boolean[]> captor = ArgumentCaptor.forClass(Boolean[].class);
         Mockito.verify(deltaFiPropertiesRepo)
                 .batchUpsertAndDeleteProperties(
@@ -104,14 +111,41 @@ class DeltaFiPropertiesServiceTest {
                         Mockito.any());
 
         Boolean[] editable = captor.getValue();
-        assertEquals(58, editable.length);
+        assertEquals(PROPERTY_COUNT, editable.length);
         int notEditable = 0;
         for (int i = 0; i < editable.length; ++i) {
             if (editable[i] == false) {
                 ++notEditable;
             }
         }
-        assertEquals(DISABLED_FOR_EXTERNAL_STORAGE.size(), notEditable);
+        assertEquals(DISABLED_STORAGE_PROPERTIES.size(), notEditable);
+    }
+
+    @Test
+    void testModifyForInMemoryStorage() {
+        Mockito.reset(deltaFiPropertiesRepo);
+        Mockito.when(deltaFiPropertiesRepo.isTimescaleDbInstalled()).thenReturn(true);
+        DeltaFiPropertiesService propsWithInMemoryStorage = new DeltaFiPropertiesService(deltaFiPropertiesRepo, eventPublisher, new LocalStorageProperties(true, true), true, true);
+        ArgumentCaptor<Boolean[]> captor = ArgumentCaptor.forClass(Boolean[].class);
+        Mockito.verify(deltaFiPropertiesRepo)
+                .batchUpsertAndDeleteProperties(
+                        Mockito.any(),
+                        Mockito.any(),
+                        Mockito.any(),
+                        Mockito.any(),
+                        captor.capture(),
+                        Mockito.any(),
+                        Mockito.any());
+
+        Boolean[] editable = captor.getValue();
+        assertEquals(PROPERTY_COUNT, editable.length);
+        int notEditable = 0;
+        for (int i = 0; i < editable.length; ++i) {
+            if (editable[i] == false) {
+                ++notEditable;
+            }
+        }
+        assertEquals(DISABLED_STORAGE_PROPERTIES.size(), notEditable);
     }
 
     @Test
@@ -119,7 +153,7 @@ class DeltaFiPropertiesServiceTest {
         Property property = Property.builder().key("checkDeleteLagErrorThreshold").editable(false).build();
         Mockito.when(deltaFiPropertiesRepo.findAll()).thenReturn(List.of(property));
 
-        DeltaFiPropertiesService propsWithExternalStorage = new DeltaFiPropertiesService(deltaFiPropertiesRepo, eventPublisher, new LocalStorageProperties(false, true), true);
+        DeltaFiPropertiesService propsWithExternalStorage = new DeltaFiPropertiesService(deltaFiPropertiesRepo, eventPublisher, new LocalStorageProperties(false, true), true, false);
         List<KeyValue> updates = List.of(new KeyValue("checkDeleteLagErrorThreshold", "30_000"));
         Assertions.assertThatThrownBy(() -> propsWithExternalStorage.updateProperties(updates, false))
                 .isInstanceOf(IllegalArgumentException.class)
@@ -128,7 +162,7 @@ class DeltaFiPropertiesServiceTest {
 
     @Test
     void testSnapshotDisabledPropertyIgnored() {
-        DeltaFiPropertiesService propsWithExternalStorage = new DeltaFiPropertiesService(deltaFiPropertiesRepo, eventPublisher, new LocalStorageProperties(false, true), true);
+        DeltaFiPropertiesService propsWithExternalStorage = new DeltaFiPropertiesService(deltaFiPropertiesRepo, eventPublisher, new LocalStorageProperties(false, true), true, false);
         List<KeyValue> updates = List.of(new KeyValue("checkDeleteLagErrorThreshold", "30_000"));
         Assertions.assertThatNoException().isThrownBy(() -> propsWithExternalStorage.updateProperties(updates, true));
         Mockito.verify(deltaFiPropertiesRepo, Mockito.never()).updateProperty(Mockito.any(), Mockito.any());
@@ -207,7 +241,7 @@ class DeltaFiPropertiesServiceTest {
         Mockito.when(deltaFiPropertiesRepo.findAll()).thenReturn(List.of(property));
 
         deltaFiPropertiesService = new DeltaFiPropertiesService(
-                deltaFiPropertiesRepo, eventPublisher, localStorageProperties, true);
+                deltaFiPropertiesRepo, eventPublisher, localStorageProperties, true, false);
 
         Snapshot snapshot = new Snapshot();
         snapshot.setDeltaFiProperties(List.of(new KeyValue("systemName", "DeltaFi")));
@@ -223,7 +257,7 @@ class DeltaFiPropertiesServiceTest {
         Mockito.reset(deltaFiPropertiesRepo);
         Map<String, String> envDisabled = Map.of("metricsEnabled", "false");
         DeltaFiPropertiesService service = new DeltaFiPropertiesService(
-                deltaFiPropertiesRepo, eventPublisher, new LocalStorageProperties(true, true), true, envDisabled);
+                deltaFiPropertiesRepo, eventPublisher, new LocalStorageProperties(true, true), true, false, envDisabled);
 
         ArgumentCaptor<Boolean[]> editableCaptor = ArgumentCaptor.forClass(Boolean[].class);
         ArgumentCaptor<String[]> keyCaptor = ArgumentCaptor.forClass(String[].class);
@@ -254,7 +288,7 @@ class DeltaFiPropertiesServiceTest {
                 "parquetAnalyticsEnabled", "false",
                 "provenanceEnabled", "false");
         DeltaFiPropertiesService service = new DeltaFiPropertiesService(
-                deltaFiPropertiesRepo, eventPublisher, new LocalStorageProperties(true, true), true, envDisabled);
+                deltaFiPropertiesRepo, eventPublisher, new LocalStorageProperties(true, true), true, false, envDisabled);
 
         ArgumentCaptor<Boolean[]> editableCaptor = ArgumentCaptor.forClass(Boolean[].class);
         ArgumentCaptor<String[]> keyCaptor = ArgumentCaptor.forClass(String[].class);
@@ -285,7 +319,7 @@ class DeltaFiPropertiesServiceTest {
         Mockito.reset(deltaFiPropertiesRepo);
         Map<String, String> envDisabled = Map.of("metricsEnabled", "false");
         DeltaFiPropertiesService service = new DeltaFiPropertiesService(
-                deltaFiPropertiesRepo, eventPublisher, new LocalStorageProperties(true, true), true, envDisabled);
+                deltaFiPropertiesRepo, eventPublisher, new LocalStorageProperties(true, true), true, false, envDisabled);
 
         Mockito.verify(deltaFiPropertiesRepo).updateProperty("metricsEnabled", "false");
     }
@@ -299,7 +333,7 @@ class DeltaFiPropertiesServiceTest {
         Mockito.when(deltaFiPropertiesRepo.findAll()).thenReturn(List.of(metricsProperty));
 
         DeltaFiPropertiesService service = new DeltaFiPropertiesService(
-                deltaFiPropertiesRepo, eventPublisher, new LocalStorageProperties(true, true), true, envDisabled);
+                deltaFiPropertiesRepo, eventPublisher, new LocalStorageProperties(true, true), true, false, envDisabled);
 
         List<KeyValue> updates = List.of(new KeyValue("metricsEnabled", "true"));
         Assertions.assertThatThrownBy(() -> service.updateProperties(updates, false))
@@ -312,7 +346,7 @@ class DeltaFiPropertiesServiceTest {
         Mockito.reset(deltaFiPropertiesRepo);
         Mockito.when(deltaFiPropertiesRepo.isTimescaleDbInstalled()).thenReturn(false);
         DeltaFiPropertiesService service = new DeltaFiPropertiesService(
-                deltaFiPropertiesRepo, eventPublisher, new LocalStorageProperties(true, true), true);
+                deltaFiPropertiesRepo, eventPublisher, new LocalStorageProperties(true, true), true, false);
 
         ArgumentCaptor<Boolean[]> editableCaptor = ArgumentCaptor.forClass(Boolean[].class);
         ArgumentCaptor<String[]> keyCaptor = ArgumentCaptor.forClass(String[].class);
@@ -344,7 +378,7 @@ class DeltaFiPropertiesServiceTest {
         Mockito.reset(deltaFiPropertiesRepo);
         Mockito.when(deltaFiPropertiesRepo.isTimescaleDbInstalled()).thenReturn(true);
         DeltaFiPropertiesService service = new DeltaFiPropertiesService(
-                deltaFiPropertiesRepo, eventPublisher, new LocalStorageProperties(true, true), true);
+                deltaFiPropertiesRepo, eventPublisher, new LocalStorageProperties(true, true), true, false);
 
         ArgumentCaptor<Boolean[]> editableCaptor = ArgumentCaptor.forClass(Boolean[].class);
         ArgumentCaptor<String[]> keyCaptor = ArgumentCaptor.forClass(String[].class);
@@ -371,7 +405,7 @@ class DeltaFiPropertiesServiceTest {
         Mockito.reset(deltaFiPropertiesRepo);
         Map<String, String> envDisabled = Map.of();
         DeltaFiPropertiesService service = new DeltaFiPropertiesService(
-                deltaFiPropertiesRepo, eventPublisher, new LocalStorageProperties(true, true), true, envDisabled);
+                deltaFiPropertiesRepo, eventPublisher, new LocalStorageProperties(true, true), true, false, envDisabled);
 
         ArgumentCaptor<Boolean[]> editableCaptor = ArgumentCaptor.forClass(Boolean[].class);
         ArgumentCaptor<String[]> keyCaptor = ArgumentCaptor.forClass(String[].class);

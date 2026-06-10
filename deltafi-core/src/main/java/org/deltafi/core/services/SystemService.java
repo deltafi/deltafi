@@ -114,7 +114,7 @@ public class SystemService {
      */
     public boolean isContentStorageDepleted() {
         try {
-            if (deltaFiPropertiesService.isExternalContent()) {
+            if (deltaFiPropertiesService.isContentStorageUnmanaged()) {
                 return false;
             }
 
@@ -160,7 +160,7 @@ public class SystemService {
     }
 
     public List<NodeMetrics> contentNodesMetrics() throws StorageCheckException {
-        if (deltaFiPropertiesService.isExternalContent()) {
+        if (deltaFiPropertiesService.isContentStorageUnmanaged()) {
             return List.of();
         }
 

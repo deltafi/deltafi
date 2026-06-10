@@ -23,6 +23,7 @@ import io.minio.SetBucketLifecycleArgs;
 import io.minio.errors.*;
 import io.minio.messages.LifecycleRule;
 import org.assertj.core.api.InstanceOfAssertFactories;
+import org.deltafi.common.content.StorageProperties;
 import org.deltafi.common.storage.s3.ObjectStorageException;
 import org.deltafi.core.MockDeltaFiPropertiesService;
 import org.junit.jupiter.api.Test;
@@ -37,6 +38,9 @@ import java.security.NoSuchAlgorithmException;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 
 @ExtendWith(MockitoExtension.class)
 class StorageConfigurationServiceTest {
@@ -48,6 +52,9 @@ class StorageConfigurationServiceTest {
     
     @Mock
     MinioClient minioClient;
+
+    @Mock
+    StorageProperties storageProperties;
 
     @Spy
     DeltaFiPropertiesService deltafiProperties = new MockDeltaFiPropertiesService();
@@ -90,6 +97,26 @@ class StorageConfigurationServiceTest {
         assertThat(args.config().rules()).asInstanceOf(InstanceOfAssertFactories.LIST).hasSize(1);
         LifecycleRule rule = args.config().rules().getFirst();
         assertThat(rule.expiration().days()).isEqualTo(13);
+    }
+
+    @Test
+    void testEnsureBucketExistsCreatesMissingBucket() throws Exception {
+        Mockito.when(storageProperties.bucketName()).thenReturn(BUCKET);
+        Mockito.when(minioClient.bucketExists(Mockito.any())).thenReturn(false);
+
+        storageConfigurationService.ensureBucketExists();
+
+        verify(minioClient).makeBucket(Mockito.any(MakeBucketArgs.class));
+    }
+
+    @Test
+    void testEnsureBucketExistsSkipsWhenBucketPresent() throws Exception {
+        Mockito.when(storageProperties.bucketName()).thenReturn(BUCKET);
+        Mockito.when(minioClient.bucketExists(Mockito.any())).thenReturn(true);
+
+        storageConfigurationService.ensureBucketExists();
+
+        verify(minioClient, never()).makeBucket(Mockito.any(MakeBucketArgs.class));
     }
 
 }

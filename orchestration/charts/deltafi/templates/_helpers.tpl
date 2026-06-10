@@ -209,6 +209,8 @@ initContainers:
   value: "6379"
 - name: STORAGE_BUCKET_NAME
   value: {{ .Values.deltafi.storage.bucketName | default "storage" }}
+- name: STORAGE_INMEMORY
+  value: {{ .Values.deltafi.storage.inMemory | default false | quote }}
 # Deprecated: SNOWBALL_ENABLED is only for backward compatibility with older plugins
 - name: SNOWBALL_ENABLED
   value: "false"

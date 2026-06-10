@@ -100,6 +100,37 @@ s3proxy:
       memory: 1Gi
 ```
 
+### In-Memory Object Storage
+
+By default, DeltaFi stores content on disk using s3proxy with a filesystem backend. You can switch to in-memory storage where all content is held in s3proxy's process memory. This eliminates disk I/O for content operations, reducing latency for content reads and writes.
+
+When in-memory storage is enabled, content deletion uses the S3 API directly instead of the filesystem-based fast delete process.
+
+::: warning
+Content stored in memory is lost when s3proxy restarts. Memory usage grows with the amount of stored content. The `diskSpacePercentThreshold` system property monitors disk usage and will not trigger deletes based on s3proxy memory consumption. Configure timed delete policies to age off data aggressively enough to prevent s3proxy from running out of memory.
+:::
+
+Consider decreasing the `deleteFrequency` system property (default 5 minutes) so that timed delete policies run more frequently and free memory sooner. Also consider setting up rate limiting on data sources to control the rate at which content accumulates in memory.
+
+In `site/values.yaml`:
+
+```yaml
+deltafi:
+  storage:
+    inMemory: true
+```
+
+In Kubernetes mode, you may also need to increase the memory allocated to s3proxy depending on your workload:
+
+```yaml
+s3proxy:
+  resources:
+    requests:
+      memory: 1Gi
+    limits:
+      memory: 4Gi
+```
+
 ### Global Environment Variables
 
 The `deltafi.globalEnv` setting injects environment variables into DeltaFi infrastructure services (core-scheduler, core-worker, analytics, egress-sink, nodemonitor, node-fastdelete, clustermonitor). These variables are **not** injected into plugin containers or core-actions. This is useful for setting JVM options, feature flags, or debug settings across the platform infrastructure.

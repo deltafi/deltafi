@@ -123,7 +123,7 @@ public class DeltaFilesService {
     private final IdentityService identityService;
     private final FlowDefinitionService flowDefinitionService;
     private final ParameterResolver parameterResolver;
-    private final Optional<LocalContentStorageService> localContentStorageService;
+    private final Optional<FastDeleteService> fastDeleteService;
     private final PluginService pluginService;
     private final FlowCacheService flowCacheService;
     private final TransactionTemplate transactionTemplate;
@@ -138,7 +138,7 @@ public class DeltaFilesService {
 
     @PostConstruct
     public void init() {
-        log.info("Delta file service initialization started is local storage? {}", localContentStorageService.isPresent());
+        log.info("Delta file service initialization started, fast delete enabled: {}", fastDeleteService.isPresent());
         String scheduleActionEvents = environment.getProperty("schedule.actionEvents");
         if (scheduleActionEvents == null || scheduleActionEvents.equals("true")) {
             DeltaFiProperties properties = getProperties();
@@ -2002,8 +2002,8 @@ public class DeltaFilesService {
         }
 
         try {
-            if (localContentStorageService.isPresent()) {
-                localContentStorageService.get().deleteContent(List.of(did), false);
+            if (fastDeleteService.isPresent()) {
+                fastDeleteService.get().deleteContent(List.of(did), false);
             } else {
                 content.forEach(contentStorageService::delete);
             }
@@ -2080,8 +2080,8 @@ public class DeltaFilesService {
 
     private void deleteContent(List<DeltaFileDeleteDTO> deltaFiles, String policy, boolean deleteMetadata, boolean blockUntilDeleted) {
         List<DeltaFileDeleteDTO> deltaFilesWithContent = deltaFiles.stream().filter(d -> d.getContentDeleted() == null).toList();
-        if (localContentStorageService.isPresent()) {
-            localContentStorageService.get().deleteContent(deltaFilesWithContent.stream().map(DeltaFileDeleteDTO::getDid).toList(), blockUntilDeleted);
+        if (fastDeleteService.isPresent()) {
+            fastDeleteService.get().deleteContent(deltaFilesWithContent.stream().map(DeltaFileDeleteDTO::getDid).toList(), blockUntilDeleted);
         } else {
             contentStorageService.deleteAllByObjectName(deltaFilesWithContent.stream()
                     .flatMap(d -> d.getContentObjectIds().stream()
@@ -3046,7 +3046,7 @@ public class DeltaFilesService {
     }
 
     private boolean isExternalStorage() {
-        return localContentStorageService.isEmpty();
+        return fastDeleteService.isEmpty();
     }
 
     private boolean isNotSkipEgress(DeltaFileFlow flow) {

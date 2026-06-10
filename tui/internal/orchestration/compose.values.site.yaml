@@ -54,6 +54,7 @@ deltafi:
       secret: ssl-secret
   storage:
     bucketName: storage
+    inMemory: false
   logs:
     enabled: true
     logrotate:

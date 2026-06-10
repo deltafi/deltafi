@@ -192,7 +192,7 @@ services:
     user: "${USER_ID}:${GROUP_ID}"
     labels:
       deltafi-group: deltafi-core
-    profiles: ["localStorage"]
+    profiles: ["localStorageFastdelete"]
     networks:
       - deltafi
     restart: unless-stopped
@@ -285,8 +285,9 @@ services:
       S3PROXY_AUTHORIZATION: aws-v2-or-v4
       S3PROXY_ENDPOINT: "http://0.0.0.0:9000"
       S3PROXY_IGNORE_UNKNOWN_HEADERS: true
-      JCLOUDS_PROVIDER: filesystem
+      JCLOUDS_PROVIDER: ${S3PROXY_JCLOUDS_PROVIDER:-filesystem}
       JCLOUDS_FILESYSTEM_BASEDIR: /data
+      JAVA_TOOL_OPTIONS: "-XX:+ExitOnOutOfMemoryError"
     env_file:
       - ${SECRETS_DIR}/minio.env
     labels:

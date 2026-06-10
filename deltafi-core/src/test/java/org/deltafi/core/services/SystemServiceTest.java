@@ -94,7 +94,7 @@ class SystemServiceTest {
         rawMetrics.put("a.b.disk-minio.usage", Map.of("node1", "[5000000, " + timestamp +"]", "node2", "[1000000, " + timestamp +"]"));
         rawMetrics.put("a.b.disk-minio.limit", Map.of("node1", "[10000000, " + timestamp + "]", "node2", "[50000000, " + timestamp + "]"));
 
-        Mockito.when(deltaFiPropertiesService.isExternalContent()).thenReturn(false);
+        Mockito.when(deltaFiPropertiesService.isContentStorageUnmanaged()).thenReturn(false);
         Mockito.when(valkeyBlockingQueue.getByKeys(SystemService.METRIC_KEYS)).thenReturn(rawMetrics);
 
         // mock failing to find the content node
@@ -108,7 +108,7 @@ class SystemServiceTest {
 
     @Test
     void isContentStorageDepleted_externalStorage() {
-        Mockito.when(deltaFiPropertiesService.isExternalContent()).thenReturn(true);
+        Mockito.when(deltaFiPropertiesService.isContentStorageUnmanaged()).thenReturn(true);
         assertFalse(sut.isContentStorageDepleted());
         assertTrue(sut.diskSpaceAPIReachable);
         Mockito.verify(valkeyBlockingQueue, Mockito.never()).getByKeys(SystemService.METRIC_KEYS);
@@ -118,6 +118,6 @@ class SystemServiceTest {
     private void diskSpaceRequirement(int val) {
         deltaFiProperties.setIngressDiskSpaceRequirementInMb(val);
         Mockito.when(deltaFiPropertiesService.getDeltaFiProperties()).thenReturn(deltaFiProperties);
-        Mockito.when(deltaFiPropertiesService.isExternalContent()).thenReturn(false);
+        Mockito.when(deltaFiPropertiesService.isContentStorageUnmanaged()).thenReturn(false);
     }
 }

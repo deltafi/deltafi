@@ -1,6 +1,6 @@
 {{- if or (include "localObjectStorageEnabled" .) (include "localArtifactStorageEnabled" .) -}}
 # ABOUTME: S3-compatible storage proxy deployment using s3proxy
-# ABOUTME: Provides object storage API for DeltaFi content with filesystem backend
+# ABOUTME: Provides object storage API for DeltaFi content with filesystem or in-memory backend
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -38,7 +38,7 @@ spec:
         - name: S3PROXY_ENDPOINT
           value: "http://0.0.0.0:9000"
         - name: JCLOUDS_PROVIDER
-          value: "filesystem"
+          value: {{ if .Values.deltafi.storage.inMemory }}"transient"{{ else }}"filesystem"{{ end }}
         - name: JCLOUDS_FILESYSTEM_BASEDIR
           value: "/data"
         - name: S3PROXY_IDENTITY
@@ -48,6 +48,8 @@ spec:
             secretKeyRef:
               name: minio-keys
               key: rootPassword
+        - name: JAVA_TOOL_OPTIONS
+          value: "-XX:+ExitOnOutOfMemoryError"
         resources:
           requests:
             memory: {{ .Values.s3proxy.resources.requests.memory | default "256Mi" }}
@@ -60,8 +62,9 @@ spec:
           tcpSocket:
             port: 9000
           initialDelaySeconds: 10
-          periodSeconds: 30
+          periodSeconds: 10
           timeoutSeconds: 5
+          failureThreshold: 3
         readinessProbe:
           tcpSocket:
             port: 9000

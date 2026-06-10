@@ -650,6 +650,13 @@ func (o *ComposeOrchestrator) localContentStorageEnabled(values map[string]any) 
 	return "false"
 }
 
+func (o *ComposeOrchestrator) jcloudsProvider(values map[string]any) string {
+	if o.getValueOr(values, "deltafi.storage.inMemory", "false") == "true" {
+		return "transient"
+	}
+	return "filesystem"
+}
+
 // localArtifactStorageEnabled checks enable.local_artifact_storage.
 // Returns "true" or "false" as a string for use in environment variables.
 func (o *ComposeOrchestrator) localArtifactStorageEnabled(values map[string]any) string {
@@ -732,6 +739,7 @@ func (o *ComposeOrchestrator) writeCommonEnv(path string) error {
 		"SNOWBALL_ENABLED":                   "false", // Deprecated: only for backward compatibility with older plugins
 		"SITE_DIR":                           o.sitePath,
 		"STORAGE_BUCKET_NAME":                o.getValueOr(values, "deltafi.storage.bucketName", "storage"),
+		"STORAGE_INMEMORY":                   o.getValueOr(values, "deltafi.storage.inMemory", "false"),
 		"VALKEY_HOST":                        "deltafi-valkey",
 		"VALKEY_PORT":                        "6379",
 		"VALKEY_URL":                         "http://deltafi-valkey:6379",
@@ -1023,6 +1031,7 @@ func (o *ComposeOrchestrator) startupEnvironment() error {
 		"LOOKUP_TABLES_ENABLED":                o.getValue(values, "deltafi.lookup.enabled"),
 		"WEB_TERMINAL_ENABLED":                 o.getValue(values, "deltafi.webTerminal.enabled"),
 		"S3PROXY":                              o.getValue(values, "dependencies.s3proxy"),
+		"S3PROXY_JCLOUDS_PROVIDER":             o.jcloudsProvider(values),
 		"POSTGRES":                             o.getValue(values, "dependencies.postgres"),
 		"NGINX":                                o.getValue(values, "dependencies.nginx"),
 		"VALKEY":                               o.getValue(values, "dependencies.valkey"),
@@ -1067,6 +1076,9 @@ func (o *ComposeOrchestrator) startupEnvironment() error {
 	// make sure minio defaults to true if it is not in the values.yaml
 	if o.localObjectStorageEnabled(values) == "true" {
 		profiles = append(profiles, "localStorage")
+		if o.getValueOr(values, "deltafi.storage.inMemory", "false") != "true" {
+			profiles = append(profiles, "localStorageFastdelete")
+		}
 	}
 
 	if len(profiles) > 0 {

@@ -87,8 +87,9 @@ public class DeltaFiConfiguration {
             DeltaFiPropertiesRepo deltaFiPropertiesRepo,
             ApplicationEventPublisher eventPublisher,
             LocalStorageProperties localStorageProperties,
-            @Value("${schedule.maintenance:true}") boolean scheduledMaintenance) {
-        return new DeltaFiPropertiesService(deltaFiPropertiesRepo, eventPublisher, localStorageProperties, scheduledMaintenance);
+            @Value("${schedule.maintenance:true}") boolean scheduledMaintenance,
+            @Value("${storage.in-memory:false}") boolean inMemoryStorage) {
+        return new DeltaFiPropertiesService(deltaFiPropertiesRepo, eventPublisher, localStorageProperties, scheduledMaintenance, inMemoryStorage);
     }
 
     @Bean

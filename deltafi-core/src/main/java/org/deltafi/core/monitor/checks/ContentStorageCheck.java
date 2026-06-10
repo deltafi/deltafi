@@ -41,7 +41,7 @@ public class ContentStorageCheck extends StatusCheck {
 
     public CheckResult check() {
         ResultBuilder resultBuilder = new ResultBuilder();
-        if (!deltaFiPropertiesService.isExternalContent()) {
+        if (!deltaFiPropertiesService.isContentStorageUnmanaged()) {
             checkContentStorage(resultBuilder);
         }
 

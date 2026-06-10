@@ -62,6 +62,8 @@ deltafi:
     image: {{.Repo}}/deltafi-analytics:{{.Tag}}
   nodemonitor:
     image: {{.Repo}}/deltafi-nodemonitor:{{.Tag}}
+  storage:
+    inMemory: false
   artifactStorage:
     bucketName: deltafi-artifacts
     url: ""   # empty = use the same endpoint as deltafi.storage (shared s3proxy)

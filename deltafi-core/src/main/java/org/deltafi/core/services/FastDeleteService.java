@@ -27,7 +27,7 @@ import java.util.UUID;
 
 @RequiredArgsConstructor
 @Slf4j
-public class LocalContentStorageService {
+public class FastDeleteService {
     private final PendingDeleteRepo pendingDeleteRepo;
     private final SystemService systemService;
     private final StorageProperties storageProperties;

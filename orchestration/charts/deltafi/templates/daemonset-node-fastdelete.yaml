@@ -1,4 +1,4 @@
-{{- if include "localObjectStorageEnabled" . -}}
+{{- if and (include "localObjectStorageEnabled" .) (not .Values.deltafi.storage.inMemory) -}}
 # Deploy a node-fastdelete instance per node for local object storage cleanup
 apiVersion: apps/v1
 kind: DaemonSet
