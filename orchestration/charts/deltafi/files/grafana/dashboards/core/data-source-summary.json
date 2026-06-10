@@ -354,7 +354,7 @@
             "uid": "deltafi-vm-metricsql-datasource"
           },
           "refId": "Ingress",
-          "expr": "sum(increase({__name__=\"stats_counts.bytes_from_source\", dataSource=~\"$dfDataSource\"}[$__interval]))",
+          "expr": "sum(sum_over_time({__name__=\"stats_counts.bytes_from_source\", dataSource=~\"$dfDataSource\"}[$__interval]))",
           "interval": "1m",
           "legendFormat": "Ingress"
         },
@@ -365,7 +365,7 @@
           },
           "hide": false,
           "refId": "Egress",
-          "expr": "sum(increase({__name__=\"stats_counts.bytes_to_sink\", dataSource=~\"$dfDataSource\", dataSink=~\"$dataSink\"}[$__interval]))",
+          "expr": "sum(sum_over_time({__name__=\"stats_counts.bytes_to_sink\", dataSource=~\"$dfDataSource\", dataSink=~\"$dataSink\"}[$__interval]))",
           "interval": "1m",
           "legendFormat": "Egress"
         }
@@ -712,7 +712,7 @@
             "uid": "deltafi-vm-metricsql-datasource"
           },
           "refId": "Ingress",
-          "expr": "sum(increase({__name__=\"stats_counts.files_from_source\", dataSource=~\"$dfDataSource\"}[$__interval]))",
+          "expr": "sum(sum_over_time({__name__=\"stats_counts.files_from_source\", dataSource=~\"$dfDataSource\"}[$__interval]))",
           "interval": "1m",
           "legendFormat": "Ingress"
         },
@@ -723,7 +723,7 @@
           },
           "hide": false,
           "refId": "Egress",
-          "expr": "sum(increase({__name__=\"stats_counts.files_to_sink\", dataSource=~\"$dfDataSource\", dataSink=~\"$dataSink\"}[$__interval]))",
+          "expr": "sum(sum_over_time({__name__=\"stats_counts.files_to_sink\", dataSource=~\"$dfDataSource\", dataSink=~\"$dataSink\"}[$__interval]))",
           "interval": "1m",
           "legendFormat": "Egress"
         },
@@ -734,7 +734,7 @@
           },
           "hide": false,
           "refId": "Dropped",
-          "expr": "sum(increase({__name__=\"stats_counts.files_dropped\", dataSource=~\"$dfDataSource\"}[$__interval]))",
+          "expr": "sum(sum_over_time({__name__=\"stats_counts.files_dropped\", dataSource=~\"$dfDataSource\"}[$__interval]))",
           "interval": "1m",
           "legendFormat": "Dropped"
         },
@@ -745,7 +745,7 @@
           },
           "hide": false,
           "refId": "Errored",
-          "expr": "sum(increase({__name__=\"stats_counts.files_errored\", dataSource=~\"$dfDataSource\"}[$__interval]))",
+          "expr": "sum(sum_over_time({__name__=\"stats_counts.files_errored\", dataSource=~\"$dfDataSource\"}[$__interval]))",
           "interval": "1m",
           "legendFormat": "Errored"
         },
@@ -756,7 +756,7 @@
           },
           "hide": false,
           "refId": "Filtered",
-          "expr": "sum(increase({__name__=\"stats_counts.files_filtered\", dataSource=~\"$dfDataSource\"}[$__interval]))",
+          "expr": "sum(sum_over_time({__name__=\"stats_counts.files_filtered\", dataSource=~\"$dfDataSource\"}[$__interval]))",
           "interval": "1m",
           "legendFormat": "Filtered"
         }
@@ -841,7 +841,7 @@
             "uid": "deltafi-vm-metricsql-datasource"
           },
           "refId": "Ingress",
-          "expr": "sum by (dataSource) (increase({__name__=\"stats_counts.files_from_source\", dataSource=~\"$dfDataSource\"}[$__interval]))",
+          "expr": "sum by (dataSource) (sum_over_time({__name__=\"stats_counts.files_from_source\", dataSource=~\"$dfDataSource\"}[$__interval]))",
           "interval": "1m",
           "legendFormat": "{{dataSource}}"
         }
@@ -1107,7 +1107,7 @@
             "uid": "deltafi-vm-metricsql-datasource"
           },
           "refId": "Ingress",
-          "expr": "sum(increase({__name__=\"stats_counts.bytes_from_source\", dataSource=~\"$dfDataSource\"}[$__interval]))",
+          "expr": "sum(sum_over_time({__name__=\"stats_counts.bytes_from_source\", dataSource=~\"$dfDataSource\"}[$__interval]))",
           "interval": "1m",
           "legendFormat": "Ingress"
         },
@@ -1118,7 +1118,7 @@
           },
           "hide": false,
           "refId": "Egress",
-          "expr": "sum(increase({__name__=\"stats_counts.bytes_to_sink\", dataSource=~\"$dfDataSource\", dataSink=~\"$dataSink\"}[$__interval]))",
+          "expr": "sum(sum_over_time({__name__=\"stats_counts.bytes_to_sink\", dataSource=~\"$dfDataSource\", dataSink=~\"$dataSink\"}[$__interval]))",
           "interval": "1m",
           "legendFormat": "Egress"
         }
@@ -1481,7 +1481,7 @@
             "uid": "deltafi-vm-metricsql-datasource"
           },
           "refId": "Ingress",
-          "expr": "sum(increase({__name__=\"stats_counts.files_from_source\", dataSource=~\"$dfDataSource\"}[$__interval]))",
+          "expr": "sum(sum_over_time({__name__=\"stats_counts.files_from_source\", dataSource=~\"$dfDataSource\"}[$__interval]))",
           "interval": "1m",
           "legendFormat": "Ingress"
         },
@@ -1492,7 +1492,7 @@
           },
           "hide": false,
           "refId": "Egress",
-          "expr": "sum(increase({__name__=\"stats_counts.files_to_sink\", dataSource=~\"$dfDataSource\", dataSink=~\"$dataSink\"}[$__interval]))",
+          "expr": "sum(sum_over_time({__name__=\"stats_counts.files_to_sink\", dataSource=~\"$dfDataSource\", dataSink=~\"$dataSink\"}[$__interval]))",
           "interval": "1m",
           "legendFormat": "Egress"
         },
@@ -1503,7 +1503,7 @@
           },
           "hide": false,
           "refId": "Filtered",
-          "expr": "sum(increase({__name__=\"stats_counts.files_filtered\", dataSource=~\"$dfDataSource\"}[$__interval]))",
+          "expr": "sum(sum_over_time({__name__=\"stats_counts.files_filtered\", dataSource=~\"$dfDataSource\"}[$__interval]))",
           "interval": "1m",
           "legendFormat": "Filtered"
         },
@@ -1514,7 +1514,7 @@
           },
           "hide": false,
           "refId": "Dropped",
-          "expr": "sum(increase({__name__=\"stats_counts.files_dropped\", dataSource=~\"$dfDataSource\"}[$__interval]))",
+          "expr": "sum(sum_over_time({__name__=\"stats_counts.files_dropped\", dataSource=~\"$dfDataSource\"}[$__interval]))",
           "interval": "1m",
           "legendFormat": "Dropped"
         },
@@ -1525,7 +1525,7 @@
           },
           "hide": false,
           "refId": "Errored",
-          "expr": "sum(increase({__name__=\"stats_counts.files_errored\", dataSource=~\"$dfDataSource\"}[$__interval]))",
+          "expr": "sum(sum_over_time({__name__=\"stats_counts.files_errored\", dataSource=~\"$dfDataSource\"}[$__interval]))",
           "interval": "1m",
           "legendFormat": "Errored"
         }

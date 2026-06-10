@@ -623,7 +623,7 @@
             "type": "victoriametrics-metrics-datasource",
             "uid": "deltafi-vm-metricsql-datasource"
           },
-          "expr": "sum by (dataSource) (increase({__name__=\"stats_counts.bytes_from_source\", dataSource=~\"$dfDataSource\"}[$__interval]))",
+          "expr": "sum by (dataSource) (sum_over_time({__name__=\"stats_counts.bytes_from_source\", dataSource=~\"$dfDataSource\"}[$__interval]))",
           "hide": false,
           "interval": "1m",
           "legendFormat": "{{dataSource}}",
@@ -721,7 +721,7 @@
             "type": "victoriametrics-metrics-datasource",
             "uid": "deltafi-vm-metricsql-datasource"
           },
-          "expr": "sum by (dataSink) (increase({__name__=\"stats_counts.bytes_to_sink\", dataSource=~\"$dfDataSource\"}[$__interval]))",
+          "expr": "sum by (dataSink) (sum_over_time({__name__=\"stats_counts.bytes_to_sink\", dataSource=~\"$dfDataSource\"}[$__interval]))",
           "hide": false,
           "interval": "1m",
           "legendFormat": "{{dataSink}}",

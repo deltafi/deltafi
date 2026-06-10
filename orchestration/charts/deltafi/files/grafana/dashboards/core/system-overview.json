@@ -221,7 +221,7 @@
           },
           "hide": false,
           "refId": "A",
-          "expr": "sum by (dataSource) (increase({__name__=\"stats_counts.bytes_from_source\", dataSource=~\"$dfDataSource\"}[$__interval]))",
+          "expr": "sum by (dataSource) (sum_over_time({__name__=\"stats_counts.bytes_from_source\", dataSource=~\"$dfDataSource\"}[$__interval]))",
           "interval": "1m",
           "legendFormat": "{{dataSource}}"
         }
@@ -387,7 +387,7 @@
           },
           "hide": false,
           "refId": "A",
-          "expr": "sum(increase({__name__=\"stats_counts.bytes_from_source\", dataSource=~\"$dfDataSource\"}[$__interval]))",
+          "expr": "sum(sum_over_time({__name__=\"stats_counts.bytes_from_source\", dataSource=~\"$dfDataSource\"}[$__interval]))",
           "interval": "1m",
           "legendFormat": "Overall Bytes"
         }
@@ -486,7 +486,7 @@
           },
           "hide": false,
           "refId": "A",
-          "expr": "sum(increase({__name__=\"stats_counts.bytes_to_sink\", dataSource=~\"$dfDataSource\"}[$__interval]))",
+          "expr": "sum(sum_over_time({__name__=\"stats_counts.bytes_to_sink\", dataSource=~\"$dfDataSource\"}[$__interval]))",
           "interval": "1m",
           "legendFormat": "Overall Egress Bytes"
         }
@@ -725,7 +725,7 @@
           },
           "hide": false,
           "refId": "B",
-          "expr": "sum by (dataSource) (increase({__name__=\"stats_counts.bytes_to_sink\", dataSource=~\"$dfDataSource\"}[$__interval]))",
+          "expr": "sum by (dataSource) (sum_over_time({__name__=\"stats_counts.bytes_to_sink\", dataSource=~\"$dfDataSource\"}[$__interval]))",
           "interval": "1m",
           "legendFormat": "{{dataSource}}"
         }
@@ -1007,7 +1007,7 @@
             "uid": "deltafi-vm-metricsql-datasource"
           },
           "refId": "A",
-          "expr": "sum by (dataSource) (increase({__name__=\"stats_counts.files_from_source\", dataSource=~\"$dfDataSource\"}[$__interval]))",
+          "expr": "sum by (dataSource) (sum_over_time({__name__=\"stats_counts.files_from_source\", dataSource=~\"$dfDataSource\"}[$__interval]))",
           "interval": "1m",
           "legendFormat": "{{dataSource}}"
         }
@@ -1105,7 +1105,7 @@
           },
           "hide": false,
           "refId": "B",
-          "expr": "sum by (dataSource) (increase({__name__=\"stats_counts.files_to_sink\", dataSource=~\"$dfDataSource\"}[$__interval]))",
+          "expr": "sum by (dataSource) (sum_over_time({__name__=\"stats_counts.files_to_sink\", dataSource=~\"$dfDataSource\"}[$__interval]))",
           "interval": "1m",
           "legendFormat": "{{dataSource}}"
         }
@@ -1204,7 +1204,7 @@
           },
           "hide": false,
           "refId": "B",
-          "expr": "sum by (dataSource) (increase({__name__=\"stats_counts.files_filtered\", dataSource=~\"$dfDataSource\"}[$__interval]))",
+          "expr": "sum by (dataSource) (sum_over_time({__name__=\"stats_counts.files_filtered\", dataSource=~\"$dfDataSource\"}[$__interval]))",
           "interval": "1m",
           "legendFormat": "{{dataSource}}"
         }
@@ -1303,7 +1303,7 @@
           },
           "hide": false,
           "refId": "B",
-          "expr": "sum by (dataSource) (increase({__name__=\"stats_counts.files_dropped\", dataSource=~\"$dfDataSource\"}[$__interval]))",
+          "expr": "sum by (dataSource) (sum_over_time({__name__=\"stats_counts.files_dropped\", dataSource=~\"$dfDataSource\"}[$__interval]))",
           "interval": "1m",
           "legendFormat": "{{dataSource}}"
         }
@@ -1402,7 +1402,7 @@
           },
           "hide": false,
           "refId": "B",
-          "expr": "sum by (dataSource) (increase({__name__=\"stats_counts.files_errored\", dataSource=~\"$dfDataSource\"}[$__interval]))",
+          "expr": "sum by (dataSource) (sum_over_time({__name__=\"stats_counts.files_errored\", dataSource=~\"$dfDataSource\"}[$__interval]))",
           "interval": "1m",
           "legendFormat": "{{dataSource}}"
         }
@@ -1501,7 +1501,7 @@
           },
           "hide": false,
           "refId": "B",
-          "expr": "sum by (dataSource) (increase({__name__=\"stats_counts.files_auto_resumed\", dataSource=~\"$dfDataSource\"}[$__interval]))",
+          "expr": "sum by (dataSource) (sum_over_time({__name__=\"stats_counts.files_auto_resumed\", dataSource=~\"$dfDataSource\"}[$__interval]))",
           "interval": "1m",
           "legendFormat": "{{dataSource}}"
         }
@@ -2324,7 +2324,7 @@
           },
           "hide": false,
           "refId": "A",
-          "expr": "sum by (source) (increase({__name__=\"stats_counts.action_execution\"}[$__interval]))",
+          "expr": "sum by (source) (sum_over_time({__name__=\"stats_counts.action_execution\"}[$__interval]))",
           "interval": "1m",
           "legendFormat": "{{source}}"
         }
@@ -2448,7 +2448,7 @@
           },
           "hide": false,
           "refId": "A",
-          "expr": "sum by (source) (increase({__name__=\"stats_counts.action_execution_time_ms\", action!=\"ingress\"}[$__interval]))",
+          "expr": "sum by (source) (sum_over_time({__name__=\"stats_counts.action_execution_time_ms\", action!=\"ingress\"}[$__interval]))",
           "interval": "1m",
           "legendFormat": "{{source}}"
         }
@@ -3120,7 +3120,7 @@
           },
           "hide": false,
           "refId": "Deleted Files",
-          "expr": "increase({__name__=\"stats_counts.deleted.files\"}[$__interval])",
+          "expr": "sum_over_time({__name__=\"stats_counts.deleted.files\"}[$__interval])",
           "interval": "1m",
           "legendFormat": "{{policy}}"
         }
@@ -3219,7 +3219,7 @@
           },
           "hide": false,
           "refId": "Deleted Bytes",
-          "expr": "increase({__name__=\"stats_counts.deleted.bytes\"}[$__interval])",
+          "expr": "sum_over_time({__name__=\"stats_counts.deleted.bytes\"}[$__interval])",
           "interval": "1m",
           "legendFormat": "{{policy}}"
         }
