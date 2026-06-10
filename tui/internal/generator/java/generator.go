@@ -19,6 +19,7 @@ package java
 
 import (
 	"bufio"
+	"bytes"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -442,28 +443,31 @@ func (g *JavaGenerator) UpdatePlugin(pluginName string, options *generator.Updat
 
 		fullOutputPath := filepath.Join(pluginDir, outputPath)
 
-		// Skip gradle-wrapper.jar as it's a binary file
-		if strings.Contains(templatePath, "gradle-wrapper.jar") {
-			continue
-		}
-
 		// Read existing file
 		oldContent, err := generator.ReadFileIfExists(fullOutputPath)
 		if err != nil {
 			return fmt.Errorf("failed to read existing file %s: %w", fullOutputPath, err)
 		}
 
-		// Flow definition files are user-owned; skip them if they already exist.
+		// User-owned files: skip during update if they already exist.
 		base := filepath.Base(outputPath)
-		if oldContent != nil && (base == "variables.json" || base == "data-source.json") {
+		if oldContent != nil && (base == "variables.json" || base == "data-source.json" || base == "LICENSE" || base == "README.md" || base == "HEADER") {
 			continue
 		}
 
-		// Generate new content from template
-		newContent, err := RenderTemplate(templatePath, data)
-		if err != nil {
-			// Skip files that don't have templates
-			continue
+		// Generate new content from template (binary files are read raw)
+		var newContent []byte
+		if isBinaryFile(templatePath) {
+			newContent, err = ReadRawFile(templatePath)
+			if err != nil {
+				return fmt.Errorf("failed to read raw template %s: %w", templatePath, err)
+			}
+		} else {
+			newContent, err = RenderTemplate(templatePath, data)
+			if err != nil {
+				// Skip files that don't have templates
+				continue
+			}
 		}
 
 		// Special handling for gradle.properties: preserve version field
@@ -474,6 +478,11 @@ func (g *JavaGenerator) UpdatePlugin(pluginName string, options *generator.Updat
 		// Special handling for build.gradle: preserve additional dependencies
 		if outputPath == "build.gradle" && oldContent != nil {
 			newContent = preserveBuildGradleDependencies(oldContent, newContent)
+		}
+
+		// Special handling for .gitignore: only append lines missing from the local copy
+		if outputPath == ".gitignore" && oldContent != nil {
+			newContent = mergeGitignoreLines(oldContent, newContent)
 		}
 
 		// Compare files
@@ -561,7 +570,11 @@ func (g *JavaGenerator) handleInteractiveUpdate(pluginDir string, diffs []*gener
 			fmt.Printf("⊘ Skipped %s\n", diff.Path)
 			processed[diff.Path] = true
 		case "d", "diff":
-			fmt.Println(diff.GenerateSideBySideDiff())
+			if isBinaryFile(diff.Path) {
+				fmt.Println("(binary file — diff not shown)")
+			} else {
+				fmt.Println(diff.GenerateSideBySideDiff())
+			}
 			// Re-prompt after showing diff
 			fmt.Print("Update this file? [y/n]: ")
 			fmt.Scanln(&action)
@@ -657,6 +670,44 @@ func preserveGradlePropertiesVersion(oldContent, newContent []byte) []byte {
 	}
 
 	return []byte(newContentStr)
+}
+
+// mergeGitignoreLines appends template lines not already present in oldContent.
+// Ordering and any extra lines in the local copy are preserved.
+func mergeGitignoreLines(oldContent, newContent []byte) []byte {
+	existing := make(map[string]bool)
+	for _, line := range strings.Split(string(oldContent), "\n") {
+		if trimmed := strings.TrimSpace(line); trimmed != "" {
+			existing[trimmed] = true
+		}
+	}
+
+	var missing []string
+	for _, line := range strings.Split(string(newContent), "\n") {
+		trimmed := strings.TrimSpace(line)
+		if trimmed == "" {
+			continue
+		}
+		if !existing[trimmed] {
+			missing = append(missing, line)
+			existing[trimmed] = true
+		}
+	}
+
+	if len(missing) == 0 {
+		return oldContent
+	}
+
+	var buf bytes.Buffer
+	buf.Write(oldContent)
+	if len(oldContent) > 0 && !bytes.HasSuffix(oldContent, []byte("\n")) {
+		buf.WriteByte('\n')
+	}
+	for _, line := range missing {
+		buf.WriteString(line)
+		buf.WriteByte('\n')
+	}
+	return buf.Bytes()
 }
 
 // preserveBuildGradleDependencies preserves additional dependencies from old content
