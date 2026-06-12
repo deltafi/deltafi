@@ -141,8 +141,8 @@
     </Dialog>
 
     <!-- Action Editor Dialog -->
-    <Dialog v-model:visible="actionEditorVisible" :header="`Edit Action: ${editingAction?.name || editingAction?.displayName || ''}`" :modal="true" :style="{ width: '600px' }" :dismissable-mask="true">
-      <div v-if="editingAction" class="action-editor-content">
+    <Dialog v-model:visible="actionEditorVisible" :header="`Edit Action: ${editingAction?.name || editingAction?.displayName || ''}`" :modal="true" class="action-editor-dialog" :style="{ width: '600px', maxWidth: '95vw' }" :dismissable-mask="true">
+      <div v-if="editingAction" class="ae-form">
         <div class="field">
           <label for="action-name-input">Name<span class="required-indicator" aria-hidden="true">*</span></label>
           <InputText id="action-name-input" v-model="editingAction.name" class="w-full" aria-required="true" placeholder="Action Name Required" />
@@ -166,10 +166,13 @@
         </div>
       </div>
       <template #footer>
+        <!-- Reference docs trigger; opens the shared ActionDocsDrawer so the form never reflows -->
+        <Button v-if="hasDocs" icon="fas fa-book" label="Reference" text severity="secondary" class="ae-ref-btn" @click="actionDocsDrawerVisible = true" />
         <Button label="Delete" severity="danger" @click="deleteEditingAction" />
         <Button label="Save" @click="actionEditorVisible = false" />
       </template>
     </Dialog>
+    <ActionDocsDrawer v-model:visible="actionDocsDrawerVisible" :action="editingAction" />
 
     <!-- Subscribe Topic Editor Dialog -->
     <Dialog v-model:visible="subscribeEditorVisible" :header="isAddingSubscribe ? 'Add Subscribe Topic' : 'Edit Subscribe Topic'" :modal="true" :style="{ width: '500px' }" :dismissable-mask="true" @hide="cancelSubscribeEdit">
@@ -255,6 +258,7 @@ import HoverSaveButton from "@/components/transformBuilder/HoverSaveButton.vue";
 import LeavePageConfirmationDialog from "@/components/LeavePageConfirmationDialog.vue";
 import PageHeader from "@/components/PageHeader.vue";
 import TransformFlowGraph from "@/components/transformBuilder/TransformFlowGraph.vue";
+import ActionDocsDrawer from "@/components/actionDocs/ActionDocsDrawer.vue";
 import useFlowActions from "@/composables/useFlowActions";
 import useFlowPlanQueryBuilder from "@/composables/useFlowPlanQueryBuilder";
 import useFlowQueryBuilder from "@/composables/useFlowQueryBuilder";
@@ -279,11 +283,12 @@ import InputText from "primevue/inputtext";
 import Panel from "primevue/panel";
 import SpelEditorDialog from "@/components/spel/SpelEditorDialog.vue";
 import { extractSchemaDefaults } from "@/utils/schemaDefaults";
+import { sanitizeDocsHtml } from "@/utils/markdownDocs";
 
 import _ from "lodash";
 
 const markdownIt = new MarkdownIt({
-  html: false,
+  html: true,
   linkify: true,
   breaks: true,
 });
@@ -341,6 +346,12 @@ const publishEditorVisible = ref(false);
 
 // Editing state for dialogs
 const editingAction = ref(null);
+
+// Action Editor docs: a subtle footer button opens the shared ActionDocsDrawer slide-out, so the
+// reference never reflows the form.
+const actionDocsDrawerVisible = ref(false);
+const hasDocs = computed(() => !!editingAction.value?.docsMarkdown);
+
 const editingSubscribeTopic = ref(null);
 const editingPublishTopic = ref(null);
 const editingSubscribeIndex = ref(-1);
@@ -940,7 +951,7 @@ const filteredActions = computed(() => {
   );
 });
 
-const renderActionDescription = (description) => markdownIt.render(description || "");
+const renderActionDescription = (description) => sanitizeDocsHtml(markdownIt.render(description || ""));
 
 const shouldExpandActionDescription = (description) => {
   if (!description) {
@@ -1806,5 +1817,16 @@ const publishUISchema = {
   th {
     background-color: #eee;
   }
+}
+
+/* Action Editor dialog. Top-level (not nested under .transform-builder-page) because the
+   dialog teleports to the document body. */
+.action-editor-dialog .ae-form {
+  max-height: 68vh;
+  overflow: auto;
+}
+/* Push the footer's Reference button to the far left, away from Delete/Save. */
+.action-editor-dialog .ae-ref-btn {
+  margin-right: auto;
 }
 </style>

@@ -63,8 +63,10 @@ GUI License Check:
     CYPRESS_BAIL_ON_FAILURE: "true"
   before_script:
     - cd deltafi-ui
-    # link node_modules from base image, then update any changed packages
+    # link node_modules from base image, then install any packages added since the
+    # image was built (e.g. dompurify) so the test-server can resolve every import
     - ln -s /app/node_modules ./node_modules
+    - npm install --prefer-offline --no-audit --no-fund
     - npm run test-server &
     - npx wait-on -t 120000 http://127.0.0.1:8080
   artifacts:

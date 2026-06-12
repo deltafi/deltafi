@@ -18,20 +18,28 @@
 
 <template>
   <CollapsiblePanel header="Actions" class="table-panel">
-    <DataTable aria-label="Plugin actions" :value="props.actions" striped-rows class="p-datatable-sm p-datatable-gridlines" sort-field="name" :sort-order="1" data-key="name">
+    <DataTable aria-label="Plugin actions" :value="props.actions" striped-rows class="p-datatable-sm p-datatable-gridlines action-rows" sort-field="name" :sort-order="1" data-key="name" :row-hover="true" @row-click="openDetails($event.data)">
       <template #empty>
         No actions included
       </template>
       <Column field="name" header="Name" sortable />
       <Column field="actionOptions.description" header="Description" />
+      <Column class="details-col">
+        <template #body>
+          <i class="fas fa-chevron-right text-muted" />
+        </template>
+      </Column>
     </DataTable>
   </CollapsiblePanel>
+  <ActionDocsDrawer v-model:visible="detailsVisible" :action="selectedAction" />
 </template>
 
 <script setup>
+import { ref } from "vue";
 import Column from "primevue/column";
 import DataTable from "primevue/datatable";
 import CollapsiblePanel from "@/components/CollapsiblePanel.vue";
+import ActionDocsDrawer from "@/components/actionDocs/ActionDocsDrawer.vue";
 
 const props = defineProps({
   actions: {
@@ -39,4 +47,22 @@ const props = defineProps({
     required: true,
   },
 });
+
+const detailsVisible = ref(false);
+const selectedAction = ref(null);
+
+const openDetails = (action) => {
+  selectedAction.value = action;
+  detailsVisible.value = true;
+};
 </script>
+
+<style scoped>
+.action-rows :deep(tbody tr) {
+  cursor: pointer;
+}
+.details-col {
+  width: 2rem;
+  text-align: right;
+}
+</style>

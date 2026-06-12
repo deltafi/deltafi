@@ -46,7 +46,8 @@ export default function usePlugins() {
           name: true,
           actionOptions: {
             description: true,
-          }
+          },
+          docsMarkdown: true,
         },
         variables: {
           name: true,
