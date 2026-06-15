@@ -28,6 +28,20 @@ import java.util.Map;
  * @param totalCount total number of matching rows (before paging)
  * @param created when the lookup table was created
  * @param modified when the lookup table was last modified
+ * @param ttlSeconds seconds a caching client may retain this result before re-querying core, or
+ *                   {@code null} when the result must not be cached (the table has no refresh schedule)
  * @param results the matching rows as column/value maps
  */
-public record LookupResults(int totalCount, OffsetDateTime created, OffsetDateTime modified, List<Map<String, String>> results) {}
+public record LookupResults(int totalCount, OffsetDateTime created, OffsetDateTime modified, Integer ttlSeconds,
+        List<Map<String, String>> results) {
+
+    /**
+     * Convenience constructor for results with no caching hint (e.g. tests or callers that build a
+     * result directly); {@code ttlSeconds} defaults to {@code null}, meaning the result is not cached.
+     */
+    @SuppressWarnings("unused") // this can be used in plugins for testing
+    public LookupResults(int totalCount, OffsetDateTime created, OffsetDateTime modified,
+            List<Map<String, String>> results) {
+        this(totalCount, created, modified, null, results);
+    }
+}

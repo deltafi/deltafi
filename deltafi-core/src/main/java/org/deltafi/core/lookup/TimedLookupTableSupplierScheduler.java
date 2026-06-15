@@ -41,6 +41,7 @@ public class TimedLookupTableSupplierScheduler {
     @Scheduled(fixedRate = 1L, timeUnit = TimeUnit.MINUTES)
     public void triggerTimedLookupTableSuppliers() {
         List<LookupTable> lookupTablesToRefresh = lookupTableService.getLookupTables().stream()
+                .filter(LookupTable::isServiceBacked)
                 .filter(LookupTable::isBackingServiceActive)
                 .filter(lookupTable -> lookupTable.getRefreshDuration() != null)
                 .filter(lookupTable -> (lookupTable.getLastRefresh() == null) ||
@@ -57,6 +58,7 @@ public class TimedLookupTableSupplierScheduler {
     }
 
     private boolean isRefreshDue(String refreshDuration, OffsetDateTime lastRefresh) {
-        return OffsetDateTime.now(clock).plusSeconds(1L).isAfter(lastRefresh.plus(Duration.parse(refreshDuration)));
+        // add 2 minutes (2 * scheduled_fixRate) to increase the likelihood that refresh happens before data becomes stale
+        return OffsetDateTime.now(clock).plusMinutes(2L).isAfter(lastRefresh.plus(Duration.parse(refreshDuration)));
     }
 }

@@ -19,23 +19,29 @@
 // ABOUTME: Creates the event queue, action runner, schema generator, and lookup table infrastructure.
 package org.deltafi.actionkit;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.victools.jsonschema.generator.SchemaGenerator;
 import com.netflix.graphql.dgs.client.DgsGraphQLClient;
 import org.deltafi.actionkit.action.Action;
 import org.deltafi.actionkit.action.parameters.EnvVarDefinitionProvider;
-import org.deltafi.actionkit.action.service.*;
+import org.deltafi.actionkit.action.service.ActionInstanceFactory;
+import org.deltafi.actionkit.action.service.ActionRunner;
+import org.deltafi.actionkit.action.service.HeartbeatService;
 import org.deltafi.actionkit.artifact.ArtifactConfiguration;
 import org.deltafi.actionkit.lookup.*;
 import org.deltafi.actionkit.properties.ActionsProperties;
-import org.deltafi.actionkit.registration.*;
+import org.deltafi.actionkit.registration.CoreClient;
+import org.deltafi.actionkit.registration.HttpCoreClient;
+import org.deltafi.actionkit.registration.PluginRegistrar;
 import org.deltafi.actionkit.service.ActionEventQueue;
 import org.deltafi.actionkit.service.HostnameService;
 import org.deltafi.common.action.EventQueueProperties;
 import org.deltafi.common.content.ContentStorageService;
 import org.deltafi.common.graphql.dgs.GraphQLClientFactory;
 import org.deltafi.common.http.HttpService;
-import org.deltafi.common.json.*;
+import org.deltafi.common.json.DataSizeDefinitionProvider;
+import org.deltafi.common.json.SchemaGeneratorConfigCustomizer;
+import org.deltafi.common.json.SchemaGeneratorFactory;
+import org.deltafi.common.json.SpringDataSizeDefinitionProvider;
 import org.deltafi.common.listener.StartupFailureListener;
 import org.deltafi.common.queue.valkey.ValkeyKeyedBlockingQueue;
 import org.deltafi.common.ssl.SslAutoConfiguration;
@@ -47,7 +53,9 @@ import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.info.BuildProperties;
-import org.springframework.context.annotation.*;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.DependsOn;
+import org.springframework.context.annotation.Import;
 import org.springframework.core.env.Environment;
 import org.springframework.scheduling.annotation.EnableScheduling;
 
@@ -60,12 +68,11 @@ import java.util.List;
  * Spring auto-configuration that wires up the action-kit infrastructure beans
  */
 @AutoConfiguration
-@EnableConfigurationProperties({ActionsProperties.class, EventQueueProperties.class})
+@EnableConfigurationProperties({ActionsProperties.class, EventQueueProperties.class, LookupTableCacheProperties.class})
 @AutoConfigureAfter(SslAutoConfiguration.class)
 @EnableScheduling
 @Import(ArtifactConfiguration.class)
 public class ActionKitAutoConfiguration {
-    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
     /**
      * Create the listener that handles startup failures.
@@ -254,8 +261,9 @@ public class ActionKitAutoConfiguration {
     @ConditionalOnMissingBean
     @Bean
     public LookupTableClient lookupTableClient(Environment environment, DgsGraphQLClient graphQLClient,
-            HttpService httpService) {
+            HttpService httpService, LookupTableCacheProperties cacheProperties) {
         String coreUrl = buildCoreUrl(environment);
-        return new CachingLookupTableClient(coreUrl + "/lookup", graphQLClient, httpService);
+        return new CachingLookupTableClient(coreUrl + "/lookup", graphQLClient, httpService,
+                cacheProperties.getMaxBytes(), cacheProperties.getMaxEntries());
     }
 }

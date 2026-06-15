@@ -114,6 +114,15 @@ class LookupTableServiceTest {
     }
 
     @Test
+    void validate_nonPositiveRefreshDuration() {
+        List<String> errors = lookupTableService.validateLookupTableCreation(
+                LookupTable.builder().sourcePlugin(PLUGIN2).name("valid_table")
+                        .keyColumns(List.of("a")).columns(List.of("a")).refreshDuration("PT0S").build());
+
+        assertThat(errors).contains("Lookup table valid_table has a non-positive refresh duration: PT0S");
+    }
+
+    @Test
     void validate_invalidNameChars() {
         List<String> errors = lookupTableService.validateLookupTableCreation(
                 LookupTable.builder().sourcePlugin(PLUGIN2).name("existing-no-dashes-allowed").keyColumns(List.of("a")).columns(List.of("a")).refreshDuration("PT1M").build());

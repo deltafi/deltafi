@@ -31,10 +31,17 @@ public class LookupMetadataExtractor implements ResultSetExtractor<LookupMetadat
     @Override
     public @Nullable LookupMetadata extractData(ResultSet rs) throws SQLException, DataAccessException {
         if (rs.next()) {
-            return new LookupMetadata(rs.getObject("created", OffsetDateTime.class), rs.getObject("modified", OffsetDateTime.class));
+            return new LookupMetadata(
+                    rs.getObject("created", OffsetDateTime.class),
+                    rs.getObject("modified", OffsetDateTime.class),
+                    rs.getObject("last_refresh", OffsetDateTime.class),
+                    rs.getString("refresh_duration"),
+                    rs.getBoolean("pull_through"),
+                    rs.getObject("db_now", OffsetDateTime.class));
         }
         return null;
     }
 
-    public record LookupMetadata(OffsetDateTime created, OffsetDateTime modified) {}
+    public record LookupMetadata(OffsetDateTime created, OffsetDateTime modified, OffsetDateTime lastRefresh,
+            String refreshDuration, boolean pullThrough, OffsetDateTime dbNow) {}
 }

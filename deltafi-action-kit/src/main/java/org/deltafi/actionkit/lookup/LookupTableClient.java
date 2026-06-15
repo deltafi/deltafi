@@ -182,7 +182,8 @@ public class LookupTableClient {
      *
      * @param lookupTableName the lookup table name
      * @param lookupOptions the lookup options to use for the query
-     * @return a List of Maps matching the query, with each Map representing the column/value pairs for a row
+     * @return a List of unmodifiable Maps matching the query, each representing the column/value pairs for a row.
+     *         The result may be served from a shared cache, so it must be treated as read-only.
      * @throws Exception if the GraphQL query fails
      */
     public LookupResults lookup(String lookupTableName, LookupOptions lookupOptions) throws Exception {
@@ -220,6 +221,7 @@ public class LookupTableClient {
                         .totalCount()
                         .created()
                         .modified()
+                        .ttlSeconds()
                         .rows()
                         .column()
                         .value()
@@ -234,11 +236,13 @@ public class LookupTableClient {
         return new LookupResults(lookupResults.getTotalCount(),
                 lookupResults.getCreated(),
                 lookupResults.getModified(),
+                lookupResults.getTtlSeconds(),
                 lookupResults.getRows().stream()
                         .map(row -> {
                             Map<String, String> map = new HashMap<>();
                             row.forEach(columnValue -> map.put(columnValue.getColumn(), columnValue.getValue()));
-                            return map;
+                            // Unmodifiable so callers can't mutate a result that may be shared from the cache.
+                            return Collections.unmodifiableMap(map);
                         })
                         .toList());
     }

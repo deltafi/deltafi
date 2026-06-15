@@ -107,11 +107,16 @@ public class LookupTableService implements PluginCleaner {
 
     private List<String> validateDuration(LookupTable lookupTable) {
         if (lookupTable.getRefreshDuration() != null) {
+            Duration duration;
             try {
-                Duration.parse(lookupTable.getRefreshDuration());
+                duration = Duration.parse(lookupTable.getRefreshDuration());
             } catch (DateTimeParseException p) {
                 return List.of("Lookup table %s has an invalid refresh duration: %s".formatted(lookupTable.getName(),
                         lookupTable.getRefreshDuration()));
+            }
+            if (duration.isZero() || duration.isNegative()) {
+                return List.of("Lookup table %s has a non-positive refresh duration: %s".formatted(
+                        lookupTable.getName(), lookupTable.getRefreshDuration()));
             }
         }
         return Collections.emptyList();

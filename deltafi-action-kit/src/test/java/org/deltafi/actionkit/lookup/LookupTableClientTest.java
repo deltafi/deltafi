@@ -21,229 +21,248 @@ import com.netflix.graphql.dgs.client.DefaultDgsGraphQLResponse;
 import com.netflix.graphql.dgs.client.DgsGraphQLClient;
 import com.netflix.graphql.dgs.client.DgsGraphQLResponse;
 import com.netflix.graphql.dgs.client.Jackson2DgsJsonMapperAdapter;
-import org.deltafi.actionkit.ActionKitAutoConfiguration;
 import org.deltafi.actionkit.generated.types.Result;
 import org.deltafi.common.http.HttpService;
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.function.ThrowingSupplier;
 import org.mockito.Mockito;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.SpringApplication;
-import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
-import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.cache.annotation.EnableCaching;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.core.env.Environment;
 
 import java.time.Duration;
 import java.util.*;
+import java.util.concurrent.*;
+import java.util.concurrent.atomic.*;
 
-@SpringBootTest(
-        classes = { LookupTableClientTest.TestApp.class, LookupTableClientTest.Config.class },
-        properties = {"cache.caches.lookup-table-client-cache=expireAfterWrite=PT1S"},
-        webEnvironment = SpringBootTest.WebEnvironment.NONE)
-@EnableAutoConfiguration(exclude = { ActionKitAutoConfiguration.class })
-@EnableCaching
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.awaitility.Awaitility.await;
+
 class LookupTableClientTest {
-    @SpringBootApplication
-    public static class TestApp {
-        public static void main(String... args) {
-            SpringApplication.run(TestApp.class, args);
-        }
-    }
 
-    private static final DgsGraphQLClient GRAPH_QL_CLIENT = Mockito.mock(DgsGraphQLClient.class);
+    private static final long MAX_BYTES = 64L * 1024 * 1024;
+    private static final int MAX_ENTRIES = 1000;
 
-    @Configuration
-    public static class Config {
-        @Bean
-        public DgsGraphQLClient graphQLClient() {
-            return GRAPH_QL_CLIENT;
-        }
-
-        @Bean
-        public HttpService httpService() {
-            return Mockito.mock(HttpService.class);
-        }
-
-        @Bean
-        public LookupTableClient lookupTableClient(Environment environment, DgsGraphQLClient graphQLClient,
-                HttpService httpService) {
-            return new CachingLookupTableClient("unused", graphQLClient, httpService);
-        }
-    }
-
-    @Autowired
-    private LookupTableClient lookupTableClient;
-
-    private static final DgsGraphQLResponse LOOKUP_RESPONSE = new DefaultDgsGraphQLResponse("""
+    private static final String CACHEABLE_RESPONSE = """
             {
               "data": {
                 "lookup": {
+                  "ttlSeconds": 3600,
                   "rows": [
                     [
-                      {
-                        "column": "city",
-                        "value": "Miami"
-                      },
-                      {
-                        "column": "state",
-                        "value": "FL"
-                      }
+                      { "column": "city", "value": "Miami" },
+                      { "column": "state", "value": "FL" }
                     ],
                     [
-                      {
-                        "column": "city",
-                        "value": "Austin"
-                      },
-                      {
-                        "column": "state",
-                        "value": "TX"
-                      }
+                      { "column": "city", "value": "Austin" },
+                      { "column": "state", "value": "TX" }
                     ],
                     [
-                      {
-                        "column": "city",
-                        "value": "Las Vegas"
-                      },
-                      {
-                        "column": "state",
-                        "value": "NV"
-                      }
+                      { "column": "city", "value": "Las Vegas" },
+                      { "column": "state", "value": "NV" }
                     ]
                   ],
                   "totalCount": 25
                 }
               }
-            }""", Map.of(), Jackson2DgsJsonMapperAdapter.fromOptions());
+            }""";
+
+    // No ttlSeconds -> the result must not be cached.
+    private static final String NON_CACHEABLE_RESPONSE = """
+            {
+              "data": {
+                "lookup": {
+                  "rows": [
+                    [
+                      { "column": "city", "value": "Miami" },
+                      { "column": "state", "value": "FL" }
+                    ]
+                  ],
+                  "totalCount": 1
+                }
+              }
+            }""";
+
+    private DgsGraphQLClient graphQLClient;
+    private CachingLookupTableClient lookupTableClient;
+    private ExecutorService pool;
 
     @BeforeEach
     void setUp() {
-        Mockito.reset(GRAPH_QL_CLIENT);
+        graphQLClient = Mockito.mock(DgsGraphQLClient.class);
+        HttpService httpService = Mockito.mock(HttpService.class);
+        lookupTableClient = new CachingLookupTableClient("unused", graphQLClient, httpService, MAX_BYTES, MAX_ENTRIES);
+        pool = Executors.newFixedThreadPool(2);
+    }
 
-        String simple = """
-                {
-                  lookup(lookupTableName: "test-lookup-table") {
-                    offset
-                    count
-                    totalCount
-                    created
-                    modified
-                    rows {
-                      column
-                      value
-                    }
-                  }
-                }""";
-        Mockito.when(GRAPH_QL_CLIENT.executeQuery(simple, Collections.emptyMap())).thenReturn(LOOKUP_RESPONSE);
+    @AfterEach
+    void tearDown() {
+        pool.shutdownNow();
+    }
 
-        // Spaces after map keys in matchingColumnValues are intentional to match generated DGS serialization!
-        String complex1 = """
-                {
-                  lookup(lookupTableName: "test-lookup-table", matchingColumnValues: [{column : "state", value : ["NV", "TX"]}], resultColumns: ["city"]) {
-                    offset
-                    count
-                    totalCount
-                    created
-                    modified
-                    rows {
-                      column
-                      value
-                    }
-                  }
-                }""";
-        Mockito.when(GRAPH_QL_CLIENT.executeQuery(complex1, Collections.emptyMap())).thenReturn(LOOKUP_RESPONSE);
-        String complex2 = """
-                {
-                  lookup(lookupTableName: "test-lookup-table", matchingColumnValues: [{column : "state", value : ["FL"]}], resultColumns: ["city"]) {
-                    offset
-                    count
-                    totalCount
-                    created
-                    modified
-                    rows {
-                      column
-                      value
-                    }
-                  }
-                }""";
-        Mockito.when(GRAPH_QL_CLIENT.executeQuery(complex2, Collections.emptyMap())).thenReturn(LOOKUP_RESPONSE);
-        String complex3 = """
-                {
-                  lookup(lookupTableName: "test-lookup-table", matchingColumnValues: [{column : "state", value : ["NV", "TX"]}], resultColumns: ["city", "state"]) {
-                    offset
-                    count
-                    totalCount
-                    created
-                    modified
-                    rows {
-                      column
-                      value
-                    }
-                  }
-                }""";
-        Mockito.when(GRAPH_QL_CLIENT.executeQuery(complex3, Collections.emptyMap())).thenReturn(LOOKUP_RESPONSE);
+    private static DgsGraphQLResponse dgsResponse(String json) {
+        return new DefaultDgsGraphQLResponse(json, Map.of(), Jackson2DgsJsonMapperAdapter.fromOptions());
+    }
+
+    private void stub(String responseJson) {
+        Mockito.when(graphQLClient.executeQuery(Mockito.anyString(), Mockito.anyMap()))
+                .thenReturn(dgsResponse(responseJson));
+    }
+
+    private static LookupOptions matching(Set<String> states, Set<String> resultColumns) {
+        return LookupOptions.builder()
+                .matchingColumnValues(Map.of("state", new TreeSet<>(states)))
+                .resultColumns(new TreeSet<>(resultColumns))
+                .build();
     }
 
     @Test
-    void lookup() throws Exception {
-        LookupResults results = lookupTableClient.lookup("test-lookup-table", LookupOptions.defaultLookupOptions());
-
-        Assertions.assertEquals(3, results.results().size());
-        Assertions.assertEquals("Austin", results.results().get(1).get("city"));
-        Assertions.assertEquals("TX", results.results().get(1).get("state"));
-    }
-
-    @Test
-    void cachesSimple() throws Exception {
-        lookupTableClient.clearCache();
+    void lookupReturnsMappedRows() throws Exception {
+        stub(CACHEABLE_RESPONSE);
 
         LookupResults results = lookupTableClient.lookup("test-lookup-table", LookupOptions.defaultLookupOptions());
 
-        Mockito.verify(GRAPH_QL_CLIENT).executeQuery(Mockito.anyString(), Mockito.anyMap());
-        Assertions.assertEquals(3, results.results().size());
-        Assertions.assertEquals("Austin", results.results().get(1).get("city"));
-        Assertions.assertEquals("TX", results.results().get(1).get("state"));
-
-        lookupTableClient.lookup("test-lookup-table", LookupOptions.defaultLookupOptions());
-        Mockito.verify(GRAPH_QL_CLIENT).executeQuery(Mockito.anyString(), Mockito.anyMap());
-
-        Thread.sleep(Duration.ofSeconds(1));
-        lookupTableClient.lookup("test-lookup-table", LookupOptions.defaultLookupOptions());
-        Mockito.verify(GRAPH_QL_CLIENT, Mockito.times(2)).executeQuery(Mockito.anyString(), Mockito.anyMap());
+        assertThat(results.results()).hasSize(3);
+        assertThat(results.results().get(1)).containsEntry("city", "Austin").containsEntry("state", "TX");
+        assertThat(results.ttlSeconds()).isEqualTo(3600);
     }
 
     @Test
-    void cachesComplex() throws Exception {
+    void cachesResultsWithTtl() throws Exception {
+        stub(CACHEABLE_RESPONSE);
+
+        lookupTableClient.lookup("test-lookup-table", LookupOptions.defaultLookupOptions());
+        // Identical query is served from the cache; core is not hit again.
+        lookupTableClient.lookup("test-lookup-table", LookupOptions.defaultLookupOptions());
+
+        Mockito.verify(graphQLClient, Mockito.times(1)).executeQuery(Mockito.anyString(), Mockito.anyMap());
+    }
+
+    @Test
+    void doesNotCacheWhenNoTtl() throws Exception {
+        stub(NON_CACHEABLE_RESPONSE);
+
+        lookupTableClient.lookup("test-lookup-table", LookupOptions.defaultLookupOptions());
+        lookupTableClient.lookup("test-lookup-table", LookupOptions.defaultLookupOptions());
+
+        // ttlSeconds absent -> every lookup hits core.
+        Mockito.verify(graphQLClient, Mockito.times(2)).executeQuery(Mockito.anyString(), Mockito.anyMap());
+    }
+
+    @Test
+    void distinctOptionsAreCachedSeparately() throws Exception {
+        stub(CACHEABLE_RESPONSE);
+
+        lookupTableClient.lookup("test-lookup-table", matching(Set.of("NV", "TX"), Set.of("city")));
+        // Same options -> cache hit.
+        lookupTableClient.lookup("test-lookup-table", matching(Set.of("NV", "TX"), Set.of("city")));
+        Mockito.verify(graphQLClient, Mockito.times(1)).executeQuery(Mockito.anyString(), Mockito.anyMap());
+
+        // Different matching values -> new query.
+        lookupTableClient.lookup("test-lookup-table", matching(Set.of("FL"), Set.of("city")));
+        Mockito.verify(graphQLClient, Mockito.times(2)).executeQuery(Mockito.anyString(), Mockito.anyMap());
+
+        // Different result columns -> new query.
+        lookupTableClient.lookup("test-lookup-table", matching(Set.of("NV", "TX"), Set.of("city", "state")));
+        Mockito.verify(graphQLClient, Mockito.times(3)).executeQuery(Mockito.anyString(), Mockito.anyMap());
+    }
+
+    @Test
+    void clearCacheForcesReQuery() throws Exception {
+        stub(CACHEABLE_RESPONSE);
+
+        lookupTableClient.lookup("test-lookup-table", LookupOptions.defaultLookupOptions());
         lookupTableClient.clearCache();
+        lookupTableClient.lookup("test-lookup-table", LookupOptions.defaultLookupOptions());
 
-        LookupResults results = lookupTableClient.lookup("test-lookup-table",
-                LookupOptions.builder().matchingColumnValues(Map.of("state", new TreeSet<>(Set.of("NV", "TX"))))
-                        .resultColumns(new TreeSet<>(Set.of("city"))).build());
+        Mockito.verify(graphQLClient, Mockito.times(2)).executeQuery(Mockito.anyString(), Mockito.anyMap());
+    }
 
-        Mockito.verify(GRAPH_QL_CLIENT).executeQuery(Mockito.anyString(), Mockito.anyMap());
-        Assertions.assertEquals(3, results.results().size());
-        Assertions.assertEquals("Austin", results.results().get(1).get("city"));
-        Assertions.assertEquals("TX", results.results().get(1).get("state"));
+    @Test
+    void coalescesConcurrentMissesForSameKey() throws Exception {
+        // Guards single-flight: drop the inFlight coalescing and both concurrent callers query core (calls == 2).
+        Gate core = gateCore(() -> dgsResponse(CACHEABLE_RESPONSE));
 
-        // Same query; pulls from cache
-        lookupTableClient.lookup("test-lookup-table",
-                LookupOptions.builder().matchingColumnValues(Map.of("state", new TreeSet<>(Set.of("NV", "TX"))))
-                        .resultColumns(new TreeSet<>(Set.of("city"))).build());
-        Mockito.verify(GRAPH_QL_CLIENT).executeQuery(Mockito.anyString(), Mockito.anyMap());
+        AsyncLookup loader = lookupAsync();   // first caller becomes the sole loader and parks in core
+        core.awaitInFlight();
+        AsyncLookup waiter = lookupAsync();   // second caller, same key
+        awaitParked(waiter);                  // ...joined the in-flight load instead of querying core
+        core.release();
 
-        // Different matching values; makes new query
-        lookupTableClient.lookup("test-lookup-table", LookupOptions.builder()
-                        .matchingColumnValues(Map.of("state", new TreeSet<>(Set.of("FL"))))
-                        .resultColumns(new TreeSet<>(Set.of("city"))).build());
-        Mockito.verify(GRAPH_QL_CLIENT, Mockito.times(2)).executeQuery(Mockito.anyString(), Mockito.anyMap());
+        assertThat(loader.get().results()).hasSize(3);
+        assertThat(waiter.get().results()).hasSize(3);
+        assertThat(core.calls()).isEqualTo(1); // both misses collapsed into one core round-trip
+    }
 
-        // Different result columns; makes new query
-        lookupTableClient.lookup("test-lookup-table", LookupOptions.builder()
-                        .matchingColumnValues(Map.of("state", new TreeSet<>(Set.of("NV", "TX"))))
-                        .resultColumns(new TreeSet<>(Set.of("city", "state"))).build());
-        Mockito.verify(GRAPH_QL_CLIENT, Mockito.times(3)).executeQuery(Mockito.anyString(), Mockito.anyMap());
+    @Test
+    void releasesWaitersWhenLoaderFailsWithError() throws Exception {
+        // Guards release-on-any-failure: the load throws an Error (not an Exception). With catch(Exception)
+        // instead of catch(Throwable) it escapes uncaught, the shared future is never completed, and waiters
+        // hang forever — which surfaces here as get() timing out rather than the expected ExecutionException.
+        Gate core = gateCore(() -> { throw new AssertionError("boom"); });
+
+        AsyncLookup loader = lookupAsync();
+        core.awaitInFlight();
+        AsyncLookup waiter = lookupAsync();
+        awaitParked(waiter);
+        core.release();
+
+        // Both fail fast; a hang would instead surface as a TimeoutException from get(5s) in AsyncLookup.
+        assertThatThrownBy(loader::get).isInstanceOf(ExecutionException.class);
+        assertThatThrownBy(waiter::get).isInstanceOf(ExecutionException.class);
+    }
+
+    // --- concurrency test harness -------------------------------------------------------------------------
+
+    /** A core stub whose every query records the call, signals it is in-flight, then blocks until released. */
+    private static final class Gate {
+        private final CountDownLatch inFlight = new CountDownLatch(1);
+        private final CountDownLatch released = new CountDownLatch(1);
+        private final AtomicInteger calls = new AtomicInteger();
+
+        void awaitInFlight() throws InterruptedException {
+            assertThat(inFlight.await(5, TimeUnit.SECONDS)).isTrue();
+        }
+        void release() { released.countDown(); }
+        int calls() { return calls.get(); }
+    }
+
+    /** Stub core so each query blocks until {@link Gate#release()}, then returns (or throws) {@code onRelease}. */
+    private Gate gateCore(ThrowingSupplier<DgsGraphQLResponse> onRelease) {
+        Gate gate = new Gate();
+        Mockito.when(graphQLClient.executeQuery(Mockito.anyString(), Mockito.anyMap())).thenAnswer(invocation -> {
+            gate.calls.incrementAndGet();
+            gate.inFlight.countDown();
+            assertThat(gate.released.await(5, TimeUnit.SECONDS)).isTrue();
+            return onRelease.get();
+        });
+        return gate;
+    }
+
+    /** A lookup running on the pool, exposing its result future and worker thread (to detect parking). */
+    private record AsyncLookup(Future<LookupResults> future, AtomicReference<Thread> thread) {
+        LookupResults get() throws Exception {
+            return future.get(5, TimeUnit.SECONDS);
+        }
+    }
+
+    /** Start lookup("t") on the pool, capturing its worker thread. */
+    private AsyncLookup lookupAsync() {
+        AtomicReference<Thread> thread = new AtomicReference<>();
+        Future<LookupResults> future = pool.submit(() -> {
+            thread.set(Thread.currentThread());
+            return lookupTableClient.lookup("t", LookupOptions.defaultLookupOptions());
+        });
+        return new AsyncLookup(future, thread);
+    }
+
+    /** Wait until the lookup's worker thread is parked — i.e. blocked on the shared in-flight load. */
+    private static void awaitParked(AsyncLookup lookup) {
+        await().atMost(Duration.ofSeconds(5)).until(() -> {
+            Thread thread = lookup.thread().get();
+            return thread != null && (thread.getState() == Thread.State.WAITING
+                    || thread.getState() == Thread.State.TIMED_WAITING);
+        });
     }
 
     @Test
@@ -252,14 +271,15 @@ class LookupTableClientTest {
         Mockito.when(graphQLResponse.hasErrors()).thenReturn(false);
         Mockito.when(graphQLResponse.extractValueAsObject("upsertLookupTableRows", Result.class))
                 .thenReturn(Result.newBuilder().success(true).build());
-        Mockito.when(GRAPH_QL_CLIENT.executeQuery(Mockito.anyString(), Mockito.anyMap())).thenReturn(graphQLResponse);
+        Mockito.when(graphQLClient.executeQuery(Mockito.anyString(), Mockito.anyMap())).thenReturn(graphQLResponse);
 
         List<Map<String, String>> rows = new ArrayList<>();
         for (int i = 0; i < 20001; i++) {
             rows.add(Map.of("column_a", Integer.toString(i)));
         }
         Result result = lookupTableClient.upsertRows("test-lookup-table", rows);
-        Assertions.assertTrue(result.getSuccess());
-        Mockito.verify(GRAPH_QL_CLIENT, Mockito.times(3)).executeQuery(Mockito.anyString(), Mockito.anyMap());
+
+        assertThat(result.getSuccess()).isTrue();
+        Mockito.verify(graphQLClient, Mockito.times(3)).executeQuery(Mockito.anyString(), Mockito.anyMap());
     }
 }

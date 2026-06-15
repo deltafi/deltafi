@@ -52,6 +52,7 @@ type LookupResults {
   totalCount: Int
   created: DateTime
   modified: DateTime
+  ttlSeconds: Int
   rows: [[ColumnValue!]!]!
 }
 

@@ -26,6 +26,7 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.jdbc.core.simple.JdbcClient;
 
 import javax.annotation.Nullable;
+import java.time.Duration;
 import java.time.OffsetDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -150,17 +151,43 @@ public class LookupTableRepo {
 
         result.setCreated(metadata.created());
         result.setModified(metadata.modified());
+        result.setTtlSeconds(ttlSeconds(metadata));
         return result;
     }
 
     private LookupMetadata getLookupMetadata() {
         String sql = """
-                select created, modified from lookup_tables
+                select created, modified, last_refresh, refresh_duration, pull_through, now() as db_now from lookup_tables
                 where name = :table_name
                 """;
 
         return jdbcClient.sql(sql).param("table_name", lookupTable.getName())
                 .query(new LookupMetadataExtractor());
+    }
+
+    /**
+     * Seconds a client may cache this result. {@code refreshDuration} is the table's freshness budget;
+     * how it maps to a TTL depends on whether the table is fed by a supplier:
+     * <ul>
+     *   <li><b>Supplier-fed</b> ({@code lastRefresh} set): align the client cache to the next scheduled
+     *       poll ({@code lastRefresh + refreshDuration}) so staleness does not compound across the
+     *       supplier&rarr;Postgres and Postgres&rarr;client layers.</li>
+     *   <li><b>Operator-owned</b> ({@code lastRefresh} null): treat {@code refreshDuration} as a flat
+     *       sliding TTL so manual edits propagate to every consumer within the window.</li>
+     * </ul>
+     * Returns {@code null} when no {@code refreshDuration} is declared, when the table is pull-through
+     * (it fetches from its supplier on every lookup, so caching would defeat that), or when a
+     * supplier-fed table is already overdue for its next poll — in those cases the result must not be cached.
+     */
+    static Integer ttlSeconds(LookupMetadata metadata) {
+        if (metadata.pullThrough() || metadata.refreshDuration() == null) {
+            return null;
+        }
+        Duration refreshDuration = Duration.parse(metadata.refreshDuration());
+        long seconds = metadata.lastRefresh() != null
+                ? Duration.between(metadata.dbNow(), metadata.lastRefresh().plus(refreshDuration)).getSeconds()
+                : refreshDuration.getSeconds();
+        return seconds > 0 ? (int) Math.min(seconds, Integer.MAX_VALUE) : null;
     }
 
     public int count() {
