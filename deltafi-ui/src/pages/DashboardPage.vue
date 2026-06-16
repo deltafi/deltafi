@@ -23,7 +23,7 @@
     </PageHeader>
     <div class="row mb-3">
       <div class="col-12">
-        <DeltaFileStats :key="refreshKey" />
+        <DeltaFileStats ref="deltaFileStatsRef" />
       </div>
     </div>
     <div class="row mb-3">
@@ -49,10 +49,12 @@ import DeltaFileStats from "@/components/dashboard/DeltaFileStats.vue";
 import Button from "primevue/button";
 
 const metricsPanelRef = ref(null);
+const deltaFileStatsRef = ref(null);
 const refreshKey = ref(0);
 const refreshDashboard = () => {
   refreshKey.value += 1;
   metricsPanelRef.value?.reload();
+  deltaFileStatsRef.value?.reload();
 };
 
 const columns = reactive({

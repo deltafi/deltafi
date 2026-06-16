@@ -33,8 +33,10 @@
         cy.contains("Refresh").should("exist");
       });
 
-      it("displays DeltaFile Stats panel", () => {
-        cy.get("span.p-panel-title").contains("DeltaFile Stats");
+      it("displays DeltaFile stats bar", () => {
+        cy.get(".summary-stats-bar").should("exist");
+        cy.get(".summary-stats-bar").contains("Total DeltaFiles");
+        cy.get(".summary-stats-bar").contains("In-flight DeltaFiles");
       });
 
       it("displays Metrics panel", () => {
