@@ -51,7 +51,7 @@ class ArtifactCacheManagerTest {
     @BeforeEach
     void setUp() {
         // No startPoller() call — tests stay single-threaded
-        cacheManager = new ArtifactCacheManager(registryClient, new ArtifactRegistryCacheProperties());
+        cacheManager = new ArtifactCacheManager(registryClient, new ArtifactCacheConfig());
     }
 
     @Test
@@ -448,7 +448,7 @@ class ArtifactCacheManagerTest {
     void resolve_withConcreteVersionAlias_isPinnedAndNeverReFetched() {
         // When the alias equals the returned manifest version, the entry is pinned
         ArtifactDescriptor descriptor = new ArtifactDescriptor(
-                PLUGIN, ARTIFACT, VERSION, ArtifactScope.PLUGIN_ONLY, true, "");
+                PLUGIN, ARTIFACT, VERSION, ArtifactScope.PLUGIN_ONLY, true, "", true);
 
         when(registryClient.download(PLUGIN, ARTIFACT, VERSION))
                 .thenReturn(new FetchedArtifact(MANIFEST, SOURCE_PREFIX, BYTES));
@@ -466,7 +466,7 @@ class ArtifactCacheManagerTest {
     void refreshIfCached_pinnedEntry_redownloadsOnExplicitEvent() {
         // Valkey version-change events are always honoured, even for pinned entries
         ArtifactDescriptor descriptor = new ArtifactDescriptor(
-                PLUGIN, ARTIFACT, VERSION, ArtifactScope.PLUGIN_ONLY, true, "");
+                PLUGIN, ARTIFACT, VERSION, ArtifactScope.PLUGIN_ONLY, true, "", true);
 
         byte[] newBytes = "replaced bytes".getBytes();
         ArtifactManifest newManifest = new ArtifactManifest(VERSION, "replaced", "application/octet-stream", "newsha", null);
@@ -554,7 +554,7 @@ class ArtifactCacheManagerTest {
     @Test
     void pollForChanges_pinnedEntries_areNotPolled() {
         ArtifactDescriptor descriptor = new ArtifactDescriptor(
-                PLUGIN, ARTIFACT, VERSION, ArtifactScope.PLUGIN_ONLY, true, "");
+                PLUGIN, ARTIFACT, VERSION, ArtifactScope.PLUGIN_ONLY, true, "", true);
 
         when(registryClient.download(PLUGIN, ARTIFACT, VERSION))
                 .thenReturn(new FetchedArtifact(MANIFEST, SOURCE_PREFIX, BYTES));
@@ -596,7 +596,7 @@ class ArtifactCacheManagerTest {
 
     @Test
     void eviction_maxEntries_evictsOldestNonPinned() {
-        ArtifactRegistryCacheProperties props = new ArtifactRegistryCacheProperties();
+        ArtifactCacheConfig props = new ArtifactCacheConfig();
         props.setMaxEntries(2);
         props.setMaxBytes(0);
         cacheManager = new ArtifactCacheManager(registryClient, props);
@@ -607,7 +607,7 @@ class ArtifactCacheManagerTest {
             when(registryClient.download(PLUGIN, name, "active"))
                     .thenReturn(new FetchedArtifact(m, SOURCE_PREFIX, BYTES));
             ArtifactDescriptor d = new ArtifactDescriptor(
-                    PLUGIN, name, "active", ArtifactScope.PLUGIN_ONLY, true, "");
+                    PLUGIN, name, "active", ArtifactScope.PLUGIN_ONLY, true, "", true);
             cacheManager.resolve(d);
         }
 
@@ -620,7 +620,7 @@ class ArtifactCacheManagerTest {
 
     @Test
     void eviction_maxBytes_evictsOldestNonPinned() {
-        ArtifactRegistryCacheProperties props = new ArtifactRegistryCacheProperties();
+        ArtifactCacheConfig props = new ArtifactCacheConfig();
         props.setMaxEntries(0);
         props.setMaxBytes(BYTES.length);
         cacheManager = new ArtifactCacheManager(registryClient, props);
@@ -631,7 +631,7 @@ class ArtifactCacheManagerTest {
             when(registryClient.download(PLUGIN, name, "active"))
                     .thenReturn(new FetchedArtifact(m, SOURCE_PREFIX, BYTES));
             ArtifactDescriptor d = new ArtifactDescriptor(
-                    PLUGIN, name, "active", ArtifactScope.PLUGIN_ONLY, true, "");
+                    PLUGIN, name, "active", ArtifactScope.PLUGIN_ONLY, true, "", true);
             cacheManager.resolve(d);
         }
 
@@ -644,7 +644,7 @@ class ArtifactCacheManagerTest {
 
     @Test
     void eviction_pinnedEntries_areNotEvicted() {
-        ArtifactRegistryCacheProperties props = new ArtifactRegistryCacheProperties();
+        ArtifactCacheConfig props = new ArtifactCacheConfig();
         props.setMaxEntries(1);
         props.setMaxBytes(0);
         cacheManager = new ArtifactCacheManager(registryClient, props);
@@ -653,14 +653,14 @@ class ArtifactCacheManagerTest {
         when(registryClient.download(PLUGIN, ARTIFACT, VERSION))
                 .thenReturn(new FetchedArtifact(m, SOURCE_PREFIX, BYTES));
         ArtifactDescriptor pinned = new ArtifactDescriptor(
-                PLUGIN, ARTIFACT, VERSION, ArtifactScope.PLUGIN_ONLY, true, "");
+                PLUGIN, ARTIFACT, VERSION, ArtifactScope.PLUGIN_ONLY, true, "", true);
         cacheManager.resolve(pinned);
 
         String other = "other-artifact";
         when(registryClient.download(PLUGIN, other, "active"))
                 .thenReturn(new FetchedArtifact(m, SOURCE_PREFIX, BYTES));
         ArtifactDescriptor unpinned = new ArtifactDescriptor(
-                PLUGIN, other, "active", ArtifactScope.PLUGIN_ONLY, true, "");
+                PLUGIN, other, "active", ArtifactScope.PLUGIN_ONLY, true, "", true);
         cacheManager.resolve(unpinned);
 
         // The pinned entry should still be in the cache (non-pinned was evicted)
@@ -994,6 +994,6 @@ class ArtifactCacheManagerTest {
     }
 
     private ArtifactDescriptor descriptor(ArtifactScope scope, boolean cacheable, String defaultResource) {
-        return new ArtifactDescriptor(PLUGIN, ARTIFACT, "active", scope, cacheable, defaultResource);
+        return new ArtifactDescriptor(PLUGIN, ARTIFACT, "active", scope, cacheable, defaultResource, true);
     }
 }

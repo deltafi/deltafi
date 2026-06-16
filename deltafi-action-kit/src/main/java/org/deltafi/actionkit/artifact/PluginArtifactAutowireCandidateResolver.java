@@ -65,7 +65,15 @@ class PluginArtifactAutowireCandidateResolver
         }
 
         if (annotation != null) {
-            return beanFactory.getBean(PluginArtifactFactory.class).create(annotation);
+            // Resolve through the same public ArtifactFactory seam a non-Spring plugin would use.
+            return beanFactory.getBean(ArtifactFactory.class)
+                    .artifact(annotation.artifactName())
+                    .scope(annotation.scope())
+                    .alias(annotation.alias())
+                    .cacheable(annotation.cacheable())
+                    .preload(annotation.preload())
+                    .defaultResource(annotation.defaultResource())
+                    .build();
         }
 
         // Delegate back to original resolver

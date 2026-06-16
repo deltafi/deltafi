@@ -17,14 +17,16 @@
  */
 package org.deltafi.actionkit.artifact;
 
-record ArtifactDescriptor(
+public record ArtifactDescriptor(
         String pluginName,
         String artifactName,
         String alias,
         ArtifactScope scope,
         // {@code false} (the default) means always fetch fresh; {@code true} means use shared cache.
         boolean cacheable,
-        String defaultResource
+        String defaultResource,
+        // {@code true} resolves eagerly; {@code false} defers resolution to first handle access.
+        boolean preload
 ) {
 
     /**
@@ -33,19 +35,5 @@ record ArtifactDescriptor(
      */
     boolean seedOnMissing() {
         return defaultResource != null && !defaultResource.isBlank();
-    }
-
-    static ArtifactDescriptor from(
-            String pluginName,
-            PluginArtifact annotation) {
-
-        return new ArtifactDescriptor(
-                pluginName,
-                annotation.artifactName(),
-                annotation.alias(),
-                annotation.scope(),
-                annotation.cacheable(),
-                annotation.defaultResource()
-        );
     }
 }

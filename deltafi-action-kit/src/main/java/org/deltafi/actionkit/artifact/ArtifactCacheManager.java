@@ -20,7 +20,6 @@ package org.deltafi.actionkit.artifact;
 import lombok.extern.slf4j.Slf4j;
 import org.deltafi.common.artifact.ArtifactRegistryConstants;
 import org.deltafi.common.artifact.VersionChangedEvent;
-import org.springframework.beans.factory.DisposableBean;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -65,7 +64,7 @@ import java.util.function.Consumer;
  * {@link ConcurrentHashMap}.
  */
 @Slf4j
-class ArtifactCacheManager implements DisposableBean {
+class ArtifactCacheManager implements AutoCloseable {
 
     private record CacheKey(String owner, String artifactName, String alias) {}
 
@@ -156,21 +155,21 @@ class ArtifactCacheManager implements DisposableBean {
     private final ConcurrentHashMap<CacheKey, CopyOnWriteArrayList<Consumer<VersionChangedEvent>>> callbacks =
             new ConcurrentHashMap<>();
     private final ArtifactRegistryClient client;
-    private final ArtifactRegistryCacheProperties props;
+    private final ArtifactCacheConfig props;
     private final ScheduledExecutorService pollScheduler = Executors.newSingleThreadScheduledExecutor(r -> {
         Thread t = new Thread(r, "artifact-cache-poll");
         t.setDaemon(true);
         return t;
     });
 
-    ArtifactCacheManager(ArtifactRegistryClient client, ArtifactRegistryCacheProperties props) {
+    ArtifactCacheManager(ArtifactRegistryClient client, ArtifactCacheConfig props) {
         this.client = client;
         this.props = props;
     }
 
     /**
-     * Starts the background polling loop. Called once by {@link ArtifactConfiguration} after the
-     * cache manager bean is created. Not called in tests so they remain single-threaded.
+     * Starts the background polling loop. Called once by {@link ArtifactInfrastructureLifecycle}
+     * when the artifact infrastructure starts. Not called in tests so they remain single-threaded.
      */
     void startPoller() {
         int intervalSeconds = props.getPollIntervalSeconds();
@@ -183,7 +182,7 @@ class ArtifactCacheManager implements DisposableBean {
     }
 
     @Override
-    public void destroy() {
+    public void close() {
         pollScheduler.shutdownNow();
     }
 

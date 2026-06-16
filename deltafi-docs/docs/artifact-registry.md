@@ -386,6 +386,55 @@ connection stays open until then). Streaming bypasses the shared cache — each 
 connection. Use `getArtifact()` for small, frequently-accessed artifacts and `streamArtifact()`
 only when memory pressure is a concern.
 
+### Without Spring: the `ArtifactFactory`
+
+The `@PluginArtifact` annotation is processed by Spring. When you prefer not to rely on Spring
+injection — a plugin built on a different framework, or one that wires its actions by hand — declare
+artifacts through the `ArtifactFactory` instead. It is the framework-agnostic construction seam the
+annotation processor itself resolves through, so the behaviour is identical: same caching, default
+resources, live updates, and scope resolution.
+
+An action receives an `ArtifactFactory` (the action-kit runtime provides one) and declares its
+handles with the fluent builder — the direct, one-to-one equivalent of the annotation parameters:
+
+```java
+public class MyTransformAction extends TransformAction<RoutingParameters> {
+
+    private final ArtifactHandle routingRules;
+
+    public MyTransformAction(ArtifactFactory artifacts) {
+        super("Route input based on configurable rules");
+        this.routingRules = artifacts.artifact("routing-rules.json")
+                .scope(ArtifactScope.PLUGIN_FIRST)            // default
+                .alias("active")                              // default
+                .preload(true)                                // default
+                .cacheable(true)                              // we call getBytes() every transform
+                .defaultResource("defaults/routing-rules.json")  // classpath seed on first deploy
+                .build();
+        // onUpdate / refresh / getBytes work exactly as with the annotation
+    }
+
+    @Override
+    public TransformResultType transform(ActionContext context,
+                                        RoutingParameters params,
+                                        TransformInput input) {
+        RoutingConfig config = parseJson(routingRules.getBytes(), RoutingConfig.class);
+        context.addMetadata("targetRegion", config.resolveRegion(input.content()));
+        return input.toTransformResult(context);
+    }
+}
+```
+
+Every builder method maps to the matching `@PluginArtifact` attribute, and the returned
+`ArtifactHandle` is the same type with the same [API](#artifacthandle-api) — including `onUpdate`,
+`refresh`, and the streaming variants on `registryService()`. Omit `defaultResource(...)` to require
+an externally-provided artifact (resolution fails fast until it is uploaded), exactly as omitting the
+annotation attribute does.
+
+Because `ArtifactFactory` is an interface, actions written this way stay unit-testable: pass a
+`TestArtifactFactory` (from `deltafi-action-kit-test`) in place of the production factory and no
+running core is required.
+
 ### Go
 
 The Go action kit provides artifact access through the `ArtifactClient`, available on the `ActionContext`. Go does not use annotations — artifacts are accessed programmatically.

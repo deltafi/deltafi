@@ -44,7 +44,9 @@ public class ArtifactRegistryService {
 
     private final ArtifactRegistryClient client;
 
-    // Package-private: created only by ArtifactConfiguration
+    // Package-private: constructed only by ArtifactFactory (directly for non-Spring plugins, or
+    // via the Spring ArtifactConfiguration bean) so the plugin-owner namespace is always bound
+    // correctly. Never instantiated by plugin code.
     ArtifactRegistryService(ArtifactRegistryClient client) {
         this.client = client;
     }

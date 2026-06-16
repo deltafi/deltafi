@@ -18,20 +18,20 @@
 package org.deltafi.actionkit.artifact;
 
 /**
- * Creates {@link ArtifactHandle} instances from {@link PluginArtifact} annotations.
+ * Creates {@link ArtifactHandle} instances from an {@link ArtifactDescriptor}.
  *
- * <p>Called by {@link PluginArtifactAutowireCandidateResolver} at Spring injection time for
- * every field annotated with {@code @PluginArtifact}. Depending on
- * {@link PluginArtifact#preload()}, the handle is either resolved immediately (eager) or
- * wrapped in a {@link LazyArtifactHandle} that defers resolution to first access.
+ * <p>Depending on {@link ArtifactDescriptor#preload()}, the handle is either resolved
+ * immediately (eager) or wrapped in a {@link LazyArtifactHandle} that defers resolution to
+ * first access.
  *
- * <p>Registered as a bean by the action-kit auto-configuration; should not normally need
- * to be instantiated directly by plugin code.
+ * <p>This is a plain primitive with no dependency on Spring or the {@code @PluginArtifact}
+ * annotation. The Spring wiring maps annotated injection points onto descriptors before
+ * calling {@link #create(ArtifactDescriptor)}.
  */
 class PluginArtifactFactory {
 
     private final ArtifactCacheManager cacheManager;
-    private final String pluginName;
+    private final String pluginOwner;
 
     /**
      * Create a factory for the given plugin.
@@ -42,25 +42,28 @@ class PluginArtifactFactory {
      */
     PluginArtifactFactory(ArtifactCacheManager cacheManager, String pluginOwner) {
         this.cacheManager = cacheManager;
-        this.pluginName = pluginOwner;
+        this.pluginOwner = pluginOwner;
+    }
+
+    /** The plugin owner namespace ({@code group.artifactId}) this factory resolves against. */
+    String pluginOwner() {
+        return pluginOwner;
     }
 
     /**
-     * Produce an {@link ArtifactHandle} for the injection point described by {@code annotation}.
+     * Produce an {@link ArtifactHandle} for the injection point described by {@code descriptor}.
      *
-     * <p>When {@link PluginArtifact#preload()} is {@code true}, the artifact is resolved
+     * <p>When {@link ArtifactDescriptor#preload()} is {@code true}, the artifact is resolved
      * (and bytes downloaded) immediately. When {@code false}, a lazy handle is returned and
-     * resolution is deferred until the first call to {@link ArtifactHandle#getBytes()} ()} or similar.
+     * resolution is deferred until the first call to {@link ArtifactHandle#getBytes()} or similar.
      *
-     * @param annotation the annotation on the injection point being processed
+     * @param descriptor the resolved description of the injection point being processed
      * @return a handle to the artifact; never {@code null}
      * @throws IllegalStateException if {@code preload} is {@code true}, the artifact is not
-     *                               found, and no {@link PluginArtifact#defaultResource()} is configured
+     *                               found, and no {@code defaultResource} is configured
      */
-    ArtifactHandle create(PluginArtifact annotation) {
-        ArtifactDescriptor descriptor = ArtifactDescriptor.from(pluginName, annotation);
-
-        if (annotation.preload()) {
+    ArtifactHandle create(ArtifactDescriptor descriptor) {
+        if (descriptor.preload()) {
             return cacheManager.resolve(descriptor);
         }
 

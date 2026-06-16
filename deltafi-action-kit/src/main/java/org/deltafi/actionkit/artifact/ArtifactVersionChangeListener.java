@@ -25,9 +25,8 @@ import io.valkey.JedisPubSub;
 import lombok.extern.slf4j.Slf4j;
 import org.deltafi.common.artifact.ArtifactRegistryConstants;
 import org.deltafi.common.artifact.VersionChangedEvent;
-import org.springframework.beans.factory.DisposableBean;
-import org.springframework.beans.factory.InitializingBean;
-import org.springframework.context.ApplicationEventPublisher;
+
+import java.util.function.Consumer;
 
 /**
  * Subscribes to the Valkey pub/sub channel for artifact version-change events and
@@ -42,27 +41,27 @@ import org.springframework.context.ApplicationEventPublisher;
  * if the connection drops.
  */
 @Slf4j
-class ArtifactVersionChangeListener implements InitializingBean, DisposableBean {
+class ArtifactVersionChangeListener implements AutoCloseable {
 
     private static final ObjectMapper MAPPER = new ObjectMapper().registerModule(new JavaTimeModule());
     private static final String PLUGIN_PREFIX = "plugins/";
 
     private final JedisPool jedisPool;
     private final ArtifactCacheManager cacheManager;
-    private final ApplicationEventPublisher eventPublisher;
+    private final Consumer<VersionChangedEvent> eventHandler;
 
     private volatile boolean running = true;
     private Thread subscriberThread;
 
     ArtifactVersionChangeListener(JedisPool jedisPool, ArtifactCacheManager cacheManager,
-                                   ApplicationEventPublisher eventPublisher) {
+                                   Consumer<VersionChangedEvent> eventHandler) {
         this.jedisPool = jedisPool;
         this.cacheManager = cacheManager;
-        this.eventPublisher = eventPublisher;
+        this.eventHandler = eventHandler;
     }
 
-    @Override
-    public void afterPropertiesSet() {
+    /** Starts the background subscriber thread. */
+    void start() {
         subscriberThread = new Thread(this::subscribeLoop, "artifact-cache-listener");
         subscriberThread.setDaemon(true);
         subscriberThread.start();
@@ -98,7 +97,7 @@ class ArtifactVersionChangeListener implements InitializingBean, DisposableBean 
             String owner = ownerFrom(event);
             cacheManager.refreshIfCached(owner, event.artifactName(), event.alias());
             cacheManager.invokeCallbacks(owner, event.artifactName(), event.alias(), event);
-            eventPublisher.publishEvent(new ArtifactVersionChangedEvent(this, event));
+            eventHandler.accept(event);
             log.debug("Processed version-change event: owner={} artifact={} alias={}",
                     owner, event.artifactName(), event.alias());
         } catch (Exception e) {
@@ -119,7 +118,7 @@ class ArtifactVersionChangeListener implements InitializingBean, DisposableBean 
     }
 
     @Override
-    public void destroy() {
+    public void close() {
         running = false;
         if (subscriberThread != null) {
             subscriberThread.interrupt();

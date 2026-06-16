@@ -46,8 +46,7 @@ class PluginArtifactFactoryTest {
     void create_preload_true_resolves_immediately() {
         when(cacheManager.resolve(any())).thenReturn(resolvedHandle);
 
-        PluginArtifact annotation = getAnnotation("preloadField");
-        ArtifactHandle result = factory.create(annotation);
+        ArtifactHandle result = factory.create(descriptor(true));
 
         // Should have resolved immediately
         verify(cacheManager, times(1)).resolve(any());
@@ -59,8 +58,7 @@ class PluginArtifactFactoryTest {
         when(cacheManager.resolve(any())).thenReturn(resolvedHandle);
         when(resolvedHandle.getBytes()).thenReturn(new byte[]{1, 2, 3});
 
-        PluginArtifact annotation = getAnnotation("lazyField");
-        ArtifactHandle result = factory.create(annotation);
+        ArtifactHandle result = factory.create(descriptor(false));
 
         // cacheManager.resolve should NOT be called yet
         verify(cacheManager, never()).resolve(any());
@@ -76,8 +74,7 @@ class PluginArtifactFactoryTest {
         when(cacheManager.resolve(any())).thenReturn(resolvedHandle);
         when(resolvedHandle.getVersion()).thenReturn("v1");
 
-        PluginArtifact annotation = getAnnotation("lazyField");
-        ArtifactHandle result = factory.create(annotation);
+        ArtifactHandle result = factory.create(descriptor(false));
 
         result.getVersion();
         result.getVersion();
@@ -87,17 +84,8 @@ class PluginArtifactFactoryTest {
         verify(cacheManager, times(1)).resolve(any());
     }
 
-    @PluginArtifact(artifactName = "my-model")
-    private ArtifactHandle preloadField;
-
-    @PluginArtifact(artifactName = "my-model", preload = false)
-    private ArtifactHandle lazyField;
-
-    private PluginArtifact getAnnotation(String fieldName) {
-        try {
-            return getClass().getDeclaredField(fieldName).getAnnotation(PluginArtifact.class);
-        } catch (NoSuchFieldException e) {
-            throw new RuntimeException(e);
-        }
+    private static ArtifactDescriptor descriptor(boolean preload) {
+        return new ArtifactDescriptor("org.example.my-plugin", "my-model", "active",
+                ArtifactScope.PLUGIN_FIRST, false, "", preload);
     }
 }

@@ -18,15 +18,12 @@
 package org.deltafi.actionkit.artifact;
 
 import lombok.Data;
-import org.springframework.boot.context.properties.ConfigurationProperties;
 
 /**
- * Configuration properties for the in-process artifact cache.
- * Bound from the {@code deltafi.artifact-registry.cache} prefix.
+ * Configuration holder for the in-process artifact cache.
  */
-@ConfigurationProperties("deltafi.artifact-registry.cache")
 @Data
-class ArtifactRegistryCacheProperties {
+class ArtifactCacheConfig {
 
     /**
      * Maximum number of artifacts to keep in the cache. {@code 0} means unlimited.

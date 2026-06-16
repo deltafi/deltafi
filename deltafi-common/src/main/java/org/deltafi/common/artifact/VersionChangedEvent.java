@@ -18,6 +18,7 @@
 package org.deltafi.common.artifact;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import lombok.Builder;
 
 import java.time.Instant;
 
@@ -26,6 +27,7 @@ import java.time.Instant;
  * {@link ArtifactRegistryConstants#VERSION_CHANGED_CHANNEL} when an artifact's alias is updated.
  * Emitted on initial publish (with makeLatest=true) and on rollback.
  */
+@Builder
 public record VersionChangedEvent(
         /** {@code "plugins/{pluginName}"} for plugin-owned artifacts, {@code "shared"} for shared. */
         String prefix,

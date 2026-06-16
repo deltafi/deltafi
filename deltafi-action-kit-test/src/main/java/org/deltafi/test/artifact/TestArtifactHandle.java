@@ -19,6 +19,7 @@ package org.deltafi.test.artifact;
 
 import org.deltafi.actionkit.artifact.ArtifactHandle;
 import org.deltafi.actionkit.artifact.ArtifactManifest;
+import org.deltafi.common.artifact.ArtifactRegistryConstants;
 import org.deltafi.common.artifact.VersionChangedEvent;
 
 import java.io.ByteArrayInputStream;
@@ -26,6 +27,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
+import java.time.Clock;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -66,16 +68,17 @@ public class TestArtifactHandle implements ArtifactHandle {
     private final Map<String, String> labels;
     private final String sourcePrefix;
     private final boolean ready;
+    private final Clock clock;
 
     private final List<Consumer<VersionChangedEvent>> callbacks = new ArrayList<>();
 
     // @Builder on the constructor keeps `callbacks` out of the builder automatically.
-    // Defaults for sourcePrefix and ready are applied via null-check since @Builder.Default
+    // Defaults for sourcePrefix, ready, and clock are applied via null-check since @Builder.Default
     // is not supported on constructor parameters.
     @lombok.Builder(builderClassName = "Builder")
     private TestArtifactHandle(byte[] bytes, String artifactName, String version, String description,
                                String contentType, String sha256, Map<String, String> labels,
-                               String sourcePrefix, Boolean ready) {
+                               String sourcePrefix, Boolean ready, Clock clock) {
         this.bytes        = bytes;
         this.artifactName = artifactName;
         this.version      = version;
@@ -85,6 +88,7 @@ public class TestArtifactHandle implements ArtifactHandle {
         this.labels       = labels;
         this.sourcePrefix = sourcePrefix != null ? sourcePrefix : "plugins/test";
         this.ready        = ready == null || ready;
+        this.clock        = clock != null ? clock : Clock.systemUTC();
     }
 
     // ── Factory entry points ──────────────────────────────────────────────────
@@ -207,6 +211,26 @@ public class TestArtifactHandle implements ArtifactHandle {
         for (Consumer<VersionChangedEvent> cb : callbacks) {
             cb.accept(event);
         }
+    }
+
+    /**
+     * Invokes all {@link #onUpdate} callbacks with a synthesized event built from this handle's
+     * own state — {@code prefix=sourcePrefix}, {@code alias="active"},
+     * {@code previousVersion=null}, {@code newVersion=version},
+     * {@code timestamp=clock.instant()}. Mirrors the production
+     * {@code ArtifactCacheManager.fireStartupCallbacks()} seeding event.
+     *
+     * <p>Supply a {@link Clock} via the builder if a test needs deterministic timestamps.
+     */
+    public void fireUpdate() {
+        fireUpdate(VersionChangedEvent.builder()
+                .prefix(sourcePrefix)
+                .artifactName(artifactName)
+                .alias(ArtifactRegistryConstants.ACTIVE_ALIAS)
+                .previousVersion(null)
+                .newVersion(version)
+                .timestamp(clock.instant())
+                .build());
     }
 
     // ── Builder extras ────────────────────────────────────────────────────────
