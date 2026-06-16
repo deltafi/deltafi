@@ -1,4 +1,4 @@
-FROM deltafi/deltafi-java-jre:21.0.11-alpine-0 AS final
+FROM deltafi/deltafi-java-jre:21.0.11-alpine-1 AS final
 VOLUME /tmp
 COPY probe.sh .
 
