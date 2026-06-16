@@ -28,7 +28,46 @@
     </button>
     <Transition name="popup">
       <div v-if="open" class="palette-popup">
+        <div class="popup-label">Theme</div>
+        <div class="theme-list">
+          <button
+            v-for="theme in themes"
+            :key="theme.id"
+            class="theme-option"
+            :class="{ active: themeId === theme.id }"
+            :aria-label="theme.label"
+            @click="selectTheme(theme.id)"
+          >
+            <span class="theme-name"><i :class="theme.icon" /> {{ theme.label }}</span>
+            <span class="theme-swatch" :style="{ backgroundColor: theme.swatch.bg }">
+              <span class="theme-swatch-accent" :style="{ backgroundColor: theme.swatch.accent }" />
+            </span>
+            <span class="theme-check-slot">
+              <i v-if="themeId === theme.id" class="fas fa-check theme-check" />
+            </span>
+          </button>
+        </div>
+        <div class="popup-label">Style</div>
+        <button
+          class="mono-toggle"
+          :class="{ active: monoStyle }"
+          role="switch"
+          :aria-checked="monoStyle"
+          aria-label="Terminal style (monospace and sharp corners)"
+          @click="toggleMonoStyle()"
+        >
+          <span class="theme-name"><i class="pi pi-desktop" /> Terminal style</span>
+          <span class="switch" :class="{ on: monoStyle }"><span class="switch-knob" /></span>
+        </button>
+        <div class="popup-label">Accent</div>
         <div class="palette-grid">
+          <button
+            class="color-swatch default-swatch"
+            :class="{ active: currentColor === 'default' }"
+            aria-label="Default (match theme)"
+            v-tooltip.bottom="'Default (match theme)'"
+            @click="selectDefault()"
+          />
           <button
             v-for="color in colors"
             :key="color.name"
@@ -46,10 +85,14 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from "vue";
+import { ref, watch, onMounted, onUnmounted } from "vue";
 import { updatePrimaryPalette } from "@primeuix/themes";
+import useTheme from "@/composables/useTheme";
+
+const { themes, themeId, setTheme, activeTheme, monoStyle, toggleMonoStyle } = useTheme();
 
 const STORAGE_KEY = "deltafi-primary-color";
+const DEFAULT_ACCENT = "default";
 
 const colors = [
   { name: "Blue", value: "#3b82f6" },
@@ -76,7 +119,17 @@ const pickerRef = ref<HTMLElement | null>(null);
 const currentColor = ref(loadStoredColor());
 
 function loadStoredColor(): string {
-  return localStorage.getItem(STORAGE_KEY) || "Blue";
+  return localStorage.getItem(STORAGE_KEY) || DEFAULT_ACCENT;
+}
+
+// Resolve which named palette to apply: the theme's accent when on "default",
+// otherwise the explicitly chosen color.
+function paletteNameFor(selection: string): string {
+  return selection === DEFAULT_ACCENT ? activeTheme.value.accent : selection;
+}
+
+function applyPalette() {
+  updatePrimaryPalette(buildPalette(paletteNameFor(currentColor.value)));
 }
 
 function buildPalette(name: string): Record<string, string> {
@@ -99,9 +152,27 @@ function buildPalette(name: string): Record<string, string> {
 function selectColor(name: string) {
   currentColor.value = name;
   localStorage.setItem(STORAGE_KEY, name);
-  updatePrimaryPalette(buildPalette(name));
+  applyPalette();
   open.value = false;
 }
+
+function selectDefault() {
+  currentColor.value = DEFAULT_ACCENT;
+  localStorage.setItem(STORAGE_KEY, DEFAULT_ACCENT);
+  applyPalette();
+  open.value = false;
+}
+
+function selectTheme(id: string) {
+  setTheme(id);
+}
+
+// When on the Default accent, follow the theme as it changes.
+watch(activeTheme, () => {
+  if (currentColor.value === DEFAULT_ACCENT) {
+    applyPalette();
+  }
+});
 
 function togglePopup() {
   open.value = !open.value;
@@ -113,13 +184,10 @@ function handleClickOutside(event: MouseEvent) {
   }
 }
 
-// Apply stored color on mount
+// Apply stored accent on mount (resolves "default" against the active theme).
 onMounted(() => {
   document.addEventListener("click", handleClickOutside);
-  const stored = loadStoredColor();
-  if (stored !== "Blue") {
-    updatePrimaryPalette(buildPalette(stored));
-  }
+  applyPalette();
 });
 
 onUnmounted(() => {
@@ -156,12 +224,149 @@ onUnmounted(() => {
   position: absolute;
   top: calc(100% + 0.5rem);
   right: 0;
+  min-width: 19rem;
   padding: 0.75rem;
   background: var(--surface-card);
   border: 1px solid var(--df-border-color);
   border-radius: 10px;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
   z-index: 1000;
+}
+
+.popup-label {
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--df-muted-color);
+  margin-bottom: 0.4rem;
+}
+
+.theme-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  margin-bottom: 0.75rem;
+}
+
+.theme-option {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.35rem 0.4rem;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  cursor: pointer;
+  color: var(--df-body-color);
+  font-size: 0.85rem;
+  text-align: left;
+  transition: background-color 0.15s, border-color 0.15s;
+}
+
+.theme-option:hover {
+  background-color: var(--df-dropdown-hover);
+}
+
+.theme-option.active {
+  border-color: var(--primary-color);
+}
+
+.theme-swatch {
+  position: relative;
+  flex-shrink: 0;
+  width: 1.1rem;
+  height: 1.1rem;
+  border-radius: 4px;
+  border: 1px solid var(--df-border-color);
+}
+
+.theme-swatch-accent {
+  position: absolute;
+  right: 1px;
+  bottom: 1px;
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 2px;
+}
+
+.theme-name {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  white-space: nowrap;
+}
+
+.theme-name i {
+  width: 1rem;
+  text-align: center;
+  font-size: 0.9rem;
+  line-height: 1;
+}
+
+.theme-check-slot {
+  flex-shrink: 0;
+  width: 0.9rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.theme-check {
+  color: var(--primary-color);
+  font-size: 0.75rem;
+}
+
+.mono-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.35rem 0.4rem;
+  margin-bottom: 0.75rem;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  cursor: pointer;
+  color: var(--df-body-color);
+  font-size: 0.85rem;
+  text-align: left;
+  transition: background-color 0.15s;
+}
+
+.mono-toggle:hover {
+  background-color: var(--df-dropdown-hover);
+}
+
+.switch {
+  flex-shrink: 0;
+  position: relative;
+  width: 1.9rem;
+  height: 1.05rem;
+  border-radius: 999px;
+  background-color: var(--df-border-color);
+  transition: background-color 0.15s;
+}
+
+.switch.on {
+  background-color: var(--primary-color);
+}
+
+.switch-knob {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 0.8rem;
+  height: 0.8rem;
+  border-radius: 50%;
+  background-color: #ffffff;
+  transition: transform 0.15s;
+}
+
+.switch.on .switch-knob {
+  transform: translateX(0.85rem);
 }
 
 .palette-grid {
@@ -183,6 +388,25 @@ onUnmounted(() => {
 .color-swatch:hover {
   transform: scale(1.2);
   box-shadow: 0 0 0 2px var(--surface-card), 0 0 0 4px currentColor;
+}
+
+.default-swatch {
+  position: relative;
+  overflow: hidden;
+  background-color: transparent;
+  border: 2px solid var(--df-muted-color);
+}
+
+.default-swatch::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: -2px;
+  right: -2px;
+  height: 2px;
+  margin-top: -1px;
+  background-color: #ef4444;
+  transform: rotate(-45deg);
 }
 
 .color-swatch.active {

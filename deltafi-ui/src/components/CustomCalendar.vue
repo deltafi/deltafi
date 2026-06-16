@@ -339,4 +339,80 @@ const helperButtons = ref([
 .vdpr-datepicker {
   position: relative;
 }
+
+/* ── Dark mode overrides for the third-party date range picker ─────────── */
+html.dark-mode {
+  .vdpr-datepicker__calendar,
+  .vdpr-datepicker__calendar-dialog {
+    background-color: var(--surface-card);
+    color: var(--text-color);
+  }
+
+  .vdpr-datepicker__calendar-dialog {
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.5);
+  }
+
+  .vdpr-datepicker__calendar-month-year {
+    color: var(--text-color);
+  }
+
+  .vdpr-datepicker__calendar-control-prev,
+  .vdpr-datepicker__calendar-control-next {
+    border-color: var(--surface-border);
+    color: var(--text-color);
+  }
+
+  .vdpr-datepicker__calendar-table th {
+    color: var(--text-color);
+  }
+
+  .vdpr-datepicker__calendar-table td {
+    background-color: var(--surface-ground);
+    color: var(--text-color);
+  }
+
+  .vdpr-datepicker__calendar-table td:hover {
+    background-color: var(--surface-hover);
+  }
+
+  .vdpr-datepicker__calendar-table .faded {
+    color: var(--df-muted-color);
+  }
+
+  .vdpr-datepicker__calendar-table .disabled,
+  .vdpr-datepicker__calendar-table .disabled:hover {
+    background-color: var(--surface-700);
+    color: var(--df-muted-color);
+  }
+
+  .vdpr-datepicker__button-default {
+    color: var(--text-color);
+    background-color: var(--surface-card);
+    border-color: var(--surface-border);
+  }
+
+  .vdpr-datepicker__button-default:hover {
+    background-color: var(--surface-hover);
+  }
+
+  .vdpr-datepicker__calendar-input-date-elem,
+  .vdpr-datepicker__calendar-input-time {
+    background-color: var(--df-input-bg);
+    color: var(--text-color);
+  }
+
+  .vdpr-datepicker__calendar-input-time-elem {
+    color: var(--text-color);
+  }
+
+  .vdpr-datepicker__calendar-input-time-control-up,
+  .vdpr-datepicker__calendar-input-time-control-down {
+    color: var(--df-muted-color);
+  }
+
+  .vdpr-datepicker__calendar-input-time-control-up:hover,
+  .vdpr-datepicker__calendar-input-time-control-down:hover {
+    color: var(--text-color);
+  }
+}
 </style>

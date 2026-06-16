@@ -194,10 +194,19 @@
   --primary-800: var(--p-primary-800, var(--blue-800));
   --primary-900: var(--p-primary-900, var(--blue-900));
 
+  /* Semantic accent tokens — the single hue source, driven by the accent
+     picker (updatePrimaryPalette). Steps are chosen for readability on LIGHT
+     surfaces here; the dark-mode block re-picks lighter steps. Accent-driven
+     chrome (links, active tabs, selected states) references these so it always
+     follows the chosen accent in every theme. */
+  --df-accent: var(--primary-600);
+  --df-accent-tint: var(--primary-100);
+  --df-accent-tint-strong: var(--primary-200);
+
   /* DeltaFi app-level semantic tokens (used by custom styles) */
   --df-body-bg: #ffffff;
   --df-body-color: #212529;
-  --df-link-color: #0057b3;
+  --df-link-color: var(--df-accent);
   --df-border-color: #dee2e6;
   --df-navbar-bg: #f8f9fa;
   --df-navbar-hover: #e9ecef;
@@ -206,7 +215,7 @@
   --df-dropdown-bg: #ffffff;
   --df-dropdown-hover: #f8f9fa;
   --df-tab-color: #6c757d;
-  --df-tab-active-color: #495057;
+  --df-tab-active-color: var(--df-accent);
   --df-muted-color: #6c757d;
   --df-paginator-color: #212529;
   --df-input-border: #ced4da;
@@ -307,30 +316,30 @@
   --df-topnav-item-hover-border: #d6dbe1;
   --df-topnav-item-hover-color: #0f172a;
   --df-topnav-item-active-bg: #ffffff;
-  --df-topnav-item-active-border: #d6dbe1;
-  --df-topnav-item-active-color: #0f172a;
+  --df-topnav-item-active-border: var(--df-accent);
+  --df-topnav-item-active-color: var(--df-accent);
   --df-topnav-item-icon-color: #64748b;
   --df-topnav-dropdown-bg: #fff;
   --df-topnav-dropdown-border: #d6dbe1;
   --df-topnav-dropdown-shadow: rgba(15, 23, 42, 0.14);
   --df-topnav-dropdown-item-color: #334155;
   --df-topnav-dropdown-item-hover-bg: #f8fafc;
-  --df-topnav-dropdown-active-bg: #eff6ff;
-  --df-topnav-dropdown-active-color: var(--primary-700);
+  --df-topnav-dropdown-active-bg: var(--df-accent-tint);
+  --df-topnav-dropdown-active-color: var(--df-accent);
   --df-topnav-hamburger-bg: #fff;
   --df-topnav-hamburger-color: #334155;
   --df-topnav-hamburger-border: #cfd6dd;
   --df-topnav-mobile-item-color: #334155;
 
   /* UI selection colors (CommandPalette, HamburgerMenu) */
-  --df-palette-selected-bg: #e3f2fd;
-  --df-palette-filtered-bg: #f0f7ff;
-  --df-palette-filtered-name-color: var(--primary-color);
+  --df-palette-selected-bg: var(--df-accent-tint-strong);
+  --df-palette-filtered-bg: var(--df-accent-tint);
+  --df-palette-filtered-name-color: var(--df-accent);
   --df-palette-confirm-overlay-bg: rgba(255, 255, 255, 0.97);
   --df-palette-validation-bg: #fff3cd;
   --df-palette-validation-color: #856404;
-  --df-menu-active-bg: #e3f2fd;
-  --df-menu-active-color: #1976d2;
+  --df-menu-active-bg: var(--df-accent-tint);
+  --df-menu-active-color: var(--df-accent);
 
   /* Clock */
   --df-clock-bg: var(--gray-700);
@@ -351,7 +360,7 @@
   --df-status-paused-bg: var(--yellow-100);
   --df-status-stopped-bg: var(--red-100);
   --df-status-info-bg: var(--blue-100);
-  --df-status-selected-bg: var(--primary-100);
+  --df-status-selected-bg: var(--df-accent-tint);
   --df-diff-added-bg: var(--green-100);
   --df-diff-removed-bg: var(--red-100);
   --df-diff-modified-bg: var(--yellow-100);
@@ -360,6 +369,11 @@
 /* ── Dark mode ────────────────────────────────────────────────────────── */
 html.dark-mode {
   color-scheme: dark;
+
+  /* Accent steps re-picked lighter for dark surfaces. */
+  --df-accent: var(--primary-400);
+  --df-accent-tint: var(--primary-900);
+  --df-accent-tint-strong: var(--primary-800);
 
   --surface-card: #1e293b;
   --surface-ground: #0f172a;
@@ -371,7 +385,7 @@ html.dark-mode {
 
   --df-body-bg: #0f172a;
   --df-body-color: #e2e8f0;
-  --df-link-color: #60a5fa;
+  --df-link-color: var(--df-accent);
   --df-border-color: #334155;
   --df-navbar-bg: #1e293b;
   --df-navbar-hover: #334155;
@@ -380,7 +394,7 @@ html.dark-mode {
   --df-dropdown-bg: #1e293b;
   --df-dropdown-hover: #334155;
   --df-tab-color: #94a3b8;
-  --df-tab-active-color: #e2e8f0;
+  --df-tab-active-color: var(--df-accent);
   --df-muted-color: #94a3b8;
   --df-paginator-color: #e2e8f0;
   --df-input-border: #475569;
@@ -481,30 +495,30 @@ html.dark-mode {
   --df-topnav-item-hover-border: var(--df-border-color);
   --df-topnav-item-hover-color: #f1f5f9;
   --df-topnav-item-active-bg: var(--surface-card);
-  --df-topnav-item-active-border: var(--df-border-color);
-  --df-topnav-item-active-color: #f1f5f9;
+  --df-topnav-item-active-border: var(--df-accent);
+  --df-topnav-item-active-color: var(--df-accent);
   --df-topnav-item-icon-color: var(--df-navbar-icon-color);
   --df-topnav-dropdown-bg: var(--surface-card);
   --df-topnav-dropdown-border: var(--df-border-color);
   --df-topnav-dropdown-shadow: rgba(0, 0, 0, 0.35);
   --df-topnav-dropdown-item-color: var(--df-body-color);
   --df-topnav-dropdown-item-hover-bg: var(--surface-hover);
-  --df-topnav-dropdown-active-bg: rgba(20, 115, 230, 0.15);
-  --df-topnav-dropdown-active-color: #60a5fa;
+  --df-topnav-dropdown-active-bg: var(--df-accent-tint);
+  --df-topnav-dropdown-active-color: var(--df-accent);
   --df-topnav-hamburger-bg: var(--surface-card);
   --df-topnav-hamburger-color: var(--df-body-color);
   --df-topnav-hamburger-border: var(--df-border-color);
   --df-topnav-mobile-item-color: var(--df-body-color);
 
   /* UI selection colors */
-  --df-palette-selected-bg: rgba(0, 123, 255, 0.2);
-  --df-palette-filtered-bg: rgba(0, 123, 255, 0.1);
-  --df-palette-filtered-name-color: #60a5fa;
+  --df-palette-selected-bg: var(--df-accent-tint-strong);
+  --df-palette-filtered-bg: var(--df-accent-tint);
+  --df-palette-filtered-name-color: var(--df-accent);
   --df-palette-confirm-overlay-bg: rgba(15, 23, 42, 0.97);
   --df-palette-validation-bg: rgba(234, 179, 8, 0.15);
   --df-palette-validation-color: #fde047;
-  --df-menu-active-bg: rgba(25, 118, 210, 0.2);
-  --df-menu-active-color: #64b5f6;
+  --df-menu-active-bg: var(--df-accent-tint);
+  --df-menu-active-color: var(--df-accent);
 
   /* Clock */
   --df-clock-bg: var(--surface-600);
@@ -515,7 +529,7 @@ html.dark-mode {
   --df-loading-color: var(--df-body-color);
   --df-loading-border: var(--df-border-color);
   --df-loading-spinner-track: var(--surface-500);
-  --df-loading-spinner-color: #60a5fa;
+  --df-loading-spinner-color: var(--primary-color);
 
   /* General-purpose subtle backgrounds and status tints */
   --df-subtle-bg: var(--surface-800);
@@ -525,7 +539,7 @@ html.dark-mode {
   --df-status-paused-bg: var(--yellow-800);
   --df-status-stopped-bg: var(--red-800);
   --df-status-info-bg: var(--blue-800);
-  --df-status-selected-bg: var(--primary-800);
+  --df-status-selected-bg: var(--df-accent-tint);
   --df-diff-added-bg: var(--green-800);
   --df-diff-removed-bg: var(--red-800);
   --df-diff-modified-bg: var(--yellow-800);
@@ -548,6 +562,450 @@ html.dark-mode {
     background: #1e293b !important;
     color: #e2e8f0;
   }
+}
+
+/* ── Dracula ──────────────────────────────────────────────────────────────
+   Named theme. Activated alongside `dark-mode` (see useTheme.ts), so it
+   inherits every dark component style and only needs to override the palette
+   deltas: dracula surfaces, purple accent, cyan links, pink/purple selection.
+   Equal specificity to the dark-mode token block but ordered after it, so
+   these win. */
+html.theme-dracula {
+  /* Hue comes from the accent (default: Violet). Only neutral chrome here. */
+  --primary-color-text: #282a36;
+
+  /* Core surfaces / text */
+  --surface-card: #21222c;
+  --surface-ground: #282a36;
+  --surface-hover: #44475a;
+  --surface-border: #44475a;
+  --text-color: #f8f8f2;
+  --text-color-secondary: #a0abca;
+
+  --df-body-bg: #282a36;
+  --df-body-color: #f8f8f2;
+  --df-border-color: #44475a;
+  --df-navbar-bg: #21222c;
+  --df-navbar-hover: #44475a;
+  --df-navbar-color: #f8f8f2;
+  --df-navbar-icon-color: #a0abca;
+  --df-dropdown-bg: #21222c;
+  --df-dropdown-hover: #44475a;
+  --df-tab-color: #a0abca;
+  --df-muted-color: #a0abca;
+  --df-paginator-color: #f8f8f2;
+  --df-input-border: #6272a4;
+  --df-input-bg: #21222c;
+  --df-list-item-color: #f8f8f2;
+  --df-progressbar-label-color: #f8f8f2;
+  --df-secondary-bg: #44475a;
+
+  /* Top nav bar (PrimaryNavBar chrome) */
+  --df-topnav-gradient-start: #21222c;
+  --df-topnav-gradient-end: #1b1c24;
+  --df-topnav-border: #44475a;
+  --df-topnav-shadow: rgba(255, 255, 255, 0.04);
+  --df-topnav-item-color: #f8f8f2;
+  --df-topnav-item-hover-border: #44475a;
+  --df-topnav-item-hover-color: #ffffff;
+  --df-topnav-item-active-bg: #44475a;
+  --df-topnav-item-icon-color: #a0abca;
+  --df-topnav-dropdown-bg: #21222c;
+  --df-topnav-dropdown-border: #44475a;
+  --df-topnav-dropdown-shadow: rgba(0, 0, 0, 0.45);
+  --df-topnav-dropdown-item-color: #f8f8f2;
+  --df-topnav-dropdown-item-hover-bg: #44475a;
+  --df-topnav-hamburger-bg: #21222c;
+  --df-topnav-hamburger-color: #f8f8f2;
+  --df-topnav-hamburger-border: #44475a;
+  --df-topnav-mobile-item-color: #f8f8f2;
+
+  /* UI selection (CommandPalette, menus) */
+  --df-palette-confirm-overlay-bg: rgba(40, 42, 54, 0.97);
+
+  /* Clock */
+  --df-clock-bg: #44475a;
+  --df-clock-color: #f8f8f2;
+
+  /* DataTable loading overlay */
+  --df-loading-bg: #21222c;
+  --df-loading-color: #f8f8f2;
+  --df-loading-border: #44475a;
+
+  /* PrimeVue panels — override the hardcoded slate from the dark-mode block */
+  --p-panel-header-background: #21222c;
+  --p-panel-header-color: #f8f8f2;
+  --p-content-background: #282a36;
+  --p-panel-content-background: #282a36;
+
+  .p-panel-header {
+    background: #21222c !important;
+    color: #f8f8f2;
+  }
+
+  .p-datatable .p-datatable-thead > tr > th {
+    background: #21222c !important;
+    color: #f8f8f2;
+  }
+}
+
+/* ── Mono ─────────────────────────────────────────────────────────────────
+   Named theme. Terminal-flavored: warm amber accent on a near-black charcoal
+   canvas. Like Dracula, activates alongside `dark-mode` and only overrides the
+   palette deltas. */
+html.theme-mono {
+  /* Hue comes from the accent (default: Amber). Only neutral chrome here. */
+  --primary-color-text: #0d0d0e;
+
+  /* Core surfaces / text */
+  --surface-card: #131313;
+  --surface-ground: #0d0d0e;
+  --surface-hover: #2a2a2c;
+  --surface-border: #2a2a2c;
+  --text-color: #d8d2c5;
+  --text-color-secondary: #8b8678;
+
+  --df-body-bg: #0d0d0e;
+  --df-body-color: #d8d2c5;
+  --df-border-color: #2a2a2c;
+  --df-navbar-bg: #131313;
+  --df-navbar-hover: #2a2a2c;
+  --df-navbar-color: #d8d2c5;
+  --df-navbar-icon-color: #8b8678;
+  --df-dropdown-bg: #131313;
+  --df-dropdown-hover: #2a2a2c;
+  --df-tab-color: #8b8678;
+  --df-muted-color: #8b8678;
+  --df-paginator-color: #d8d2c5;
+  --df-input-border: #3a3a3c;
+  --df-input-bg: #131313;
+  --df-list-item-color: #d8d2c5;
+  --df-progressbar-label-color: #d8d2c5;
+  --df-secondary-bg: #2a2a2c;
+
+  /* Top nav bar (PrimaryNavBar chrome) */
+  --df-topnav-gradient-start: #131313;
+  --df-topnav-gradient-end: #0d0d0e;
+  --df-topnav-border: #2a2a2c;
+  --df-topnav-shadow: rgba(255, 255, 255, 0.03);
+  --df-topnav-item-color: #d8d2c5;
+  --df-topnav-item-hover-border: #2a2a2c;
+  --df-topnav-item-hover-color: #f5f1e8;
+  --df-topnav-item-active-bg: #2a2a2c;
+  --df-topnav-item-icon-color: #8b8678;
+  --df-topnav-dropdown-bg: #131313;
+  --df-topnav-dropdown-border: #2a2a2c;
+  --df-topnav-dropdown-shadow: rgba(0, 0, 0, 0.5);
+  --df-topnav-dropdown-item-color: #d8d2c5;
+  --df-topnav-dropdown-item-hover-bg: #2a2a2c;
+  --df-topnav-hamburger-bg: #131313;
+  --df-topnav-hamburger-color: #d8d2c5;
+  --df-topnav-hamburger-border: #2a2a2c;
+  --df-topnav-mobile-item-color: #d8d2c5;
+
+  /* UI selection (CommandPalette, menus) */
+  --df-palette-confirm-overlay-bg: rgba(13, 13, 14, 0.97);
+
+  /* Clock */
+  --df-clock-bg: #2a2a2c;
+  --df-clock-color: #d8d2c5;
+
+  /* DataTable loading overlay */
+  --df-loading-bg: #131313;
+  --df-loading-color: #d8d2c5;
+  --df-loading-border: #2a2a2c;
+
+  /* PrimeVue panels — override the hardcoded slate from the dark-mode block */
+  --p-panel-header-background: #131313;
+  --p-panel-header-color: #d8d2c5;
+  --p-content-background: #0d0d0e;
+  --p-panel-content-background: #0d0d0e;
+
+  .p-panel-header {
+    background: #131313 !important;
+    color: #d8d2c5;
+  }
+
+  .p-datatable .p-datatable-thead > tr > th {
+    background: #131313 !important;
+    color: #d8d2c5;
+  }
+}
+
+/* ── Solarized Light ───────────────────────────────────────────────────────
+   A LIGHT theme: does NOT carry the dark-mode class, so it overrides the base
+   :root light tokens directly (single class on <html> beats :root). Warm cream
+   canvas with the classic Solarized blue accent. */
+html.theme-solarized-light {
+  /* Hue comes from the accent (default: Blue). Only neutral chrome here. */
+  --primary-color-text: #fdf6e3;
+
+  /* Core surfaces / text (base3 canvas, base2 elevated ground) */
+  --surface-card: #fdf6e3;
+  --surface-ground: #eee8d5;
+  --surface-hover: #e3ddc9;
+  --surface-border: #ddd6c1;
+  --text-color: #586e75;
+  --text-color-secondary: #657b83;
+
+  --df-body-bg: #fdf6e3;
+  --df-body-color: #586e75;
+  --df-border-color: #ddd6c1;
+  --df-navbar-bg: #eee8d5;
+  --df-navbar-hover: #e3ddc9;
+  --df-navbar-color: #586e75;
+  --df-navbar-icon-color: #657b83;
+  --df-dropdown-bg: #fdf6e3;
+  --df-dropdown-hover: #eee8d5;
+  --df-tab-color: #657b83;
+  --df-muted-color: #93a1a1;
+  --df-paginator-color: #586e75;
+  --df-input-border: #d8d0b8;
+  --df-input-bg: #fdf6e3;
+  --df-list-item-color: #586e75;
+  --df-progressbar-label-color: #586e75;
+  --df-secondary-bg: #93a1a1;
+
+  /* Top nav bar */
+  --df-topnav-gradient-start: #eee8d5;
+  --df-topnav-gradient-end: #e3ddc9;
+  --df-topnav-border: #d8d0b8;
+  --df-topnav-shadow: rgba(253, 246, 227, 0.75);
+  --df-topnav-item-color: #586e75;
+  --df-topnav-item-hover-bg: rgba(253, 246, 227, 0.7);
+  --df-topnav-item-hover-border: #d8d0b8;
+  --df-topnav-item-hover-color: #073642;
+  --df-topnav-item-active-bg: #fdf6e3;
+  --df-topnav-item-icon-color: #657b83;
+  --df-topnav-dropdown-bg: #fdf6e3;
+  --df-topnav-dropdown-border: #d8d0b8;
+  --df-topnav-dropdown-shadow: rgba(7, 54, 66, 0.14);
+  --df-topnav-dropdown-item-color: #586e75;
+  --df-topnav-dropdown-item-hover-bg: #eee8d5;
+  --df-topnav-hamburger-bg: #fdf6e3;
+  --df-topnav-hamburger-color: #586e75;
+  --df-topnav-hamburger-border: #d8d0b8;
+  --df-topnav-mobile-item-color: #586e75;
+
+  /* UI selection */
+  --df-palette-confirm-overlay-bg: rgba(253, 246, 227, 0.97);
+
+  /* Clock */
+  --df-clock-bg: #586e75;
+  --df-clock-color: #fdf6e3;
+
+  /* DataTable loading overlay */
+  --df-loading-bg: #eee8d5;
+  --df-loading-color: #586e75;
+  --df-loading-border: #ddd6c1;
+
+  /* PrimeVue panels */
+  --p-panel-header-background: #eee8d5;
+  --p-panel-header-color: #586e75;
+  --p-content-background: #fdf6e3;
+  --p-panel-content-background: #fdf6e3;
+}
+
+/* ── Solarized Dark ────────────────────────────────────────────────────────
+   Dark theme; activates alongside dark-mode. Deep teal base03 canvas with a
+   cyan link accent. */
+html.theme-solarized-dark {
+  /* Hue comes from the accent (default: Teal). Only neutral chrome here. */
+  --primary-color-text: #002b36;
+
+  /* Core surfaces / text (base03 canvas, base02 cards) */
+  --surface-card: #073642;
+  --surface-ground: #002b36;
+  --surface-hover: #0a4453;
+  --surface-border: #0a4453;
+  --text-color: #93a1a1;
+  --text-color-secondary: #839496;
+
+  --df-body-bg: #002b36;
+  --df-body-color: #93a1a1;
+  --df-border-color: #0a4453;
+  --df-navbar-bg: #073642;
+  --df-navbar-hover: #0a4453;
+  --df-navbar-color: #93a1a1;
+  --df-navbar-icon-color: #839496;
+  --df-dropdown-bg: #073642;
+  --df-dropdown-hover: #0a4453;
+  --df-tab-color: #839496;
+  --df-muted-color: #657b83;
+  --df-paginator-color: #93a1a1;
+  --df-input-border: #0a4453;
+  --df-input-bg: #073642;
+  --df-list-item-color: #93a1a1;
+  --df-progressbar-label-color: #93a1a1;
+  --df-secondary-bg: #586e75;
+
+  /* Top nav bar */
+  --df-topnav-gradient-start: #073642;
+  --df-topnav-gradient-end: #04303b;
+  --df-topnav-border: #0a4453;
+  --df-topnav-shadow: rgba(255, 255, 255, 0.04);
+  --df-topnav-item-color: #93a1a1;
+  --df-topnav-item-hover-border: #0a4453;
+  --df-topnav-item-hover-color: #fdf6e3;
+  --df-topnav-item-active-bg: #0a4453;
+  --df-topnav-item-icon-color: #839496;
+  --df-topnav-dropdown-bg: #073642;
+  --df-topnav-dropdown-border: #0a4453;
+  --df-topnav-dropdown-shadow: rgba(0, 0, 0, 0.45);
+  --df-topnav-dropdown-item-color: #93a1a1;
+  --df-topnav-dropdown-item-hover-bg: #0a4453;
+  --df-topnav-hamburger-bg: #073642;
+  --df-topnav-hamburger-color: #93a1a1;
+  --df-topnav-hamburger-border: #0a4453;
+  --df-topnav-mobile-item-color: #93a1a1;
+
+  /* UI selection */
+  --df-palette-confirm-overlay-bg: rgba(0, 43, 54, 0.97);
+
+  /* Clock */
+  --df-clock-bg: #0a4453;
+  --df-clock-color: #93a1a1;
+
+  /* DataTable loading overlay */
+  --df-loading-bg: #073642;
+  --df-loading-color: #93a1a1;
+  --df-loading-border: #0a4453;
+
+  /* PrimeVue panels — override the hardcoded slate from the dark-mode block */
+  --p-panel-header-background: #073642;
+  --p-panel-header-color: #93a1a1;
+  --p-content-background: #002b36;
+  --p-panel-content-background: #002b36;
+
+  .p-panel-header {
+    background: #073642 !important;
+    color: #93a1a1;
+  }
+
+  .p-datatable .p-datatable-thead > tr > th {
+    background: #073642 !important;
+    color: #93a1a1;
+  }
+}
+
+/* ── High Contrast ─────────────────────────────────────────────────────────
+   Accessibility theme; activates alongside dark-mode. Pure black canvas, white
+   text, white borders everywhere, bright yellow accent with cyan links. */
+html.theme-high-contrast {
+  /* Hue comes from the accent (default: Yellow). Only neutral chrome here. */
+  --primary-color-text: #000000;
+
+  /* Core surfaces / text */
+  --surface-card: #000000;
+  --surface-ground: #000000;
+  --surface-hover: #1a1a1a;
+  --surface-border: #ffffff;
+  --text-color: #ffffff;
+  --text-color-secondary: #e6e6e6;
+
+  --df-body-bg: #000000;
+  --df-body-color: #ffffff;
+  --df-border-color: #ffffff;
+  --df-navbar-bg: #000000;
+  --df-navbar-hover: #1a1a1a;
+  --df-navbar-color: #ffffff;
+  --df-navbar-icon-color: #ffffff;
+  --df-dropdown-bg: #000000;
+  --df-dropdown-hover: #1a1a1a;
+  --df-tab-color: #e6e6e6;
+  --df-muted-color: #e6e6e6;
+  --df-paginator-color: #ffffff;
+  --df-input-border: #ffffff;
+  --df-input-bg: #000000;
+  --df-list-item-color: #ffffff;
+  --df-progressbar-label-color: #ffffff;
+  --df-secondary-bg: #333333;
+
+  /* Top nav bar */
+  --df-topnav-gradient-start: #000000;
+  --df-topnav-gradient-end: #000000;
+  --df-topnav-border: #ffffff;
+  --df-topnav-shadow: rgba(255, 255, 255, 0);
+  --df-topnav-item-color: #ffffff;
+  --df-topnav-item-hover-border: #ffffff;
+  --df-topnav-item-hover-color: #ffffff;
+  --df-topnav-item-active-bg: #1a1a1a;
+  --df-topnav-item-icon-color: #ffffff;
+  --df-topnav-dropdown-bg: #000000;
+  --df-topnav-dropdown-border: #ffffff;
+  --df-topnav-dropdown-shadow: rgba(255, 255, 255, 0.2);
+  --df-topnav-dropdown-item-color: #ffffff;
+  --df-topnav-dropdown-item-hover-bg: #1a1a1a;
+  --df-topnav-hamburger-bg: #000000;
+  --df-topnav-hamburger-color: #ffffff;
+  --df-topnav-hamburger-border: #ffffff;
+  --df-topnav-mobile-item-color: #ffffff;
+
+  /* UI selection */
+  --df-palette-confirm-overlay-bg: rgba(0, 0, 0, 0.98);
+
+  /* Clock */
+  --df-clock-bg: #1a1a1a;
+  --df-clock-color: #ffffff;
+
+  /* DataTable loading overlay */
+  --df-loading-bg: #000000;
+  --df-loading-color: #ffffff;
+  --df-loading-border: #ffffff;
+
+  /* PrimeVue panels — override the hardcoded slate from the dark-mode block */
+  --p-panel-header-background: #000000;
+  --p-panel-header-color: #ffffff;
+  --p-content-background: #000000;
+  --p-panel-content-background: #000000;
+
+  .p-panel-header {
+    background: #000000 !important;
+    color: #ffffff;
+  }
+
+  .p-datatable .p-datatable-thead > tr > th {
+    background: #000000 !important;
+    color: #ffffff;
+  }
+}
+
+/* ── Terminal style (mono-style) ───────────────────────────────────────────
+   Independent of the color theme: monospace type + sharp corners. Layers on
+   top of any theme. Font rules deliberately target text/control containers —
+   NOT a universal `*` — so icon fonts (.pi / .fa, which set their own
+   font-family on the icon element) keep rendering glyphs. */
+html.mono-style body,
+html.mono-style input,
+html.mono-style button,
+html.mono-style textarea,
+html.mono-style select,
+html.mono-style .p-component,
+html.mono-style .form-control {
+  font-family: "SFMono-Regular", "SF Mono", Menlo, Consolas, "Liberation Mono", "Courier New", monospace;
+}
+
+/* Sharp corners on the common surfaces and controls. */
+html.mono-style .card,
+html.mono-style .card-header,
+html.mono-style .card-footer,
+html.mono-style .btn,
+html.mono-style .badge,
+html.mono-style .form-control,
+html.mono-style .list-group-item,
+html.mono-style .p-component,
+html.mono-style .p-button,
+html.mono-style .p-inputtext,
+html.mono-style .p-dropdown,
+html.mono-style .p-multiselect,
+html.mono-style .p-dialog,
+html.mono-style .p-menu,
+html.mono-style .p-overlaypanel,
+html.mono-style .p-panel,
+html.mono-style .p-datatable,
+html.mono-style .p-tag,
+html.mono-style .p-chip {
+  border-radius: 0 !important;
 }
 
 html {
