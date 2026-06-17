@@ -1,6 +1,7 @@
 import java.util.concurrent.TimeUnit
-import javax.inject.Inject
-import org.gradle.process.ExecOperations
+import org.deltafi.gradle.cli.ExecHelper
+import org.deltafi.gradle.cli.ToolRunner
+import org.deltafi.gradle.security.Severity
 
 buildscript {
     dependencies {
@@ -10,17 +11,17 @@ buildscript {
 
 plugins {
     id 'git-version-conventions'
+    id 'security-scan'
     id 'io.github.gradle-nexus.publish-plugin' version '2.0.0'
     id "de.undercouch.download" version "5.7.0"
     id 'com.adarshr.test-logger' version '4.0.0'
 }
 
-abstract class ExecHelper {
-    @Inject
-    abstract ExecOperations getExecOperations()
-}
-
 ext.execHelper = objects.newInstance(ExecHelper)
+
+// Accessor for the securityScan extension provided by the security-scan precompiled script plugin.
+// Used by grypeFullReport / trivyFullReport to resolve the container fallback images.
+def securityScanExt = extensions.getByName('securityScan')
 
 // Distribution configuration
 
@@ -289,22 +290,32 @@ task installPrerequisites {
     dependsOn checkDockerInstallation
 }
 
-task grypeReport {
-    group = 'verification'
-    description = 'Runs grype on all Docker images and displays a combined summary'
-    
-    // Depend on all grype tasks from projects that build docker images
-    def dockerProjects = ['deltafi-core', 'deltafi-core-actions', 'deltafi-dirwatcher', 'deltafi-egress-sink', 'deltafi-nodemonitor']
-    dockerProjects.each { projectName ->
-        try {
-            dependsOn ":${projectName}:grype"
-        } catch (Exception e) {
-            // Project or task might not exist, ignore
+// securityScan extension + aggregator task + scanSource/scanConfig/scanSecrets/trivyDbWarmup
+// are all provided by the security-scan precompiled script plugin (applied above).
+
+task collectSboms {
+    group = 'security'
+    description = 'Generates a CycloneDX SBOM for every docker-producing project (syft)'
+    subprojects.each { sp ->
+        sp.afterEvaluate {
+            def sbomTask = sp.tasks.findByName('sbom')
+            if (sbomTask != null) dependsOn sbomTask
         }
     }
-    
+}
+
+def grypeReportResultsDir = layout.buildDirectory.dir("grype-results").get().asFile
+def trivyReportResultsDir = layout.buildDirectory.dir("trivy-results").get().asFile
+def grypeFullReportScanFile = layout.buildDirectory.file("grype.scan.txt").get().asFile
+def trivyFullReportScanFile = layout.buildDirectory.file("trivy.scan.txt").get().asFile
+
+task grypeReport {
+    group = 'security'
+    description = 'Aggregates per-project grype scan results into a combined summary'
+    // Per-project grype task dependencies are wired by the subprojects afterEvaluate block below.
+
     doLast {
-        def resultsDir = layout.buildDirectory.dir("grype-results").get().asFile
+        def resultsDir = grypeReportResultsDir
         if (!resultsDir.exists() || !resultsDir.isDirectory()) {
             println "\nNo grype results found. Run individual grype tasks first."
             return
@@ -349,7 +360,7 @@ task grypeReport {
         
         if (combinedSeverityCounts.size() > 0) {
             println "\nVulnerabilities by severity (combined):"
-            def severityOrder = ["Critical", "High", "Medium", "Low", "Negligible", "Unknown"]
+            def severityOrder = Severity.DISPLAY_ORDER
             severityOrder.each { severity ->
                 if (combinedSeverityCounts.containsKey(severity)) {
                     println "  ${severity.padRight(12)}: ${combinedSeverityCounts[severity]}"
@@ -373,7 +384,7 @@ task grypeReport {
             println "    Image: ${result.imageName}"
             println "    Total: ${result.totalVulnerabilities}"
             if (result.severityCounts && result.severityCounts.size() > 0) {
-                def severityOrder = ["Critical", "High", "Medium", "Low", "Negligible", "Unknown"]
+                def severityOrder = Severity.DISPLAY_ORDER
                 def severityLine = severityOrder.findAll { result.severityCounts.containsKey(it) }
                     .collect { "${it}:${result.severityCounts[it]}" }
                     .join(", ")
@@ -388,7 +399,7 @@ task grypeReport {
                 if (result.fixableVulnerabilities && result.fixableVulnerabilities.size() > 0) {
                     println "    Fixable vulnerabilities:"
                     // Sort by severity (Critical first) then by vulnerability ID
-                    def severityOrder = ["Critical", "High", "Medium", "Low", "Negligible", "Unknown"]
+                    def severityOrder = Severity.DISPLAY_ORDER
                     def sortedFixable = result.fixableVulnerabilities.sort { vuln ->
                         def severityIndex = severityOrder.indexOf(vuln.severity ?: "Unknown")
                         if (severityIndex == -1) severityIndex = 999
@@ -409,8 +420,8 @@ task grypeReport {
 }
 
 task grypeFullReport {
-    group = 'verification'
-    description = 'Runs install, then scans all DeltaFi images with grype and displays a combined summary'
+    group = 'security'
+    description = 'Installs DeltaFi, then scans every running image with grype and emits a combined summary'
     dependsOn 'install'
     
     // Always run, never cache
@@ -442,114 +453,54 @@ deltafi versions --plain --brief | awk '{ print \$3 }' | grep -v '^Image\$'
         if (versionsResult.exitValue != 0) {
             throw new GradleException("Failed to get image list from deltafi versions: ${versionsError.toString()}")
         }
-        
+
         def imageList = versionsOutput.toString().trim().split('\n').findAll { it.trim().length() > 0 }
             .unique()
             .sort()
-        
+
         if (imageList.isEmpty()) {
             println "\nNo images found. Make sure DeltaFi is installed and running."
             return
         }
-        
+
         println "\nFound ${imageList.size()} image(s) to scan:"
         imageList.each { println "  - ${it}" }
         println ""
-        
-        // Check if grype is available locally or via Docker
-        def checkResult = execHelper.execOperations.exec {
-            ignoreExitValue = true
-            executable "bash"
-            args "-c", "command -v grype"
-            standardOutput = new ByteArrayOutputStream()
-            errorOutput = new ByteArrayOutputStream()
+
+        def runner = new ToolRunner(execHelper.execOperations, 'grype', securityScanExt.toolImages.grype)
+        runner.ensureAvailable()
+        if (runner.isUsingContainer()) {
+            println "grype not found locally, using Docker container: ${runner.dockerImage}\n"
         }
-        
-        def useContainer = (checkResult.exitValue != 0)
-        def grypeCmd = useContainer ? "docker" : "grype"
-        def grypeImage = "anchore/grype:latest"
-        
-        if (useContainer) {
-            // Check if docker is available
-            def dockerCheck = execHelper.execOperations.exec {
-                ignoreExitValue = true
-                executable "bash"
-                args "-c", "command -v docker"
-                standardOutput = new ByteArrayOutputStream()
-                errorOutput = new ByteArrayOutputStream()
-            }
-            
-            if (dockerCheck.exitValue != 0) {
-                throw new GradleException("grype is not installed and docker is not available. Please install grype or docker.")
-            }
-            
-            println "grype not found locally, using Docker container: ${grypeImage}\n"
-        }
-        
-        // Helper function to build grype command
-        def buildGrypeArgs = { args ->
-            if (useContainer) {
-                def dockerSocket = "/var/run/docker.sock"
-                def osName = System.getProperty("os.name").toLowerCase()
-                if (osName.contains("windows")) {
-                    dockerSocket = "//var/run/docker.sock"
-                }
-                return ["run", "--rm", "-v", "${dockerSocket}:/var/run/docker.sock", grypeImage] + args
-            } else {
-                return args
-            }
-        }
-        
-        // Update grype database once
+
         println "Updating grype database..."
-        execHelper.execOperations.exec {
-            executable grypeCmd
-            args buildGrypeArgs(["db", "update"])
-        }
+        runner.runStreaming(["db", "update"])
         println ""
-        
-        def resultsDir = layout.buildDirectory.dir("grype-results").get().asFile
+
+        def resultsDir = grypeReportResultsDir
         resultsDir.mkdirs()
-        
+
         def allResults = []
-        
-        // Scan each image
+
         imageList.eachWithIndex { imageName, index ->
             println "Scanning image ${index + 1}/${imageList.size()}: ${imageName}"
-            
-            // Run grype with JSON output
-            def jsonOutput = new ByteArrayOutputStream()
-            def jsonError = new ByteArrayOutputStream()
-            def jsonResult = execHelper.execOperations.exec {
-                ignoreExitValue = true
-                executable grypeCmd
-                args buildGrypeArgs([imageName, "--output", "json"])
-                standardOutput = jsonOutput
-                errorOutput = jsonError
-            }
-            
-            // Run grype with table output for user to see
-            execHelper.execOperations.exec {
-                ignoreExitValue = true
-                executable grypeCmd
-                args buildGrypeArgs([imageName])
-            }
-            
-            // Parse JSON and store results
-            if (jsonOutput.size() > 0) {
+
+            def jsonResult = runner.run([imageName, "--output", "json"])
+            runner.runStreaming([imageName])
+
+            if (jsonResult.stdout.length() > 0) {
                 try {
-                    def json = new groovy.json.JsonSlurper().parseText(jsonOutput.toString())
+                    def json = new groovy.json.JsonSlurper().parseText(jsonResult.stdout)
                     def matches = json.matches ?: []
-                    
-                    // Count vulnerabilities by severity and collect fixable vulnerabilities
+
                     def severityCounts = [:]
                     def fixableCount = 0
                     def fixableVulnerabilities = []
-                    
+
                     matches.each { match ->
-                        def severity = match.vulnerability?.severity ?: "Unknown"
+                        def severity = Severity.normalize(match.vulnerability?.severity)
                         severityCounts[severity] = (severityCounts[severity] ?: 0) + 1
-                        
+
                         if (match.vulnerability?.fix?.versions && !match.vulnerability.fix.versions.isEmpty()) {
                             fixableCount++
                             fixableVulnerabilities.add([
@@ -592,7 +543,7 @@ deltafi versions --plain --brief | awk '{ print \$3 }' | grep -v '^Image\$'
                     
                     if (severityCounts.size() > 0) {
                         println "\nVulnerabilities by severity:"
-                        def severityOrder = ["Critical", "High", "Medium", "Low", "Negligible", "Unknown"]
+                        def severityOrder = Severity.DISPLAY_ORDER
                         severityOrder.each { severity ->
                             if (severityCounts.containsKey(severity)) {
                                 println "  ${severity.padRight(12)}: ${severityCounts[severity]}"
@@ -649,7 +600,7 @@ deltafi versions --plain --brief | awk '{ print \$3 }' | grep -v '^Image\$'
         
         if (combinedSeverityCounts.size() > 0) {
             summary.append("\nVulnerabilities by severity (combined):").append("\n")
-            def severityOrder = ["Critical", "High", "Medium", "Low", "Negligible", "Unknown"]
+            def severityOrder = Severity.DISPLAY_ORDER
             severityOrder.each { severity ->
                 if (combinedSeverityCounts.containsKey(severity)) {
                     summary.append("  ${severity.padRight(12)}: ${combinedSeverityCounts[severity]}").append("\n")
@@ -672,7 +623,7 @@ deltafi versions --plain --brief | awk '{ print \$3 }' | grep -v '^Image\$'
             summary.append("    Image: ${result.imageName}").append("\n")
             summary.append("    Total: ${result.totalVulnerabilities}").append("\n")
             if (result.severityCounts && result.severityCounts.size() > 0) {
-                def severityOrder = ["Critical", "High", "Medium", "Low", "Negligible", "Unknown"]
+                def severityOrder = Severity.DISPLAY_ORDER
                 def severityLine = severityOrder.findAll { result.severityCounts.containsKey(it) }
                     .collect { "${it}:${result.severityCounts[it]}" }
                     .join(", ")
@@ -686,7 +637,7 @@ deltafi versions --plain --brief | awk '{ print \$3 }' | grep -v '^Image\$'
                 // Display fixable vulnerabilities list
                 if (result.fixableVulnerabilities && result.fixableVulnerabilities.size() > 0) {
                     summary.append("    Fixable vulnerabilities:").append("\n")
-                    def severityOrder = ["Critical", "High", "Medium", "Low", "Negligible", "Unknown"]
+                    def severityOrder = Severity.DISPLAY_ORDER
                     def sortedFixable = result.fixableVulnerabilities.sort { vuln ->
                         def severityIndex = severityOrder.indexOf(vuln.severity ?: "Unknown")
                         if (severityIndex == -1) severityIndex = 999
@@ -708,28 +659,19 @@ deltafi versions --plain --brief | awk '{ print \$3 }' | grep -v '^Image\$'
         println summary.toString()
         
         // Write summary to file
-        def scanFile = layout.buildDirectory.file("grype.scan.txt").get().asFile
+        def scanFile = grypeFullReportScanFile
         scanFile.text = summary.toString()
         println "Scan summary written to: ${scanFile.absolutePath}"
     }
 }
 
 task trivyReport {
-    group = 'verification'
-    description = 'Runs trivy on all Docker images and displays a combined summary'
-    
-    // Depend on all trivy tasks from projects that build docker images
-    def dockerProjects = ['deltafi-core', 'deltafi-core-actions', 'deltafi-dirwatcher', 'deltafi-egress-sink', 'deltafi-nodemonitor']
-    dockerProjects.each { projectName ->
-        try {
-            dependsOn ":${projectName}:trivy"
-        } catch (Exception e) {
-            // Project or task might not exist, ignore
-        }
-    }
-    
+    group = 'security'
+    description = 'Aggregates per-project trivy scan results into a combined summary'
+    // Per-project trivy task dependencies are wired by the subprojects afterEvaluate block below.
+
     doLast {
-        def resultsDir = layout.buildDirectory.dir("trivy-results").get().asFile
+        def resultsDir = trivyReportResultsDir
         if (!resultsDir.exists() || !resultsDir.isDirectory()) {
             println "\nNo trivy results found. Run individual trivy tasks first."
             return
@@ -774,7 +716,7 @@ task trivyReport {
         
         if (combinedSeverityCounts.size() > 0) {
             println "\nVulnerabilities by severity (combined):"
-            def severityOrder = ["Critical", "High", "Medium", "Low", "Negligible", "Unknown"]
+            def severityOrder = Severity.DISPLAY_ORDER
             severityOrder.each { severity ->
                 if (combinedSeverityCounts.containsKey(severity)) {
                     println "  ${severity.padRight(12)}: ${combinedSeverityCounts[severity]}"
@@ -798,7 +740,7 @@ task trivyReport {
             println "    Image: ${result.imageName}"
             println "    Total: ${result.totalVulnerabilities}"
             if (result.severityCounts && result.severityCounts.size() > 0) {
-                def severityOrder = ["Critical", "High", "Medium", "Low", "Negligible", "Unknown"]
+                def severityOrder = Severity.DISPLAY_ORDER
                 def severityLine = severityOrder.findAll { result.severityCounts.containsKey(it) }
                     .collect { "${it}:${result.severityCounts[it]}" }
                     .join(", ")
@@ -813,7 +755,7 @@ task trivyReport {
                 if (result.fixableVulnerabilities && result.fixableVulnerabilities.size() > 0) {
                     println "    Fixable vulnerabilities:"
                     // Sort by severity (Critical first) then by vulnerability ID
-                    def severityOrder = ["Critical", "High", "Medium", "Low", "Negligible", "Unknown"]
+                    def severityOrder = Severity.DISPLAY_ORDER
                     def sortedFixable = result.fixableVulnerabilities.sort { vuln ->
                         def severityIndex = severityOrder.indexOf(vuln.severity ?: "Unknown")
                         if (severityIndex == -1) severityIndex = 999
@@ -834,8 +776,8 @@ task trivyReport {
 }
 
 task trivyFullReport {
-    group = 'verification'
-    description = 'Runs install, then scans all DeltaFi images with trivy and displays a combined summary'
+    group = 'security'
+    description = 'Installs DeltaFi, then scans every running image with trivy and emits a combined summary'
     dependsOn 'install'
     
     // Always run, never cache
@@ -881,81 +823,26 @@ deltafi versions --plain --brief | awk '{ print \$3 }' | grep -v '^Image\$'
         imageList.each { println "  - ${it}" }
         println ""
 
-        // Check if trivy is available locally or via Docker
-        def checkResult = execHelper.execOperations.exec {
-            ignoreExitValue = true
-            executable "bash"
-            args "-c", "command -v trivy"
-            standardOutput = new ByteArrayOutputStream()
-            errorOutput = new ByteArrayOutputStream()
+        def runner = new ToolRunner(execHelper.execOperations, 'trivy', securityScanExt.toolImages.trivy)
+        runner.ensureAvailable()
+        if (runner.isUsingContainer()) {
+            println "trivy not found locally, using Docker container: ${runner.dockerImage}\n"
         }
-        
-        def useContainer = (checkResult.exitValue != 0)
-        def trivyCmd = useContainer ? "docker" : "trivy"
-        def trivyImage = "aquasec/trivy:latest"
-        
-        if (useContainer) {
-            // Check if docker is available
-            def dockerCheck = execHelper.execOperations.exec {
-                ignoreExitValue = true
-                executable "bash"
-                args "-c", "command -v docker"
-                standardOutput = new ByteArrayOutputStream()
-                errorOutput = new ByteArrayOutputStream()
-            }
-            
-            if (dockerCheck.exitValue != 0) {
-                throw new GradleException("trivy is not installed and docker is not available. Please install trivy or docker.")
-            }
-            
-            println "trivy not found locally, using Docker container: ${trivyImage}\n"
-        }
-        
-        // Helper function to build trivy command
-        def buildTrivyArgs = { args ->
-            if (useContainer) {
-                def dockerSocket = "/var/run/docker.sock"
-                def osName = System.getProperty("os.name").toLowerCase()
-                if (osName.contains("windows")) {
-                    dockerSocket = "//var/run/docker.sock"
-                }
-                return ["run", "--rm", "-v", "${dockerSocket}:/var/run/docker.sock", trivyImage, "image"] + args
-            } else {
-                return ["image"] + args
-            }
-        }
-        
-        def resultsDir = layout.buildDirectory.dir("trivy-results").get().asFile
+
+        def resultsDir = trivyReportResultsDir
         resultsDir.mkdirs()
-        
+
         def allResults = []
-        
-        // Scan each image
+
         imageList.eachWithIndex { imageName, index ->
             println "Scanning image ${index + 1}/${imageList.size()}: ${imageName}"
-            
-            // Run trivy with JSON output
-            def jsonOutput = new ByteArrayOutputStream()
-            def jsonError = new ByteArrayOutputStream()
-            def jsonResult = execHelper.execOperations.exec {
-                ignoreExitValue = true
-                executable trivyCmd
-                args buildTrivyArgs(["--format", "json", imageName])
-                standardOutput = jsonOutput
-                errorOutput = jsonError
-            }
-            
-            // Run trivy with table output for user to see
-            execHelper.execOperations.exec {
-                ignoreExitValue = true
-                executable trivyCmd
-                args buildTrivyArgs([imageName])
-            }
-            
-            // Parse JSON and store results
-            if (jsonOutput.size() > 0) {
+
+            def jsonResult = runner.run(["image", "--format", "json", imageName])
+            runner.runStreaming(["image", imageName])
+
+            if (jsonResult.stdout.length() > 0) {
                 try {
-                    def json = new groovy.json.JsonSlurper().parseText(jsonOutput.toString())
+                    def json = new groovy.json.JsonSlurper().parseText(jsonResult.stdout)
                     def vulnerabilities = []
                     
                     // Trivy JSON structure: { "Results": [{ "Vulnerabilities": [...] }] }
@@ -973,11 +860,7 @@ deltafi versions --plain --brief | awk '{ print \$3 }' | grep -v '^Image\$'
                     def fixableVulnerabilities = []
                     
                     vulnerabilities.each { vuln ->
-                        def severity = vuln.Severity ?: "Unknown"
-                        // Normalize severity to match grype format (capitalize first letter, rest lowercase)
-                        if (severity && severity.length() > 0) {
-                            severity = severity.substring(0, 1).toUpperCase() + severity.substring(1).toLowerCase()
-                        }
+                        def severity = Severity.normalize(vuln.Severity)
                         severityCounts[severity] = (severityCounts[severity] ?: 0) + 1
                         
                         if (vuln.FixedVersion && vuln.FixedVersion != "") {
@@ -1022,7 +905,7 @@ deltafi versions --plain --brief | awk '{ print \$3 }' | grep -v '^Image\$'
                     
                     if (severityCounts.size() > 0) {
                         println "\nVulnerabilities by severity:"
-                        def severityOrder = ["Critical", "High", "Medium", "Low", "Negligible", "Unknown"]
+                        def severityOrder = Severity.DISPLAY_ORDER
                         severityOrder.each { severity ->
                             if (severityCounts.containsKey(severity)) {
                                 println "  ${severity.padRight(12)}: ${severityCounts[severity]}"
@@ -1079,7 +962,7 @@ deltafi versions --plain --brief | awk '{ print \$3 }' | grep -v '^Image\$'
         
         if (combinedSeverityCounts.size() > 0) {
             summary.append("\nVulnerabilities by severity (combined):").append("\n")
-            def severityOrder = ["Critical", "High", "Medium", "Low", "Negligible", "Unknown"]
+            def severityOrder = Severity.DISPLAY_ORDER
             severityOrder.each { severity ->
                 if (combinedSeverityCounts.containsKey(severity)) {
                     summary.append("  ${severity.padRight(12)}: ${combinedSeverityCounts[severity]}").append("\n")
@@ -1102,7 +985,7 @@ deltafi versions --plain --brief | awk '{ print \$3 }' | grep -v '^Image\$'
             summary.append("    Image: ${result.imageName}").append("\n")
             summary.append("    Total: ${result.totalVulnerabilities}").append("\n")
             if (result.severityCounts && result.severityCounts.size() > 0) {
-                def severityOrder = ["Critical", "High", "Medium", "Low", "Negligible", "Unknown"]
+                def severityOrder = Severity.DISPLAY_ORDER
                 def severityLine = severityOrder.findAll { result.severityCounts.containsKey(it) }
                     .collect { "${it}:${result.severityCounts[it]}" }
                     .join(", ")
@@ -1116,7 +999,7 @@ deltafi versions --plain --brief | awk '{ print \$3 }' | grep -v '^Image\$'
                 // Display fixable vulnerabilities list
                 if (result.fixableVulnerabilities && result.fixableVulnerabilities.size() > 0) {
                     summary.append("    Fixable vulnerabilities:").append("\n")
-                    def severityOrder = ["Critical", "High", "Medium", "Low", "Negligible", "Unknown"]
+                    def severityOrder = Severity.DISPLAY_ORDER
                     def sortedFixable = result.fixableVulnerabilities.sort { vuln ->
                         def severityIndex = severityOrder.indexOf(vuln.severity ?: "Unknown")
                         if (severityIndex == -1) severityIndex = 999
@@ -1138,7 +1021,7 @@ deltafi versions --plain --brief | awk '{ print \$3 }' | grep -v '^Image\$'
         println summary.toString()
         
         // Write summary to file
-        def scanFile = layout.buildDirectory.file("trivy.scan.txt").get().asFile
+        def scanFile = trivyFullReportScanFile
         scanFile.text = summary.toString()
         println "Scan summary written to: ${scanFile.absolutePath}"
     }
@@ -1296,18 +1179,20 @@ subprojects {
     }
 
     afterEvaluate {
-        // Configure grypeReport to depend on this project's grype task if it exists
+        // Aggregate grype/trivy from any project that produces a docker image
+        // (i.e. applies docker-scan, which registers both tasks).
         def grypeTask = tasks.findByName('grype')
         def grypeReportTask = rootProject.tasks.findByName('grypeReport')
-        if (grypeTask != null && grypeReportTask != null && project.name in ['deltafi-core', 'deltafi-core-actions', 'deltafi-dirwatcher', 'deltafi-egress-sink', 'deltafi-nodemonitor']) {
+        if (grypeTask != null && grypeReportTask != null) {
             grypeReportTask.dependsOn grypeTask
         }
-        // Configure trivyReport to depend on this project's trivy task if it exists
         def trivyTask = tasks.findByName('trivy')
         def trivyReportTask = rootProject.tasks.findByName('trivyReport')
-        if (trivyTask != null && trivyReportTask != null && project.name in ['deltafi-core', 'deltafi-core-actions', 'deltafi-dirwatcher', 'deltafi-egress-sink', 'deltafi-nodemonitor']) {
+        if (trivyTask != null && trivyReportTask != null) {
             trivyReportTask.dependsOn trivyTask
         }
+        // securityScan auto-discovers grype/trivy tasks via the security-scan script plugin's
+        // allprojects wiring — no manual hookup needed here.
         var orchestrationMode = deltafiConfig['orchestrationMode'] ? deltafiConfig['orchestrationMode'].toLowerCase() : null
         if (orchestrationMode == 'kind') {
             tasks.matching { it.name == 'pushToKind' }.all {

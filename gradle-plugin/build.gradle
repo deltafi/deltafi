@@ -83,6 +83,16 @@ pluginDescriptors {
                 declaration.setDescription("Applies the DeltaFi license header conventions (mappings, excludes, strict check) to a project")
                 declaration.getTags().set(['deltafi', 'DeltaFi', 'license'])
             }
+            if (declaration.getId() == "org.deltafi.docker-scan") {
+                declaration.setDisplayName("DeltaFi Docker Security Scan Tasks")
+                declaration.setDescription("Adds 'grype' and 'trivy' tasks that scan the project's Docker image for vulnerabilities")
+                declaration.getTags().set(['deltafi', 'DeltaFi', 'security'])
+            }
+            if (declaration.getId() == "org.deltafi.security-scan") {
+                declaration.setDisplayName("DeltaFi Security Scan Aggregator")
+                declaration.setDescription("Aggregates grype/trivy scan results, applies per-tool severity gates, and writes a markdown + json summary report")
+                declaration.getTags().set(['deltafi', 'DeltaFi', 'security'])
+            }
         }
     }
 }

@@ -9,6 +9,7 @@ To get started, follow the [Core Developer's Guide](/getting-started/for-core-de
 Each project has its own patterns and conventions:
 
 - [deltafi-core](/contributing/deltafi-core) - Core service patterns, GraphQL, DeltaFile state model
+- [Security Scanning](/contributing/security-scanning) - Running grype/trivy scans, configuring the gate, suppressing findings
 
 ## Working with the Repository and Submitting a Merge Request
 

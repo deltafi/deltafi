@@ -22,6 +22,8 @@ plugins {
     id 'jacoco'
     id 'org.springframework.boot'
     id 'org.deltafi.docker'
+    id 'org.deltafi.docker-scan'
+    id 'org.deltafi.security-scan'
     id 'org.deltafi.test-summary'
 }
 

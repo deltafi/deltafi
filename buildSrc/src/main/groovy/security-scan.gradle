@@ -1,0 +1,721 @@
+// ABOUTME: Registers the securityScan extension + task, aggregates per-tool scan results, and applies the gate.
+// ABOUTME: Shared by the monorepo (via root build.gradle) and downstream plugins (via plugin-convention).
+import org.deltafi.gradle.cli.ExecHelper
+import org.deltafi.gradle.cli.ToolRunner
+import org.deltafi.gradle.security.SecurityScanExtension
+import org.deltafi.gradle.security.SeverityGate
+import org.deltafi.gradle.security.Severity
+
+def securityScanExt = extensions.create('securityScan', SecurityScanExtension, project)
+
+def aggregatorExecHelper = objects.newInstance(ExecHelper)
+
+/**
+ * Build-scoped service whose only job is to serialise trivy invocations. Trivy contends on its
+ * own boltdb cache files when multiple scans run concurrently — even after a shared DB warmup
+ * — which manifests as silently-empty JSON output for the losers. maxParallelUsages = 1 forces
+ * Gradle to run at most one trivy-bearing task at a time across the whole build.
+ */
+abstract class TrivyDbAccessService implements org.gradle.api.services.BuildService<org.gradle.api.services.BuildServiceParameters.None> {}
+
+def trivyDbAccessService = gradle.sharedServices.registerIfAbsent('trivyDbAccess', TrivyDbAccessService) {
+    maxParallelUsages = 1
+}
+project.ext.trivyDbAccessService = trivyDbAccessService
+
+// Pre-warm the trivy vulnerability database once before any trivy task fans out. Without this,
+// parallel trivy invocations collide on the shared ~/.cache/trivy db lock — symptoms include
+// missing JSON outputs and scans that "succeed" in seconds with zero findings.
+task trivyDbWarmup {
+    group = 'security'
+    description = 'Downloads/updates the trivy vulnerability databases once before parallel scan tasks run'
+
+    outputs.upToDateWhen { false }
+    outputs.cacheIf { false }
+    usesService trivyDbAccessService
+
+    doLast {
+        def runner = new ToolRunner(aggregatorExecHelper.execOperations, 'trivy', securityScanExt.toolImages.trivy)
+        runner.ensureAvailable()
+        runner.announceFallbackOnce()
+        runner.runStreaming(['image', '--download-db-only'])
+        runner.runStreaming(['image', '--download-java-db-only'])
+    }
+}
+
+// Capture all project/rootProject references at config time so the securityScan doLast does not
+// trip Gradle 9's Task.project execution-time deprecation.
+def buildDir = project.layout.buildDirectory
+def grypeResultsDir = buildDir.dir('grype-results').get().asFile
+def trivyResultsDir = buildDir.dir('trivy-results').get().asFile
+def sourceResultsDir = buildDir.dir('scan-results/source').get().asFile
+def configResultsDir = buildDir.dir('scan-results/config').get().asFile
+def secretsResultsDir = buildDir.dir('scan-results/secrets').get().asFile
+def failOnOverrideProvider = providers.gradleProperty('failOn')
+
+task securityScan {
+    group = 'security'
+    description = 'Aggregates security scan results and fails the build on findings above the per-tool severity threshold'
+
+    outputs.upToDateWhen { false }
+    outputs.cacheIf { false }
+
+    doLast {
+        def failOnOverride = failOnOverrideProvider.orNull
+        def ignoreUnfixed = securityScanExt.ignoreUnfixed
+        def slurp = new groovy.json.JsonSlurper()
+        def gateResults = []
+        // Also keep the full scan-result JSONs around so the report can render per-finding tables.
+        def scanResults = []
+
+        def collectFrom = { File dir, String fileNameSuffix, String threshold ->
+            if (dir == null || !dir.isDirectory()) return
+            dir.listFiles({ f -> f.name.endsWith(fileNameSuffix) } as FileFilter)?.each { file ->
+                def scanResult = slurp.parseText(file.text)
+                gateResults << SeverityGate.evaluate(scanResult, threshold, ignoreUnfixed)
+                scanResults << scanResult
+            }
+        }
+
+        collectFrom(
+            grypeResultsDir,
+            '-grype-results.json',
+            failOnOverride ?: securityScanExt.failOn.grypeImage
+        )
+        collectFrom(
+            trivyResultsDir,
+            '-trivy-results.json',
+            failOnOverride ?: securityScanExt.failOn.trivyImage
+        )
+        collectFrom(
+            sourceResultsDir,
+            '.json',
+            failOnOverride ?: securityScanExt.failOn.trivyFs
+        )
+        collectFrom(
+            configResultsDir,
+            '.json',
+            failOnOverride ?: securityScanExt.failOn.checkov
+        )
+        collectFrom(
+            secretsResultsDir,
+            '.json',
+            failOnOverride ?: securityScanExt.failOn.trivySecret
+        )
+
+        def anyTripped = gateResults.any { it.tripped }
+        def reportDir = securityScanExt.reportDir
+        reportDir.mkdirs()
+
+        def summaryJson = [
+            gateResult: anyTripped ? 'FAIL' : 'PASS',
+            ignoreUnfixed: ignoreUnfixed,
+            gates: gateResults.collect { gr ->
+                [
+                    tool: gr.tool,
+                    projectName: gr.projectName,
+                    imageName: gr.imageName,
+                    threshold: gr.threshold,
+                    tripped: gr.tripped,
+                    evaluatedCounts: gr.evaluatedCounts,
+                    blockingCounts: gr.blockingCounts
+                ]
+            }
+        ]
+        new File(reportDir, 'summary.json').text = new groovy.json.JsonBuilder(summaryJson).toPrettyString()
+
+        // Sort findings by severity (most severe first), then by id, for stable readable tables.
+        def sortFindings = { List items ->
+            items.sort { a, b ->
+                int r = Severity.rank(a.severity ?: 'Unknown') <=> Severity.rank(b.severity ?: 'Unknown')
+                if (r != 0) return r
+                return (a.id ?: '') <=> (b.id ?: '')
+            }
+        }
+
+        def cveTable = { List findings ->
+            if (!findings) return "_No findings._\n"
+            def sb = new StringBuilder()
+            sb.append("| Severity | ID | Package | Version | Fix |\n")
+            sb.append("|----------|----|---------|---------|-----|\n")
+            sortFindings(findings).each { f ->
+                def fix = f.fixVersion ? "`${f.fixVersion}`" : '—'
+                sb.append("| ${f.severity} | ${f.id} | `${f.package}` | `${f.version}` | ${fix} |\n")
+            }
+            return sb.toString()
+        }
+
+        def checkovTable = { List findings ->
+            if (!findings) return "_No findings._\n"
+            def sb = new StringBuilder()
+            sb.append("| Severity | Rule | File:Line | Resource |\n")
+            sb.append("|----------|------|-----------|----------|\n")
+            sortFindings(findings).each { f ->
+                def loc = f.line ? "`${f.file}:${f.line}`" : "`${f.file}`"
+                sb.append("| ${f.severity} | ${f.id} | ${loc} | `${f.resource ?: '—'}` |\n")
+            }
+            return sb.toString()
+        }
+
+        def secretsTable = { List findings ->
+            if (!findings) return "_No findings._\n"
+            def sb = new StringBuilder()
+            sb.append("| Severity | Rule | File:Line | Title |\n")
+            sb.append("|----------|------|-----------|-------|\n")
+            sortFindings(findings).each { f ->
+                def loc = f.line ? "`${f.file}:${f.line}`" : "`${f.file}`"
+                sb.append("| ${f.severity} | ${f.id} | ${loc} | ${f.title ?: ''} |\n")
+            }
+            return sb.toString()
+        }
+
+        def detailsBlock = { String summaryLine, String body ->
+            "<details>\n<summary>${summaryLine}</summary>\n\n${body}\n</details>\n\n"
+        }
+
+        def md = new StringBuilder()
+        md.append("# Security Scan\n\n")
+        md.append("Gate result: **${summaryJson.gateResult}**\n\n")
+        md.append("Mode: ignoreUnfixed=${ignoreUnfixed}\n\n")
+
+        md.append("## At a glance\n\n")
+        md.append("| Tool | Project | Threshold | Tripped | Blocking | Evaluated |\n")
+        md.append("|------|---------|-----------|---------|----------|----------|\n")
+        gateResults.sort { a, b -> (a.projectName <=> b.projectName) ?: (a.tool <=> b.tool) }.each { gr ->
+            def evalSummary = Severity.DISPLAY_ORDER.findAll { gr.evaluatedCounts.containsKey(it) }
+                .collect { "${it}:${gr.evaluatedCounts[it]}" }.join(' ') ?: '—'
+            def blockSummary = gr.blockingCounts ? Severity.DISPLAY_ORDER.findAll { gr.blockingCounts.containsKey(it) }
+                .collect { "${it}:${gr.blockingCounts[it]}" }.join(' ') : '—'
+            md.append("| ${gr.tool} | ${gr.projectName} | ${gr.threshold} | ${gr.tripped ? 'yes' : 'no'} | ${blockSummary} | ${evalSummary} |\n")
+        }
+        md.append("\n")
+
+        // Per-image detail: group grype + trivy results by project name.
+        def imageResults = scanResults.findAll { it.tool in ['grype', 'trivy'] }
+        if (imageResults) {
+            md.append("## Per-image findings\n\n")
+            imageResults.groupBy { it.projectName }.sort { a, b -> a.key <=> b.key }.each { project, results ->
+                def imageName = results.find { it.imageName }?.imageName ?: ''
+                md.append("### ${project}\n\n")
+                if (imageName) md.append("Image: `${imageName}`\n\n")
+                results.sort { it.tool }.each { r ->
+                    def n = r.findings?.size() ?: 0
+                    def fixable = r.fixableCount ?: 0
+                    md.append(detailsBlock("${r.tool} — ${n} finding${n == 1 ? '' : 's'} (${fixable} fixable)", cveTable(r.findings ?: [])))
+                }
+            }
+        }
+
+        // Repo-wide scans.
+        def sourceResult = scanResults.find { it.tool == 'trivy-source' }
+        def configResult = scanResults.find { it.tool == 'checkov' }
+        def secretsResult = scanResults.find { it.tool == 'trivy-secrets' }
+
+        if (sourceResult || configResult || secretsResult) {
+            md.append("## Repo-wide findings\n\n")
+        }
+
+        if (sourceResult) {
+            int n = sourceResult.findings?.size() ?: 0
+            int fixable = sourceResult.fixableCount ?: 0
+            md.append("### Source dependencies (trivy fs)\n\n")
+            md.append("${n} finding${n == 1 ? '' : 's'}, ${fixable} fixable.\n\n")
+            md.append(detailsBlock("Findings", cveTable(sourceResult.findings ?: [])))
+        }
+
+        if (configResult) {
+            int n = configResult.findings?.size() ?: 0
+            md.append("### Configuration & IaC (Checkov)\n\n")
+            md.append("${n} finding${n == 1 ? '' : 's'}.\n\n")
+            // Roll up by rule for a compact view since Checkov runs repeat the same rule across files.
+            def byRule = (configResult.findings ?: []).groupBy { it.id }.collect { id, items ->
+                [id: id, severity: items.first().severity, count: items.size(), sampleFile: items.first().file]
+            }.sort { a, b -> -(a.count <=> b.count) }
+            def rollup = new StringBuilder()
+            rollup.append("| Severity | Rule | Count | Sample file |\n")
+            rollup.append("|----------|------|-------|-------------|\n")
+            byRule.each { r ->
+                rollup.append("| ${r.severity} | ${r.id} | ${r.count} | `${r.sampleFile}` |\n")
+            }
+            md.append(detailsBlock("By rule (rolled up)", rollup.toString()))
+            md.append(detailsBlock("All findings", checkovTable(configResult.findings ?: [])))
+        }
+
+        if (secretsResult) {
+            int n = secretsResult.findings?.size() ?: 0
+            md.append("### Secrets (trivy)\n\n")
+            md.append("${n} finding${n == 1 ? '' : 's'}.\n\n")
+            md.append(detailsBlock("Findings", secretsTable(secretsResult.findings ?: [])))
+        }
+
+        new File(reportDir, 'summary.md').text = md.toString()
+
+        def separator = '=================================================================================='
+        println "\n" + separator
+        println "SECURITY SCAN SUMMARY"
+        println separator
+        println "Gate result: ${summaryJson.gateResult}"
+        println "ignoreUnfixed: ${ignoreUnfixed}"
+        if (anyTripped) {
+            println "\nGate trips:"
+            gateResults.findAll { it.tripped }.each { gr ->
+                def blocking = Severity.DISPLAY_ORDER.findAll { gr.blockingCounts.containsKey(it) }
+                    .collect { "${it}:${gr.blockingCounts[it]}" }.join(' ')
+                println "  ${gr.tool}/${gr.projectName} (threshold=${gr.threshold}): ${blocking}"
+            }
+        }
+        println "\nReport: ${new File(reportDir, 'summary.md').absolutePath}"
+        println separator + "\n"
+
+        if (anyTripped) {
+            throw new GradleException("Security scan gate tripped — see ${new File(reportDir, 'summary.md').absolutePath}")
+        }
+    }
+}
+
+// Shared trivy invocation + JSON aggregation helper used by the source/config/secret scans below.
+// Each scan supplies its own trivy args and a parser closure that turns trivy's raw JSON into
+// our unified scan-result schema (severityCounts + fixableSeverityCounts).
+def runTrivyScan = { Map opts ->
+    String scanType = opts.scanType
+    List<String> trivyArgs = opts.trivyArgs
+    File scanPath = opts.scanPath
+    Closure<Map> parseJson = opts.parseJson
+    File outputDir = opts.outputDir
+    String outputFileName = opts.outputFileName
+    String summaryTitle = opts.summaryTitle
+
+    def runner = new ToolRunner(aggregatorExecHelper.execOperations, 'trivy', securityScanExt.toolImages.trivy)
+    runner.ensureAvailable()
+    runner.announceFallbackOnce()
+
+    // Mount the host scan target so the trivy container can read it; translatePath() rewrites
+    // to /scan-target in container mode and is a no-op in native mode.
+    runner.mount(scanPath.absolutePath, '/scan-target')
+    def targetArg = runner.translatePath(scanPath.absolutePath)
+
+    // Same treatment for the trivyignore file when present.
+    def ignoreFlags = []
+    if (securityScanExt.suppressionsDir?.isDirectory()) {
+        def f = new File(securityScanExt.suppressionsDir, 'trivyignore')
+        if (f.isFile()) {
+            runner.mount(f.absolutePath, '/trivyignore')
+            ignoreFlags = ['--ignorefile', runner.translatePath(f.absolutePath)]
+        }
+    }
+
+    def jsonArgs = trivyArgs + ['--format', 'json'] + ignoreFlags + [targetArg]
+    def tableArgs = trivyArgs + ignoreFlags + [targetArg]
+
+    def jsonResult = runner.run(jsonArgs)
+    runner.runStreaming(tableArgs)
+
+    if (securityScanExt.sarif) {
+        def sarifFile = new File(outputDir, outputFileName.replaceFirst(/\.json$/, '.sarif'))
+        outputDir.mkdirs()
+        // Mount the output directory so trivy (in container mode) can write the SARIF file back to the host.
+        runner.mount(outputDir.absolutePath, '/sarif-output')
+        def sarifPath = runner.translatePath(sarifFile.absolutePath)
+        def sarifArgs = trivyArgs + ['--format', 'sarif', '--output', sarifPath] + ignoreFlags + [targetArg]
+        runner.runStreaming(sarifArgs)
+        println "SARIF written to: ${sarifFile.absolutePath}"
+    }
+
+    def severityCounts = [:]
+    def fixableSeverityCounts = [:]
+    def findings = []
+    int totalFindings = 0
+
+    if (jsonResult.stdout.length() > 0) {
+        try {
+            def json = new groovy.json.JsonSlurper().parseText(jsonResult.stdout)
+            def parsed = parseJson(json)
+            severityCounts = parsed.severityCounts ?: [:]
+            fixableSeverityCounts = parsed.fixableSeverityCounts ?: [:]
+            findings = parsed.findings ?: []
+            totalFindings = parsed.totalFindings ?: 0
+        } catch (Exception e) {
+            println "\nWarning: Could not parse trivy JSON output for ${scanType}: ${e.message}"
+        }
+    }
+
+    outputDir.mkdirs()
+    def results = [
+        projectName: scanType,
+        imageName: '',
+        tool: "trivy-${scanType}".toString(),
+        totalVulnerabilities: totalFindings,
+        severityCounts: severityCounts,
+        fixableSeverityCounts: fixableSeverityCounts,
+        fixableCount: fixableSeverityCounts.values().sum() ?: 0,
+        findings: findings
+    ]
+    new File(outputDir, outputFileName).text = new groovy.json.JsonBuilder(results).toPrettyString()
+
+    def sep = '=================================================================================='
+    println "\n" + sep
+    println summaryTitle
+    println sep
+    println "Total findings: ${totalFindings}"
+    if (severityCounts.size() > 0) {
+        println "\nFindings by severity:"
+        Severity.DISPLAY_ORDER.each { sev ->
+            if (severityCounts.containsKey(sev)) {
+                println "  ${sev.padRight(12)}: ${severityCounts[sev]}"
+            }
+        }
+    }
+    println sep + "\n"
+}
+
+task scanSource {
+    group = 'security'
+    description = 'Scans the source tree for vulnerabilities in declared dependencies (trivy fs)'
+    outputs.upToDateWhen { false }
+    outputs.cacheIf { false }
+    usesService trivyDbAccessService
+
+    doLast {
+        runTrivyScan(
+            scanType: 'source',
+            trivyArgs: ['fs', '--skip-dirs', securityScanExt.skipDirs.join(',')],
+            scanPath: securityScanExt.sourcePath,
+            outputDir: sourceResultsDir,
+            outputFileName: 'trivy-fs.json',
+            summaryTitle: 'TRIVY SOURCE SCAN SUMMARY',
+            parseJson: { json ->
+                def sc = [:]; def fc = [:]; def fl = []; int t = 0
+                json.Results?.each { result ->
+                    result.Vulnerabilities?.each { vuln ->
+                        def s = Severity.normalize(vuln.Severity)
+                        sc[s] = (sc[s] ?: 0) + 1
+                        def fixed = vuln.FixedVersion && vuln.FixedVersion != ""
+                        if (fixed) fc[s] = (fc[s] ?: 0) + 1
+                        fl.add([
+                            id: vuln.VulnerabilityID ?: 'Unknown',
+                            severity: s,
+                            package: vuln.PkgName ?: 'Unknown',
+                            version: vuln.InstalledVersion ?: 'Unknown',
+                            fixVersion: fixed ? vuln.FixedVersion : null
+                        ])
+                        t++
+                    }
+                }
+                return [severityCounts: sc, fixableSeverityCounts: fc, findings: fl, totalFindings: t]
+            }
+        )
+    }
+}
+
+task scanConfig {
+    group = 'security'
+    description = 'Scans Dockerfiles, Helm charts, and k8s manifests for misconfigurations (Checkov)'
+    outputs.upToDateWhen { false }
+    outputs.cacheIf { false }
+
+    doLast {
+        // Remove any stale output from when this task used trivy config so the aggregator doesn't
+        // double-count config findings on the migration run.
+        new File(configResultsDir, 'trivy-config.json').delete()
+        new File(configResultsDir, 'trivy-config.sarif').delete()
+
+        def runner = new ToolRunner(aggregatorExecHelper.execOperations, 'checkov', securityScanExt.toolImages.checkov, false)
+        runner.ensureAvailable()
+        runner.announceFallbackOnce()
+        // Silence checkov's "An unsupported instruction //" warnings when it parses files like
+        // tui/internal/generator/dockerfile.go (Go source, not a Dockerfile) — they emit before
+        // --skip-path runs and pollute the console without contributing to the gate.
+        runner.env('LOG_LEVEL', 'ERROR')
+
+        // Mount each configPath into the container so checkov can read it. translatePath() will
+        // return the host path in native mode or /scan{n} in container mode.
+        def directoryFlags = []
+        securityScanExt.configPaths.eachWithIndex { File path, int i ->
+            def hostPath = path.absolutePath
+            runner.mount(hostPath, "/scan${i}".toString())
+            directoryFlags += ['-d', runner.translatePath(hostPath)]
+        }
+
+        // Optional config file at .security/checkov.yaml (used for skip-check etc.)
+        def configFileFlags = []
+        if (securityScanExt.suppressionsDir?.isDirectory()) {
+            def checkovYaml = new File(securityScanExt.suppressionsDir, 'checkov.yaml')
+            if (checkovYaml.isFile()) {
+                runner.mount(checkovYaml.absolutePath, '/checkov.yaml')
+                configFileFlags = ['--config-file', runner.translatePath(checkovYaml.absolutePath)]
+            }
+        }
+
+        // Path-skip regex flags — exclude templates, generator source, build artefacts, etc.
+        def skipPathFlags = securityScanExt.configSkipPaths.collectMany { ['--skip-path', it] }
+
+        // --soft-fail so non-zero exit on findings doesn't propagate. --quiet keeps console
+        // output sane; we still print our own summary below.
+        def jsonResult = runner.run(directoryFlags + configFileFlags + skipPathFlags + ['-o', 'json', '--soft-fail', '--quiet'])
+        runner.runStreaming(directoryFlags + configFileFlags + skipPathFlags + ['--soft-fail', '--compact'])
+
+        if (securityScanExt.sarif) {
+            configResultsDir.mkdirs()
+            def sarifFile = new File(configResultsDir, 'checkov.sarif')
+            runner.runStreaming(directoryFlags + configFileFlags + skipPathFlags + ['-o', 'sarif', '--output-file-path', runner.translatePath(sarifFile.absolutePath), '--soft-fail', '--quiet'])
+            // checkov writes to <output-file-path>/results_sarif.sarif; relocate to a stable name.
+            def emitted = new File(sarifFile.absolutePath, 'results_sarif.sarif')
+            if (emitted.isFile()) {
+                emitted.renameTo(sarifFile)
+            }
+            println "Checkov SARIF written to: ${sarifFile.absolutePath}"
+        }
+
+        def severityCounts = [:]
+        def findings = []
+        int totalFindings = 0
+
+        if (jsonResult.stdout.length() > 0) {
+            try {
+                def parsed = new groovy.json.JsonSlurper().parseText(jsonResult.stdout)
+                // checkov returns a list when multiple frameworks ran, or a single object otherwise.
+                def frameworkResults = parsed instanceof List ? parsed : [parsed]
+                frameworkResults.each { fw ->
+                    fw?.results?.failed_checks?.each { check ->
+                        // Checkov OSS leaves severity null on most checks (severity is a
+                        // Prisma Cloud commercial feature). Default to Medium so the gate is
+                        // still meaningful — users can override the gate threshold or attach
+                        // severity via .security/checkov.yaml.
+                        def raw = check.severity
+                        String s
+                        if (raw == null || raw == '') s = Severity.MEDIUM
+                        else if (raw == 'INFO') s = Severity.NEGLIGIBLE
+                        else s = Severity.normalize(raw)
+                        severityCounts[s] = (severityCounts[s] ?: 0) + 1
+                        findings.add([
+                            id: check.check_id ?: 'Unknown',
+                            severity: s,
+                            checkName: check.check_name ?: '',
+                            file: check.file_path ?: '',
+                            line: check.file_line_range ? check.file_line_range[0] : null,
+                            resource: check.resource ?: ''
+                        ])
+                        totalFindings++
+                    }
+                }
+            } catch (Exception e) {
+                println "\nWarning: Could not parse checkov JSON output: ${e.message}"
+            }
+        }
+
+        configResultsDir.mkdirs()
+        def results = [
+            projectName: 'config',
+            imageName: '',
+            tool: 'checkov',
+            totalVulnerabilities: totalFindings,
+            severityCounts: severityCounts,
+            // Misconfig has no "fix version" concept — every finding participates in the gate.
+            fixableSeverityCounts: severityCounts.collectEntries { k, v -> [(k): v] },
+            fixableCount: totalFindings,
+            findings: findings
+        ]
+        new File(configResultsDir, 'checkov.json').text = new groovy.json.JsonBuilder(results).toPrettyString()
+
+        def sep = '=================================================================================='
+        println "\n" + sep
+        println "CHECKOV CONFIG SCAN SUMMARY"
+        println sep
+        println "Total findings: ${totalFindings}"
+        if (severityCounts.size() > 0) {
+            println "\nFindings by severity:"
+            Severity.DISPLAY_ORDER.each { sev ->
+                if (severityCounts.containsKey(sev)) {
+                    println "  ${sev.padRight(12)}: ${severityCounts[sev]}"
+                }
+            }
+        }
+        println sep + "\n"
+    }
+}
+
+task scanSecrets {
+    group = 'security'
+    description = 'Scans the source tree for hardcoded secrets (trivy)'
+    outputs.upToDateWhen { false }
+    outputs.cacheIf { false }
+    usesService trivyDbAccessService
+
+    doLast {
+        runTrivyScan(
+            scanType: 'secrets',
+            trivyArgs: ['fs', '--scanners', 'secret', '--skip-dirs', securityScanExt.skipDirs.join(',')],
+            scanPath: securityScanExt.secretsPath,
+            outputDir: secretsResultsDir,
+            outputFileName: 'trivy-secrets.json',
+            summaryTitle: 'TRIVY SECRET SCAN SUMMARY',
+            parseJson: { json ->
+                def sc = [:]; def fl = []; int t = 0
+                json.Results?.each { result ->
+                    result.Secrets?.each { secret ->
+                        def s = Severity.normalize(secret.Severity)
+                        sc[s] = (sc[s] ?: 0) + 1
+                        fl.add([
+                            id: secret.RuleID ?: 'Unknown',
+                            severity: s,
+                            title: secret.Title ?: '',
+                            file: result.Target ?: '',
+                            line: secret.StartLine ?: null
+                        ])
+                        t++
+                    }
+                }
+                // Secrets are always actionable — mirror counts as fixable for gate evaluation
+                return [severityCounts: sc, fixableSeverityCounts: sc.collectEntries { k, v -> [(k): v] }, findings: fl, totalFindings: t]
+            }
+        )
+    }
+}
+
+task scanReferencedImages {
+    group = 'security'
+    description = 'Scans externally-referenced container images (e.g. deltafi/* from the TUI orchestrator) with trivy'
+    outputs.upToDateWhen { false }
+    outputs.cacheIf { false }
+    usesService trivyDbAccessService
+
+    doLast {
+        def images = securityScanExt.referencedImages
+        if (!images) {
+            println "No referenced images configured (securityScan.referencedImages is empty)."
+            return
+        }
+
+        def runner = new ToolRunner(aggregatorExecHelper.execOperations, 'trivy', securityScanExt.toolImages.trivy)
+        runner.ensureAvailable()
+        runner.announceFallbackOnce()
+
+        // In container fallback mode, mount the trivyignore file so the trivy container can read it.
+        def ignoreFlags = []
+        if (securityScanExt.suppressionsDir?.isDirectory()) {
+            def f = new File(securityScanExt.suppressionsDir, 'trivyignore')
+            if (f.isFile()) {
+                runner.mount(f.absolutePath, '/trivyignore')
+                ignoreFlags = ['--ignorefile', runner.translatePath(f.absolutePath)]
+            }
+        }
+
+        trivyResultsDir.mkdirs()
+        def docker = aggregatorExecHelper.execOperations
+
+        images.eachWithIndex { String image, int idx ->
+            println "\nScanning ${idx + 1}/${images.size()}: ${image}"
+
+            // Pull the image so trivy can analyse it (no-op if already present locally).
+            docker.exec {
+                it.ignoreExitValue = true
+                it.executable = 'docker'
+                it.args = ['pull', '--quiet', image]
+                it.standardOutput = new ByteArrayOutputStream()
+                it.errorOutput = new ByteArrayOutputStream()
+            }
+
+            def jsonResult = runner.run(['image'] + ignoreFlags + ['--format', 'json', image])
+            runner.runStreaming(['image'] + ignoreFlags + [image])
+
+            if (jsonResult.stdout.length() == 0) {
+                println "Warning: trivy returned no output for ${image}; skipping."
+                return
+            }
+
+            def severityCounts = [:]
+            def fixableSeverityCounts = [:]
+            int fixableCount = 0
+            def findings = []
+            try {
+                def json = new groovy.json.JsonSlurper().parseText(jsonResult.stdout)
+                json.Results?.each { r ->
+                    r.Vulnerabilities?.each { vuln ->
+                        def sev = Severity.normalize(vuln.Severity)
+                        severityCounts[sev] = (severityCounts[sev] ?: 0) + 1
+                        def fixed = vuln.FixedVersion && vuln.FixedVersion != ''
+                        if (fixed) {
+                            fixableCount++
+                            fixableSeverityCounts[sev] = (fixableSeverityCounts[sev] ?: 0) + 1
+                        }
+                        findings.add([
+                            id: vuln.VulnerabilityID ?: 'Unknown',
+                            severity: sev,
+                            package: vuln.PkgName ?: 'Unknown',
+                            version: vuln.InstalledVersion ?: 'Unknown',
+                            fixVersion: fixed ? vuln.FixedVersion : null
+                        ])
+                    }
+                }
+            } catch (Exception e) {
+                println "Warning: could not parse trivy JSON for ${image}: ${e.message}"
+                return
+            }
+
+            // image name like "deltafi/grafana:12.4.3-0" → "deltafi_grafana_12.4.3-0"
+            def projectName = image.replaceAll('[/:]', '_')
+            def results = [
+                projectName: projectName,
+                imageName: image,
+                tool: 'trivy',
+                totalVulnerabilities: findings.size(),
+                severityCounts: severityCounts,
+                fixableSeverityCounts: fixableSeverityCounts,
+                fixableCount: fixableCount,
+                findings: findings,
+                fixableVulnerabilities: findings.findAll { it.fixVersion != null }
+            ]
+            // Filename prefix `referenced-` makes these distinguishable from project-built scans.
+            def outFile = new File(trivyResultsDir, "referenced-${projectName}-trivy-results.json")
+            outFile.text = new groovy.json.JsonBuilder(results).toPrettyString()
+
+            def sep = '=================================================================================='
+            println "\n" + sep
+            println "TRIVY REFERENCED-IMAGE SUMMARY"
+            println sep
+            println "Image: ${image}"
+            println "Total vulnerabilities: ${findings.size()}"
+            if (severityCounts.size() > 0) {
+                println "\nBy severity:"
+                Severity.DISPLAY_ORDER.each { s ->
+                    if (severityCounts.containsKey(s)) {
+                        println "  ${s.padRight(12)}: ${severityCounts[s]}"
+                    }
+                }
+            }
+            println sep + "\n"
+        }
+    }
+}
+
+// Wire the source/secret/referenced scans into the trivy DB warmup. scanConfig now uses Checkov,
+// so it doesn't share the trivy DB lock and skips the warmup.
+scanSource.dependsOn tasks.named('trivyDbWarmup')
+scanSecrets.dependsOn tasks.named('trivyDbWarmup')
+scanReferencedImages.dependsOn tasks.named('trivyDbWarmup')
+tasks.named('securityScan').configure { dependsOn scanSource, scanConfig, scanSecrets, scanReferencedImages }
+
+// Auto-discover any project that registers grype/trivy tasks (via docker-scan) and wire them into
+// securityScan + the trivy DB warmup + the trivy serialisation service.
+//
+// `allprojects` iterates the applying project plus every subproject — this is intentional, because
+// the same code path serves two contexts:
+//   - Monorepo: applied at root; subprojects (deltafi-core, etc.) carry the grype/trivy tasks.
+//   - Downstream plugin: applied at root; the root project itself carries grype/trivy (no subprojects).
+// Using `project.afterEvaluate` directly would break the monorepo; `subprojects { … }` would break
+// downstream plugins.
+def aggregatorProject = project
+allprojects { ap ->
+    ap.afterEvaluate {
+        def grypeTask = ap.tasks.findByName('grype')
+        if (grypeTask != null) aggregatorProject.tasks.named('securityScan').configure { dependsOn grypeTask }
+        def trivyTask = ap.tasks.findByName('trivy')
+        if (trivyTask != null) {
+            aggregatorProject.tasks.named('securityScan').configure { dependsOn trivyTask }
+            // Serialise DB access: every trivy task must wait for the shared warmup to complete,
+            // AND uses the build-scoped service that throttles concurrent trivy invocations to 1.
+            trivyTask.dependsOn aggregatorProject.tasks.named('trivyDbWarmup')
+            trivyTask.usesService trivyDbAccessService
+        }
+    }
+}
