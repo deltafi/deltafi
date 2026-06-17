@@ -47,9 +47,7 @@
   "editable": false,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 1,
-  "id": 11,
   "links": [],
-  "liveNow": false,
   "panels": [
     {
       "collapsed": false,
@@ -73,102 +71,33 @@
         "defaults": {
           "color": {
             "fixedColor": "green",
-            "mode": "continuous-GrYlRd"
-          },
-          "displayName": "In Flight DeltaFiles",
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              },
-              {
-                "color": "red",
-                "value": 80
-              }
-            ]
-          },
-          "unit": "locale"
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 6,
-        "w": 4,
-        "x": 0,
-        "y": 1
-      },
-      "id": 61,
-      "maxDataPoints": 1,
-      "options": {
-        "colorMode": "value",
-        "graphMode": "none",
-        "justifyMode": "center",
-        "orientation": "auto",
-        "percentChangeColorMode": "standard",
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": "",
-          "values": false
-        },
-        "showPercentChange": false,
-        "textMode": "value_and_name",
-        "wideLayout": false
-      },
-      "pluginVersion": "11.2.2+security-01",
-      "targets": [
-        {
-          "datasource": {
-            "type": "victoriametrics-metrics-datasource",
-            "uid": "deltafi-vm-metricsql-datasource"
-          },
-          "expr": "gauge.deltafile.inFlightCount",
-          "legendFormat": "Files in flight",
-          "refId": "A"
-        }
-      ],
-      "transparent": true,
-      "type": "stat"
-    },
-    {
-      "datasource": {
-        "type": "victoriametrics-metrics-datasource",
-        "uid": "deltafi-vm-metricsql-datasource"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "fixedColor": "green",
-            "mode": "fixed"
+            "mode": "palette-classic"
           },
           "custom": {
-            "axisBorderShow": false,
+            "axisBorderShow": true,
             "axisCenteredZero": false,
             "axisColorMode": "text",
-            "axisLabel": "In Flight DeltaFiles",
+            "axisLabel": "",
             "axisPlacement": "left",
             "barAlignment": 0,
             "barWidthFactor": 0.6,
             "drawStyle": "line",
             "fillOpacity": 50,
-            "gradientMode": "hue",
+            "gradientMode": "none",
             "hideFrom": {
               "legend": false,
               "tooltip": false,
               "viz": false
             },
             "insertNulls": false,
-            "lineInterpolation": "linear",
+            "lineInterpolation": "smooth",
             "lineWidth": 1,
             "pointSize": 5,
             "scaleDistribution": {
               "type": "linear"
             },
-            "showPoints": "auto",
+            "showPoints": "never",
+            "showValues": false,
             "spanNulls": false,
             "stacking": {
               "group": "A",
@@ -186,7 +115,7 @@
             "steps": [
               {
                 "color": "green",
-                "value": null
+                "value": 0
               },
               {
                 "color": "red",
@@ -195,41 +124,173 @@
             ]
           }
         },
-        "overrides": []
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Total In Flight"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "green",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Paused"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "yellow",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Cold"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "blue",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Warm"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "orange",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Rate Limited"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "red",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          }
+        ]
       },
       "gridPos": {
         "h": 6,
-        "w": 8,
-        "x": 4,
+        "w": 24,
+        "x": 0,
         "y": 1
       },
       "id": 59,
       "options": {
         "legend": {
-          "calcs": [],
-          "displayMode": "list",
-          "placement": "bottom",
-          "showLegend": false
+          "calcs": [
+            "lastNotNull",
+            "max"
+          ],
+          "displayMode": "table",
+          "placement": "right",
+          "showLegend": true,
+          "width": 500
         },
         "tooltip": {
+          "hideZeros": false,
           "mode": "multi",
           "sort": "none"
         }
       },
-      "pluginVersion": "9.3.2",
+      "pluginVersion": "12.4.3",
       "targets": [
         {
           "datasource": {
             "type": "victoriametrics-metrics-datasource",
             "uid": "deltafi-vm-metricsql-datasource"
           },
+          "editorMode": "code",
           "expr": "gauge.deltafile.inFlightCount",
-          "legendFormat": "In Flight",
+          "format": "time_series",
+          "legendFormat": "Total In Flight",
+          "range": true,
           "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "victoriametrics-metrics-datasource",
+            "uid": "deltafi-vm-metricsql-datasource"
+          },
+          "editorMode": "code",
+          "expr": "gauge.deltafile.pausedCount",
+          "format": "time_series",
+          "legendFormat": "Paused",
+          "range": true,
+          "refId": "B"
+        },
+        {
+          "datasource": {
+            "type": "victoriametrics-metrics-datasource",
+            "uid": "deltafi-vm-metricsql-datasource"
+          },
+          "editorMode": "code",
+          "expr": "gauge.deltafile.coldQueuedCount",
+          "format": "time_series",
+          "legendFormat": "Cold",
+          "range": true,
+          "refId": "C"
+        },
+        {
+          "datasource": {
+            "type": "victoriametrics-metrics-datasource",
+            "uid": "deltafi-vm-metricsql-datasource"
+          },
+          "editorMode": "code",
+          "expr": "gauge.deltafile.warmQueuedCount",
+          "format": "time_series",
+          "legendFormat": "Warm",
+          "range": true,
+          "refId": "D"
+        },
+        {
+          "datasource": {
+            "type": "victoriametrics-metrics-datasource",
+            "uid": "deltafi-vm-metricsql-datasource"
+          },
+          "editorMode": "code",
+          "expr": "gauge.deltafile.rateLimitedCount",
+          "format": "time_series",
+          "legendFormat": "Rate Limited",
+          "range": true,
+          "refId": "E"
         }
       ],
-      "transparent": true,
       "title": "In-Flight DeltaFiles",
+      "transparent": true,
       "type": "timeseries"
     },
     {
@@ -237,14 +298,13 @@
         "type": "victoriametrics-metrics-datasource",
         "uid": "deltafi-vm-metricsql-datasource"
       },
-      "description": "",
       "fieldConfig": {
         "defaults": {
           "color": {
             "mode": "palette-classic"
           },
           "custom": {
-            "axisBorderShow": false,
+            "axisBorderShow": true,
             "axisCenteredZero": false,
             "axisColorMode": "text",
             "axisLabel": "",
@@ -267,6 +327,7 @@
               "type": "linear"
             },
             "showPoints": "never",
+            "showValues": false,
             "spanNulls": false,
             "stacking": {
               "group": "A",
@@ -282,7 +343,7 @@
             "steps": [
               {
                 "color": "green",
-                "value": null
+                "value": 0
               },
               {
                 "color": "red",
@@ -295,40 +356,44 @@
       },
       "gridPos": {
         "h": 6,
-        "w": 12,
-        "x": 12,
-        "y": 1
+        "w": 24,
+        "x": 0,
+        "y": 15
       },
       "id": 17,
       "interval": "10s",
       "options": {
         "legend": {
           "calcs": [
-            "max",
-            "last"
+            "lastNotNull",
+            "max"
           ],
-          "displayMode": "list",
+          "displayMode": "table",
           "placement": "right",
-          "showLegend": false
+          "showLegend": true,
+          "width": 500
         },
         "tooltip": {
+          "hideZeros": false,
           "mode": "multi",
           "sort": "desc"
         }
       },
+      "pluginVersion": "12.4.3",
       "targets": [
         {
           "datasource": {
             "type": "victoriametrics-metrics-datasource",
             "uid": "deltafi-vm-metricsql-datasource"
           },
-          "expr": "{__name__=\"gauge.action_queue.queue_size\"}",
+          "expr": "label_replace({__name__=\"gauge.action_queue.queue_size\"}, \"queue_name\", \"$1\", \"queue_name\", \"org\\\\.deltafi\\\\.(.*)\")",
           "legendFormat": "{{queue_name}}",
           "refId": "A"
         }
       ],
       "title": "Action Queue Depth",
-      "type": "timeseries"
+      "type": "timeseries",
+      "transparent": true
     },
     {
       "datasource": {
@@ -336,14 +401,13 @@
         "type": "victoriametrics-metrics-datasource",
         "uid": "deltafi-vm-metricsql-datasource"
       },
-      "description": "",
       "fieldConfig": {
         "defaults": {
           "color": {
             "mode": "palette-classic"
           },
           "custom": {
-            "axisBorderShow": false,
+            "axisBorderShow": true,
             "axisCenteredZero": false,
             "axisColorMode": "text",
             "axisLabel": "",
@@ -367,6 +431,7 @@
               "type": "linear"
             },
             "showPoints": "never",
+            "showValues": false,
             "spanNulls": false,
             "stacking": {
               "group": "A",
@@ -384,7 +449,7 @@
             "steps": [
               {
                 "color": "green",
-                "value": null
+                "value": 0
               },
               {
                 "color": "red",
@@ -397,24 +462,30 @@
       },
       "gridPos": {
         "h": 6,
-        "w": 12,
+        "w": 24,
         "x": 0,
-        "y": 7
+        "y": 8
       },
       "id": 388,
       "interval": "1m",
       "options": {
         "legend": {
-          "calcs": [],
-          "displayMode": "list",
+          "calcs": [
+            "lastNotNull",
+            "max"
+          ],
+          "displayMode": "table",
           "placement": "right",
-          "showLegend": false
+          "showLegend": true,
+          "width": 500
         },
         "tooltip": {
+          "hideZeros": false,
           "mode": "multi",
           "sort": "desc"
         }
       },
+      "pluginVersion": "12.4.3",
       "targets": [
         {
           "datasource": {
@@ -422,14 +493,14 @@
             "uid": "deltafi-vm-metricsql-datasource"
           },
           "expr": "sum by (dataSource) (sum_over_time({__name__=\"stats_counts.files_to_sink\"}[$__interval]))",
-          "hide": false,
           "interval": "1m",
           "legendFormat": "{{dataSource}}",
           "refId": "A"
         }
       ],
       "title": "DeltaFiles Egressed by Data Source",
-      "type": "timeseries"
+      "type": "timeseries",
+      "transparent": true
     },
     {
       "datasource": {
@@ -437,14 +508,13 @@
         "type": "victoriametrics-metrics-datasource",
         "uid": "deltafi-vm-metricsql-datasource"
       },
-      "description": "",
       "fieldConfig": {
         "defaults": {
           "color": {
             "mode": "palette-classic"
           },
           "custom": {
-            "axisBorderShow": false,
+            "axisBorderShow": true,
             "axisCenteredZero": false,
             "axisColorMode": "text",
             "axisLabel": "",
@@ -467,6 +537,7 @@
               "type": "linear"
             },
             "showPoints": "never",
+            "showValues": false,
             "spanNulls": false,
             "stacking": {
               "group": "A",
@@ -484,7 +555,7 @@
             "steps": [
               {
                 "color": "green",
-                "value": null
+                "value": 0
               },
               {
                 "color": "red",
@@ -497,24 +568,30 @@
       },
       "gridPos": {
         "h": 6,
-        "w": 12,
-        "x": 12,
-        "y": 7
+        "w": 24,
+        "x": 0,
+        "y": 22
       },
       "id": 5,
       "interval": "1m",
       "options": {
         "legend": {
-          "calcs": [],
-          "displayMode": "list",
+          "calcs": [
+            "lastNotNull",
+            "max"
+          ],
+          "displayMode": "table",
           "placement": "right",
-          "showLegend": false
+          "showLegend": true,
+          "width": 500
         },
         "tooltip": {
+          "hideZeros": false,
           "mode": "multi",
           "sort": "desc"
         }
       },
+      "pluginVersion": "12.4.3",
       "targets": [
         {
           "datasource": {
@@ -522,14 +599,14 @@
             "uid": "deltafi-vm-metricsql-datasource"
           },
           "expr": "sum by (source) (sum_over_time({__name__=\"stats_counts.action_execution\"}[$__interval]))",
-          "hide": false,
           "interval": "1m",
           "legendFormat": "{{source}}",
           "refId": "A"
         }
       ],
       "title": "Action Execution Count",
-      "type": "timeseries"
+      "type": "timeseries",
+      "transparent": true
     },
     {
       "datasource": {
@@ -537,14 +614,13 @@
         "type": "victoriametrics-metrics-datasource",
         "uid": "deltafi-vm-metricsql-datasource"
       },
-      "description": "",
       "fieldConfig": {
         "defaults": {
           "color": {
             "mode": "palette-classic"
           },
           "custom": {
-            "axisBorderShow": false,
+            "axisBorderShow": true,
             "axisCenteredZero": false,
             "axisColorMode": "text",
             "axisLabel": "",
@@ -568,6 +644,7 @@
               "type": "linear"
             },
             "showPoints": "never",
+            "showValues": false,
             "spanNulls": false,
             "stacking": {
               "group": "A",
@@ -584,7 +661,7 @@
             "steps": [
               {
                 "color": "green",
-                "value": null
+                "value": 0
               },
               {
                 "color": "red",
@@ -633,25 +710,31 @@
       },
       "gridPos": {
         "h": 6,
-        "w": 12,
+        "w": 24,
         "x": 0,
-        "y": 13
+        "y": 29
       },
       "id": 389,
       "interval": "1m",
       "maxDataPoints": 100,
       "options": {
         "legend": {
-          "calcs": [],
-          "displayMode": "list",
+          "calcs": [
+            "lastNotNull",
+            "max"
+          ],
+          "displayMode": "table",
           "placement": "right",
-          "showLegend": false
+          "showLegend": true,
+          "width": 500
         },
         "tooltip": {
+          "hideZeros": false,
           "mode": "multi",
           "sort": "desc"
         }
       },
+      "pluginVersion": "12.4.3",
       "targets": [
         {
           "datasource": {
@@ -681,7 +764,6 @@
             "uid": "deltafi-vm-metricsql-datasource"
           },
           "expr": "sum by (dataSource) (sum_over_time({__name__=\"stats_counts.execution_time_ms\"}[$__interval])) / sum by (dataSource) (sum_over_time({__name__=\"stats_counts.files_to_sink\"}[$__interval]))",
-          "hide": false,
           "interval": "1m",
           "legendFormat": "{{dataSource}}",
           "refId": "C"
@@ -714,14 +796,14 @@
             "uid": "deltafi-vm-metricsql-datasource"
           },
           "expr": "avg_over_time((sum(sum_over_time({__name__=\"stats_counts.execution_time_ms\"}[$__interval])) / sum(sum_over_time({__name__=\"stats_counts.files_to_sink\"}[$__interval])))[10m:])",
-          "hide": false,
           "interval": "1m",
           "legendFormat": "Overall",
           "refId": "F"
         }
       ],
       "title": "Average DeltaFile Latency by Data Source",
-      "type": "timeseries"
+      "type": "timeseries",
+      "transparent": true
     },
     {
       "datasource": {
@@ -729,14 +811,13 @@
         "type": "victoriametrics-metrics-datasource",
         "uid": "deltafi-vm-metricsql-datasource"
       },
-      "description": "",
       "fieldConfig": {
         "defaults": {
           "color": {
             "mode": "palette-classic"
           },
           "custom": {
-            "axisBorderShow": false,
+            "axisBorderShow": true,
             "axisCenteredZero": false,
             "axisColorMode": "text",
             "axisLabel": "",
@@ -759,6 +840,7 @@
               "type": "linear"
             },
             "showPoints": "never",
+            "showValues": false,
             "spanNulls": false,
             "stacking": {
               "group": "A",
@@ -774,7 +856,7 @@
             "steps": [
               {
                 "color": "green",
-                "value": null
+                "value": 0
               },
               {
                 "color": "red",
@@ -788,25 +870,31 @@
       },
       "gridPos": {
         "h": 6,
-        "w": 12,
-        "x": 12,
-        "y": 13
+        "w": 24,
+        "x": 0,
+        "y": 36
       },
       "id": 84,
       "interval": "1m",
       "maxDataPoints": 100,
       "options": {
         "legend": {
-          "calcs": [],
-          "displayMode": "list",
+          "calcs": [
+            "lastNotNull",
+            "max"
+          ],
+          "displayMode": "table",
           "placement": "right",
-          "showLegend": false
+          "showLegend": true,
+          "width": 500
         },
         "tooltip": {
+          "hideZeros": false,
           "mode": "multi",
           "sort": "desc"
         }
       },
+      "pluginVersion": "12.4.3",
       "targets": [
         {
           "datasource": {
@@ -836,28 +924,27 @@
             "uid": "deltafi-vm-metricsql-datasource"
           },
           "expr": "sum by (source) (sum_over_time({__name__=\"stats_counts.action_execution_time_ms\"}[$__interval])) / sum by (source) (sum_over_time({__name__=\"stats_counts.action_execution\"}[$__interval]))",
-          "hide": false,
           "interval": "1m",
           "legendFormat": "{{source}}",
           "refId": "C"
         }
       ],
       "title": "Action Execution Latency (Average Action Execution Time)",
-      "type": "timeseries"
+      "type": "timeseries",
+      "transparent": true
     },
     {
       "datasource": {
         "type": "victoriametrics-metrics-datasource",
         "uid": "deltafi-vm-metricsql-datasource"
       },
-      "description": "",
       "fieldConfig": {
         "defaults": {
           "color": {
             "mode": "palette-classic"
           },
           "custom": {
-            "axisBorderShow": false,
+            "axisBorderShow": true,
             "axisCenteredZero": false,
             "axisColorMode": "text",
             "axisLabel": "",
@@ -880,6 +967,7 @@
               "type": "linear"
             },
             "showPoints": "never",
+            "showValues": false,
             "spanNulls": false,
             "stacking": {
               "group": "A",
@@ -896,7 +984,7 @@
             "steps": [
               {
                 "color": "green",
-                "value": null
+                "value": 0
               },
               {
                 "color": "red",
@@ -933,25 +1021,30 @@
         ]
       },
       "gridPos": {
-        "h": 9,
-        "w": 12,
+        "h": 4,
+        "w": 24,
         "x": 0,
-        "y": 19
+        "y": 43
       },
       "id": 78,
       "options": {
         "legend": {
-          "calcs": [],
-          "displayMode": "list",
-          "placement": "bottom",
-          "showLegend": true
+          "calcs": [
+            "lastNotNull",
+            "max"
+          ],
+          "displayMode": "table",
+          "placement": "right",
+          "showLegend": true,
+          "width": 500
         },
         "tooltip": {
+          "hideZeros": false,
           "mode": "multi",
           "sort": "none"
         }
       },
-      "pluginVersion": "8.5.3",
+      "pluginVersion": "12.4.3",
       "targets": [
         {
           "datasource": {
@@ -959,7 +1052,6 @@
             "uid": "deltafi-vm-metricsql-datasource"
           },
           "expr": "max({__name__=~\"gauge.node.memory.limit\"})",
-          "hide": false,
           "legendFormat": "limit",
           "refId": "B"
         },
@@ -969,27 +1061,26 @@
             "uid": "deltafi-vm-metricsql-datasource"
           },
           "expr": "{__name__=~\"gauge.node.memory.usage\"}",
-          "hide": false,
           "legendFormat": "{{hostname}}",
           "refId": "A"
         }
       ],
       "title": "Node RAM utilization over time",
-      "type": "timeseries"
+      "type": "timeseries",
+      "transparent": true
     },
     {
       "datasource": {
         "type": "victoriametrics-metrics-datasource",
         "uid": "deltafi-vm-metricsql-datasource"
       },
-      "description": "",
       "fieldConfig": {
         "defaults": {
           "color": {
             "mode": "palette-classic"
           },
           "custom": {
-            "axisBorderShow": false,
+            "axisBorderShow": true,
             "axisCenteredZero": false,
             "axisColorMode": "text",
             "axisLabel": "",
@@ -1012,6 +1103,7 @@
               "type": "linear"
             },
             "showPoints": "never",
+            "showValues": false,
             "spanNulls": false,
             "stacking": {
               "group": "A",
@@ -1028,7 +1120,7 @@
             "steps": [
               {
                 "color": "green",
-                "value": null
+                "value": 0
               },
               {
                 "color": "red",
@@ -1065,25 +1157,30 @@
         ]
       },
       "gridPos": {
-        "h": 9,
-        "w": 12,
-        "x": 12,
-        "y": 19
+        "h": 4,
+        "w": 24,
+        "x": 0,
+        "y": 61
       },
       "id": 77,
       "options": {
         "legend": {
-          "calcs": [],
-          "displayMode": "list",
-          "placement": "bottom",
-          "showLegend": true
+          "calcs": [
+            "lastNotNull",
+            "max"
+          ],
+          "displayMode": "table",
+          "placement": "right",
+          "showLegend": true,
+          "width": 500
         },
         "tooltip": {
+          "hideZeros": false,
           "mode": "multi",
           "sort": "desc"
         }
       },
-      "pluginVersion": "8.5.3",
+      "pluginVersion": "12.4.3",
       "targets": [
         {
           "datasource": {
@@ -1091,7 +1188,6 @@
             "uid": "deltafi-vm-metricsql-datasource"
           },
           "expr": "max({__name__=~\"gauge.node.cpu.limit\"})",
-          "hide": false,
           "legendFormat": "limit",
           "refId": "Limit"
         },
@@ -1101,27 +1197,26 @@
             "uid": "deltafi-vm-metricsql-datasource"
           },
           "expr": "{__name__=~\"gauge.node.cpu.usage\"}",
-          "hide": false,
           "legendFormat": "{{hostname}}",
           "refId": "A"
         }
       ],
       "title": "Node CPU utilization over time",
-      "type": "timeseries"
+      "type": "timeseries",
+      "transparent": true
     },
     {
       "datasource": {
         "type": "victoriametrics-metrics-datasource",
         "uid": "deltafi-vm-metricsql-datasource"
       },
-      "description": "",
       "fieldConfig": {
         "defaults": {
           "color": {
             "mode": "palette-classic"
           },
           "custom": {
-            "axisBorderShow": false,
+            "axisBorderShow": true,
             "axisCenteredZero": false,
             "axisColorMode": "text",
             "axisLabel": "",
@@ -1144,6 +1239,7 @@
               "type": "linear"
             },
             "showPoints": "never",
+            "showValues": false,
             "spanNulls": false,
             "stacking": {
               "group": "A",
@@ -1160,7 +1256,7 @@
             "steps": [
               {
                 "color": "green",
-                "value": null
+                "value": 0
               },
               {
                 "color": "red",
@@ -1198,27 +1294,30 @@
       },
       "gridPos": {
         "h": 12,
-        "w": 12,
+        "w": 24,
         "x": 0,
-        "y": 28
+        "y": 48
       },
       "id": 80,
       "interval": "10s",
       "options": {
         "legend": {
           "calcs": [
-            "lastNotNull"
+            "lastNotNull",
+            "max"
           ],
           "displayMode": "table",
           "placement": "right",
-          "showLegend": true
+          "showLegend": true,
+          "width": 500
         },
         "tooltip": {
+          "hideZeros": false,
           "mode": "multi",
           "sort": "desc"
         }
       },
-      "pluginVersion": "8.5.3",
+      "pluginVersion": "12.4.3",
       "targets": [
         {
           "datasource": {
@@ -1226,27 +1325,26 @@
             "uid": "deltafi-vm-metricsql-datasource"
           },
           "expr": "sum by (app) ({__name__=~\"gauge.app.memory\"})",
-          "hide": false,
           "legendFormat": "{{app}}",
           "refId": "B"
         }
       ],
       "title": "App RAM utilization over time",
-      "type": "timeseries"
+      "type": "timeseries",
+      "transparent": true
     },
     {
       "datasource": {
         "type": "victoriametrics-metrics-datasource",
         "uid": "deltafi-vm-metricsql-datasource"
       },
-      "description": "",
       "fieldConfig": {
         "defaults": {
           "color": {
             "mode": "palette-classic"
           },
           "custom": {
-            "axisBorderShow": false,
+            "axisBorderShow": true,
             "axisCenteredZero": false,
             "axisColorMode": "text",
             "axisLabel": "",
@@ -1269,6 +1367,7 @@
               "type": "linear"
             },
             "showPoints": "never",
+            "showValues": false,
             "spanNulls": false,
             "stacking": {
               "group": "A",
@@ -1285,7 +1384,7 @@
             "steps": [
               {
                 "color": "green",
-                "value": null
+                "value": 0
               },
               {
                 "color": "red",
@@ -1323,27 +1422,30 @@
       },
       "gridPos": {
         "h": 12,
-        "w": 12,
-        "x": 12,
-        "y": 28
+        "w": 24,
+        "x": 0,
+        "y": 66
       },
       "id": 81,
       "interval": "10s",
       "options": {
         "legend": {
           "calcs": [
-            "lastNotNull"
+            "lastNotNull",
+            "max"
           ],
           "displayMode": "table",
           "placement": "right",
-          "showLegend": true
+          "showLegend": true,
+          "width": 500
         },
         "tooltip": {
+          "hideZeros": false,
           "mode": "multi",
           "sort": "desc"
         }
       },
-      "pluginVersion": "8.5.3",
+      "pluginVersion": "12.4.3",
       "targets": [
         {
           "datasource": {
@@ -1351,20 +1453,19 @@
             "uid": "deltafi-vm-metricsql-datasource"
           },
           "expr": "sum by (app) ({__name__=~\"gauge.app.cpu\"})",
-          "hide": false,
           "legendFormat": "{{app}}",
           "refId": "B"
         }
       ],
       "title": "App CPU utilization over time",
-      "type": "timeseries"
+      "type": "timeseries",
+      "transparent": true
     },
     {
       "datasource": {
         "type": "victoriametrics-metrics-datasource",
         "uid": "deltafi-vm-metricsql-datasource"
       },
-      "description": "",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -1394,6 +1495,7 @@
               "type": "linear"
             },
             "showPoints": "never",
+            "showValues": false,
             "spanNulls": false,
             "stacking": {
               "group": "A",
@@ -1410,7 +1512,7 @@
             "steps": [
               {
                 "color": "green",
-                "value": null
+                "value": 0
               },
               {
                 "color": "red",
@@ -1450,26 +1552,28 @@
         "h": 6,
         "w": 9,
         "x": 0,
-        "y": 40
+        "y": 78
       },
-      "hideTimeOverride": true,
       "id": 345,
       "interval": "10s",
       "options": {
         "legend": {
           "calcs": [
-            "lastNotNull"
+            "lastNotNull",
+            "max"
           ],
           "displayMode": "list",
           "placement": "right",
-          "showLegend": false
+          "showLegend": false,
+          "width": 500
         },
         "tooltip": {
+          "hideZeros": false,
           "mode": "multi",
           "sort": "desc"
         }
       },
-      "pluginVersion": "8.5.3",
+      "pluginVersion": "12.4.3",
       "targets": [
         {
           "datasource": {
@@ -1477,7 +1581,6 @@
             "uid": "deltafi-vm-metricsql-datasource"
           },
           "expr": "sort_desc(sum by (namespace) ({__name__=~\"gauge.app.memory\", namespace!=\"\"}))",
-          "hide": false,
           "legendFormat": "{{namespace}}",
           "refId": "B"
         }
@@ -1490,7 +1593,6 @@
         "type": "datasource",
         "uid": "-- Dashboard --"
       },
-      "description": "",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -1529,7 +1631,7 @@
         "h": 6,
         "w": 3,
         "x": 9,
-        "y": 40
+        "y": 78
       },
       "id": 344,
       "interval": "10s",
@@ -1538,7 +1640,11 @@
         "legend": {
           "displayMode": "list",
           "placement": "bottom",
-          "showLegend": false
+          "showLegend": false,
+          "calcs": [
+            "lastNotNull",
+            "max"
+          ]
         },
         "pieType": "donut",
         "reduceOptions": {
@@ -1548,12 +1654,14 @@
           "fields": "",
           "values": false
         },
+        "sort": "desc",
         "tooltip": {
+          "hideZeros": false,
           "mode": "multi",
           "sort": "none"
         }
       },
-      "pluginVersion": "8.5.3",
+      "pluginVersion": "12.4.3",
       "targets": [
         {
           "datasource": {
@@ -1564,6 +1672,7 @@
           "refId": "A"
         }
       ],
+      "title": "",
       "transparent": true,
       "type": "piechart"
     },
@@ -1572,7 +1681,6 @@
         "type": "datasource",
         "uid": "-- Dashboard --"
       },
-      "description": "",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -1611,7 +1719,7 @@
         "h": 6,
         "w": 3,
         "x": 12,
-        "y": 40
+        "y": 78
       },
       "id": 347,
       "interval": "10s",
@@ -1620,7 +1728,11 @@
         "legend": {
           "displayMode": "list",
           "placement": "bottom",
-          "showLegend": false
+          "showLegend": false,
+          "calcs": [
+            "lastNotNull",
+            "max"
+          ]
         },
         "pieType": "donut",
         "reduceOptions": {
@@ -1630,12 +1742,14 @@
           "fields": "",
           "values": false
         },
+        "sort": "desc",
         "tooltip": {
+          "hideZeros": false,
           "mode": "multi",
           "sort": "none"
         }
       },
-      "pluginVersion": "8.5.3",
+      "pluginVersion": "12.4.3",
       "targets": [
         {
           "datasource": {
@@ -1646,6 +1760,7 @@
           "refId": "A"
         }
       ],
+      "title": "",
       "transparent": true,
       "type": "piechart"
     },
@@ -1654,7 +1769,6 @@
         "type": "victoriametrics-metrics-datasource",
         "uid": "deltafi-vm-metricsql-datasource"
       },
-      "description": "",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -1684,6 +1798,7 @@
               "type": "linear"
             },
             "showPoints": "never",
+            "showValues": false,
             "spanNulls": false,
             "stacking": {
               "group": "A",
@@ -1700,7 +1815,7 @@
             "steps": [
               {
                 "color": "green",
-                "value": null
+                "value": 0
               },
               {
                 "color": "red",
@@ -1740,26 +1855,28 @@
         "h": 6,
         "w": 9,
         "x": 15,
-        "y": 40
+        "y": 78
       },
-      "hideTimeOverride": true,
       "id": 346,
       "interval": "10s",
       "options": {
         "legend": {
           "calcs": [
-            "lastNotNull"
+            "lastNotNull",
+            "max"
           ],
           "displayMode": "list",
           "placement": "right",
-          "showLegend": false
+          "showLegend": false,
+          "width": 500
         },
         "tooltip": {
+          "hideZeros": false,
           "mode": "multi",
           "sort": "desc"
         }
       },
-      "pluginVersion": "8.5.3",
+      "pluginVersion": "12.4.3",
       "targets": [
         {
           "datasource": {
@@ -1767,7 +1884,6 @@
             "uid": "deltafi-vm-metricsql-datasource"
           },
           "expr": "sort_desc(sum by (namespace) ({__name__=~\"gauge.app.cpu\", namespace!=\"\"}))",
-          "hide": false,
           "legendFormat": "{{namespace}}",
           "refId": "B"
         }
@@ -1780,7 +1896,6 @@
         "type": "victoriametrics-metrics-datasource",
         "uid": "deltafi-vm-metricsql-datasource"
       },
-      "description": "",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -1810,6 +1925,7 @@
               "type": "linear"
             },
             "showPoints": "never",
+            "showValues": false,
             "spanNulls": false,
             "stacking": {
               "group": "A",
@@ -1826,7 +1942,7 @@
             "steps": [
               {
                 "color": "green",
-                "value": null
+                "value": 0
               },
               {
                 "color": "red",
@@ -1842,22 +1958,26 @@
         "h": 12,
         "w": 12,
         "x": 0,
-        "y": 46
+        "y": 84
       },
       "id": 20,
       "options": {
         "legend": {
-          "calcs": [],
+          "calcs": [
+            "lastNotNull",
+            "max"
+          ],
           "displayMode": "list",
           "placement": "bottom",
           "showLegend": true
         },
         "tooltip": {
+          "hideZeros": false,
           "mode": "single",
           "sort": "none"
         }
       },
-      "pluginVersion": "8.5.3",
+      "pluginVersion": "12.4.3",
       "targets": [
         {
           "datasource": {
@@ -1865,7 +1985,6 @@
             "uid": "deltafi-vm-metricsql-datasource"
           },
           "expr": "{__name__=~\"gauge.node.disk.usage\"}",
-          "hide": false,
           "legendFormat": "{{hostname}} {{service}}",
           "refId": "A"
         }
@@ -1878,7 +1997,6 @@
         "type": "victoriametrics-metrics-datasource",
         "uid": "deltafi-vm-metricsql-datasource"
       },
-      "description": "",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -1908,6 +2026,7 @@
               "type": "linear"
             },
             "showPoints": "never",
+            "showValues": false,
             "spanNulls": false,
             "stacking": {
               "group": "A",
@@ -1924,7 +2043,7 @@
             "steps": [
               {
                 "color": "green",
-                "value": null
+                "value": 0
               },
               {
                 "color": "red",
@@ -1940,22 +2059,27 @@
         "h": 6,
         "w": 12,
         "x": 12,
-        "y": 46
+        "y": 84
       },
       "id": 45,
       "options": {
         "legend": {
-          "calcs": [],
+          "calcs": [
+            "lastNotNull",
+            "max"
+          ],
           "displayMode": "list",
           "placement": "right",
-          "showLegend": true
+          "showLegend": true,
+          "width": 500
         },
         "tooltip": {
+          "hideZeros": false,
           "mode": "multi",
           "sort": "desc"
         }
       },
-      "pluginVersion": "8.5.3",
+      "pluginVersion": "12.4.3",
       "targets": [
         {
           "datasource": {
@@ -1963,7 +2087,6 @@
             "uid": "deltafi-vm-metricsql-datasource"
           },
           "expr": "{__name__=\"stats_counts.deleted.bytes\"}",
-          "hide": false,
           "legendFormat": "{{policy}}",
           "refId": "Deleted Bytes"
         }
@@ -1976,7 +2099,6 @@
         "type": "victoriametrics-metrics-datasource",
         "uid": "deltafi-vm-metricsql-datasource"
       },
-      "description": "",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -2006,6 +2128,7 @@
               "type": "linear"
             },
             "showPoints": "never",
+            "showValues": false,
             "spanNulls": false,
             "stacking": {
               "group": "A",
@@ -2023,7 +2146,7 @@
             "steps": [
               {
                 "color": "green",
-                "value": null
+                "value": 0
               }
             ]
           },
@@ -2035,22 +2158,27 @@
         "h": 6,
         "w": 12,
         "x": 12,
-        "y": 52
+        "y": 90
       },
       "id": 44,
       "options": {
         "legend": {
-          "calcs": [],
+          "calcs": [
+            "lastNotNull",
+            "max"
+          ],
           "displayMode": "list",
           "placement": "right",
-          "showLegend": true
+          "showLegend": true,
+          "width": 500
         },
         "tooltip": {
+          "hideZeros": false,
           "mode": "multi",
           "sort": "desc"
         }
       },
-      "pluginVersion": "8.5.3",
+      "pluginVersion": "12.4.3",
       "targets": [
         {
           "datasource": {
@@ -2058,7 +2186,6 @@
             "uid": "deltafi-vm-metricsql-datasource"
           },
           "expr": "{__name__=\"stats_counts.deleted.files\"}",
-          "hide": false,
           "legendFormat": "{{policy}}",
           "refId": "Deleted Files"
         }
@@ -2067,15 +2194,15 @@
       "type": "timeseries"
     },
     {
-      "datasource": {
-        "type": "victoriametrics-metrics-datasource",
-        "uid": "deltafi-vm-metricsql-datasource"
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
       },
       "gridPos": {
         "h": 3,
         "w": 24,
         "x": 0,
-        "y": 58
+        "y": 96
       },
       "id": 348,
       "options": {
@@ -2087,921 +2214,1112 @@
         "content": "<hr/>\n<h1><center>Processing Node Breakdown</center></h1>",
         "mode": "html"
       },
-      "pluginVersion": "11.2.2+security-01",
+      "pluginVersion": "12.4.3",
+      "title": "",
       "transparent": true,
       "type": "text"
     },
     {
-      "collapsed": false,
+      "collapsed": true,
       "gridPos": {
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 61
+        "y": 99
       },
       "id": 85,
-      "panels": [],
+      "panels": [
+        {
+          "datasource": {
+            "default": false,
+            "type": "victoriametrics-metrics-datasource",
+            "uid": "deltafi-vm-metricsql-datasource"
+          },
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "thresholds"
+              },
+              "mappings": [],
+              "min": 0,
+              "thresholds": {
+                "mode": "percentage",
+                "steps": [
+                  {
+                    "color": "dark-green",
+                    "value": 0
+                  },
+                  {
+                    "color": "semi-dark-green",
+                    "value": 60
+                  },
+                  {
+                    "color": "yellow",
+                    "value": 70
+                  },
+                  {
+                    "color": "orange",
+                    "value": 80
+                  },
+                  {
+                    "color": "red",
+                    "value": 90
+                  },
+                  {
+                    "color": "dark-red",
+                    "value": 95
+                  }
+                ]
+              },
+              "unit": "decbytes"
+            },
+            "overrides": [
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "limit"
+                },
+                "properties": [
+                  {
+                    "id": "color",
+                    "value": {
+                      "fixedColor": "dark-red",
+                      "mode": "fixed"
+                    }
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "trend"
+                },
+                "properties": [
+                  {
+                    "id": "color",
+                    "value": {
+                      "fixedColor": "super-light-purple",
+                      "mode": "fixed"
+                    }
+                  }
+                ]
+              }
+            ]
+          },
+          "gridPos": {
+            "h": 9,
+            "w": 3,
+            "x": 0,
+            "y": 91
+          },
+          "id": 250,
+          "maxDataPoints": 2,
+          "options": {
+            "minVizHeight": 75,
+            "minVizWidth": 75,
+            "orientation": "auto",
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "fields": "/^Total RAM$/",
+              "values": false
+            },
+            "showThresholdLabels": false,
+            "showThresholdMarkers": true,
+            "sizing": "auto"
+          },
+          "pluginVersion": "12.4.3",
+          "targets": [
+            {
+              "datasource": {
+                "type": "victoriametrics-metrics-datasource",
+                "uid": "deltafi-vm-metricsql-datasource"
+              },
+              "expr": "max({__name__=~\"gauge.node.memory.limit\", hostname=~\"$nodes\"})",
+              "legendFormat": "limit",
+              "refId": "B"
+            },
+            {
+              "datasource": {
+                "type": "victoriametrics-metrics-datasource",
+                "uid": "deltafi-vm-metricsql-datasource"
+              },
+              "expr": "{__name__=~\"gauge.node.memory.usage\", hostname=~\"$nodes\"}",
+              "legendFormat": "Total RAM",
+              "refId": "A"
+            }
+          ],
+          "title": "",
+          "transparent": true,
+          "type": "gauge"
+        },
+        {
+          "datasource": {
+            "default": false,
+            "type": "victoriametrics-metrics-datasource",
+            "uid": "deltafi-vm-metricsql-datasource"
+          },
+          "description": "- Limit is physical RAM on the node\n- \"hostname\" is RAM usage as reported by host OS\n- App RAM is RAM usage as reported by clustermonitor (kubernetes)",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "continuous-GrYlRd"
+              },
+              "custom": {
+                "axisBorderShow": false,
+                "axisCenteredZero": false,
+                "axisColorMode": "text",
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "barWidthFactor": 0.6,
+                "drawStyle": "line",
+                "fillOpacity": 18,
+                "gradientMode": "scheme",
+                "hideFrom": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                },
+                "insertNulls": false,
+                "lineInterpolation": "linear",
+                "lineWidth": 1,
+                "pointSize": 5,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "never",
+                "showValues": false,
+                "spanNulls": false,
+                "stacking": {
+                  "group": "A",
+                  "mode": "none"
+                },
+                "thresholdsStyle": {
+                  "mode": "off"
+                }
+              },
+              "mappings": [],
+              "min": 0,
+              "thresholds": {
+                "mode": "percentage",
+                "steps": [
+                  {
+                    "color": "dark-green",
+                    "value": 0
+                  },
+                  {
+                    "color": "green",
+                    "value": 50
+                  },
+                  {
+                    "color": "yellow",
+                    "value": 60
+                  },
+                  {
+                    "color": "orange",
+                    "value": 70
+                  },
+                  {
+                    "color": "red",
+                    "value": 80
+                  },
+                  {
+                    "color": "dark-red",
+                    "value": 90
+                  }
+                ]
+              },
+              "unit": "decbytes"
+            },
+            "overrides": [
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Limit"
+                },
+                "properties": [
+                  {
+                    "id": "color",
+                    "value": {
+                      "fixedColor": "dark-red",
+                      "mode": "fixed"
+                    }
+                  },
+                  {
+                    "id": "custom.gradientMode",
+                    "value": "none"
+                  },
+                  {
+                    "id": "custom.fillOpacity",
+                    "value": 0
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Trend"
+                },
+                "properties": [
+                  {
+                    "id": "custom.fillOpacity",
+                    "value": 0
+                  },
+                  {
+                    "id": "custom.gradientMode",
+                    "value": "none"
+                  },
+                  {
+                    "id": "color",
+                    "value": {
+                      "fixedColor": "super-light-purple",
+                      "mode": "fixed"
+                    }
+                  },
+                  {
+                    "id": "custom.lineStyle",
+                    "value": {
+                      "dash": [
+                        0,
+                        3,
+                        3
+                      ],
+                      "fill": "dot"
+                    }
+                  }
+                ]
+              }
+            ]
+          },
+          "gridPos": {
+            "h": 9,
+            "w": 9,
+            "x": 3,
+            "y": 91
+          },
+          "id": 372,
+          "options": {
+            "legend": {
+              "calcs": [
+                "lastNotNull",
+                "max"
+              ],
+              "displayMode": "list",
+              "placement": "bottom",
+              "showLegend": false
+            },
+            "tooltip": {
+              "hideZeros": false,
+              "mode": "multi",
+              "sort": "none"
+            }
+          },
+          "pluginVersion": "12.4.3",
+          "targets": [
+            {
+              "datasource": {
+                "type": "victoriametrics-metrics-datasource",
+                "uid": "deltafi-vm-metricsql-datasource"
+              },
+              "expr": "max({__name__=~\"gauge.node.memory.limit\", hostname=~\"$nodes\"})",
+              "legendFormat": "Limit",
+              "refId": "B"
+            },
+            {
+              "datasource": {
+                "type": "victoriametrics-metrics-datasource",
+                "uid": "deltafi-vm-metricsql-datasource"
+              },
+              "expr": "{__name__=~\"gauge.node.memory.usage\", hostname=~\"$nodes\"}",
+              "legendFormat": "Total RAM",
+              "refId": "A"
+            },
+            {
+              "datasource": {
+                "type": "victoriametrics-metrics-datasource",
+                "uid": "deltafi-vm-metricsql-datasource"
+              },
+              "expr": "sum({__name__=\"gauge.app.memory\", node=~\"$nodes\"}) * 1000000",
+              "legendFormat": "App RAM",
+              "refId": "C"
+            },
+            {
+              "datasource": {
+                "type": "victoriametrics-metrics-datasource",
+                "uid": "deltafi-vm-metricsql-datasource"
+              },
+              "expr": "avg_over_time({__name__=~\"gauge.node.memory.usage\", hostname=~\"$nodes\"}[200s])",
+              "legendFormat": "Trend",
+              "refId": "trend"
+            }
+          ],
+          "title": "Memory utilization over time ($nodes)",
+          "type": "timeseries"
+        },
+        {
+          "datasource": {
+            "default": false,
+            "type": "victoriametrics-metrics-datasource",
+            "uid": "deltafi-vm-metricsql-datasource"
+          },
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisBorderShow": false,
+                "axisCenteredZero": false,
+                "axisColorMode": "text",
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "barWidthFactor": 0.6,
+                "drawStyle": "line",
+                "fillOpacity": 35,
+                "gradientMode": "opacity",
+                "hideFrom": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                },
+                "insertNulls": false,
+                "lineInterpolation": "linear",
+                "lineWidth": 1,
+                "pointSize": 5,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "never",
+                "showValues": false,
+                "spanNulls": false,
+                "stacking": {
+                  "group": "A",
+                  "mode": "none"
+                },
+                "thresholdsStyle": {
+                  "mode": "off"
+                }
+              },
+              "mappings": [],
+              "min": 0,
+              "thresholds": {
+                "mode": "percentage",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": 0
+                  },
+                  {
+                    "color": "red",
+                    "value": 80
+                  }
+                ]
+              },
+              "unit": "decmbytes"
+            },
+            "overrides": [
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "limit"
+                },
+                "properties": [
+                  {
+                    "id": "color",
+                    "value": {
+                      "fixedColor": "dark-red",
+                      "mode": "fixed"
+                    }
+                  },
+                  {
+                    "id": "custom.gradientMode",
+                    "value": "none"
+                  },
+                  {
+                    "id": "custom.fillOpacity",
+                    "value": 0
+                  }
+                ]
+              }
+            ]
+          },
+          "gridPos": {
+            "h": 9,
+            "w": 12,
+            "x": 12,
+            "y": 91
+          },
+          "id": 156,
+          "interval": "10s",
+          "options": {
+            "legend": {
+              "calcs": [
+                "lastNotNull",
+                "max"
+              ],
+              "displayMode": "table",
+              "placement": "right",
+              "showLegend": true,
+              "width": 500
+            },
+            "tooltip": {
+              "hideZeros": false,
+              "mode": "multi",
+              "sort": "desc"
+            }
+          },
+          "pluginVersion": "12.4.3",
+          "targets": [
+            {
+              "datasource": {
+                "type": "victoriametrics-metrics-datasource",
+                "uid": "deltafi-vm-metricsql-datasource"
+              },
+              "expr": "sum by (app) ({__name__=\"gauge.app.memory\", node=~\"$nodes\"})",
+              "legendFormat": "{{app}}",
+              "refId": "B"
+            }
+          ],
+          "title": "App RAM utilization over time ($nodes)",
+          "type": "timeseries"
+        },
+        {
+          "datasource": {
+            "default": false,
+            "type": "victoriametrics-metrics-datasource",
+            "uid": "deltafi-vm-metricsql-datasource"
+          },
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "thresholds"
+              },
+              "mappings": [],
+              "min": 0,
+              "thresholds": {
+                "mode": "percentage",
+                "steps": [
+                  {
+                    "color": "dark-green",
+                    "value": 0
+                  },
+                  {
+                    "color": "semi-dark-green",
+                    "value": 60
+                  },
+                  {
+                    "color": "yellow",
+                    "value": 70
+                  },
+                  {
+                    "color": "orange",
+                    "value": 80
+                  },
+                  {
+                    "color": "red",
+                    "value": 90
+                  },
+                  {
+                    "color": "dark-red",
+                    "value": 95
+                  }
+                ]
+              },
+              "unit": "cores"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 9,
+            "w": 3,
+            "x": 0,
+            "y": 100
+          },
+          "id": 387,
+          "maxDataPoints": 2,
+          "options": {
+            "minVizHeight": 75,
+            "minVizWidth": 75,
+            "orientation": "auto",
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "fields": "/^Total CPU$/",
+              "values": false
+            },
+            "showThresholdLabels": false,
+            "showThresholdMarkers": true,
+            "sizing": "auto"
+          },
+          "pluginVersion": "12.4.3",
+          "targets": [
+            {
+              "datasource": {
+                "type": "victoriametrics-metrics-datasource",
+                "uid": "deltafi-vm-metricsql-datasource"
+              },
+              "expr": "max({__name__=~\"gauge.node.cpu.limit\", hostname=~\"$nodes\"}) * 0.001",
+              "legendFormat": "limit",
+              "refId": "B"
+            },
+            {
+              "datasource": {
+                "type": "victoriametrics-metrics-datasource",
+                "uid": "deltafi-vm-metricsql-datasource"
+              },
+              "expr": "{__name__=~\"gauge.node.cpu.usage\", hostname=~\"$nodes\"} * 0.001",
+              "legendFormat": "Total CPU",
+              "refId": "A"
+            }
+          ],
+          "title": "",
+          "transparent": true,
+          "type": "gauge"
+        },
+        {
+          "datasource": {
+            "default": false,
+            "type": "victoriametrics-metrics-datasource",
+            "uid": "deltafi-vm-metricsql-datasource"
+          },
+          "description": "- Limit is physical RAM on the node\n- \"hostname\" is CPU usage as reported by host OS\n- App CPU is CPU usage as reported by clustermonitor (kubernetes)\n- IOWait is CPU usage as reported by Host OS",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "continuous-GrYlRd"
+              },
+              "custom": {
+                "axisBorderShow": false,
+                "axisCenteredZero": false,
+                "axisColorMode": "text",
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "barWidthFactor": 0.6,
+                "drawStyle": "line",
+                "fillOpacity": 35,
+                "gradientMode": "scheme",
+                "hideFrom": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                },
+                "insertNulls": false,
+                "lineInterpolation": "linear",
+                "lineWidth": 1,
+                "pointSize": 5,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "never",
+                "showValues": false,
+                "spanNulls": false,
+                "stacking": {
+                  "group": "A",
+                  "mode": "none"
+                },
+                "thresholdsStyle": {
+                  "mode": "off"
+                }
+              },
+              "mappings": [],
+              "min": 0,
+              "thresholds": {
+                "mode": "percentage",
+                "steps": [
+                  {
+                    "color": "dark-green",
+                    "value": 0
+                  },
+                  {
+                    "color": "green",
+                    "value": 50
+                  },
+                  {
+                    "color": "yellow",
+                    "value": 60
+                  },
+                  {
+                    "color": "orange",
+                    "value": 70
+                  },
+                  {
+                    "color": "red",
+                    "value": 80
+                  },
+                  {
+                    "color": "dark-red",
+                    "value": 90
+                  }
+                ]
+              },
+              "unit": "mCore"
+            },
+            "overrides": [
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Limit"
+                },
+                "properties": [
+                  {
+                    "id": "custom.gradientMode",
+                    "value": "none"
+                  },
+                  {
+                    "id": "custom.fillOpacity",
+                    "value": 0
+                  },
+                  {
+                    "id": "color",
+                    "value": {
+                      "fixedColor": "dark-red",
+                      "mode": "fixed"
+                    }
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Trend"
+                },
+                "properties": [
+                  {
+                    "id": "custom.lineStyle",
+                    "value": {
+                      "dash": [
+                        0,
+                        3,
+                        3
+                      ],
+                      "fill": "dot"
+                    }
+                  },
+                  {
+                    "id": "color",
+                    "value": {
+                      "fixedColor": "super-light-purple",
+                      "mode": "fixed"
+                    }
+                  },
+                  {
+                    "id": "custom.gradientMode",
+                    "value": "none"
+                  },
+                  {
+                    "id": "custom.fillOpacity",
+                    "value": 0
+                  }
+                ]
+              }
+            ]
+          },
+          "gridPos": {
+            "h": 9,
+            "w": 9,
+            "x": 3,
+            "y": 100
+          },
+          "id": 343,
+          "options": {
+            "legend": {
+              "calcs": [
+                "lastNotNull",
+                "max"
+              ],
+              "displayMode": "list",
+              "placement": "bottom",
+              "showLegend": false
+            },
+            "tooltip": {
+              "hideZeros": false,
+              "mode": "multi",
+              "sort": "none"
+            }
+          },
+          "pluginVersion": "12.4.3",
+          "targets": [
+            {
+              "datasource": {
+                "type": "victoriametrics-metrics-datasource",
+                "uid": "deltafi-vm-metricsql-datasource"
+              },
+              "expr": "max({__name__=~\"gauge.node.cpu.limit\", hostname=~\"$nodes\"})",
+              "legendFormat": "Limit",
+              "refId": "Limit"
+            },
+            {
+              "datasource": {
+                "type": "victoriametrics-metrics-datasource",
+                "uid": "deltafi-vm-metricsql-datasource"
+              },
+              "expr": "{__name__=~\"gauge.node.cpu.usage\", hostname=~\"$nodes\"}",
+              "legendFormat": "Total CPU",
+              "refId": "A"
+            },
+            {
+              "datasource": {
+                "type": "victoriametrics-metrics-datasource",
+                "uid": "deltafi-vm-metricsql-datasource"
+              },
+              "expr": "sum({__name__=\"gauge.app.cpu\", node=~\"$nodes\"})",
+              "legendFormat": "App CPU",
+              "refId": "C"
+            },
+            {
+              "datasource": {
+                "type": "victoriametrics-metrics-datasource",
+                "uid": "deltafi-vm-metricsql-datasource"
+              },
+              "expr": "{__name__=~\"gauge.node.cpu.iowait\", hostname=~\"$nodes\"}",
+              "legendFormat": "IO Wait",
+              "refId": "B"
+            },
+            {
+              "datasource": {
+                "type": "victoriametrics-metrics-datasource",
+                "uid": "deltafi-vm-metricsql-datasource"
+              },
+              "expr": "avg_over_time({__name__=~\"gauge.node.cpu.usage\", hostname=~\"$nodes\"}[100s])",
+              "legendFormat": "Trend",
+              "refId": "Trend"
+            }
+          ],
+          "title": "CPU utilization over time ($nodes)",
+          "type": "timeseries"
+        },
+        {
+          "datasource": {
+            "default": false,
+            "type": "victoriametrics-metrics-datasource",
+            "uid": "deltafi-vm-metricsql-datasource"
+          },
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisBorderShow": false,
+                "axisCenteredZero": false,
+                "axisColorMode": "text",
+                "axisGridShow": true,
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "barWidthFactor": 0.6,
+                "drawStyle": "line",
+                "fillOpacity": 35,
+                "gradientMode": "opacity",
+                "hideFrom": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                },
+                "insertNulls": false,
+                "lineInterpolation": "linear",
+                "lineWidth": 1,
+                "pointSize": 5,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "never",
+                "showValues": false,
+                "spanNulls": false,
+                "stacking": {
+                  "group": "A",
+                  "mode": "none"
+                },
+                "thresholdsStyle": {
+                  "mode": "off"
+                }
+              },
+              "mappings": [],
+              "min": 0,
+              "thresholds": {
+                "mode": "percentage",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": 0
+                  },
+                  {
+                    "color": "red",
+                    "value": 80
+                  }
+                ]
+              },
+              "unit": "mCore"
+            },
+            "overrides": [
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "limit"
+                },
+                "properties": [
+                  {
+                    "id": "color",
+                    "value": {
+                      "fixedColor": "dark-red",
+                      "mode": "fixed"
+                    }
+                  },
+                  {
+                    "id": "custom.gradientMode",
+                    "value": "none"
+                  },
+                  {
+                    "id": "custom.fillOpacity",
+                    "value": 0
+                  }
+                ]
+              }
+            ]
+          },
+          "gridPos": {
+            "h": 9,
+            "w": 12,
+            "x": 12,
+            "y": 100
+          },
+          "id": 180,
+          "interval": "10s",
+          "options": {
+            "legend": {
+              "calcs": [
+                "lastNotNull",
+                "max"
+              ],
+              "displayMode": "table",
+              "placement": "right",
+              "showLegend": true,
+              "width": 500
+            },
+            "tooltip": {
+              "hideZeros": false,
+              "mode": "multi",
+              "sort": "desc"
+            }
+          },
+          "pluginVersion": "12.4.3",
+          "targets": [
+            {
+              "datasource": {
+                "type": "victoriametrics-metrics-datasource",
+                "uid": "deltafi-vm-metricsql-datasource"
+              },
+              "expr": "{__name__=\"gauge.app.cpu\", node=~\"$nodes\"}",
+              "legendFormat": "{{app}}",
+              "refId": "B"
+            }
+          ],
+          "title": "App CPU utilization over time ($nodes)",
+          "type": "timeseries"
+        }
+      ],
       "repeat": "nodes",
-      "repeatDirection": "h",
       "title": "Performance on Node $nodes",
       "type": "row"
     },
     {
-      "datasource": {
-        "default": false,
-        "type": "victoriametrics-metrics-datasource",
-        "uid": "deltafi-vm-metricsql-datasource"
-      },
-      "description": "",
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "thresholds"
-          },
-          "mappings": [],
-          "min": 0,
-          "thresholds": {
-            "mode": "percentage",
-            "steps": [
-              {
-                "color": "dark-green",
-                "value": null
-              },
-              {
-                "color": "semi-dark-green",
-                "value": 60
-              },
-              {
-                "color": "yellow",
-                "value": 70
-              },
-              {
-                "color": "orange",
-                "value": 80
-              },
-              {
-                "color": "red",
-                "value": 90
-              },
-              {
-                "color": "dark-red",
-                "value": 95
-              }
-            ]
-          },
-          "unit": "decbytes"
-        },
-        "overrides": [
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "limit"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "dark-red",
-                  "mode": "fixed"
-                }
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "trend"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "super-light-purple",
-                  "mode": "fixed"
-                }
-              }
-            ]
-          }
-        ]
-      },
-      "gridPos": {
-        "h": 9,
-        "w": 3,
-        "x": 0,
-        "y": 62
-      },
-      "id": 250,
-      "maxDataPoints": 2,
-      "options": {
-        "minVizHeight": 75,
-        "minVizWidth": 75,
-        "orientation": "auto",
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": "/^Total RAM$/",
-          "values": false
-        },
-        "showThresholdLabels": false,
-        "showThresholdMarkers": true,
-        "sizing": "auto"
-      },
-      "pluginVersion": "11.2.2+security-01",
-      "targets": [
-        {
-          "datasource": {
-            "type": "victoriametrics-metrics-datasource",
-            "uid": "deltafi-vm-metricsql-datasource"
-          },
-          "expr": "max({__name__=~\"gauge.node.memory.limit\", hostname=~\"$nodes\"})",
-          "hide": false,
-          "legendFormat": "limit",
-          "refId": "B"
-        },
-        {
-          "datasource": {
-            "type": "victoriametrics-metrics-datasource",
-            "uid": "deltafi-vm-metricsql-datasource"
-          },
-          "expr": "{__name__=~\"gauge.node.memory.usage\", hostname=~\"$nodes\"}",
-          "hide": false,
-          "legendFormat": "Total RAM",
-          "refId": "A"
-        }
-      ],
+      "id": 700,
+      "type": "text",
       "transparent": true,
-      "type": "gauge"
-    },
-    {
-      "datasource": {
-        "default": false,
-        "type": "victoriametrics-metrics-datasource",
-        "uid": "deltafi-vm-metricsql-datasource"
-      },
-      "description": "- Limit is physical RAM on the node\n- \"hostname\" is RAM usage as reported by host OS\n- App RAM is RAM usage as reported by clustermonitor (kubernetes)",
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "continuous-GrYlRd"
-          },
-          "custom": {
-            "axisBorderShow": false,
-            "axisCenteredZero": false,
-            "axisColorMode": "text",
-            "axisLabel": "",
-            "axisPlacement": "auto",
-            "barAlignment": 0,
-            "barWidthFactor": 0.6,
-            "drawStyle": "line",
-            "fillOpacity": 18,
-            "gradientMode": "scheme",
-            "hideFrom": {
-              "legend": false,
-              "tooltip": false,
-              "viz": false
-            },
-            "insertNulls": false,
-            "lineInterpolation": "linear",
-            "lineWidth": 1,
-            "pointSize": 5,
-            "scaleDistribution": {
-              "type": "linear"
-            },
-            "showPoints": "never",
-            "spanNulls": false,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            },
-            "thresholdsStyle": {
-              "mode": "off"
-            }
-          },
-          "mappings": [],
-          "min": 0,
-          "thresholds": {
-            "mode": "percentage",
-            "steps": [
-              {
-                "color": "dark-green",
-                "value": null
-              },
-              {
-                "color": "green",
-                "value": 50
-              },
-              {
-                "color": "yellow",
-                "value": 60
-              },
-              {
-                "color": "orange",
-                "value": 70
-              },
-              {
-                "color": "red",
-                "value": 80
-              },
-              {
-                "color": "dark-red",
-                "value": 90
-              }
-            ]
-          },
-          "unit": "decbytes"
-        },
-        "overrides": [
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Limit"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "dark-red",
-                  "mode": "fixed"
-                }
-              },
-              {
-                "id": "custom.gradientMode",
-                "value": "none"
-              },
-              {
-                "id": "custom.fillOpacity",
-                "value": 0
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Trend"
-            },
-            "properties": [
-              {
-                "id": "custom.fillOpacity",
-                "value": 0
-              },
-              {
-                "id": "custom.gradientMode",
-                "value": "none"
-              },
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "super-light-purple",
-                  "mode": "fixed"
-                }
-              },
-              {
-                "id": "custom.lineStyle",
-                "value": {
-                  "dash": [
-                    0,
-                    3,
-                    3
-                  ],
-                  "fill": "dot"
-                }
-              }
-            ]
-          }
-        ]
-      },
+      "title": "",
       "gridPos": {
-        "h": 9,
-        "w": 9,
-        "x": 3,
-        "y": 62
-      },
-      "id": 372,
-      "options": {
-        "legend": {
-          "calcs": [],
-          "displayMode": "list",
-          "placement": "bottom",
-          "showLegend": false
-        },
-        "tooltip": {
-          "mode": "multi",
-          "sort": "none"
-        }
-      },
-      "pluginVersion": "8.5.3",
-      "targets": [
-        {
-          "datasource": {
-            "type": "victoriametrics-metrics-datasource",
-            "uid": "deltafi-vm-metricsql-datasource"
-          },
-          "expr": "max({__name__=~\"gauge.node.memory.limit\", hostname=~\"$nodes\"})",
-          "hide": false,
-          "legendFormat": "Limit",
-          "refId": "B"
-        },
-        {
-          "datasource": {
-            "type": "victoriametrics-metrics-datasource",
-            "uid": "deltafi-vm-metricsql-datasource"
-          },
-          "expr": "{__name__=~\"gauge.node.memory.usage\", hostname=~\"$nodes\"}",
-          "hide": false,
-          "legendFormat": "Total RAM",
-          "refId": "A"
-        },
-        {
-          "datasource": {
-            "type": "victoriametrics-metrics-datasource",
-            "uid": "deltafi-vm-metricsql-datasource"
-          },
-          "expr": "sum({__name__=\"gauge.app.memory\", node=~\"$nodes\"}) * 1000000",
-          "hide": false,
-          "legendFormat": "App RAM",
-          "refId": "C"
-        },
-        {
-          "datasource": {
-            "type": "victoriametrics-metrics-datasource",
-            "uid": "deltafi-vm-metricsql-datasource"
-          },
-          "expr": "avg_over_time({__name__=~\"gauge.node.memory.usage\", hostname=~\"$nodes\"}[200s])",
-          "hide": false,
-          "legendFormat": "Trend",
-          "refId": "trend"
-        }
-      ],
-      "title": "Memory utilization over time ($nodes)",
-      "type": "timeseries"
-    },
-    {
-      "datasource": {
-        "default": false,
-        "type": "victoriametrics-metrics-datasource",
-        "uid": "deltafi-vm-metricsql-datasource"
-      },
-      "description": "",
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "palette-classic"
-          },
-          "custom": {
-            "axisBorderShow": false,
-            "axisCenteredZero": false,
-            "axisColorMode": "text",
-            "axisLabel": "",
-            "axisPlacement": "auto",
-            "barAlignment": 0,
-            "barWidthFactor": 0.6,
-            "drawStyle": "line",
-            "fillOpacity": 35,
-            "gradientMode": "opacity",
-            "hideFrom": {
-              "legend": false,
-              "tooltip": false,
-              "viz": false
-            },
-            "insertNulls": false,
-            "lineInterpolation": "linear",
-            "lineWidth": 1,
-            "pointSize": 5,
-            "scaleDistribution": {
-              "type": "linear"
-            },
-            "showPoints": "never",
-            "spanNulls": false,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            },
-            "thresholdsStyle": {
-              "mode": "off"
-            }
-          },
-          "mappings": [],
-          "min": 0,
-          "thresholds": {
-            "mode": "percentage",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              },
-              {
-                "color": "red",
-                "value": 80
-              }
-            ]
-          },
-          "unit": "decmbytes"
-        },
-        "overrides": [
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "limit"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "dark-red",
-                  "mode": "fixed"
-                }
-              },
-              {
-                "id": "custom.gradientMode",
-                "value": "none"
-              },
-              {
-                "id": "custom.fillOpacity",
-                "value": 0
-              }
-            ]
-          }
-        ]
-      },
-      "gridPos": {
-        "h": 9,
-        "w": 12,
-        "x": 12,
-        "y": 62
-      },
-      "id": 156,
-      "interval": "10s",
-      "options": {
-        "legend": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "displayMode": "table",
-          "placement": "right",
-          "showLegend": true
-        },
-        "tooltip": {
-          "mode": "multi",
-          "sort": "desc"
-        }
-      },
-      "pluginVersion": "8.5.3",
-      "targets": [
-        {
-          "datasource": {
-            "type": "victoriametrics-metrics-datasource",
-            "uid": "deltafi-vm-metricsql-datasource"
-          },
-          "expr": "sum by (app) ({__name__=\"gauge.app.memory\", node=~\"$nodes\"})",
-          "hide": false,
-          "legendFormat": "{{app}}",
-          "refId": "B"
-        }
-      ],
-      "title": "App RAM utilization over time ($nodes)",
-      "type": "timeseries"
-    },
-    {
-      "datasource": {
-        "default": false,
-        "type": "victoriametrics-metrics-datasource",
-        "uid": "deltafi-vm-metricsql-datasource"
-      },
-      "description": "",
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "thresholds"
-          },
-          "mappings": [],
-          "min": 0,
-          "thresholds": {
-            "mode": "percentage",
-            "steps": [
-              {
-                "color": "dark-green",
-                "value": null
-              },
-              {
-                "color": "semi-dark-green",
-                "value": 60
-              },
-              {
-                "color": "yellow",
-                "value": 70
-              },
-              {
-                "color": "orange",
-                "value": 80
-              },
-              {
-                "color": "red",
-                "value": 90
-              },
-              {
-                "color": "dark-red",
-                "value": 95
-              }
-            ]
-          },
-          "unit": "cores"
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 9,
-        "w": 3,
+        "h": 1,
+        "w": 24,
         "x": 0,
-        "y": 71
+        "y": 7
       },
-      "id": 387,
-      "maxDataPoints": 2,
       "options": {
-        "minVizHeight": 75,
-        "minVizWidth": 75,
-        "orientation": "auto",
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": "/^Total CPU$/",
-          "values": false
-        },
-        "showThresholdLabels": false,
-        "showThresholdMarkers": true,
-        "sizing": "auto"
-      },
-      "pluginVersion": "11.2.2+security-01",
-      "targets": [
-        {
-          "datasource": {
-            "type": "victoriametrics-metrics-datasource",
-            "uid": "deltafi-vm-metricsql-datasource"
-          },
-          "expr": "max({__name__=~\"gauge.node.cpu.limit\", hostname=~\"$nodes\"}) * 0.001",
-          "hide": false,
-          "legendFormat": "limit",
-          "refId": "B"
-        },
-        {
-          "datasource": {
-            "type": "victoriametrics-metrics-datasource",
-            "uid": "deltafi-vm-metricsql-datasource"
-          },
-          "expr": "{__name__=~\"gauge.node.cpu.usage\", hostname=~\"$nodes\"} * 0.001",
-          "hide": false,
-          "legendFormat": "Total CPU",
-          "refId": "A"
+        "mode": "html",
+        "content": "<hr style=\"margin:0;border:0;border-top:1px solid rgba(127,127,127,0.35);\" />",
+        "code": {
+          "language": "plaintext",
+          "showLineNumbers": false,
+          "showMiniMap": false
         }
-      ],
+      }
+    },
+    {
+      "id": 701,
+      "type": "text",
       "transparent": true,
-      "type": "gauge"
+      "title": "",
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 14
+      },
+      "options": {
+        "mode": "html",
+        "content": "<hr style=\"margin:0;border:0;border-top:1px solid rgba(127,127,127,0.35);\" />",
+        "code": {
+          "language": "plaintext",
+          "showLineNumbers": false,
+          "showMiniMap": false
+        }
+      }
     },
     {
-      "datasource": {
-        "default": false,
-        "type": "victoriametrics-metrics-datasource",
-        "uid": "deltafi-vm-metricsql-datasource"
-      },
-      "description": "- Limit is physical RAM on the node\n- \"hostname\" is CPU usage as reported by host OS\n- App CPU is CPU usage as reported by clustermonitor (kubernetes)\n- IOWait is CPU usage as reported by Host OS",
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "continuous-GrYlRd"
-          },
-          "custom": {
-            "axisBorderShow": false,
-            "axisCenteredZero": false,
-            "axisColorMode": "text",
-            "axisLabel": "",
-            "axisPlacement": "auto",
-            "barAlignment": 0,
-            "barWidthFactor": 0.6,
-            "drawStyle": "line",
-            "fillOpacity": 35,
-            "gradientMode": "scheme",
-            "hideFrom": {
-              "legend": false,
-              "tooltip": false,
-              "viz": false
-            },
-            "insertNulls": false,
-            "lineInterpolation": "linear",
-            "lineWidth": 1,
-            "pointSize": 5,
-            "scaleDistribution": {
-              "type": "linear"
-            },
-            "showPoints": "never",
-            "spanNulls": false,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            },
-            "thresholdsStyle": {
-              "mode": "off"
-            }
-          },
-          "mappings": [],
-          "min": 0,
-          "thresholds": {
-            "mode": "percentage",
-            "steps": [
-              {
-                "color": "dark-green",
-                "value": null
-              },
-              {
-                "color": "green",
-                "value": 50
-              },
-              {
-                "color": "yellow",
-                "value": 60
-              },
-              {
-                "color": "orange",
-                "value": 70
-              },
-              {
-                "color": "red",
-                "value": 80
-              },
-              {
-                "color": "dark-red",
-                "value": 90
-              }
-            ]
-          },
-          "unit": "mCore"
-        },
-        "overrides": [
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Limit"
-            },
-            "properties": [
-              {
-                "id": "custom.gradientMode",
-                "value": "none"
-              },
-              {
-                "id": "custom.fillOpacity",
-                "value": 0
-              },
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "dark-red",
-                  "mode": "fixed"
-                }
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Trend"
-            },
-            "properties": [
-              {
-                "id": "custom.lineStyle",
-                "value": {
-                  "dash": [
-                    0,
-                    3,
-                    3
-                  ],
-                  "fill": "dot"
-                }
-              },
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "super-light-purple",
-                  "mode": "fixed"
-                }
-              },
-              {
-                "id": "custom.gradientMode",
-                "value": "none"
-              },
-              {
-                "id": "custom.fillOpacity",
-                "value": 0
-              }
-            ]
-          }
-        ]
-      },
+      "id": 702,
+      "type": "text",
+      "transparent": true,
+      "title": "",
       "gridPos": {
-        "h": 9,
-        "w": 9,
-        "x": 3,
-        "y": 71
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 21
       },
-      "id": 343,
       "options": {
-        "legend": {
-          "calcs": [],
-          "displayMode": "list",
-          "placement": "bottom",
-          "showLegend": false
-        },
-        "tooltip": {
-          "mode": "multi",
-          "sort": "none"
+        "mode": "html",
+        "content": "<hr style=\"margin:0;border:0;border-top:1px solid rgba(127,127,127,0.35);\" />",
+        "code": {
+          "language": "plaintext",
+          "showLineNumbers": false,
+          "showMiniMap": false
         }
-      },
-      "pluginVersion": "8.5.3",
-      "targets": [
-        {
-          "datasource": {
-            "type": "victoriametrics-metrics-datasource",
-            "uid": "deltafi-vm-metricsql-datasource"
-          },
-          "expr": "max({__name__=~\"gauge.node.cpu.limit\", hostname=~\"$nodes\"})",
-          "hide": false,
-          "legendFormat": "Limit",
-          "refId": "Limit"
-        },
-        {
-          "datasource": {
-            "type": "victoriametrics-metrics-datasource",
-            "uid": "deltafi-vm-metricsql-datasource"
-          },
-          "expr": "{__name__=~\"gauge.node.cpu.usage\", hostname=~\"$nodes\"}",
-          "hide": false,
-          "legendFormat": "Total CPU",
-          "refId": "A"
-        },
-        {
-          "datasource": {
-            "type": "victoriametrics-metrics-datasource",
-            "uid": "deltafi-vm-metricsql-datasource"
-          },
-          "expr": "sum({__name__=\"gauge.app.cpu\", node=~\"$nodes\"})",
-          "hide": false,
-          "legendFormat": "App CPU",
-          "refId": "C"
-        },
-        {
-          "datasource": {
-            "type": "victoriametrics-metrics-datasource",
-            "uid": "deltafi-vm-metricsql-datasource"
-          },
-          "expr": "{__name__=~\"gauge.node.cpu.iowait\", hostname=~\"$nodes\"}",
-          "hide": false,
-          "legendFormat": "IO Wait",
-          "refId": "B"
-        },
-        {
-          "datasource": {
-            "type": "victoriametrics-metrics-datasource",
-            "uid": "deltafi-vm-metricsql-datasource"
-          },
-          "expr": "avg_over_time({__name__=~\"gauge.node.cpu.usage\", hostname=~\"$nodes\"}[100s])",
-          "hide": false,
-          "legendFormat": "Trend",
-          "refId": "Trend"
-        }
-      ],
-      "title": "CPU utilization over time ($nodes)",
-      "type": "timeseries"
+      }
     },
     {
-      "datasource": {
-        "default": false,
-        "type": "victoriametrics-metrics-datasource",
-        "uid": "deltafi-vm-metricsql-datasource"
-      },
-      "description": "",
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "palette-classic"
-          },
-          "custom": {
-            "axisBorderShow": false,
-            "axisCenteredZero": false,
-            "axisColorMode": "text",
-            "axisGridShow": true,
-            "axisLabel": "",
-            "axisPlacement": "auto",
-            "barAlignment": 0,
-            "barWidthFactor": 0.6,
-            "drawStyle": "line",
-            "fillOpacity": 35,
-            "gradientMode": "opacity",
-            "hideFrom": {
-              "legend": false,
-              "tooltip": false,
-              "viz": false
-            },
-            "insertNulls": false,
-            "lineInterpolation": "linear",
-            "lineWidth": 1,
-            "pointSize": 5,
-            "scaleDistribution": {
-              "type": "linear"
-            },
-            "showPoints": "never",
-            "spanNulls": false,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            },
-            "thresholdsStyle": {
-              "mode": "off"
-            }
-          },
-          "mappings": [],
-          "min": 0,
-          "thresholds": {
-            "mode": "percentage",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              },
-              {
-                "color": "red",
-                "value": 80
-              }
-            ]
-          },
-          "unit": "mCore"
-        },
-        "overrides": [
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "limit"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "dark-red",
-                  "mode": "fixed"
-                }
-              },
-              {
-                "id": "custom.gradientMode",
-                "value": "none"
-              },
-              {
-                "id": "custom.fillOpacity",
-                "value": 0
-              }
-            ]
-          }
-        ]
-      },
+      "id": 703,
+      "type": "text",
+      "transparent": true,
+      "title": "",
       "gridPos": {
-        "h": 9,
-        "w": 12,
-        "x": 12,
-        "y": 71
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 28
       },
-      "id": 180,
-      "interval": "10s",
       "options": {
-        "legend": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "displayMode": "table",
-          "placement": "right",
-          "showLegend": true
-        },
-        "tooltip": {
-          "mode": "multi",
-          "sort": "desc"
+        "mode": "html",
+        "content": "<hr style=\"margin:0;border:0;border-top:1px solid rgba(127,127,127,0.35);\" />",
+        "code": {
+          "language": "plaintext",
+          "showLineNumbers": false,
+          "showMiniMap": false
         }
+      }
+    },
+    {
+      "id": 704,
+      "type": "text",
+      "transparent": true,
+      "title": "",
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 35
       },
-      "pluginVersion": "8.5.3",
-      "targets": [
-        {
-          "datasource": {
-            "type": "victoriametrics-metrics-datasource",
-            "uid": "deltafi-vm-metricsql-datasource"
-          },
-          "expr": "{__name__=\"gauge.app.cpu\", node=~\"$nodes\"}",
-          "hide": false,
-          "legendFormat": "{{app}}",
-          "refId": "B"
+      "options": {
+        "mode": "html",
+        "content": "<hr style=\"margin:0;border:0;border-top:1px solid rgba(127,127,127,0.35);\" />",
+        "code": {
+          "language": "plaintext",
+          "showLineNumbers": false,
+          "showMiniMap": false
         }
-      ],
-      "title": "App CPU utilization over time ($nodes)",
-      "type": "timeseries"
+      }
+    },
+    {
+      "id": 705,
+      "type": "text",
+      "transparent": true,
+      "title": "",
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 42
+      },
+      "options": {
+        "mode": "html",
+        "content": "<hr style=\"margin:0;border:0;border-top:1px solid rgba(127,127,127,0.35);\" />",
+        "code": {
+          "language": "plaintext",
+          "showLineNumbers": false,
+          "showMiniMap": false
+        }
+      }
+    },
+    {
+      "id": 706,
+      "type": "text",
+      "transparent": true,
+      "title": "",
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 47
+      },
+      "options": {
+        "mode": "html",
+        "content": "<hr style=\"margin:0;border:0;border-top:1px solid rgba(127,127,127,0.35);\" />",
+        "code": {
+          "language": "plaintext",
+          "showLineNumbers": false,
+          "showMiniMap": false
+        }
+      }
+    },
+    {
+      "id": 707,
+      "type": "text",
+      "transparent": true,
+      "title": "",
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 60
+      },
+      "options": {
+        "mode": "html",
+        "content": "<hr style=\"margin:0;border:0;border-top:1px solid rgba(127,127,127,0.35);\" />",
+        "code": {
+          "language": "plaintext",
+          "showLineNumbers": false,
+          "showMiniMap": false
+        }
+      }
+    },
+    {
+      "id": 708,
+      "type": "text",
+      "transparent": true,
+      "title": "",
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 65
+      },
+      "options": {
+        "mode": "html",
+        "content": "<hr style=\"margin:0;border:0;border-top:1px solid rgba(127,127,127,0.35);\" />",
+        "code": {
+          "language": "plaintext",
+          "showLineNumbers": false,
+          "showMiniMap": false
+        }
+      }
     }
   ],
+  "preload": false,
   "refresh": "",
-  "revision": 1,
-  "schemaVersion": 39,
+  "schemaVersion": 42,
   "tags": [
     "DeltaFi"
   ],
@@ -3009,7 +3327,6 @@
     "list": [
       {
         "current": {
-          "selected": true,
           "text": [
             "All"
           ],
@@ -3035,13 +3352,12 @@
         },
         "refresh": 2,
         "regex": "",
-        "skipUrlSync": false,
+        "regexApplyTo": "value",
         "sort": 1,
         "type": "query"
       },
       {
         "current": {
-          "selected": true,
           "text": [
             "All"
           ],
@@ -3067,7 +3383,7 @@
         },
         "refresh": 2,
         "regex": "",
-        "skipUrlSync": false,
+        "regexApplyTo": "value",
         "sort": 1,
         "type": "query"
       }
@@ -3090,9 +3406,9 @@
       "1d"
     ]
   },
-  "timezone": "",
+  "timezone": "browser",
   "title": "System Performance",
   "uid": "system-performance",
-  "version": 4,
+  "version": 5,
   "weekStart": ""
 }
