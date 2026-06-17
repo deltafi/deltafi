@@ -17,8 +17,10 @@
  */
 package org.deltafi.actionkit.lookup;
 
-import com.netflix.graphql.dgs.client.GraphQLClient;
-import com.netflix.graphql.dgs.client.GraphQLResponse;
+import com.netflix.graphql.dgs.client.DefaultDgsGraphQLResponse;
+import com.netflix.graphql.dgs.client.DgsGraphQLClient;
+import com.netflix.graphql.dgs.client.DgsGraphQLResponse;
+import com.netflix.graphql.dgs.client.Jackson2DgsJsonMapperAdapter;
 import org.deltafi.actionkit.generated.types.Result;
 import org.deltafi.common.http.HttpService;
 import org.junit.jupiter.api.AfterEach;
@@ -81,13 +83,13 @@ class LookupTableClientTest {
               }
             }""";
 
-    private GraphQLClient graphQLClient;
+    private DgsGraphQLClient graphQLClient;
     private CachingLookupTableClient lookupTableClient;
     private ExecutorService pool;
 
     @BeforeEach
     void setUp() {
-        graphQLClient = Mockito.mock(GraphQLClient.class);
+        graphQLClient = Mockito.mock(DgsGraphQLClient.class);
         HttpService httpService = Mockito.mock(HttpService.class);
         lookupTableClient = new CachingLookupTableClient("unused", graphQLClient, httpService, MAX_BYTES, MAX_ENTRIES);
         pool = Executors.newFixedThreadPool(2);
@@ -98,8 +100,8 @@ class LookupTableClientTest {
         pool.shutdownNow();
     }
 
-    private static GraphQLResponse graphQLResponse(String json) {
-        return new GraphQLResponse(json);
+    private static DgsGraphQLResponse graphQLResponse(String json) {
+        return new DefaultDgsGraphQLResponse(json, Map.of(), Jackson2DgsJsonMapperAdapter.Companion.fromOptions());
     }
 
     private void stub(String responseJson) {
@@ -226,7 +228,7 @@ class LookupTableClientTest {
     }
 
     /** Stub core so each query blocks until {@link Gate#release()}, then returns (or throws) {@code onRelease}. */
-    private Gate gateCore(ThrowingSupplier<GraphQLResponse> onRelease) {
+    private Gate gateCore(ThrowingSupplier<DgsGraphQLResponse> onRelease) {
         Gate gate = new Gate();
         Mockito.when(graphQLClient.executeQuery(Mockito.anyString(), Mockito.anyMap())).thenAnswer(invocation -> {
             gate.calls.incrementAndGet();
@@ -265,7 +267,7 @@ class LookupTableClientTest {
 
     @Test
     void batchesUpserts() throws Exception {
-        GraphQLResponse graphQLResponse = Mockito.mock(GraphQLResponse.class);
+        DgsGraphQLResponse graphQLResponse = Mockito.mock(DgsGraphQLResponse.class);
         Mockito.when(graphQLResponse.hasErrors()).thenReturn(false);
         Mockito.when(graphQLResponse.extractValueAsObject("upsertLookupTableRows", Result.class))
                 .thenReturn(Result.newBuilder().success(true).build());

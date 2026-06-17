@@ -20,7 +20,7 @@
 package org.deltafi.actionkit;
 
 import com.github.victools.jsonschema.generator.SchemaGenerator;
-import com.netflix.graphql.dgs.client.GraphQLClient;
+import com.netflix.graphql.dgs.client.DgsGraphQLClient;
 import org.deltafi.actionkit.action.Action;
 import org.deltafi.actionkit.action.parameters.EnvVarDefinitionProvider;
 import org.deltafi.actionkit.action.service.ActionInstanceFactory;
@@ -237,11 +237,11 @@ public class ActionKitAutoConfiguration {
      * Create the GraphQL client for communicating with the core API.
      * @param environment the Spring environment for resolving the core URL
      * @param httpClient the HTTP client to use for requests
-     * @return a configured GraphQLClient
+     * @return a configured DgsGraphQLClient
      */
     @ConditionalOnMissingBean
     @Bean
-    public GraphQLClient graphQLClient(Environment environment, HttpClient httpClient) {
+    public DgsGraphQLClient graphQLClient(Environment environment, HttpClient httpClient) {
         String coreUrl = buildCoreUrl(environment);
         return new GraphQLClientFactory(httpClient).build(coreUrl + "/graphql", "X-User-Permissions", "Admin",
                 "X-User-Name", "deltafi-cli");
@@ -260,7 +260,7 @@ public class ActionKitAutoConfiguration {
      */
     @ConditionalOnMissingBean
     @Bean
-    public LookupTableClient lookupTableClient(Environment environment, GraphQLClient graphQLClient,
+    public LookupTableClient lookupTableClient(Environment environment, DgsGraphQLClient graphQLClient,
             HttpService httpService, LookupTableCacheProperties cacheProperties) {
         String coreUrl = buildCoreUrl(environment);
         return new CachingLookupTableClient(coreUrl + "/lookup", graphQLClient, httpService,

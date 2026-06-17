@@ -17,8 +17,8 @@
  */
 package org.deltafi.common.graphql.dgs;
 
-import com.netflix.graphql.dgs.client.GraphQLClient;
-import com.netflix.graphql.dgs.client.GraphQLResponse;
+import com.netflix.graphql.dgs.client.DgsGraphQLClient;
+import com.netflix.graphql.dgs.client.DgsGraphQLResponse;
 import com.netflix.graphql.dgs.client.GraphQLError;
 import com.netflix.graphql.dgs.client.codegen.GraphQLQueryRequest;
 import org.intellij.lang.annotations.Language;
@@ -40,9 +40,9 @@ public class GraphQLExecutor {
      * @return the extracted and deserialized response object
      * @throws Exception if the query fails or contains errors
      */
-    public static <T> T executeQuery(GraphQLClient graphQLClient, GraphQLQueryRequest queryRequest,
+    public static <T> T executeQuery(DgsGraphQLClient graphQLClient, GraphQLQueryRequest queryRequest,
             String responseObjectPath, Class<T> responseObjectClass) throws Exception {
-        GraphQLResponse response = executeQuery(graphQLClient, queryRequest);
+        DgsGraphQLResponse response = executeQuery(graphQLClient, queryRequest);
 
         return response.extractValueAsObject(responseObjectPath, responseObjectClass);
     }
@@ -54,7 +54,7 @@ public class GraphQLExecutor {
      * @return the GraphQL response
      * @throws Exception if the query fails or contains errors
      */
-    public static GraphQLResponse executeQuery(GraphQLClient graphQLClient, GraphQLQueryRequest queryRequest)
+    public static DgsGraphQLResponse executeQuery(DgsGraphQLClient graphQLClient, GraphQLQueryRequest queryRequest)
             throws Exception {
         return executeQuery(graphQLClient, queryRequest.serialize(), Collections.emptyMap());
     }
@@ -67,9 +67,9 @@ public class GraphQLExecutor {
      * @return the GraphQL response
      * @throws Exception if the query fails or contains errors
      */
-    public static GraphQLResponse executeQuery(GraphQLClient graphQLClient, @Language("graphql") String query,
+    public static DgsGraphQLResponse executeQuery(DgsGraphQLClient graphQLClient, @Language("graphql") String query,
             Map<String, Object> variables) throws Exception {
-        GraphQLResponse response = graphQLClient.executeQuery(query, variables);
+        DgsGraphQLResponse response = graphQLClient.executeQuery(query, variables);
 
         if (response.hasErrors()) {
             String errorMessage = "Error executing GraphQL query:\n\nOriginal query:\n" + query + "\n\n" +

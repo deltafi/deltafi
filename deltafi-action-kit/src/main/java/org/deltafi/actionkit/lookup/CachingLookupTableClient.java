@@ -19,7 +19,7 @@
 // ABOUTME: Honors the per-result ttlSeconds from core; no Caffeine/Spring caching dependency.
 package org.deltafi.actionkit.lookup;
 
-import com.netflix.graphql.dgs.client.GraphQLClient;
+import com.netflix.graphql.dgs.client.DgsGraphQLClient;
 import lombok.extern.slf4j.Slf4j;
 import org.deltafi.actionkit.lookup.LookupResultCache.CacheKey;
 import org.deltafi.common.http.HttpService;
@@ -47,7 +47,7 @@ public class CachingLookupTableClient extends LookupTableClient {
     private final LookupResultCache cache;
     private final ConcurrentHashMap<CacheKey, CompletableFuture<LookupResults>> inFlight = new ConcurrentHashMap<>();
 
-    public CachingLookupTableClient(String lookupUrl, GraphQLClient graphQLClient, HttpService httpService,
+    public CachingLookupTableClient(String lookupUrl, DgsGraphQLClient graphQLClient, HttpService httpService,
             long maxBytes, int maxEntries) {
         super(lookupUrl, graphQLClient, httpService);
         this.cache = new LookupResultCache(maxBytes, maxEntries);

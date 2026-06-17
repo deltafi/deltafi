@@ -45,6 +45,7 @@ lookup:
 dgs:
   graphql:
     path: "/api/v2/graphql"
+    preferred-json-mapper: jackson2
     graphiql:
       enabled: false
 management:
