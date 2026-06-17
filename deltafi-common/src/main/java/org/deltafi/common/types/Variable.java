@@ -23,11 +23,13 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.io.Serializable;
+
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class Variable {
+public class Variable implements Serializable {
 
   public static final String MASK_STRING = "*********";
 

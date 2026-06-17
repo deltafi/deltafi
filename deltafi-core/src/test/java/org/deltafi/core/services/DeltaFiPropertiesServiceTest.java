@@ -39,7 +39,7 @@ import java.util.Map;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import static org.deltafi.core.services.DeltaFiPropertiesService.DISABLED_STORAGE_PROPERTIES;
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @ExtendWith(MockitoExtension.class)
 class DeltaFiPropertiesServiceTest {

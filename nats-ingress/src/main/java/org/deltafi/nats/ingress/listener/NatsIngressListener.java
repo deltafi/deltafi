@@ -26,8 +26,8 @@ import org.deltafi.ingress.service.IngressRequestor;
 import org.deltafi.nats.ingress.config.NatsProperties;
 import org.springframework.stereotype.Component;
 
-import javax.annotation.PostConstruct;
-import javax.annotation.PreDestroy;
+import jakarta.annotation.PostConstruct;
+import jakarta.annotation.PreDestroy;
 import java.nio.charset.StandardCharsets;
 import java.time.*;
 import java.util.Collections;

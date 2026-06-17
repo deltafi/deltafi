@@ -17,11 +17,12 @@
  */
 package org.deltafi.common.types;
 
+import java.io.Serializable;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 
-public record JoinConfiguration(Duration maxAge, Integer minNum, Integer maxNum, String metadataKey) {
+public record JoinConfiguration(Duration maxAge, Integer minNum, Integer maxNum, String metadataKey) implements Serializable {
     public List<String> validate() {
         List<String> errors = new ArrayList<>();
 

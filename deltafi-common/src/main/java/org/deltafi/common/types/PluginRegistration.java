@@ -17,8 +17,10 @@
  */
 package org.deltafi.common.types;
 
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
 import org.deltafi.common.lookup.LookupTable;
 import org.deltafi.common.types.integration.IntegrationTest;
@@ -28,6 +30,8 @@ import java.util.List;
 
 @Data
 @Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class PluginRegistration {
     private String image;
     private String imagePullSecret;

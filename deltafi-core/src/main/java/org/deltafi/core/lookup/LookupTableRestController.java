@@ -21,7 +21,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.deltafi.core.security.NeedsPermission;
 import org.springframework.core.io.Resource;
 import org.springframework.http.*;
-import org.springframework.lang.Nullable;
+import org.jspecify.annotations.Nullable;
 import org.springframework.web.bind.annotation.*;
 
 import javax.ws.rs.core.MediaType;

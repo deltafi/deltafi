@@ -22,10 +22,12 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.deltafi.common.types.ActionType;
 
+import java.io.Serializable;
+
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class JoinDefinition {
+public class JoinDefinition implements Serializable {
     private String flow;
     private ActionType actionType;
     private String action;

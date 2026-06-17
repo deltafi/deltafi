@@ -22,13 +22,14 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.io.Serializable;
 import java.time.OffsetDateTime;
 
 @Data
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-public class LogMessage {
+public class LogMessage implements Serializable {
     private LogSeverity severity;
     private OffsetDateTime created;
     // may be action name or username

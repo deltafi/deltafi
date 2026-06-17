@@ -27,8 +27,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
-import org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.cache.Cache;
@@ -40,11 +38,9 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 @SpringBootTest(classes = { CacheAutoConfigurationTest.TestApp.class, TestService.class,
         CacheAutoConfigurationTest.TickerConfiguration.class },
-        properties = { "cache.caches.test-cache-a=expireAfterWrite=PT3S",
-                "cache.caches.test-cache-b=expireAfterWrite=PT5S" },
         webEnvironment = SpringBootTest.WebEnvironment.NONE)
 @EnableAutoConfiguration(exclude = { ContentStorageServiceAutoConfiguration.class, HttpServiceAutoConfiguration.class,
-        MinioAutoConfiguration.class, DataSourceAutoConfiguration.class, HibernateJpaAutoConfiguration.class })
+        MinioAutoConfiguration.class })
 public class CacheAutoConfigurationTest {
     @SpringBootApplication
     public static class TestApp {
@@ -68,6 +64,16 @@ public class CacheAutoConfigurationTest {
         @Bean
         public Ticker ticker() {
             return new TestTicker();
+        }
+
+        @Bean
+        CacheSpec cacheSpecA() {
+            return new CacheSpec("test-cache-a", "expireAfterWrite=PT3S");
+        }
+
+        @Bean
+        CacheSpec cacheSpecB() {
+            return new CacheSpec("test-cache-b", "expireAfterWrite=PT5S");
         }
     }
 

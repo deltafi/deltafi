@@ -1,6 +1,16 @@
+import javax.inject.Inject
+import org.gradle.process.ExecOperations
+
 plugins {
     id 'org.deltafi.docker'
 }
+
+abstract class DockerExecHelper {
+    @Inject
+    abstract ExecOperations getExecOperations()
+}
+
+def execOps = project.objects.newInstance(DockerExecHelper).execOperations
 
 docker {
     name = "${project.name}:${project.version}"
@@ -57,7 +67,7 @@ task grype {
     
     doLast {
         // Check if grype is available locally
-        def checkResult = exec {
+        def checkResult = execOps.exec {
             ignoreExitValue = true
             executable "bash"
             args "-c", "command -v grype"
@@ -71,7 +81,7 @@ task grype {
         
         if (useContainer) {
             // Check if docker is available
-            def dockerCheck = exec {
+            def dockerCheck = execOps.exec {
                 ignoreExitValue = true
                 executable "bash"
                 args "-c", "command -v docker"
@@ -107,7 +117,7 @@ task grype {
         }
         
         // Update grype database
-        exec {
+        execOps.exec {
             executable grypeCmd
             args buildGrypeArgs(["db", "update"])
         }
@@ -115,7 +125,7 @@ task grype {
         // Run grype with JSON output to capture results for summary
         def jsonOutput = new ByteArrayOutputStream()
         def jsonErrorOutput = new ByteArrayOutputStream()
-        def jsonResult = exec {
+        def jsonResult = execOps.exec {
             ignoreExitValue = true
             executable grypeCmd
             args buildGrypeArgs([imageName, "--output", "json"])
@@ -124,7 +134,7 @@ task grype {
         }
         
         // Run grype with table output for user to see
-        def tableResult = exec {
+        def tableResult = execOps.exec {
             ignoreExitValue = true
             executable grypeCmd
             args buildGrypeArgs([imageName])
@@ -221,7 +231,7 @@ task trivy {
     
     doLast {
         // Check if trivy is available locally
-        def checkResult = exec {
+        def checkResult = execOps.exec {
             ignoreExitValue = true
             executable "bash"
             args "-c", "command -v trivy"
@@ -235,7 +245,7 @@ task trivy {
         
         if (useContainer) {
             // Check if docker is available
-            def dockerCheck = exec {
+            def dockerCheck = execOps.exec {
                 ignoreExitValue = true
                 executable "bash"
                 args "-c", "command -v docker"
@@ -273,7 +283,7 @@ task trivy {
         // Run trivy with JSON output to capture results for summary
         def jsonOutput = new ByteArrayOutputStream()
         def jsonErrorOutput = new ByteArrayOutputStream()
-        def jsonResult = exec {
+        def jsonResult = execOps.exec {
             ignoreExitValue = true
             executable trivyCmd
             args buildTrivyArgs(["--format", "json", imageName])
@@ -282,7 +292,7 @@ task trivy {
         }
         
         // Run trivy with table output for user to see
-        def tableResult = exec {
+        def tableResult = execOps.exec {
             ignoreExitValue = true
             executable trivyCmd
             args buildTrivyArgs([imageName])

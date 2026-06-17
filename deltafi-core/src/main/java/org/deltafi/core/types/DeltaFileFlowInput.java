@@ -22,6 +22,7 @@ import jakarta.persistence.Transient;
 import lombok.*;
 import org.deltafi.common.types.Content;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -35,17 +36,17 @@ import java.util.Set;
 @EqualsAndHashCode
 @JsonInclude(JsonInclude.Include.NON_EMPTY)
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class DeltaFileFlowInput {
+public class DeltaFileFlowInput implements Serializable {
     @Transient
     @JsonIgnore
     @EqualsAndHashCode.Exclude
     @ToString.Exclude
-    private DeltaFileFlow flow;
+    private transient DeltaFileFlow flow;
 
     @Transient
     @JsonIgnore
     @EqualsAndHashCode.Exclude
-    private Map<String,String> cachedMetadata;
+    private transient Map<String,String> cachedMetadata;
 
     @Transient
     @JsonIgnore

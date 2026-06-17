@@ -22,7 +22,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.deltafi.common.types.Variable;
 import org.deltafi.common.types.VariableDataType;
 import org.jetbrains.annotations.NotNull;
-import org.springframework.lang.Nullable;
+import org.jspecify.annotations.Nullable;
 import org.springframework.util.Assert;
 import org.springframework.util.StringUtils;
 

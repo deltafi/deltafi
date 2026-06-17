@@ -22,6 +22,7 @@ import com.fasterxml.uuid.Generators;
 import io.hypersistence.utils.hibernate.type.json.JsonBinaryType;
 import jakarta.persistence.*;
 import jakarta.persistence.CascadeType;
+import jakarta.persistence.NamedEntityGraph;
 import jakarta.persistence.OrderBy;
 import jakarta.persistence.Table;
 import lombok.*;

@@ -21,10 +21,12 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.io.Serializable;
+
 @Builder
 @Data
 @NoArgsConstructor
-public class DefaultRule {
+public class DefaultRule implements Serializable {
     private DefaultBehavior defaultBehavior;
     private String topic;
 

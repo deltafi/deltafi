@@ -30,10 +30,15 @@ import org.springframework.cache.caffeine.CaffeineCache;
 import org.springframework.cache.support.SimpleCacheManager;
 import org.springframework.context.annotation.Bean;
 
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
- * Auto-configures Caffeine-based caching from {@link CacheProperties}.
+ * Builds the shared {@link CacheManager} from {@link CacheSpec} beans (coded defaults next to each
+ * {@code @Cacheable} usage) layered with {@link CacheProperties} (YAML overrides under
+ * {@code cache.caches}). A YAML entry replaces the same-named {@code CacheSpec} default; entries
+ * that exist only in YAML become additional caches.
  */
 @AutoConfiguration
 @ConditionalOnClass({ Caffeine.class, CaffeineCache.class })
@@ -42,30 +47,25 @@ import java.util.List;
 @EnableConfigurationProperties(CacheProperties.class)
 @EnableCaching
 public class CacheAutoConfiguration {
-    /**
-     * Provides a {@link Ticker} for cache expiration timing.
-     * @return a ticker backed by {@link System#nanoTime()}
-     */
     @Bean
     @ConditionalOnMissingBean
     public Ticker ticker() {
         return System::nanoTime;
     }
 
-    /**
-     * Creates a {@link CacheManager} with Caffeine caches defined in the cache properties.
-     * @param cacheProperties the cache configuration properties
-     * @param ticker the ticker used for cache expiration timing
-     * @return the configured cache manager
-     */
     @Bean
-    public CacheManager cacheManager(CacheProperties cacheProperties, Ticker ticker) {
-        SimpleCacheManager simpleCacheManager = new SimpleCacheManager();
-        List<CaffeineCache> caches = cacheProperties.getCaches().entrySet().stream()
-                .map(cacheEntry -> new CaffeineCache(cacheEntry.getKey(),
-                        Caffeine.from(cacheEntry.getValue()).ticker(ticker).build()))
-                .toList();
-        simpleCacheManager.setCaches(caches);
-        return simpleCacheManager;
+    public CacheManager cacheManager(List<CacheSpec> specs, CacheProperties properties, Ticker ticker) {
+        Map<String, String> merged = new LinkedHashMap<>();
+        for (CacheSpec spec : specs) {
+            merged.put(spec.name(), spec.spec());
+        }
+        merged.putAll(properties.getCaches());
+
+        SimpleCacheManager cacheManager = new SimpleCacheManager();
+        cacheManager.setCaches(merged.entrySet().stream()
+                .map(e -> new CaffeineCache(e.getKey(),
+                        Caffeine.from(e.getValue()).ticker(ticker).build()))
+                .toList());
+        return cacheManager;
     }
 }

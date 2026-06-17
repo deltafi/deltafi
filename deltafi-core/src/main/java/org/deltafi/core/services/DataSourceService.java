@@ -114,7 +114,7 @@ public abstract class DataSourceService<P extends FlowPlan, F extends DataSource
      * @param result the result object
      * @return true if any changes were made, false otherwise
      */
-    public final boolean flowSpecificUpdateFromSnapshot(F flow, S dataSourceSnapshot, Result result) {
+    public boolean flowSpecificUpdateFromSnapshot(F flow, S dataSourceSnapshot, Result result) {
         boolean changed = updateCommonDataSourceFields(flow, dataSourceSnapshot);
         return updateSpecificDataSourceFields(flow, dataSourceSnapshot, result) || changed;
     }

@@ -32,10 +32,12 @@ import org.deltafi.common.action.documentation.DocumentationGenerator;
 import org.deltafi.common.cache.CacheAutoConfiguration;
 import org.deltafi.common.content.ContentStorageServiceAutoConfiguration;
 import org.deltafi.common.storage.s3.minio.MinioAutoConfiguration;
+import org.springframework.cache.CacheManager;
+import org.springframework.cache.support.NoOpCacheManager;
+import org.springframework.context.annotation.Bean;
 import org.deltafi.common.types.ActionDescriptor;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
-import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.context.annotation.ComponentScan;
 
@@ -50,9 +52,14 @@ import java.util.Map;
 @RequiredArgsConstructor
 @ComponentScan("${scan.base.package}")
 @EnableAutoConfiguration(exclude = {ActionKitAutoConfiguration.class, CacheAutoConfiguration.class,
-        ContentStorageServiceAutoConfiguration.class, DataSourceAutoConfiguration.class, MinioAutoConfiguration.class})
+        ContentStorageServiceAutoConfiguration.class, MinioAutoConfiguration.class})
 public class ActionsDocumentationGenerator implements CommandLineRunner {
     private final List<Action<?, ?, ?>> actions;
+
+    @Bean
+    public CacheManager cacheManager() {
+        return new NoOpCacheManager();
+    }
 
     private final SchemaGenerator schemaGenerator = new ActionKitAutoConfiguration().parametersSchemaGenerator(null);
 

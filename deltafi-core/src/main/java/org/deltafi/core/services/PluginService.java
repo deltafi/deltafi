@@ -40,7 +40,7 @@ import org.deltafi.core.validation.FlowPlanValidator;
 import org.deltafi.core.validation.PluginValidator;
 import org.springframework.boot.info.BuildProperties;
 import org.springframework.core.env.Environment;
-import org.springframework.lang.Nullable;
+import org.jspecify.annotations.Nullable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 

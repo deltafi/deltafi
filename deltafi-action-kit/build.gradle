@@ -11,6 +11,8 @@ dependencies {
     api project(':deltafi-common-spring')
 
     api 'org.springframework.boot:spring-boot-starter'
+    api 'org.springframework.boot:spring-boot-starter-cache'
+    api "com.github.ben-manes.caffeine:caffeine:${caffeineVersion}"
 
     implementation 'com.google.code.findbugs:jsr305:3.0.2'
 
@@ -29,6 +31,7 @@ generateJava {
     packageName = 'org.deltafi.actionkit.generated'
     generateClient = true
     skipEntityQueries = true
+    implementSerializable = true
     typeMapping = [
             "SortDirection"    : "org.deltafi.common.types.SortDirection",
             "LookupTable"      : "org.deltafi.common.lookup.LookupTable"

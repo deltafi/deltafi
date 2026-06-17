@@ -22,6 +22,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.deltafi.common.content.Segment;
 
+import java.io.Serializable;
 import java.util.*;
 
 /**
@@ -30,7 +31,7 @@ import java.util.*;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class Content {
+public class Content implements Serializable {
   private String name;
   private String mediaType;
   private List<Segment> segments = new ArrayList<>();

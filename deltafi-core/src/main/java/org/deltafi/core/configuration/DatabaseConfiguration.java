@@ -19,10 +19,10 @@ package org.deltafi.core.configuration;
 
 import com.zaxxer.hikari.HikariDataSource;
 import org.flywaydb.core.Flyway;
-import org.hibernate.boot.model.naming.CamelCaseToUnderscoresNamingStrategy;
-import org.springframework.boot.autoconfigure.jdbc.DataSourceProperties;
+import org.hibernate.boot.model.naming.PhysicalNamingStrategySnakeCaseImpl;
+import org.springframework.boot.jdbc.autoconfigure.DataSourceProperties;
 import org.springframework.boot.context.properties.ConfigurationProperties;
-import org.springframework.boot.orm.jpa.hibernate.SpringImplicitNamingStrategy;
+import org.springframework.boot.hibernate.SpringImplicitNamingStrategy;
 import org.springframework.context.annotation.*;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
@@ -116,7 +116,7 @@ public class DatabaseConfiguration {
         bean.setJpaVendorAdapter(new HibernateJpaVendorAdapter());
         bean.setJpaPropertyMap(Map.of(
                 "hibernate.implicit_naming_strategy", SpringImplicitNamingStrategy.class.getName(),
-                "hibernate.physical_naming_strategy", CamelCaseToUnderscoresNamingStrategy.class.getName()));
+                "hibernate.physical_naming_strategy", PhysicalNamingStrategySnakeCaseImpl.class.getName()));
         bean.setPersistenceUnitName("primary");
         return bean;
     }

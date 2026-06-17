@@ -67,7 +67,7 @@ public class UserRest {
         try {
             userService.importUsersAndRoles(usersAndRoles);
         } catch (Exception e) {
-            return ResponseEntity.unprocessableEntity().body(e.getMessage());
+            return ResponseEntity.unprocessableContent().body(e.getMessage());
         }
         auditLogger.audit("Imported {} users and {} roles", usersAndRoles.users().size(), usersAndRoles.roles().size());
         return ResponseEntity.ok(null);

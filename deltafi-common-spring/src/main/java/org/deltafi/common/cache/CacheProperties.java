@@ -24,8 +24,9 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Configuration properties for Caffeine caches, mapped from the {@code cache} prefix.
- * Each entry maps a cache name to a Caffeine spec string.
+ * YAML overrides for the Caffeine caches built by {@link CacheAutoConfiguration}. Each entry under
+ * {@code cache.caches} maps a cache name to a Caffeine spec string and supersedes the same-named
+ * {@link CacheSpec} bean's coded default.
  */
 @ConfigurationProperties("cache")
 @Data

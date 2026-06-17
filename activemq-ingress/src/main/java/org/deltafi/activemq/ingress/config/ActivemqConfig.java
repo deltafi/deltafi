@@ -19,7 +19,7 @@ package org.deltafi.activemq.ingress.config;
 
 import jakarta.jms.ConnectionFactory;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.boot.autoconfigure.jms.DefaultJmsListenerContainerFactoryConfigurer;
+import org.springframework.boot.jms.autoconfigure.DefaultJmsListenerContainerFactoryConfigurer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.jms.config.DefaultJmsListenerContainerFactory;

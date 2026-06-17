@@ -52,7 +52,7 @@ public class FeignClientFactoryTest {
 
     @RegisterExtension
     static WireMockExtension wireMockHttp = WireMockExtension.newInstance()
-            .options(WireMockConfiguration.wireMockConfig().dynamicPort())
+            .options(WireMockConfiguration.wireMockConfig().dynamicPort().bindAddress("127.0.0.1"))
             .build();
 
     @Test

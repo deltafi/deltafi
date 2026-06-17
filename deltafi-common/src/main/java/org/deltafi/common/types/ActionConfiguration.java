@@ -20,6 +20,7 @@ package org.deltafi.common.types;
 import com.fasterxml.jackson.databind.JsonNode;
 import lombok.*;
 
+import java.io.Serializable;
 import java.util.*;
 
 @Getter
@@ -27,7 +28,7 @@ import java.util.*;
 @EqualsAndHashCode
 @ToString(callSuper = true, exclude = "internalParameters")
 @NoArgsConstructor
-public class ActionConfiguration {
+public class ActionConfiguration implements Serializable {
     private String name;
     private String apiVersion;
     private ActionType actionType;

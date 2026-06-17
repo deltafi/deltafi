@@ -26,7 +26,7 @@ import org.deltafi.core.generated.types.*;
 import org.deltafi.core.security.NeedsPermission;
 import org.deltafi.core.types.Result;
 import org.springframework.graphql.data.method.annotation.GraphQlExceptionHandler;
-import org.springframework.lang.Nullable;
+import org.jspecify.annotations.Nullable;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 
 import java.util.*;

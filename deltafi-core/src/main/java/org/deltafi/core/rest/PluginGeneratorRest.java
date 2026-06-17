@@ -50,10 +50,10 @@ public class PluginGeneratorRest {
             if (PluginLanguage.JAVA.equals(pluginGeneratorInput.getPluginLanguage())) {
                 return javaPluginGenerator.generateProject(pluginGeneratorInput).toByteArray();
             } else {
-                throw new ResponseStatusException(HttpStatus.UNPROCESSABLE_ENTITY, "Plugin Language: " + pluginGeneratorInput.getPluginLanguage() + " is not supported");
+                throw new ResponseStatusException(HttpStatus.UNPROCESSABLE_CONTENT, "Plugin Language: " + pluginGeneratorInput.getPluginLanguage() + " is not supported");
             }
         } catch (IllegalArgumentException illegalArgumentException) {
-            throw new ResponseStatusException(HttpStatus.UNPROCESSABLE_ENTITY, illegalArgumentException.getMessage());
+            throw new ResponseStatusException(HttpStatus.UNPROCESSABLE_CONTENT, illegalArgumentException.getMessage());
         } catch (IOException ioException) {
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to create the plugin");
         }

@@ -20,13 +20,14 @@ package org.deltafi.common.content;
 import lombok.*;
 import org.deltafi.common.storage.s3.ObjectReference;
 
+import java.io.Serializable;
 import java.util.*;
 
 /** Represents a byte range within a content object stored in S3. */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class Segment {
+public class Segment implements Serializable {
     private UUID uuid;
     private long offset;
     private long size;

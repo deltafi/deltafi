@@ -19,6 +19,7 @@ package org.deltafi.common.types;
 
 import lombok.*;
 
+import java.io.Serializable;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -29,7 +30,7 @@ import java.util.Map;
 @ToString(callSuper = true)
 @NoArgsConstructor
 @AllArgsConstructor
-public class AnnotationConfig {
+public class AnnotationConfig implements Serializable {
     private Map<String, String> annotations;
     private List<String> metadataPatterns;
     private String discardPrefix;

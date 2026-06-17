@@ -3,6 +3,9 @@ spring:
     auto: false
   application:
     name: deltafi-core
+  http:
+    converters:
+      preferred-json-mapper: jackson
   datasource:
     url: jdbc:postgresql://${DELTAFI_POSTGRES_SERVICE_HOST:deltafi-postgres}:${DELTAFI_POSTGRES_SERVICE_PORT:5432}/${POSTGRES_DB}
     username: ${POSTGRES_USER:deltafi}

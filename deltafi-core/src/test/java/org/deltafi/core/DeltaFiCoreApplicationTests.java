@@ -83,7 +83,8 @@ import org.mockito.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.TestConfiguration;
-import org.springframework.boot.test.web.client.TestRestTemplate;
+import org.springframework.boot.resttestclient.TestRestTemplate;
+import org.springframework.boot.resttestclient.autoconfigure.AutoConfigureTestRestTemplate;
 import org.springframework.context.annotation.Bean;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.dao.DuplicateKeyException;
@@ -140,6 +141,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@AutoConfigureTestRestTemplate
 @Testcontainers
 @Sql(statements = "TRUNCATE TABLE annotations, delta_file_flows, delta_files, delete_policies, flows, flow_summary_counts, flow_summary_deltas, plugins, properties, resume_policies, analytics, event_annotations, flow_definitions CASCADE",
 		executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD)
@@ -460,6 +462,7 @@ class DeltaFiCoreApplicationTests {
 
 	@BeforeEach
 	void setup() {
+		MockitoAnnotations.openMocks(this);
 		deltaFiPropertiesService.getDeltaFiProperties().setIngressEnabled(true);
 		deltaFiPropertiesService.upsertProperties();
 		resumePolicyService.refreshCache();

@@ -17,10 +17,8 @@
  */
 package org.deltafi.actionkit.lookup;
 
-import com.netflix.graphql.dgs.client.DefaultDgsGraphQLResponse;
-import com.netflix.graphql.dgs.client.DgsGraphQLClient;
-import com.netflix.graphql.dgs.client.DgsGraphQLResponse;
-import com.netflix.graphql.dgs.client.Jackson2DgsJsonMapperAdapter;
+import com.netflix.graphql.dgs.client.GraphQLClient;
+import com.netflix.graphql.dgs.client.GraphQLResponse;
 import org.deltafi.actionkit.generated.types.Result;
 import org.deltafi.common.http.HttpService;
 import org.junit.jupiter.api.AfterEach;
@@ -83,13 +81,13 @@ class LookupTableClientTest {
               }
             }""";
 
-    private DgsGraphQLClient graphQLClient;
+    private GraphQLClient graphQLClient;
     private CachingLookupTableClient lookupTableClient;
     private ExecutorService pool;
 
     @BeforeEach
     void setUp() {
-        graphQLClient = Mockito.mock(DgsGraphQLClient.class);
+        graphQLClient = Mockito.mock(GraphQLClient.class);
         HttpService httpService = Mockito.mock(HttpService.class);
         lookupTableClient = new CachingLookupTableClient("unused", graphQLClient, httpService, MAX_BYTES, MAX_ENTRIES);
         pool = Executors.newFixedThreadPool(2);
@@ -100,13 +98,13 @@ class LookupTableClientTest {
         pool.shutdownNow();
     }
 
-    private static DgsGraphQLResponse dgsResponse(String json) {
-        return new DefaultDgsGraphQLResponse(json, Map.of(), Jackson2DgsJsonMapperAdapter.fromOptions());
+    private static GraphQLResponse graphQLResponse(String json) {
+        return new GraphQLResponse(json);
     }
 
     private void stub(String responseJson) {
         Mockito.when(graphQLClient.executeQuery(Mockito.anyString(), Mockito.anyMap()))
-                .thenReturn(dgsResponse(responseJson));
+                .thenReturn(graphQLResponse(responseJson));
     }
 
     private static LookupOptions matching(Set<String> states, Set<String> resultColumns) {
@@ -181,7 +179,7 @@ class LookupTableClientTest {
     @Test
     void coalescesConcurrentMissesForSameKey() throws Exception {
         // Guards single-flight: drop the inFlight coalescing and both concurrent callers query core (calls == 2).
-        Gate core = gateCore(() -> dgsResponse(CACHEABLE_RESPONSE));
+        Gate core = gateCore(() -> graphQLResponse(CACHEABLE_RESPONSE));
 
         AsyncLookup loader = lookupAsync();   // first caller becomes the sole loader and parks in core
         core.awaitInFlight();
@@ -228,7 +226,7 @@ class LookupTableClientTest {
     }
 
     /** Stub core so each query blocks until {@link Gate#release()}, then returns (or throws) {@code onRelease}. */
-    private Gate gateCore(ThrowingSupplier<DgsGraphQLResponse> onRelease) {
+    private Gate gateCore(ThrowingSupplier<GraphQLResponse> onRelease) {
         Gate gate = new Gate();
         Mockito.when(graphQLClient.executeQuery(Mockito.anyString(), Mockito.anyMap())).thenAnswer(invocation -> {
             gate.calls.incrementAndGet();
@@ -267,7 +265,7 @@ class LookupTableClientTest {
 
     @Test
     void batchesUpserts() throws Exception {
-        DgsGraphQLResponse graphQLResponse = Mockito.mock(DgsGraphQLResponse.class);
+        GraphQLResponse graphQLResponse = Mockito.mock(GraphQLResponse.class);
         Mockito.when(graphQLResponse.hasErrors()).thenReturn(false);
         Mockito.when(graphQLResponse.extractValueAsObject("upsertLookupTableRows", Result.class))
                 .thenReturn(Result.newBuilder().success(true).build());

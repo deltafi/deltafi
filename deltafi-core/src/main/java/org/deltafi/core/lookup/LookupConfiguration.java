@@ -19,12 +19,12 @@ package org.deltafi.core.lookup;
 
 import com.zaxxer.hikari.HikariDataSource;
 import org.flywaydb.core.Flyway;
-import org.hibernate.boot.model.naming.CamelCaseToUnderscoresNamingStrategy;
+import org.hibernate.boot.model.naming.PhysicalNamingStrategySnakeCaseImpl;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.boot.autoconfigure.jdbc.DataSourceProperties;
+import org.springframework.boot.jdbc.autoconfigure.DataSourceProperties;
 import org.springframework.boot.context.properties.ConfigurationProperties;
-import org.springframework.boot.orm.jpa.hibernate.SpringImplicitNamingStrategy;
+import org.springframework.boot.hibernate.SpringImplicitNamingStrategy;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
@@ -89,7 +89,7 @@ public class LookupConfiguration {
         bean.setJpaVendorAdapter(new HibernateJpaVendorAdapter());
         bean.setJpaPropertyMap(Map.of(
                 "hibernate.implicit_naming_strategy", SpringImplicitNamingStrategy.class.getName(),
-                "hibernate.physical_naming_strategy", CamelCaseToUnderscoresNamingStrategy.class.getName()));
+                "hibernate.physical_naming_strategy", PhysicalNamingStrategySnakeCaseImpl.class.getName()));
         bean.setPersistenceUnitName("lookup");
         return bean;
     }

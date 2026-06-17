@@ -27,6 +27,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -35,7 +36,7 @@ import java.util.Objects;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class PublishRules {
+public class PublishRules implements Serializable {
     private static final ObjectMapper YAML_MAPPER = YAMLMapper.builder()
             .defaultPropertyInclusion(JsonInclude.Value.construct(
                     JsonInclude.Include.NON_NULL, JsonInclude.Include.NON_NULL))

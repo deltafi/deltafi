@@ -20,9 +20,11 @@ package org.deltafi.common.types;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.io.Serializable;
+
 @Data
 @NoArgsConstructor
-public class Rule {
+public class Rule implements Serializable {
     private String topic;
     private String condition;
 

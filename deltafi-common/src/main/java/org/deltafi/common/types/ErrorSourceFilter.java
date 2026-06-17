@@ -22,9 +22,11 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.io.Serializable;
+
 @Data
 @NoArgsConstructor
-public class ErrorSourceFilter {
+public class ErrorSourceFilter implements Serializable {
     private FlowType flowType;
     private String flowName;
     private String actionName;

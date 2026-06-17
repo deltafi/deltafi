@@ -27,10 +27,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 
-import org.hibernate.dialect.Dialect;
-import org.hibernate.engine.spi.SharedSessionContractImplementor;
-import org.hibernate.type.descriptor.jdbc.JdbcType;
-import org.hibernate.type.spi.TypeConfiguration;
+import org.hibernate.type.descriptor.WrapperOptions;
 import org.hibernate.usertype.UserType;
 
 public class StringListType implements UserType<List<String>> {
@@ -57,7 +54,7 @@ public class StringListType implements UserType<List<String>> {
     }
 
     @Override
-    public List<String> nullSafeGet(ResultSet rs, int position, SharedSessionContractImplementor session, Object owner) throws SQLException {
+    public List<String> nullSafeGet(ResultSet rs, int position, WrapperOptions options) throws SQLException {
         Array array = rs.getArray(position);
         if (array == null) {
             return null;
@@ -66,10 +63,10 @@ public class StringListType implements UserType<List<String>> {
     }
 
     @Override
-    public void nullSafeSet(PreparedStatement st, List<String> value, int index, SharedSessionContractImplementor session) throws SQLException {
+    public void nullSafeSet(PreparedStatement st, List<String> value, int index, WrapperOptions options) throws SQLException {
         if (st != null) {
             if (value != null) {
-                try (var connection = session.getJdbcConnectionAccess().obtainConnection()) {
+                try (var connection = options.getSession().getJdbcConnectionAccess().obtainConnection()) {
                     Array array = connection.createArrayOf("text", value.toArray());
                     st.setArray(index, array);
                 }
@@ -106,22 +103,17 @@ public class StringListType implements UserType<List<String>> {
     }
 
     @Override
-    public JdbcType getJdbcType(TypeConfiguration typeConfiguration) {
-        return typeConfiguration.getJdbcTypeRegistry().getDescriptor(getSqlType());
-    }
-
-    @Override
-    public long getDefaultSqlLength(Dialect dialect, JdbcType jdbcType) {
+    public long getDefaultSqlLength() {
         return 255L;
     }
 
     @Override
-    public int getDefaultSqlPrecision(Dialect dialect, JdbcType jdbcType) {
+    public int getDefaultSqlPrecision() {
         return 0;
     }
 
     @Override
-    public int getDefaultSqlScale(Dialect dialect, JdbcType jdbcType) {
+    public int getDefaultSqlScale() {
         return 0;
     }
 }

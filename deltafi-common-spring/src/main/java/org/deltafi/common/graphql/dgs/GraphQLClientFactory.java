@@ -17,8 +17,8 @@
  */
 package org.deltafi.common.graphql.dgs;
 
-import com.netflix.graphql.dgs.client.DgsCustomGraphQLClient;
-import com.netflix.graphql.dgs.client.DgsGraphQLClient;
+import com.netflix.graphql.dgs.client.CustomGraphQLClient;
+import com.netflix.graphql.dgs.client.GraphQLClient;
 import com.netflix.graphql.dgs.client.HttpResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -29,20 +29,20 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 
-/** Creates configured {@link DgsGraphQLClient} instances that execute queries over HTTP. */
+/** Creates configured {@link GraphQLClient} instances that execute queries over HTTP. */
 @RequiredArgsConstructor
 @Slf4j
 public class GraphQLClientFactory {
     private final HttpClient httpClient;
 
     /**
-     * Build a {@link DgsGraphQLClient} that sends requests to the given URL.
+     * Build a {@link GraphQLClient} that sends requests to the given URL.
      * @param coreUrl the GraphQL endpoint URL
      * @param headers optional header name/value pairs to include with each request
-     * @return a configured {@link DgsGraphQLClient}
+     * @return a configured {@link GraphQLClient}
      */
-    public DgsGraphQLClient build(String coreUrl, String... headers) {
-        return new DgsCustomGraphQLClient(coreUrl, (url, defaultHeaders, body) -> {
+    public GraphQLClient build(String coreUrl, String... headers) {
+        return new CustomGraphQLClient(coreUrl, (url, defaultHeaders, body) -> {
             HttpRequest.Builder requestBuilder = HttpRequest.newBuilder()
                     .uri(URI.create(url))
                     .header("Content-Type", MediaType.APPLICATION_JSON)

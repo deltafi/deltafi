@@ -22,6 +22,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.io.Serializable;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -32,7 +33,7 @@ import java.util.regex.Pattern;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class PluginCoordinates {
+public class PluginCoordinates implements Serializable {
   private static final Pattern PATTERN = Pattern.compile("(.+):(.+):(.+)");
 
   private String groupId;

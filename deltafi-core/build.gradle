@@ -33,8 +33,7 @@ dependencies {
 
     implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
     implementation 'org.springframework.boot:spring-boot-starter-security'
-    implementation 'org.springframework.boot:spring-boot-starter-web'
-    implementation 'org.springframework.retry:spring-retry'
+    implementation 'org.springframework.boot:spring-boot-starter-webmvc'
     implementation 'org.springframework:spring-aspects'
 
     implementation 'com.networknt:json-schema-validator:1.5.9'
@@ -49,7 +48,7 @@ dependencies {
     implementation "com.github.docker-java:docker-java-transport-httpclient5:${dockerJavaVersion}"
     implementation 'org.lz4:lz4-java:1.8.1'
     implementation 'org.postgresql:postgresql:42.7.11'
-    implementation 'io.hypersistence:hypersistence-utils-hibernate-63:3.11.0'
+    implementation "io.hypersistence:hypersistence-utils-hibernate-71:${hypersistenceVersion}"
     implementation "com.fasterxml.uuid:java-uuid-generator:${javaUuidGeneratorVersion}"
     implementation "org.flywaydb:flyway-core:${flywayVersion}"
     implementation "org.flywaydb:flyway-database-postgresql:${flywayVersion}"
@@ -69,6 +68,11 @@ dependencies {
     testImplementation "org.testcontainers:junit-jupiter:${testContainersVersion}"
     testImplementation "org.testcontainers:postgresql:${testContainersVersion}"
     testImplementation 'org.springframework.boot:spring-boot-testcontainers'
+    testImplementation 'org.springframework.boot:spring-boot-flyway'
+    testImplementation 'org.springframework.boot:spring-boot-jdbc-test'
+    testImplementation 'org.springframework.boot:spring-boot-resttestclient'
+    testImplementation 'org.springframework.boot:spring-boot-restclient'
+    testImplementation 'org.springframework.boot:spring-boot-webmvc-test'
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
 
@@ -76,6 +80,7 @@ generateJava {
     packageName = 'org.deltafi.core.generated'
     generateClient = true
     skipEntityQueries = true
+    implementSerializable = true
     typeMapping = [
             "Duration"                      : "java.time.Duration",
             "JSON"                          : "java.util.Map<String, Object>",

@@ -29,6 +29,7 @@ import org.deltafi.common.types.Content;
 import org.deltafi.common.types.ResumeMetadata;
 import org.jetbrains.annotations.NotNull;
 
+import java.io.Serializable;
 import java.time.OffsetDateTime;
 import java.util.*;
 
@@ -39,7 +40,7 @@ import java.util.*;
 @EqualsAndHashCode
 @JsonInclude(JsonInclude.Include.NON_EMPTY)
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class Action {
+public class Action implements Serializable {
   static final private int MAX_CAUSE_SIZE = 100_000;
 
   @JsonProperty("n")
