@@ -19,9 +19,11 @@ package org.deltafi.core.configuration;
 import com.fasterxml.jackson.databind.Module;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import org.deltafi.core.converters.DataSizeDeserializer;
+import org.springframework.boot.jackson.autoconfigure.JsonMapperBuilderCustomizer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.util.unit.DataSize;
+import tools.jackson.databind.DeserializationFeature;
 
 @Configuration
 public class JacksonConfig {
@@ -30,5 +32,17 @@ public class JacksonConfig {
         SimpleModule module = new SimpleModule();
         module.addDeserializer(DataSize.class, new DataSizeDeserializer());
         return module;
+    }
+
+    /**
+     * Restores Jackson 2 leniency on the inbound HTTP {@code JsonMapper} so older Go
+     * and Python plugins keep registering: JSON {@code null} maps to a Java primitive's
+     * zero value rather than failing the request, and unknown properties are ignored.
+     */
+    @Bean
+    public JsonMapperBuilderCustomizer deltafiLenientJsonMapperBuilderCustomizer() {
+        return builder -> builder
+                .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
+                .disable(DeserializationFeature.FAIL_ON_NULL_FOR_PRIMITIVES);
     }
 }
