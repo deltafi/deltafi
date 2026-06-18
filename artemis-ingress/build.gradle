@@ -12,15 +12,7 @@ configurations {
     all {
         resolutionStrategy {
             dependencySubstitution {
-                substitute module('commons-beanutils:commons-beanutils') using module('commons-beanutils:commons-beanutils:1.11.0') because 'CVE'
-                substitute module('org.bouncycastle:bcprov-jdk18on') using module('org.bouncycastle:bcprov-jdk18on:1.84') because 'CVE'
-                substitute module('org.codehaus.plexus:plexus-utils') using module('org.codehaus.plexus:plexus-utils:4.0.3') because 'CVE'
-                substitute module('org.apache.commons:commons-lang3') using module('org.apache.commons:commons-lang3:3.19.0') because 'CVE'
-                substitute module('io.netty:netty-codec-http') using module('io.netty:netty-codec-http:4.1.133.Final') because 'CVE'
-                substitute module('io.netty:netty-codec-http2') using module('io.netty:netty-codec-http2:4.1.133.Final') because 'CVE'
-                substitute module('io.netty:netty-handler') using module('io.netty:netty-handler:4.1.133.Final') because 'CVE'
-                substitute module('io.netty:netty-handler-proxy') using module('io.netty:netty-handler-proxy:4.1.133.Final') because 'CVE'
-                substitute module('io.netty:netty-codec') using module('io.netty:netty-codec:4.1.133.Final') because 'CVE'
+                // substitute module('org.bouncycastle:bcprov-jdk18on') using module('org.bouncycastle:bcprov-jdk18on:1.84') because 'CVE'
             }
         }
     }

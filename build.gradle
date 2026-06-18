@@ -616,6 +616,6 @@ task cacheToMavenLocal(type: Copy) {
     dependsOn tasks.resolveDeps
 }
 
-
-gradle.addListener new TimingsListener()
+// Uncomment to enable task timing
+// gradle.addListener new TimingsListener()
 

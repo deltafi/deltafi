@@ -39,7 +39,7 @@ dependencies {
     implementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml'
     implementation "ch.qos.logback:logback-classic:${logbackVersion}"
     implementation "net.logstash.logback:logstash-logback-encoder:${logstashEncoderVersion}"
-    implementation 'org.apache.maven:maven-artifact:3.9.11'
+    implementation 'org.apache.maven:maven-artifact:3.9.16'
 
     testImplementation platform("org.junit:junit-bom:${jupiterVersion}")
     testRuntimeOnly platform("org.junit:junit-bom:${jupiterVersion}")
