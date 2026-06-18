@@ -57,14 +57,14 @@ type Annotation struct {
 // Preserves DID for annotation joins, partitioned by creation_time, has event_time bucket computed.
 // This stage allows annotations to be joined efficiently before final aggregation by event_time.
 type PreAggregatedEvent struct {
-	DID            string    `parquet:"did"`                               // Preserved for annotation joins
+	DID             string    `parquet:"did"`                                      // Preserved for annotation joins
 	EventTimeBucket time.Time `parquet:"event_time_bucket,timestamp(millisecond)"` // 5-min bucket by EVENT time
-	DataSource     string    `parquet:"data_source"`
-	EventType      string    `parquet:"event_type"`
-	FlowName       string    `parquet:"flow_name,optional"`
-	ActionName     string    `parquet:"action_name,optional"`
-	Cause          string    `parquet:"cause,optional"`
-	IngressType    string    `parquet:"ingress_type,optional"`
+	DataSource      string    `parquet:"data_source"`
+	EventType       string    `parquet:"event_type"`
+	FlowName        string    `parquet:"flow_name,optional"`
+	ActionName      string    `parquet:"action_name,optional"`
+	Cause           string    `parquet:"cause,optional"`
+	IngressType     string    `parquet:"ingress_type,optional"`
 
 	// Annotations joined from annotation files
 	Annotations map[string]string `parquet:"annotations,optional"`

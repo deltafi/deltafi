@@ -2,3 +2,4 @@ deltafi-dirwatcher
 watched-dir
 *.log
 *.pid
+.go/

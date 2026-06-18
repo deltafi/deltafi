@@ -36,13 +36,13 @@ const DefaultAgeOffDays = 30
 const DefaultProvenanceAgeOffDays = 3
 
 type CoreConfig struct {
-	coreURL               string
-	analyticsGroupName    string
-	ageOffDays            int
-	provenanceAgeOffDays  int
-	mu                    sync.RWMutex
-	logger                *slog.Logger
-	client                *http.Client
+	coreURL              string
+	analyticsGroupName   string
+	ageOffDays           int
+	provenanceAgeOffDays int
+	mu                   sync.RWMutex
+	logger               *slog.Logger
+	client               *http.Client
 }
 
 func NewCoreConfig(coreURL string, logger *slog.Logger) *CoreConfig {

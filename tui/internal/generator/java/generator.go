@@ -676,14 +676,14 @@ func preserveGradlePropertiesVersion(oldContent, newContent []byte) []byte {
 // Ordering and any extra lines in the local copy are preserved.
 func mergeGitignoreLines(oldContent, newContent []byte) []byte {
 	existing := make(map[string]bool)
-	for _, line := range strings.Split(string(oldContent), "\n") {
+	for line := range strings.SplitSeq(string(oldContent), "\n") {
 		if trimmed := strings.TrimSpace(line); trimmed != "" {
 			existing[trimmed] = true
 		}
 	}
 
 	var missing []string
-	for _, line := range strings.Split(string(newContent), "\n") {
+	for line := range strings.SplitSeq(string(newContent), "\n") {
 		trimmed := strings.TrimSpace(line)
 		if trimmed == "" {
 			continue
