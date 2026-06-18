@@ -1,8 +1,10 @@
-// ABOUTME: Adds 'grype' and 'trivy' tasks that scan the project's Docker image for vulnerabilities.
+// ABOUTME: Per-subproject scan + report tasks for a project's Docker image (grype, trivy, sbom).
 // ABOUTME: Shared by the monorepo (via docker-conventions) and downstream plugins (via plugin-convention).
 import org.deltafi.gradle.cli.ExecHelper
 import org.deltafi.gradle.cli.ToolRunner
-import org.deltafi.gradle.security.Severity
+import org.deltafi.gradle.security.ReportRenderer
+import org.deltafi.gradle.security.ScanExecutor
+import org.deltafi.gradle.security.ScanResultParser
 
 plugins {
     id 'org.deltafi.docker'
@@ -10,28 +12,41 @@ plugins {
 
 def securityScanExecHelper = objects.newInstance(ExecHelper)
 
-// Config-time captures shared by grype/trivy/sbom. All references to project/rootProject must
-// happen here (config time) — task doLast bodies are forbidden from touching them per Gradle 9's
-// Task.project deprecation, since that breaks the configuration cache.
+// Config-time captures shared by all tasks. All references to project/rootProject must happen here
+// (config time) — task doLast bodies are forbidden from touching them per Gradle 9's Task.project
+// deprecation, since that breaks the configuration cache.
 def projectName = project.name
 def projectVersion = project.version
-def rootBuildDir = rootProject.layout.buildDirectory
+def projectBuildDir = project.layout.buildDirectory
+def reportDir = projectBuildDir.dir('reports/security').get().asFile
 
-def grypeJsonOutput = rootBuildDir.file("grype-results/${projectName}-grype-results.json").get().asFile
-def grypeSarifOutput = rootBuildDir.file("grype-results/${projectName}-grype-results.sarif").get().asFile
-def trivyJsonOutput = rootBuildDir.file("trivy-results/${projectName}-trivy-results.json").get().asFile
-def trivySarifOutput = rootBuildDir.file("trivy-results/${projectName}-trivy-results.sarif").get().asFile
+def grypeJsonOutput  = new File(reportDir, 'grype.json')
+def grypeMdOutput    = new File(reportDir, 'grype.md')
+def grypeSarifOutput = new File(reportDir, 'grype.sarif')
+def trivyJsonOutput  = new File(reportDir, 'trivy.json')
+def trivyMdOutput    = new File(reportDir, 'trivy.md')
+def trivySarifOutput = new File(reportDir, 'trivy.sarif')
 
-// State that depends on docker { ... } config or the rootProject's securityScan extension is
-// resolved during afterEvaluate, then closed over by the task doLast bodies.
+// Walks up to find the securityScan extension wherever security-scan was applied (this project,
+// an ancestor, or the root). Decouples per-image result location from the aggregator's location
+// so the two plugins don't have to be applied at the same level of the project tree.
+def findSecurityScanExtUpward = {
+    def p = project
+    while (p != null) {
+        def ext = p.extensions.findByName('securityScan')
+        if (ext != null) return ext
+        p = p.parent
+    }
+    return null
+}
+
+// State that depends on docker { ... } config or the securityScan extension is resolved during
+// afterEvaluate, then closed over by the task doLast bodies.
 def scanImageName = null
 def grypeConfigPath = null
 def trivyIgnorePath = null
 def sarifEnabled = false
 def sbomOutputDir = null
-// Container fallback images for grype / trivy / syft. Resolved at afterEvaluate from the root
-// securityScan extension when present, defaulting to the upstream tags. Override per project via
-// `securityScan { toolImages.grype = '...' }`.
 def grypeImage = 'anchore/grype:latest'
 def trivyImage = 'aquasec/trivy:latest'
 def syftImage  = 'anchore/syft:latest'
@@ -44,11 +59,10 @@ afterEvaluate {
         ? "deltafi/${projectName}:${projectVersion}".toString()
         : project.docker.name.toString()
 
-    // Suppressions + toolImages live under the root project's securityScan extension (when present).
-    def ext = rootProject.extensions.findByName('securityScan')
+    def ext = findSecurityScanExtUpward()
     if (ext != null) {
         sarifEnabled = ext.sarif
-        sbomOutputDir = ext.sbomDir ?: rootBuildDir.dir('sboms').get().asFile
+        sbomOutputDir = ext.sbomDir ?: projectBuildDir.dir('sboms').get().asFile
         if (ext.suppressionsDir?.isDirectory()) {
             def grypeYaml = new File(ext.suppressionsDir, 'grype.yaml')
             if (grypeYaml.isFile()) grypeConfigPath = grypeYaml.absolutePath
@@ -59,15 +73,16 @@ afterEvaluate {
         if (ext.toolImages?.trivy) trivyImage = ext.toolImages.trivy
         if (ext.toolImages?.syft)  syftImage  = ext.toolImages.syft
     } else {
-        sbomOutputDir = rootBuildDir.dir('sboms').get().asFile
+        sbomOutputDir = projectBuildDir.dir('sboms').get().asFile
     }
 }
 
+// ---------- ad-hoc streaming scan tasks (no artifacts) ----------
+
 task grype {
     group = 'security'
-    description = "Scans this project's Docker image for vulnerabilities (grype)"
+    description = "Streams grype output for this project's Docker image"
 
-    // Always run, never cache - vulnerability databases update frequently
     outputs.upToDateWhen { false }
     outputs.cacheIf { false }
 
@@ -76,112 +91,19 @@ task grype {
         runner.ensureAvailable()
         runner.announceFallbackOnce()
 
-        def imageName = scanImageName
-        // In container fallback mode, mount the grype config file so the grype container can read it.
         def grypePrefix = []
         if (grypeConfigPath != null) {
             runner.mount(grypeConfigPath, '/grype.yaml')
             grypePrefix = ['--config', runner.translatePath(grypeConfigPath)]
         }
 
-        runner.runStreaming(["db", "update"])
-
-        def jsonResult = runner.run(grypePrefix + [imageName, "--output", "json"])
-        runner.runStreaming(grypePrefix + [imageName])
-
-        if (sarifEnabled) {
-            grypeSarifOutput.parentFile.mkdirs()
-            // Mount the output directory so grype (in container mode) can write the SARIF file back to the host.
-            runner.mount(grypeSarifOutput.parentFile.absolutePath, '/sarif-output')
-            def sarifPath = runner.translatePath(grypeSarifOutput.absolutePath)
-            runner.runStreaming(grypePrefix + [imageName, "--output", "sarif", "--file", sarifPath])
-            println "Grype SARIF written to: ${grypeSarifOutput.absolutePath}"
-        }
-
-        if (jsonResult.stdout.length() > 0) {
-            try {
-                def json = new groovy.json.JsonSlurper().parseText(jsonResult.stdout)
-                def matches = json.matches ?: []
-
-                def severityCounts = [:]
-                def fixableSeverityCounts = [:]
-                def fixableCount = 0
-                def findings = []
-
-                matches.each { match ->
-                    def severity = Severity.normalize(match.vulnerability?.severity)
-                    severityCounts[severity] = (severityCounts[severity] ?: 0) + 1
-
-                    def fixVersions = match.vulnerability?.fix?.versions
-                    def fixed = fixVersions && !fixVersions.isEmpty()
-                    if (fixed) {
-                        fixableCount++
-                        fixableSeverityCounts[severity] = (fixableSeverityCounts[severity] ?: 0) + 1
-                    }
-                    findings.add([
-                        id: match.vulnerability?.id ?: "Unknown",
-                        severity: severity,
-                        package: match.artifact?.name ?: "Unknown",
-                        version: match.artifact?.version ?: "Unknown",
-                        fixVersion: fixed ? fixVersions[0] : null
-                    ])
-                }
-
-                grypeJsonOutput.parentFile.mkdirs()
-
-                def results = [
-                    projectName: projectName,
-                    imageName: imageName,
-                    tool: 'grype',
-                    totalVulnerabilities: matches.size(),
-                    severityCounts: severityCounts,
-                    fixableSeverityCounts: fixableSeverityCounts,
-                    fixableCount: fixableCount,
-                    findings: findings,
-                    // Subset of findings that have a fix available — kept for the
-                    // grypeReport/grypeFullReport aggregator tasks in root build.gradle.
-                    fixableVulnerabilities: findings.findAll { it.fixVersion != null }
-                ]
-
-                grypeJsonOutput.text = new groovy.json.JsonBuilder(results).toPrettyString()
-
-                def separator = "=================================================================================="
-                println "\n" + separator
-                println "GRYPE SCAN SUMMARY"
-                println separator
-                println "Image: ${imageName}"
-                println "Total vulnerabilities found: ${matches.size()}"
-
-                if (severityCounts.size() > 0) {
-                    println "\nVulnerabilities by severity:"
-                    Severity.DISPLAY_ORDER.each { severity ->
-                        if (severityCounts.containsKey(severity)) {
-                            println "  ${severity.padRight(12)}: ${severityCounts[severity]}"
-                        }
-                    }
-                    severityCounts.each { severity, count ->
-                        if (!Severity.DISPLAY_ORDER.contains(severity)) {
-                            println "  ${severity.padRight(12)}: ${count}"
-                        }
-                    }
-                }
-
-                if (fixableCount > 0) {
-                    println "\nFixable vulnerabilities: ${fixableCount}"
-                }
-
-                println separator + "\n"
-
-            } catch (Exception e) {
-                println "\nWarning: Could not parse grype JSON output for summary: ${e.message}"
-            }
-        }
+        runner.runStreaming(grypePrefix + [scanImageName, '--quiet'])
     }
 }
 
 task trivy {
     group = 'security'
-    description = "Scans this project's Docker image for vulnerabilities (trivy)"
+    description = "Streams trivy output for this project's Docker image"
 
     outputs.upToDateWhen { false }
     outputs.cacheIf { false }
@@ -191,114 +113,94 @@ task trivy {
         runner.ensureAvailable()
         runner.announceFallbackOnce()
 
-        def imageName = scanImageName
-        // In container fallback mode, the host trivyignore path won't exist inside the trivy
-        // container — mount it explicitly and pass the translated (container-side) path.
         def trivyIgnoreFlags = []
         if (trivyIgnorePath != null) {
             runner.mount(trivyIgnorePath, '/trivyignore')
             trivyIgnoreFlags = ['--ignorefile', runner.translatePath(trivyIgnorePath)]
         }
 
-        def jsonResult = runner.run(["image"] + trivyIgnoreFlags + ["--format", "json", imageName])
-        runner.runStreaming(["image"] + trivyIgnoreFlags + [imageName])
+        runner.runStreaming(['--quiet', 'image', '--skip-db-update', '--skip-java-db-update'] + trivyIgnoreFlags + [scanImageName])
+    }
+}
+
+// ---------- per-image *Report tasks (produce build/reports/security/{grype,trivy}.{json,md}) ----------
+
+task grypeReport {
+    group = 'security'
+    description = "Generates grype.json and grype.md for this project's Docker image"
+    outputs.upToDateWhen { false }
+    outputs.cacheIf { false }
+
+    doLast {
+        def runner = new ToolRunner(securityScanExecHelper.execOperations, 'grype', grypeImage)
+        runner.ensureAvailable()
+        runner.announceFallbackOnce()
+
+        def grypePrefix = []
+        if (grypeConfigPath != null) {
+            runner.mount(grypeConfigPath, '/grype.yaml')
+            grypePrefix = ['--config', runner.translatePath(grypeConfigPath)]
+        }
+
+        def raw = ScanExecutor.runAndParseJson(runner,
+            grypePrefix + [scanImageName, '--output', 'json'],
+            path)
+        def result = ScanResultParser.grypeImage(raw, projectName, scanImageName)
+
+        reportDir.mkdirs()
+        grypeJsonOutput.text = new groovy.json.JsonBuilder(result).toPrettyString()
+        grypeMdOutput.text   = ReportRenderer.renderImageReport(result, ReportRenderer.isoNow())
+
+        if (sarifEnabled) {
+            grypeSarifOutput.parentFile.mkdirs()
+            runner.mount(grypeSarifOutput.parentFile.absolutePath, '/sarif-output')
+            runner.runStreaming(grypePrefix + [scanImageName, '--output', 'sarif', '--file', runner.translatePath(grypeSarifOutput.absolutePath)])
+            println "Grype SARIF written to: ${grypeSarifOutput.absolutePath}"
+        }
+
+        println "grype: ${result.totalVulnerabilities} findings → ${grypeMdOutput.absolutePath}"
+    }
+}
+
+task trivyReport {
+    group = 'security'
+    description = "Generates trivy.json and trivy.md for this project's Docker image"
+    outputs.upToDateWhen { false }
+    outputs.cacheIf { false }
+
+    doLast {
+        def runner = new ToolRunner(securityScanExecHelper.execOperations, 'trivy', trivyImage)
+        runner.ensureAvailable()
+        runner.announceFallbackOnce()
+
+        def trivyIgnoreFlags = []
+        if (trivyIgnorePath != null) {
+            runner.mount(trivyIgnorePath, '/trivyignore')
+            trivyIgnoreFlags = ['--ignorefile', runner.translatePath(trivyIgnorePath)]
+        }
+
+        def raw = ScanExecutor.runAndParseJson(runner,
+            ['--quiet', 'image', '--skip-db-update', '--skip-java-db-update'] + trivyIgnoreFlags + ['--format', 'json', scanImageName],
+            path)
+        def result = ScanResultParser.trivyImage(raw, projectName, scanImageName)
+
+        reportDir.mkdirs()
+        trivyJsonOutput.text = new groovy.json.JsonBuilder(result).toPrettyString()
+        trivyMdOutput.text   = ReportRenderer.renderImageReport(result, ReportRenderer.isoNow())
 
         if (sarifEnabled) {
             trivySarifOutput.parentFile.mkdirs()
-            // Mount the output directory so trivy (in container mode) can write the SARIF file back to the host.
             runner.mount(trivySarifOutput.parentFile.absolutePath, '/sarif-output')
-            def sarifPath = runner.translatePath(trivySarifOutput.absolutePath)
-            runner.runStreaming(["image"] + trivyIgnoreFlags + ["--format", "sarif", "--output", sarifPath, imageName])
+            runner.runStreaming(['--quiet', 'image', '--skip-db-update', '--skip-java-db-update'] + trivyIgnoreFlags +
+                ['--format', 'sarif', '--output', runner.translatePath(trivySarifOutput.absolutePath), scanImageName])
             println "Trivy SARIF written to: ${trivySarifOutput.absolutePath}"
         }
 
-        if (jsonResult.stdout.length() > 0) {
-            try {
-                def json = new groovy.json.JsonSlurper().parseText(jsonResult.stdout)
-                def vulnerabilities = []
-
-                if (json.Results) {
-                    json.Results.each { result ->
-                        if (result.Vulnerabilities) {
-                            vulnerabilities.addAll(result.Vulnerabilities)
-                        }
-                    }
-                }
-
-                def severityCounts = [:]
-                def fixableSeverityCounts = [:]
-                def fixableCount = 0
-                def findings = []
-
-                vulnerabilities.each { vuln ->
-                    def severity = Severity.normalize(vuln.Severity)
-                    severityCounts[severity] = (severityCounts[severity] ?: 0) + 1
-
-                    def fixed = vuln.FixedVersion && vuln.FixedVersion != ""
-                    if (fixed) {
-                        fixableCount++
-                        fixableSeverityCounts[severity] = (fixableSeverityCounts[severity] ?: 0) + 1
-                    }
-                    findings.add([
-                        id: vuln.VulnerabilityID ?: "Unknown",
-                        severity: severity,
-                        package: vuln.PkgName ?: "Unknown",
-                        version: vuln.InstalledVersion ?: "Unknown",
-                        fixVersion: fixed ? vuln.FixedVersion : null
-                    ])
-                }
-
-                trivyJsonOutput.parentFile.mkdirs()
-
-                def results = [
-                    projectName: projectName,
-                    imageName: imageName,
-                    tool: 'trivy',
-                    totalVulnerabilities: vulnerabilities.size(),
-                    severityCounts: severityCounts,
-                    fixableSeverityCounts: fixableSeverityCounts,
-                    fixableCount: fixableCount,
-                    findings: findings,
-                    // Subset of findings that have a fix available — kept for the
-                    // trivyReport/trivyFullReport aggregator tasks in root build.gradle.
-                    fixableVulnerabilities: findings.findAll { it.fixVersion != null }
-                ]
-
-                trivyJsonOutput.text = new groovy.json.JsonBuilder(results).toPrettyString()
-
-                def separator = "=================================================================================="
-                println "\n" + separator
-                println "TRIVY SCAN SUMMARY"
-                println separator
-                println "Image: ${imageName}"
-                println "Total vulnerabilities found: ${vulnerabilities.size()}"
-
-                if (severityCounts.size() > 0) {
-                    println "\nVulnerabilities by severity:"
-                    Severity.DISPLAY_ORDER.each { severity ->
-                        if (severityCounts.containsKey(severity)) {
-                            println "  ${severity.padRight(12)}: ${severityCounts[severity]}"
-                        }
-                    }
-                    severityCounts.each { severity, count ->
-                        if (!Severity.DISPLAY_ORDER.contains(severity)) {
-                            println "  ${severity.padRight(12)}: ${count}"
-                        }
-                    }
-                }
-
-                if (fixableCount > 0) {
-                    println "\nFixable vulnerabilities: ${fixableCount}"
-                }
-
-                println separator + "\n"
-
-            } catch (Exception e) {
-                println "\nWarning: Could not parse trivy JSON output for summary: ${e.message}"
-            }
-        }
+        println "trivy: ${result.totalVulnerabilities} findings → ${trivyMdOutput.absolutePath}"
     }
 }
+
+// ---------- sbom (unchanged behavior, just relocated dependency wiring) ----------
 
 task sbom {
     group = 'security'
@@ -315,7 +217,6 @@ task sbom {
         sbomOutputDir.mkdirs()
         def outputFile = new File(sbomOutputDir, "${projectName}.cdx.json")
 
-        // Mount the output directory so syft (in container mode) can write the SBOM back to the host.
         runner.mount(sbomOutputDir.absolutePath, '/sbom-output')
         def sbomPath = runner.translatePath(outputFile.absolutePath)
 
@@ -330,6 +231,8 @@ afterEvaluate {
     if (producer != null) {
         grype.dependsOn producer
         trivy.dependsOn producer
+        grypeReport.dependsOn producer
+        trivyReport.dependsOn producer
         sbom.dependsOn producer
     }
 }
