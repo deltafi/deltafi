@@ -481,9 +481,7 @@ public class DocumentationGenerator {
         if (properties == null) {
             return null;
         }
-        Iterator<Map.Entry<String, JsonNode>> fields = properties.fields();
-        while (fields.hasNext()) {
-            Map.Entry<String, JsonNode> field = fields.next();
+        for (Map.Entry<String, JsonNode> field : properties.properties()) {
             if (field.getValue().has("const")) {
                 return field.getKey();
             }

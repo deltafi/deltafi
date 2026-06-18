@@ -62,9 +62,7 @@ class DockerExtension {
     }
 
     void tag(String taskName, String tag) {
-        if (namedTags.putIfAbsent(taskName, tag) != null) {
-            project.logger.warn("WARNING: Task name '${taskName}' is existed.")
-        }
+        namedTags.put(taskName, tag)
     }
 
     File getResolvedDockerfile() {
