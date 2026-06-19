@@ -337,7 +337,7 @@ const schemaProvided = (schema) => {
 const search = async (event) => {
   setTimeout(() => {
     if (!event.query.trim().length) {
-      topicList.value = allTopics.value;
+      topicList.value = [...allTopics.value];
     } else {
       topicList.value = allTopics.value.filter((topic) => {
         return topic.toLowerCase().includes(event.query.toLowerCase());
