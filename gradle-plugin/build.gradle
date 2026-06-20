@@ -27,6 +27,8 @@ dependencies {
     implementation project(':deltafi-common-spring')
 
     implementation "org.springframework.boot:spring-boot-gradle-plugin:${springBootVersion}"
+
+    implementation "org.yaml:snakeyaml:2.3"
 }
 
 group = 'org.deltafi.gradle-plugin'
