@@ -48,6 +48,10 @@ dgs:
     preferred-json-mapper: jackson2
     graphiql:
       enabled: false
+springdoc:
+  # emit map keys (paths, schemas, properties) in a stable order so the committed
+  # openapi.yaml is deterministic across regenerations (drift check)
+  writer-with-order-by-keys: true
 management:
   endpoint:
     health:

@@ -29,9 +29,10 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
 import java.util.Map;
+import static org.springframework.http.MediaType.TEXT_PLAIN_VALUE;
 
 @RestController
-@RequestMapping("/api/v2/lookup")
+@RequestMapping(value = "/api/v2/lookup", produces = TEXT_PLAIN_VALUE)
 @Slf4j
 public class LookupTableRestController {
     private final LookupTableService lookupTableService;

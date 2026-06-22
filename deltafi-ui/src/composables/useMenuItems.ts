@@ -348,6 +348,13 @@ export default function useMenuItems(): {
           visible: computed(() => hasPermission("Admin")),
         },
         {
+          name: "Swagger UI",
+          icon: "fas fa-code fa-fw",
+          url: computed(() => buildURL(undefined, "/swagger")),
+          visible: computed(() => hasPermission("Admin")),
+          keywords: ["rest", "api", "openapi", "swagger"],
+        },
+        {
           name: "Versions",
           icon: "fas fa-info-circle fa-fw",
           path: "/versions",

@@ -18,20 +18,19 @@
 package org.deltafi.core.rest;
 
 import lombok.AllArgsConstructor;
-import org.deltafi.core.exceptions.StorageCheckException;
 import org.deltafi.core.security.NeedsPermission;
 import org.deltafi.core.services.SystemService;
 import org.deltafi.core.types.NodeMetrics;
+import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.time.OffsetDateTime;
 import java.util.List;
-import java.util.Map;
 
 @RestController
-@RequestMapping("/api/v2/metrics/system")
+@RequestMapping(value = "/api/v2/metrics/system", produces = MediaType.APPLICATION_JSON_VALUE)
 @AllArgsConstructor
 public class MetricsRest {
 

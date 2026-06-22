@@ -28,9 +28,11 @@ import org.springframework.web.bind.annotation.*;
 import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
+import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
+import static org.springframework.http.MediaType.TEXT_PLAIN_VALUE;
 
 @RestController
-@RequestMapping("/api/v2/deltafile/annotate")
+@RequestMapping(value = "/api/v2/deltafile/annotate", produces = APPLICATION_JSON_VALUE)
 @RequiredArgsConstructor
 public class DeltaFileAnnotationRest {
 
@@ -38,13 +40,13 @@ public class DeltaFileAnnotationRest {
     private final CoreAuditLogger auditLogger;
 
     @NeedsPermission.DeltaFileMetadataWrite
-    @PostMapping("/{did}")
+    @PostMapping(value = "/{did}", produces = TEXT_PLAIN_VALUE)
     public ResponseEntity<String> annotateDeltaFile(@PathVariable UUID did, @RequestParam Map<String, String> requestParams) {
         return annotateDeltaFile(did, requestParams, false);
     }
 
     @NeedsPermission.DeltaFileMetadataWrite
-    @PostMapping("/{did}/allowOverwrites")
+    @PostMapping(value = "/{did}/allowOverwrites", produces = TEXT_PLAIN_VALUE)
     public ResponseEntity<String> annotateDeltaFileAllowOverwrites(@PathVariable UUID did, @RequestParam Map<String, String> requestParams) {
         return annotateDeltaFile(did, requestParams, true);
     }

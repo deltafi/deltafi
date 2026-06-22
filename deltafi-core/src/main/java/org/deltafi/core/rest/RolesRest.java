@@ -25,6 +25,7 @@ import org.deltafi.core.services.RoleService;
 import org.deltafi.core.types.Role;
 import org.deltafi.core.util.UpdateMapper;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -33,7 +34,7 @@ import java.util.UUID;
 import static org.deltafi.common.constant.DeltaFiConstants.ADMIN_ID;
 
 @RestController
-@RequestMapping("/api/v2/roles")
+@RequestMapping(value = "/api/v2/roles", produces = MediaType.APPLICATION_JSON_VALUE)
 @RequiredArgsConstructor
 public class RolesRest {
     private final RoleService roleService;

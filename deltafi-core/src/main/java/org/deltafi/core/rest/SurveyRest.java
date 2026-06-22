@@ -38,7 +38,7 @@ import java.time.OffsetDateTime;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/v2/survey")
+@RequestMapping(value = "/api/v2/survey", produces = MediaType.APPLICATION_JSON_VALUE)
 @AllArgsConstructor
 @Slf4j
 public class SurveyRest {

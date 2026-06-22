@@ -29,5 +29,7 @@ public class WebConfiguration implements WebMvcConfigurer {
         viewControllerRegistry.addRedirectViewController("/docs/", "/docs/index.html");
         viewControllerRegistry.addRedirectViewController("/graphiql", "/graphiql/index.html");
         viewControllerRegistry.addRedirectViewController("/graphiql/", "/graphiql/index.html");
+        viewControllerRegistry.addRedirectViewController("/swagger", "/swagger-ui/index.html");
+        viewControllerRegistry.addRedirectViewController("/swagger/", "/swagger-ui/index.html");
     }
 }

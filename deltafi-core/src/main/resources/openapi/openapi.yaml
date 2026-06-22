@@ -1,0 +1,4121 @@
+components:
+  schemas:
+    ActionConfiguration:
+      properties:
+        actionType:
+          enum:
+          - "INGRESS"
+          - "TIMED_INGRESS"
+          - "TRANSFORM"
+          - "EGRESS"
+          - "PUBLISH"
+          - "UNKNOWN"
+          type: "string"
+        apiVersion:
+          type: "string"
+        internalParameters:
+          additionalProperties: {}
+          type: "object"
+        join:
+          $ref: "#/components/schemas/JoinConfiguration"
+        name:
+          type: "string"
+        parameterSchema:
+          $ref: "#/components/schemas/JsonNode"
+        parameters:
+          additionalProperties: {}
+          type: "object"
+        templated:
+          type: "boolean"
+        type:
+          type: "string"
+      type: "object"
+    ActionGeneratorInput:
+      properties:
+        actionType:
+          enum:
+          - "INGRESS"
+          - "TIMED_INGRESS"
+          - "TRANSFORM"
+          - "EGRESS"
+          - "PUBLISH"
+          - "UNKNOWN"
+          type: "string"
+        actionsPackageName:
+          type: "string"
+        className:
+          type: "string"
+        description:
+          type: "string"
+        fullClassName:
+          type: "string"
+        packageName:
+          type: "string"
+        parameterClassName:
+          type: "string"
+        paramsPackageName:
+          type: "string"
+      type: "object"
+    ActionMetrics:
+      properties:
+        actionName:
+          type: "string"
+        executionCount:
+          format: "int64"
+          type: "integer"
+        executionTimeMs:
+          format: "int64"
+          type: "integer"
+      type: "object"
+    AggregatedSearchOptions:
+      properties:
+        annotationKeys:
+          items:
+            type: "string"
+          type: "array"
+          uniqueItems: true
+        dataSinks:
+          items:
+            type: "string"
+          type: "array"
+          uniqueItems: true
+        restDataSources:
+          items:
+            type: "string"
+          type: "array"
+          uniqueItems: true
+        timedDataSources:
+          items:
+            type: "string"
+          type: "array"
+          uniqueItems: true
+        topics:
+          items:
+            type: "string"
+          type: "array"
+          uniqueItems: true
+        transforms:
+          items:
+            type: "string"
+          type: "array"
+          uniqueItems: true
+      type: "object"
+    AggregatedStats:
+      properties:
+        healthyCount:
+          format: "int32"
+          type: "integer"
+        memberCount:
+          format: "int32"
+          type: "integer"
+        totalColdQueue:
+          format: "int64"
+          type: "integer"
+        totalErrors:
+          format: "int64"
+          type: "integer"
+        totalInFlight:
+          format: "int64"
+          type: "integer"
+        totalPaused:
+          format: "int64"
+          type: "integer"
+        totalRateLimited:
+          format: "int64"
+          type: "integer"
+        totalWarmQueue:
+          format: "int64"
+          type: "integer"
+        unhealthyCount:
+          format: "int32"
+          type: "integer"
+      type: "object"
+    AnnotationConfig:
+      properties:
+        annotations:
+          additionalProperties:
+            type: "string"
+          type: "object"
+        discardPrefix:
+          type: "string"
+        metadataPatterns:
+          items:
+            type: "string"
+          type: "array"
+      type: "object"
+    AppInfo:
+      properties:
+        app:
+          type: "string"
+        container:
+          type: "string"
+        group:
+          type: "string"
+        image:
+          $ref: "#/components/schemas/Image"
+      type: "object"
+    AppName:
+      properties:
+        name:
+          type: "string"
+      type: "object"
+    ArtifactManifest:
+      properties:
+        artifactName:
+          type: "string"
+        contentType:
+          type: "string"
+        createdAt:
+          format: "date-time"
+          type: "string"
+        description:
+          type: "string"
+        labels:
+          additionalProperties:
+            type: "string"
+          type: "object"
+        modifiedAt:
+          format: "date-time"
+          type: "string"
+        sha256:
+          type: "string"
+        size:
+          format: "int64"
+          type: "integer"
+        version:
+          type: "string"
+      type: "object"
+    ArtifactSummary:
+      properties:
+        activeManifest:
+          $ref: "#/components/schemas/ArtifactManifest"
+        activeVersion:
+          type: "string"
+        aliases:
+          additionalProperties:
+            type: "string"
+          type: "object"
+        artifactName:
+          type: "string"
+        totalVersions:
+          format: "int32"
+          type: "integer"
+      type: "object"
+    BackOff:
+      properties:
+        delay:
+          format: "int32"
+          type: "integer"
+        maxDelay:
+          format: "int32"
+          type: "integer"
+        multiplier:
+          format: "int32"
+          type: "integer"
+        random:
+          type: "boolean"
+      type: "object"
+    CheckResult:
+      properties:
+        code:
+          format: "int32"
+          type: "integer"
+        description:
+          type: "string"
+        message:
+          type: "string"
+        nextRunTime:
+          format: "date-time"
+          type: "string"
+        statusCheckId:
+          type: "string"
+        timestamp:
+          format: "date-time"
+          type: "string"
+      type: "object"
+    ColdQueueMetrics:
+      properties:
+        actionClass:
+          type: "string"
+        actionName:
+          type: "string"
+        count:
+          format: "int32"
+          type: "integer"
+        flowName:
+          type: "string"
+        flowType:
+          type: "string"
+        oldestQueuedAt:
+          format: "date-time"
+          type: "string"
+      type: "object"
+    ConfigDiff:
+      properties:
+        comparedAt:
+          format: "date-time"
+          type: "string"
+        leaderName:
+          type: "string"
+        memberName:
+          type: "string"
+        sections:
+          items:
+            $ref: "#/components/schemas/DiffSection"
+          type: "array"
+      type: "object"
+    Content:
+      properties:
+        mediaType:
+          type: "string"
+        name:
+          type: "string"
+        segments:
+          items:
+            $ref: "#/components/schemas/Segment"
+          type: "array"
+        size:
+          format: "int64"
+          type: "integer"
+        tags:
+          items:
+            type: "string"
+          type: "array"
+          uniqueItems: true
+      type: "object"
+    ContentRequest:
+      properties:
+        actionIndex:
+          format: "int32"
+          type: "integer"
+        contentIndex:
+          format: "int32"
+          type: "integer"
+        did:
+          format: "uuid"
+          type: "string"
+        flowNumber:
+          format: "int32"
+          type: "integer"
+        offset:
+          format: "int64"
+          type: "integer"
+        size:
+          format: "int64"
+          type: "integer"
+      type: "object"
+    CredentialsConfig:
+      properties:
+        passwordEnvVar:
+          type: "string"
+        type:
+          type: "string"
+        username:
+          type: "string"
+      type: "object"
+    DataSinkPlan:
+      properties:
+        description:
+          type: "string"
+        egressAction:
+          $ref: "#/components/schemas/ActionConfiguration"
+        name:
+          type: "string"
+        sourcePlugin:
+          $ref: "#/components/schemas/PluginCoordinates"
+        subscribe:
+          items:
+            $ref: "#/components/schemas/Rule"
+          type: "array"
+          uniqueItems: true
+        tags:
+          items:
+            type: "string"
+          type: "array"
+          uniqueItems: true
+        type:
+          enum:
+          - "REST_DATA_SOURCE"
+          - "TIMED_DATA_SOURCE"
+          - "ON_ERROR_DATA_SOURCE"
+          - "TRANSFORM"
+          - "DATA_SINK"
+          type: "string"
+      required:
+      - "description"
+      - "egressAction"
+      - "name"
+      - "subscribe"
+      type: "object"
+    DataSinkSnapshot:
+      properties:
+        expectedAnnotations:
+          items:
+            type: "string"
+          type: "array"
+          uniqueItems: true
+        name:
+          type: "string"
+        rateLimit:
+          $ref: "#/components/schemas/RateLimit"
+        running:
+          type: "boolean"
+        sourcePlugin:
+          $ref: "#/components/schemas/PluginCoordinates"
+        testMode:
+          type: "boolean"
+      type: "object"
+    DataSize:
+      properties:
+        negative:
+          type: "boolean"
+      type: "object"
+    DefaultRule:
+      properties:
+        defaultBehavior:
+          enum:
+          - "ERROR"
+          - "FILTER"
+          - "PUBLISH"
+          type: "string"
+        topic:
+          type: "string"
+      type: "object"
+    DeletePolicies:
+      properties:
+        timedPolicies:
+          items:
+            $ref: "#/components/schemas/TimedDeletePolicy"
+          type: "array"
+      type: "object"
+    DeltaFiProperties:
+      properties:
+        actionExecutionTimeout:
+          type: "string"
+        actionExecutionWarning:
+          type: "string"
+        ageOffDays:
+          format: "int32"
+          type: "integer"
+        allowedAnalyticsAnnotations:
+          type: "string"
+        analyticsGroupName:
+          type: "string"
+        autoCleanPostgres:
+          type: "boolean"
+        autoResumeCheckFrequency:
+          type: "string"
+        autoResumeEnabled:
+          type: "boolean"
+        cacheSyncDuration:
+          type: "string"
+        cachedMemberConfigs:
+          items:
+            $ref: "#/components/schemas/MemberConfig"
+          type: "array"
+        checkActionQueueSizeThreshold:
+          format: "int32"
+          type: "integer"
+        checkColdQueueMinimumGrowing:
+          format: "int32"
+          type: "integer"
+        checkColdQueueWarningThreshold:
+          format: "int32"
+          type: "integer"
+        checkContentStoragePercentThreshold:
+          format: "int32"
+          type: "integer"
+        checkDeleteLagErrorThreshold:
+          format: "int32"
+          type: "integer"
+        checkDeleteLagWarningThreshold:
+          format: "int32"
+          type: "integer"
+        checkSslExpirationErrorThreshold:
+          format: "int32"
+          type: "integer"
+        checkSslExpirationWarningThreshold:
+          format: "int32"
+          type: "integer"
+        coreInternalQueueSize:
+          format: "int32"
+          type: "integer"
+        coreServiceThreads:
+          format: "int32"
+          type: "integer"
+        deleteFrequency:
+          type: "string"
+        deletePolicyBatchSize:
+          format: "int32"
+          type: "integer"
+        diskSpacePercentThreshold:
+          format: "double"
+          type: "number"
+        egressEnabled:
+          type: "boolean"
+        inMemoryQueueSize:
+          format: "int32"
+          type: "integer"
+        ingressDiskSpaceRequirementInBytes:
+          format: "int64"
+          type: "integer"
+        ingressDiskSpaceRequirementInMb:
+          format: "int64"
+          type: "integer"
+        ingressEnabled:
+          type: "boolean"
+        insertBatchSize:
+          format: "int32"
+          type: "integer"
+        joinAcquireLockTimeoutMs:
+          format: "int64"
+          type: "integer"
+        joinLockCheckInterval:
+          type: "string"
+        joinMaxLockDuration:
+          type: "string"
+        leaderConfig:
+          type: "string"
+        maxFlowDepth:
+          format: "int32"
+          type: "integer"
+        memberConfigs:
+          items:
+            $ref: "#/components/schemas/MemberConfig"
+          type: "array"
+        memberPollingInterval:
+          format: "int32"
+          type: "integer"
+        memberPollingTimeout:
+          format: "int32"
+          type: "integer"
+        memberRequestTimeout:
+          format: "int32"
+          type: "integer"
+        messageOfTheDay:
+          type: "string"
+        metadataDiskSpacePercentThreshold:
+          format: "double"
+          type: "number"
+        metricsEnabled:
+          type: "boolean"
+        minimumActionLogSeverity:
+          enum:
+          - "TRACE"
+          - "INFO"
+          - "WARNING"
+          - "ERROR"
+          - "USER"
+          type: "string"
+        parquetAnalyticsAgeOffDays:
+          format: "int32"
+          type: "integer"
+        parquetAnalyticsEnabled:
+          type: "boolean"
+        pluginDeployTimeout:
+          type: "string"
+        pluginImagePullSecret:
+          type: "string"
+        provenanceAgeOffDays:
+          format: "int32"
+          type: "integer"
+        provenanceAnnotationsAllowed:
+          type: "string"
+        provenanceEnabled:
+          type: "boolean"
+        requeueBacklogThreshold:
+          format: "int32"
+          type: "integer"
+        requeueDuration:
+          type: "string"
+        scheduledServiceThreads:
+          format: "int32"
+          type: "integer"
+        securityBannerBackgroundColor:
+          type: "string"
+        securityBannerEnabled:
+          type: "boolean"
+        securityBannerText:
+          type: "string"
+        securityBannerTextColor:
+          type: "string"
+        systemName:
+          type: "string"
+        timescaleAnalyticsEnabled:
+          type: "boolean"
+        topBarBackgroundColor:
+          type: "string"
+        topBarTextColor:
+          type: "string"
+        uiContentPreviewSize:
+          format: "int64"
+          type: "integer"
+        uiUseUTC:
+          type: "boolean"
+      type: "object"
+    DeltaFiUserDTO:
+      properties:
+        createdAt:
+          format: "date-time"
+          type: "string"
+        dn:
+          type: "string"
+        id:
+          format: "uuid"
+          type: "string"
+        name:
+          type: "string"
+        permissions:
+          items:
+            type: "string"
+          type: "array"
+          uniqueItems: true
+        roles:
+          items:
+            $ref: "#/components/schemas/Role"
+          type: "array"
+          uniqueItems: true
+        updatedAt:
+          format: "date-time"
+          type: "string"
+        username:
+          type: "string"
+      type: "object"
+    DeltaFileOrder:
+      properties:
+        direction:
+          enum:
+          - "ASC"
+          - "DESC"
+          type: "string"
+        field:
+          type: "string"
+      type: "object"
+    DeltaFilesFilter:
+      properties:
+        actions:
+          items:
+            type: "string"
+          type: "array"
+        annotations:
+          items:
+            $ref: "#/components/schemas/KeyValue"
+          type: "array"
+        contentDeleted:
+          type: "boolean"
+        createdAfter:
+          format: "date-time"
+          type: "string"
+        createdBefore:
+          format: "date-time"
+          type: "string"
+        dataSinks:
+          items:
+            type: "string"
+          type: "array"
+        dataSources:
+          items:
+            type: "string"
+          type: "array"
+        dids:
+          items:
+            format: "uuid"
+            type: "string"
+          type: "array"
+        egressed:
+          type: "boolean"
+        errorAcknowledged:
+          type: "boolean"
+        errorCause:
+          type: "string"
+        filtered:
+          type: "boolean"
+        filteredCause:
+          type: "string"
+        ingressBytesMax:
+          format: "int64"
+          type: "integer"
+        ingressBytesMin:
+          format: "int64"
+          type: "integer"
+        modifiedAfter:
+          format: "date-time"
+          type: "string"
+        modifiedBefore:
+          format: "date-time"
+          type: "string"
+        nameFilter:
+          $ref: "#/components/schemas/NameFilter"
+        parentDid:
+          format: "uuid"
+          type: "string"
+        paused:
+          type: "boolean"
+        pendingAnnotations:
+          type: "boolean"
+        pinned:
+          type: "boolean"
+        referencedBytesMax:
+          format: "int64"
+          type: "integer"
+        referencedBytesMin:
+          format: "int64"
+          type: "integer"
+        replayable:
+          type: "boolean"
+        replayed:
+          type: "boolean"
+        requeueCountMin:
+          format: "int32"
+          type: "integer"
+        stage:
+          enum:
+          - "IN_FLIGHT"
+          - "COMPLETE"
+          - "ERROR"
+          - "CANCELLED"
+          type: "string"
+        terminalStage:
+          type: "boolean"
+        testMode:
+          type: "boolean"
+        topics:
+          items:
+            type: "string"
+          type: "array"
+        totalBytesMax:
+          format: "int64"
+          type: "integer"
+        totalBytesMin:
+          format: "int64"
+          type: "integer"
+        transforms:
+          items:
+            type: "string"
+          type: "array"
+        userNotes:
+          type: "boolean"
+        warnings:
+          type: "boolean"
+      type: "object"
+    DetailedQueueMetrics:
+      properties:
+        coldQueues:
+          items:
+            $ref: "#/components/schemas/ColdQueueMetrics"
+          type: "array"
+        rateLimitedQueues:
+          items:
+            $ref: "#/components/schemas/ColdQueueMetrics"
+          type: "array"
+        timestamp:
+          format: "date-time"
+          type: "string"
+        warmQueues:
+          items:
+            $ref: "#/components/schemas/WarmQueueMetrics"
+          type: "array"
+      type: "object"
+    DiffItem:
+      properties:
+        leaderValue: {}
+        memberValue: {}
+        path:
+          type: "string"
+        type:
+          enum:
+          - "ADDED"
+          - "REMOVED"
+          - "MODIFIED"
+          type: "string"
+      type: "object"
+    DiffSection:
+      properties:
+        diffCount:
+          format: "int32"
+          type: "integer"
+        diffs:
+          items:
+            $ref: "#/components/schemas/DiffItem"
+          type: "array"
+        name:
+          type: "string"
+      type: "object"
+    ErrorSourceFilter:
+      properties:
+        actionClass:
+          type: "string"
+        actionName:
+          type: "string"
+        flowName:
+          type: "string"
+        flowType:
+          enum:
+          - "REST_DATA_SOURCE"
+          - "TIMED_DATA_SOURCE"
+          - "ON_ERROR_DATA_SOURCE"
+          - "TRANSFORM"
+          - "DATA_SINK"
+          type: "string"
+      type: "object"
+    Event:
+      properties:
+        acknowledged:
+          type: "boolean"
+        content:
+          type: "string"
+        id:
+          format: "uuid"
+          type: "string"
+        notification:
+          type: "boolean"
+        severity:
+          type: "string"
+        source:
+          type: "string"
+        summary:
+          type: "string"
+        timestamp:
+          format: "date-time"
+          type: "string"
+      type: "object"
+    EventsWithCount:
+      properties:
+        count:
+          format: "int32"
+          type: "integer"
+        events:
+          items:
+            $ref: "#/components/schemas/Event"
+          type: "array"
+        offset:
+          format: "int32"
+          type: "integer"
+        totalCount:
+          format: "int32"
+          type: "integer"
+      type: "object"
+    ExportErrorsRequest:
+      properties:
+        acknowledge:
+          type: "boolean"
+        limit:
+          format: "int32"
+          type: "integer"
+        maxSize:
+          $ref: "#/components/schemas/DataSize"
+        reason:
+          type: "string"
+      type: "object"
+    ExportRequest:
+      properties:
+        deltaFilesFilter:
+          $ref: "#/components/schemas/DeltaFilesFilter"
+        includeContent:
+          type: "boolean"
+        limit:
+          format: "int32"
+          type: "integer"
+        offset:
+          format: "int32"
+          type: "integer"
+        order:
+          $ref: "#/components/schemas/DeltaFileOrder"
+      type: "object"
+    FederatedActionRequest:
+      properties:
+        filter:
+          $ref: "#/components/schemas/FederatedErrorFilter"
+        flows:
+          items:
+            $ref: "#/components/schemas/FlowSelection"
+          type: "array"
+        limit:
+          format: "int32"
+          type: "integer"
+        memberNames:
+          items:
+            type: "string"
+          type: "array"
+        reason:
+          type: "string"
+      type: "object"
+    FederatedActionResponse:
+      properties:
+        membersFailed:
+          format: "int32"
+          type: "integer"
+        results:
+          items:
+            $ref: "#/components/schemas/FederatedActionResult"
+          type: "array"
+        totalFailureCount:
+          format: "int32"
+          type: "integer"
+        totalSuccessCount:
+          format: "int32"
+          type: "integer"
+      type: "object"
+    FederatedActionResult:
+      properties:
+        error:
+          type: "string"
+        failureCount:
+          format: "int32"
+          type: "integer"
+        memberName:
+          type: "string"
+        status:
+          enum:
+          - "CONNECTED"
+          - "UNREACHABLE"
+          - "STALE"
+          type: "string"
+        successCount:
+          format: "int32"
+          type: "integer"
+      type: "object"
+    FederatedErrorFilter:
+      properties:
+        dataSinks:
+          items:
+            type: "string"
+          type: "array"
+        dataSources:
+          items:
+            type: "string"
+          type: "array"
+        errorAcknowledged:
+          type: "boolean"
+        errorCause:
+          type: "string"
+        memberNames:
+          items:
+            type: "string"
+          type: "array"
+        memberTags:
+          items:
+            type: "string"
+          type: "array"
+        modifiedAfter:
+          format: "date-time"
+          type: "string"
+        modifiedBefore:
+          format: "date-time"
+          type: "string"
+        transforms:
+          items:
+            type: "string"
+          type: "array"
+      type: "object"
+    FederatedErrorResponse:
+      properties:
+        membersFailed:
+          format: "int32"
+          type: "integer"
+        membersSearched:
+          format: "int32"
+          type: "integer"
+        results:
+          items:
+            $ref: "#/components/schemas/FederatedErrorResult"
+          type: "array"
+        searchedAt:
+          format: "date-time"
+          type: "string"
+        totalCount:
+          format: "int64"
+          type: "integer"
+      type: "object"
+    FederatedErrorResult:
+      properties:
+        count:
+          format: "int64"
+          type: "integer"
+        error:
+          type: "string"
+        memberName:
+          type: "string"
+        memberUrl:
+          type: "string"
+        status:
+          enum:
+          - "CONNECTED"
+          - "UNREACHABLE"
+          - "STALE"
+          type: "string"
+        tags:
+          items:
+            type: "string"
+          type: "array"
+      type: "object"
+    FederatedErrorSummary:
+      properties:
+        count:
+          format: "int64"
+          type: "integer"
+        flowType:
+          type: "string"
+        key:
+          type: "string"
+        nodeCount:
+          format: "int32"
+          type: "integer"
+      type: "object"
+    FederatedErrorSummaryResponse:
+      properties:
+        membersFailed:
+          format: "int32"
+          type: "integer"
+        membersSearched:
+          format: "int32"
+          type: "integer"
+        searchedAt:
+          format: "date-time"
+          type: "string"
+        summaries:
+          items:
+            $ref: "#/components/schemas/FederatedErrorSummary"
+          type: "array"
+        totalCount:
+          format: "int64"
+          type: "integer"
+      type: "object"
+    FederatedSearchResponse:
+      properties:
+        membersFailed:
+          format: "int32"
+          type: "integer"
+        membersSearched:
+          format: "int32"
+          type: "integer"
+        results:
+          items:
+            $ref: "#/components/schemas/FederatedSearchResult"
+          type: "array"
+        searchedAt:
+          format: "date-time"
+          type: "string"
+        totalCount:
+          format: "int64"
+          type: "integer"
+      type: "object"
+    FederatedSearchResult:
+      properties:
+        count:
+          format: "int64"
+          type: "integer"
+        error:
+          type: "string"
+        memberName:
+          type: "string"
+        memberUrl:
+          type: "string"
+        status:
+          enum:
+          - "CONNECTED"
+          - "UNREACHABLE"
+          - "STALE"
+          type: "string"
+        tags:
+          items:
+            type: "string"
+          type: "array"
+      type: "object"
+    FlowKey:
+      properties:
+        flowName:
+          type: "string"
+        flowType:
+          type: "string"
+      type: "object"
+    FlowMetrics:
+      properties:
+        deletedByPolicy:
+          additionalProperties:
+            format: "int64"
+            type: "integer"
+          type: "object"
+        egressByDataSink:
+          additionalProperties:
+            format: "int64"
+            type: "integer"
+          type: "object"
+        ingressByDataSource:
+          additionalProperties:
+            format: "int64"
+            type: "integer"
+          type: "object"
+        storageByService:
+          additionalProperties:
+            format: "int64"
+            type: "integer"
+          type: "object"
+      type: "object"
+    FlowSelection:
+      properties:
+        flowType:
+          type: "string"
+        name:
+          type: "string"
+      type: "object"
+    Image:
+      properties:
+        name:
+          type: "string"
+        tag:
+          type: "string"
+      type: "object"
+    ImportResponse:
+      properties:
+        bytes:
+          format: "int64"
+          type: "integer"
+        count:
+          format: "int64"
+          type: "integer"
+        skipped:
+          format: "int64"
+          type: "integer"
+      type: "object"
+    IngressEventItem:
+      properties:
+        annotations:
+          additionalProperties:
+            type: "string"
+          type: "object"
+        content:
+          items:
+            $ref: "#/components/schemas/Content"
+          type: "array"
+        deltaFileName:
+          type: "string"
+        did:
+          format: "uuid"
+          type: "string"
+        flowName:
+          type: "string"
+        metadata:
+          additionalProperties:
+            type: "string"
+          type: "object"
+      type: "object"
+    IngressResult:
+      properties:
+        content:
+          items:
+            $ref: "#/components/schemas/Content"
+          type: "array"
+        dataSource:
+          type: "string"
+        did:
+          format: "uuid"
+          type: "string"
+      type: "object"
+    Input:
+      properties:
+        dn:
+          type: "string"
+        name:
+          type: "string"
+        password:
+          type: "string"
+        roleIds:
+          items:
+            format: "uuid"
+            type: "string"
+          type: "array"
+          uniqueItems: true
+        username:
+          type: "string"
+      type: "object"
+    JoinConfiguration:
+      properties:
+        maxAge:
+          type: "string"
+        maxNum:
+          format: "int32"
+          type: "integer"
+        metadataKey:
+          type: "string"
+        minNum:
+          format: "int32"
+          type: "integer"
+      type: "object"
+    JsonNode: {}
+    KeyValue:
+      properties:
+        key:
+          type: "string"
+        value:
+          type: "string"
+      type: "object"
+    LeaderDashboardData:
+      properties:
+        lastRefresh:
+          format: "date-time"
+          type: "string"
+        members:
+          items:
+            $ref: "#/components/schemas/MemberStatus"
+          type: "array"
+      type: "object"
+    Link:
+      properties:
+        description:
+          type: "string"
+        id:
+          format: "uuid"
+          type: "string"
+        linkType:
+          enum:
+          - "EXTERNAL"
+          - "DELTAFILE_LINK"
+          type: "string"
+        name:
+          type: "string"
+        url:
+          type: "string"
+      type: "object"
+    ListArtifactsResponse:
+      properties:
+        artifacts:
+          items:
+            $ref: "#/components/schemas/ArtifactSummary"
+          type: "array"
+        pluginName:
+          type: "string"
+      type: "object"
+    ListVersionsResponse:
+      properties:
+        activeVersion:
+          type: "string"
+        aliases:
+          additionalProperties:
+            items:
+              type: "string"
+            type: "array"
+          type: "object"
+        artifactName:
+          type: "string"
+        pluginName:
+          type: "string"
+        versions:
+          items:
+            $ref: "#/components/schemas/ArtifactManifest"
+          type: "array"
+      type: "object"
+    MemberConfig:
+      properties:
+        credentials:
+          $ref: "#/components/schemas/CredentialsConfig"
+        name:
+          type: "string"
+        tags:
+          items:
+            type: "string"
+          type: "array"
+        url:
+          type: "string"
+      type: "object"
+    MemberReport:
+      properties:
+        coldQueuedCount:
+          format: "int64"
+          type: "integer"
+        cpuUsage:
+          format: "double"
+          type: "number"
+        diskUsage:
+          format: "double"
+          type: "number"
+        errorCount:
+          format: "int64"
+          type: "integer"
+        inFlightCount:
+          format: "int64"
+          type: "integer"
+        memoryUsage:
+          format: "double"
+          type: "number"
+        oldestInFlightCreated:
+          format: "date-time"
+          type: "string"
+        pausedCount:
+          format: "int64"
+          type: "integer"
+        rateLimitedCount:
+          format: "int64"
+          type: "integer"
+        status:
+          type: "object"
+        version:
+          type: "string"
+        warmQueuedCount:
+          format: "int64"
+          type: "integer"
+      type: "object"
+    MemberStatus:
+      properties:
+        coldQueuedCount:
+          format: "int64"
+          type: "integer"
+        connectionError:
+          type: "string"
+        connectionState:
+          enum:
+          - "CONNECTED"
+          - "UNREACHABLE"
+          - "STALE"
+          type: "string"
+        cpuUsage:
+          format: "double"
+          type: "number"
+        diskUsage:
+          format: "double"
+          type: "number"
+        errorCount:
+          format: "int64"
+          type: "integer"
+        inFlightCount:
+          format: "int64"
+          type: "integer"
+        isLeader:
+          type: "boolean"
+        lastUpdated:
+          format: "date-time"
+          type: "string"
+        memberName:
+          type: "string"
+        memoryUsage:
+          format: "double"
+          type: "number"
+        oldestInFlightCreated:
+          format: "date-time"
+          type: "string"
+        pausedCount:
+          format: "int64"
+          type: "integer"
+        rateLimitedCount:
+          format: "int64"
+          type: "integer"
+        status:
+          $ref: "#/components/schemas/MonitorResult"
+        tags:
+          items:
+            type: "string"
+          type: "array"
+        url:
+          type: "string"
+        version:
+          type: "string"
+        warmQueuedCount:
+          format: "int64"
+          type: "integer"
+      type: "object"
+    MonitorResult:
+      properties:
+        checks:
+          items:
+            $ref: "#/components/schemas/CheckResult"
+          type: "array"
+        code:
+          format: "int32"
+          type: "integer"
+        color:
+          type: "string"
+        state:
+          type: "string"
+        timestamp:
+          format: "date-time"
+          type: "string"
+      type: "object"
+    NameFilter:
+      properties:
+        caseSensitive:
+          type: "boolean"
+        name:
+          type: "string"
+      type: "object"
+    NodeMetrics:
+      properties:
+        apps:
+          items:
+            $ref: "#/components/schemas/AppName"
+          type: "array"
+        name:
+          type: "string"
+        resources:
+          additionalProperties:
+            additionalProperties:
+              format: "int64"
+              type: "integer"
+            type: "object"
+          type: "object"
+      type: "object"
+    Nodes:
+      properties:
+        nodes:
+          items:
+            $ref: "#/components/schemas/NodeMetrics"
+          type: "array"
+        timestamp:
+          format: "date-time"
+          type: "string"
+      type: "object"
+    OnErrorDataSourcePlan:
+      properties:
+        annotationConfig:
+          $ref: "#/components/schemas/AnnotationConfig"
+        annotationFilters:
+          items:
+            $ref: "#/components/schemas/KeyValue"
+          type: "array"
+        description:
+          type: "string"
+        errorMessageRegex:
+          type: "string"
+        includeSourceAnnotationsRegex:
+          items:
+            type: "string"
+          type: "array"
+        includeSourceMetadataRegex:
+          items:
+            type: "string"
+          type: "array"
+        metadata:
+          additionalProperties:
+            type: "string"
+          type: "object"
+        metadataFilters:
+          items:
+            $ref: "#/components/schemas/KeyValue"
+          type: "array"
+        name:
+          type: "string"
+        sourceFilters:
+          items:
+            $ref: "#/components/schemas/ErrorSourceFilter"
+          type: "array"
+        sourceMetadataPrefix:
+          type: "string"
+        sourcePlugin:
+          $ref: "#/components/schemas/PluginCoordinates"
+        tags:
+          items:
+            type: "string"
+          type: "array"
+          uniqueItems: true
+        topic:
+          type: "string"
+        type:
+          enum:
+          - "REST_DATA_SOURCE"
+          - "TIMED_DATA_SOURCE"
+          - "ON_ERROR_DATA_SOURCE"
+          - "TRANSFORM"
+          - "DATA_SINK"
+          type: "string"
+      required:
+      - "description"
+      - "name"
+      - "topic"
+      type: "object"
+    OnErrorDataSourceSnapshot:
+      properties:
+        maxErrors:
+          format: "int32"
+          type: "integer"
+        name:
+          type: "string"
+        rateLimit:
+          $ref: "#/components/schemas/RateLimit"
+        running:
+          type: "boolean"
+        sourcePlugin:
+          $ref: "#/components/schemas/PluginCoordinates"
+        testMode:
+          type: "boolean"
+        topic:
+          type: "string"
+      type: "object"
+    PerFlowMetrics:
+      properties:
+        bytesIn:
+          format: "int64"
+          type: "integer"
+        bytesOut:
+          format: "int64"
+          type: "integer"
+        filesIn:
+          format: "int64"
+          type: "integer"
+        filesOut:
+          format: "int64"
+          type: "integer"
+        flowName:
+          type: "string"
+        flowType:
+          type: "string"
+      type: "object"
+    Permission:
+      properties:
+        category:
+          type: "string"
+        description:
+          type: "string"
+        name:
+          type: "string"
+      type: "object"
+    PluginCoordinates:
+      properties:
+        artifactId:
+          type: "string"
+        groupId:
+          type: "string"
+        version:
+          type: "string"
+      type: "object"
+    PluginGeneratorInput:
+      properties:
+        actionMap:
+          additionalProperties:
+            items:
+              $ref: "#/components/schemas/ActionGeneratorInput"
+            type: "array"
+          type: "object"
+        actions:
+          items:
+            $ref: "#/components/schemas/ActionGeneratorInput"
+          type: "array"
+          uniqueItems: true
+        artifactId:
+          type: "string"
+        description:
+          type: "string"
+        egressActions:
+          items:
+            $ref: "#/components/schemas/ActionGeneratorInput"
+          type: "array"
+        groupId:
+          type: "string"
+        pluginLanguage:
+          enum:
+          - "JAVA"
+          - "PYTHON"
+          type: "string"
+        transformActions:
+          items:
+            $ref: "#/components/schemas/ActionGeneratorInput"
+          type: "array"
+      type: "object"
+    PluginInfo:
+      properties:
+        artifactId:
+          type: "string"
+        displayName:
+          type: "string"
+        groupId:
+          type: "string"
+        imageName:
+          type: "string"
+        imageTag:
+          type: "string"
+        version:
+          type: "string"
+      type: "object"
+    PluginSnapshot:
+      properties:
+        disabled:
+          type: "boolean"
+        imageName:
+          type: "string"
+        imagePullSecret:
+          type: "string"
+        pluginCoordinates:
+          $ref: "#/components/schemas/PluginCoordinates"
+      type: "object"
+    PluginVariables:
+      properties:
+        artifactId:
+          type: "string"
+        groupId:
+          type: "string"
+        id:
+          format: "uuid"
+          type: "string"
+        sourcePlugin:
+          $ref: "#/components/schemas/PluginCoordinates"
+        variables:
+          items:
+            $ref: "#/components/schemas/Variable"
+          type: "array"
+        version:
+          type: "string"
+      type: "object"
+    PluginsResponse:
+      properties:
+        membersNotReporting:
+          items:
+            type: "string"
+          type: "array"
+        plugins:
+          additionalProperties:
+            items:
+              $ref: "#/components/schemas/PluginInfo"
+            type: "array"
+          type: "object"
+      type: "object"
+    PublishArtifactResponse:
+      properties:
+        active:
+          type: "boolean"
+        artifactName:
+          type: "string"
+        pluginName:
+          type: "string"
+        sha256:
+          type: "string"
+        version:
+          type: "string"
+      type: "object"
+    PublishRules:
+      properties:
+        defaultRule:
+          $ref: "#/components/schemas/DefaultRule"
+        matchingPolicy:
+          enum:
+          - "ALL_MATCHING"
+          - "FIRST_MATCHING"
+          type: "string"
+        rules:
+          items:
+            $ref: "#/components/schemas/Rule"
+          type: "array"
+      type: "object"
+    PurgeConfig:
+      properties:
+        keepLatest:
+          format: "int32"
+          type: "integer"
+        maxAgeMinutes:
+          format: "int64"
+          type: "integer"
+      type: "object"
+    PurgeResponse:
+      properties:
+        artifactName:
+          type: "string"
+        pluginName:
+          type: "string"
+        purgedVersions:
+          items:
+            type: "string"
+          type: "array"
+      type: "object"
+    RateLimit:
+      properties:
+        durationSeconds:
+          format: "int32"
+          type: "integer"
+        maxAmount:
+          format: "int64"
+          type: "integer"
+        unit:
+          enum:
+          - "BYTES"
+          - "FILES"
+          type: "string"
+      type: "object"
+    RestDataSourcePlan:
+      properties:
+        annotationConfig:
+          $ref: "#/components/schemas/AnnotationConfig"
+        description:
+          type: "string"
+        metadata:
+          additionalProperties:
+            type: "string"
+          type: "object"
+        name:
+          type: "string"
+        sourcePlugin:
+          $ref: "#/components/schemas/PluginCoordinates"
+        tags:
+          items:
+            type: "string"
+          type: "array"
+          uniqueItems: true
+        topic:
+          type: "string"
+        type:
+          enum:
+          - "REST_DATA_SOURCE"
+          - "TIMED_DATA_SOURCE"
+          - "ON_ERROR_DATA_SOURCE"
+          - "TRANSFORM"
+          - "DATA_SINK"
+          type: "string"
+      required:
+      - "description"
+      - "name"
+      - "topic"
+      type: "object"
+    RestDataSourceSnapshot:
+      properties:
+        maxErrors:
+          format: "int32"
+          type: "integer"
+        name:
+          type: "string"
+        rateLimit:
+          $ref: "#/components/schemas/RateLimit"
+        running:
+          type: "boolean"
+        sourcePlugin:
+          $ref: "#/components/schemas/PluginCoordinates"
+        testMode:
+          type: "boolean"
+        topic:
+          type: "string"
+      type: "object"
+    ResumePolicy:
+      properties:
+        action:
+          type: "string"
+        backOff:
+          $ref: "#/components/schemas/BackOff"
+        dataSource:
+          type: "string"
+        enabled:
+          type: "boolean"
+        errorSubstring:
+          type: "string"
+        id:
+          format: "uuid"
+          type: "string"
+        maxAttempts:
+          format: "int32"
+          type: "integer"
+        name:
+          type: "string"
+        priority:
+          format: "int32"
+          type: "integer"
+      type: "object"
+    Role:
+      properties:
+        createdAt:
+          format: "date-time"
+          type: "string"
+        id:
+          format: "uuid"
+          type: "string"
+        name:
+          type: "string"
+        permissions:
+          items:
+            type: "string"
+          type: "array"
+        updatedAt:
+          format: "date-time"
+          type: "string"
+      type: "object"
+    RoleSnapshot:
+      properties:
+        createdAt:
+          format: "date-time"
+          type: "string"
+        id:
+          format: "uuid"
+          type: "string"
+        name:
+          type: "string"
+        permissions:
+          items:
+            type: "string"
+          type: "array"
+        updatedAt:
+          format: "date-time"
+          type: "string"
+      type: "object"
+    RollbackRequest:
+      properties:
+        version:
+          type: "string"
+      type: "object"
+    RollbackResponse:
+      properties:
+        artifactName:
+          type: "string"
+        pluginName:
+          type: "string"
+        rolledBackTo:
+          type: "string"
+      type: "object"
+    Rule:
+      properties:
+        condition:
+          type: "string"
+        topic:
+          type: "string"
+      type: "object"
+    RunningTask:
+      properties:
+        actionClass:
+          type: "string"
+        actionName:
+          type: "string"
+        appName:
+          type: "string"
+        did:
+          format: "uuid"
+          type: "string"
+        runningForMs:
+          format: "int64"
+          type: "integer"
+        startTime:
+          format: "date-time"
+          type: "string"
+      type: "object"
+    RunningTasksResponse:
+      properties:
+        heartbeatThresholdMs:
+          format: "int64"
+          type: "integer"
+        tasks:
+          items:
+            $ref: "#/components/schemas/RunningTask"
+          type: "array"
+      type: "object"
+    SecurityBanner:
+      properties:
+        backgroundColor:
+          type: "string"
+        enabled:
+          type: "boolean"
+        text:
+          type: "string"
+        textColor:
+          type: "string"
+      type: "object"
+    Segment:
+      properties:
+        did:
+          format: "uuid"
+          type: "string"
+        offset:
+          format: "int64"
+          type: "integer"
+        size:
+          format: "int64"
+          type: "integer"
+        uuid:
+          format: "uuid"
+          type: "string"
+      type: "object"
+    SetAliasRequest:
+      properties:
+        version:
+          type: "string"
+      type: "object"
+    SetAliasResponse:
+      properties:
+        alias:
+          type: "string"
+        artifactName:
+          type: "string"
+        pluginName:
+          type: "string"
+        version:
+          type: "string"
+      type: "object"
+    Snapshot:
+      properties:
+        dataSinks:
+          items:
+            $ref: "#/components/schemas/DataSinkSnapshot"
+          type: "array"
+        deletePolicies:
+          $ref: "#/components/schemas/DeletePolicies"
+        deltaFiProperties:
+          items:
+            $ref: "#/components/schemas/KeyValue"
+          type: "array"
+        links:
+          items:
+            $ref: "#/components/schemas/Link"
+          type: "array"
+        onErrorDataSources:
+          items:
+            $ref: "#/components/schemas/OnErrorDataSourceSnapshot"
+          type: "array"
+        pluginVariables:
+          items:
+            $ref: "#/components/schemas/PluginVariables"
+          type: "array"
+        plugins:
+          items:
+            $ref: "#/components/schemas/PluginSnapshot"
+          type: "array"
+        restDataSources:
+          items:
+            $ref: "#/components/schemas/RestDataSourceSnapshot"
+          type: "array"
+        resumePolicies:
+          items:
+            $ref: "#/components/schemas/ResumePolicy"
+          type: "array"
+        roles:
+          items:
+            $ref: "#/components/schemas/RoleSnapshot"
+          type: "array"
+        systemFlowPlans:
+          $ref: "#/components/schemas/SystemFlowPlans"
+        timedDataSources:
+          items:
+            $ref: "#/components/schemas/TimedDataSourceSnapshot"
+          type: "array"
+        transformFlows:
+          items:
+            $ref: "#/components/schemas/TransformFlowSnapshot"
+          type: "array"
+        users:
+          items:
+            $ref: "#/components/schemas/UserSnapshot"
+          type: "array"
+      type: "object"
+    SseEmitter:
+      properties:
+        timeout:
+          format: "int64"
+          type: "integer"
+      type: "object"
+    Status:
+      properties:
+        status:
+          type: "object"
+        timestamp:
+          format: "date-time"
+          type: "string"
+      type: "object"
+    StreamingResponseBody: {}
+    SurveyError:
+      properties:
+        error:
+          type: "string"
+        surveyEvent:
+          $ref: "#/components/schemas/SurveyEvent"
+      type: "object"
+    SurveyErrors:
+      properties:
+        error:
+          items:
+            $ref: "#/components/schemas/SurveyError"
+          type: "array"
+        timestamp:
+          format: "date-time"
+          type: "string"
+      type: "object"
+    SurveyEvent:
+      properties:
+        annotations:
+          additionalProperties:
+            type: "string"
+          type: "object"
+        dataSource:
+          type: "string"
+        files:
+          format: "int32"
+          type: "integer"
+        ingressBytes:
+          format: "int64"
+          type: "integer"
+        timestamp:
+          format: "date-time"
+          type: "string"
+        valid:
+          type: "boolean"
+      type: "object"
+    SystemFlowPlans:
+      properties:
+        dataSinkPlans:
+          items:
+            $ref: "#/components/schemas/DataSinkPlan"
+          type: "array"
+        onErrorDataSources:
+          items:
+            $ref: "#/components/schemas/OnErrorDataSourcePlan"
+          type: "array"
+        restDataSources:
+          items:
+            $ref: "#/components/schemas/RestDataSourcePlan"
+          type: "array"
+        timedDataSources:
+          items:
+            $ref: "#/components/schemas/TimedDataSourcePlan"
+          type: "array"
+        transformPlans:
+          items:
+            $ref: "#/components/schemas/TransformFlowPlan"
+          type: "array"
+      type: "object"
+    TimedDataSourcePlan:
+      properties:
+        annotationConfig:
+          $ref: "#/components/schemas/AnnotationConfig"
+        cronSchedule:
+          type: "string"
+        description:
+          type: "string"
+        metadata:
+          additionalProperties:
+            type: "string"
+          type: "object"
+        name:
+          type: "string"
+        sourcePlugin:
+          $ref: "#/components/schemas/PluginCoordinates"
+        tags:
+          items:
+            type: "string"
+          type: "array"
+          uniqueItems: true
+        timedIngressAction:
+          $ref: "#/components/schemas/ActionConfiguration"
+        topic:
+          type: "string"
+        type:
+          enum:
+          - "REST_DATA_SOURCE"
+          - "TIMED_DATA_SOURCE"
+          - "ON_ERROR_DATA_SOURCE"
+          - "TRANSFORM"
+          - "DATA_SINK"
+          type: "string"
+      required:
+      - "cronSchedule"
+      - "description"
+      - "name"
+      - "timedIngressAction"
+      - "topic"
+      type: "object"
+    TimedDataSourceSnapshot:
+      properties:
+        cronSchedule:
+          type: "string"
+        maxErrors:
+          format: "int32"
+          type: "integer"
+        name:
+          type: "string"
+        rateLimit:
+          $ref: "#/components/schemas/RateLimit"
+        running:
+          type: "boolean"
+        sourcePlugin:
+          $ref: "#/components/schemas/PluginCoordinates"
+        testMode:
+          type: "boolean"
+        topic:
+          type: "string"
+      type: "object"
+    TimedDeletePolicy:
+      discriminator:
+        propertyName: "__typename"
+      properties:
+        __typename:
+          type: "string"
+        afterComplete:
+          type: "string"
+        afterCreate:
+          type: "string"
+        deleteMetadata:
+          type: "boolean"
+        enabled:
+          type: "boolean"
+        flow:
+          type: "string"
+        id:
+          format: "uuid"
+          type: "string"
+        minBytes:
+          format: "int64"
+          type: "integer"
+        name:
+          type: "string"
+      required:
+      - "__typename"
+      type: "object"
+    TopBar:
+      properties:
+        backgroundColor:
+          type: "string"
+        textColor:
+          type: "string"
+      type: "object"
+    TransformFlowPlan:
+      properties:
+        description:
+          type: "string"
+        name:
+          type: "string"
+        publish:
+          $ref: "#/components/schemas/PublishRules"
+        sourcePlugin:
+          $ref: "#/components/schemas/PluginCoordinates"
+        subscribe:
+          items:
+            $ref: "#/components/schemas/Rule"
+          type: "array"
+          uniqueItems: true
+        tags:
+          items:
+            type: "string"
+          type: "array"
+          uniqueItems: true
+        transformActions:
+          items:
+            $ref: "#/components/schemas/ActionConfiguration"
+          type: "array"
+        type:
+          enum:
+          - "REST_DATA_SOURCE"
+          - "TIMED_DATA_SOURCE"
+          - "ON_ERROR_DATA_SOURCE"
+          - "TRANSFORM"
+          - "DATA_SINK"
+          type: "string"
+      required:
+      - "description"
+      - "name"
+      - "subscribe"
+      type: "object"
+    TransformFlowSnapshot:
+      properties:
+        name:
+          type: "string"
+        running:
+          type: "boolean"
+        sourcePlugin:
+          $ref: "#/components/schemas/PluginCoordinates"
+        testMode:
+          type: "boolean"
+      type: "object"
+    UiConfig:
+      properties:
+        authMode:
+          type: "string"
+        clusterMode:
+          type: "boolean"
+        contentPreviewSize:
+          format: "int64"
+          type: "integer"
+        deltaFileLinks:
+          items:
+            $ref: "#/components/schemas/Link"
+          type: "array"
+        domain:
+          type: "string"
+        externalLinks:
+          items:
+            $ref: "#/components/schemas/Link"
+          type: "array"
+        leader:
+          type: "boolean"
+        links:
+          items:
+            $ref: "#/components/schemas/Link"
+          type: "array"
+          writeOnly: true
+        lookupTablesEnabled:
+          type: "boolean"
+        messageOfTheDay:
+          type: "string"
+        properties:
+          $ref: "#/components/schemas/DeltaFiProperties"
+          writeOnly: true
+        securityBanner:
+          $ref: "#/components/schemas/SecurityBanner"
+        title:
+          type: "string"
+        topBar:
+          $ref: "#/components/schemas/TopBar"
+        useUTC:
+          type: "boolean"
+        webTerminalEnabled:
+          type: "boolean"
+      type: "object"
+    UserSnapshot:
+      properties:
+        createdAt:
+          format: "date-time"
+          type: "string"
+        dn:
+          type: "string"
+        id:
+          format: "uuid"
+          type: "string"
+        name:
+          type: "string"
+        password:
+          type: "string"
+        roles:
+          items:
+            $ref: "#/components/schemas/RoleSnapshot"
+          type: "array"
+          uniqueItems: true
+        updatedAt:
+          format: "date-time"
+          type: "string"
+        username:
+          type: "string"
+      type: "object"
+    UsersAndRoles:
+      properties:
+        roles:
+          items:
+            $ref: "#/components/schemas/Role"
+          type: "array"
+        users:
+          items:
+            $ref: "#/components/schemas/DeltaFiUserDTO"
+          type: "array"
+      type: "object"
+    Variable:
+      properties:
+        dataType:
+          enum:
+          - "STRING"
+          - "BOOLEAN"
+          - "NUMBER"
+          - "LIST"
+          - "SET"
+          - "MAP"
+          type: "string"
+        defaultValue:
+          type: "string"
+        description:
+          type: "string"
+        masked:
+          type: "boolean"
+        name:
+          type: "string"
+        required:
+          type: "boolean"
+        value:
+          type: "string"
+      type: "object"
+    Versions:
+      properties:
+        timestamp:
+          format: "date-time"
+          type: "string"
+        versions:
+          items:
+            $ref: "#/components/schemas/AppInfo"
+          type: "array"
+      type: "object"
+    WarmQueueMetrics:
+      properties:
+        actionClass:
+          type: "string"
+        actionName:
+          type: "string"
+        count:
+          format: "int32"
+          type: "integer"
+        flowName:
+          type: "string"
+        flowType:
+          type: "string"
+        oldestDid:
+          format: "uuid"
+          type: "string"
+        oldestQueuedAt:
+          format: "date-time"
+          type: "string"
+      type: "object"
+info:
+  description: "REST API for the DeltaFi data transformation and enrichment platform.\n\
+    \nAuthorization: endpoints that list a required permission are also accessible\
+    \ to users holding the Admin permission, which grants every permission system-wide."
+  title: "DeltaFi REST API"
+  version: "v2"
+openapi: "3.1.0"
+paths:
+  /api/v2/artifacts:
+    get:
+      description: "Requires permission: ArtifactRegistryRead."
+      operationId: "listAllArtifacts"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: "#/components/schemas/ListArtifactsResponse"
+                type: "array"
+          description: "OK"
+      tags:
+      - "artifact-registry-rest"
+      x-required-permissions:
+      - "ArtifactRegistryRead"
+  /api/v2/artifacts/{owner}:
+    get:
+      description: "Requires permission: ArtifactRegistryRead."
+      operationId: "listArtifacts"
+      parameters:
+      - in: "path"
+        name: "owner"
+        required: true
+        schema:
+          type: "string"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ListArtifactsResponse"
+          description: "OK"
+      tags:
+      - "artifact-registry-rest"
+      x-required-permissions:
+      - "ArtifactRegistryRead"
+  /api/v2/artifacts/{owner}/{artifactName}:
+    delete:
+      description: "Requires permission: ArtifactRegistryWrite."
+      operationId: "deleteArtifact"
+      parameters:
+      - in: "path"
+        name: "owner"
+        required: true
+        schema:
+          type: "string"
+      - in: "path"
+        name: "artifactName"
+        required: true
+        schema:
+          type: "string"
+      responses:
+        "200":
+          description: "OK"
+      tags:
+      - "artifact-registry-rest"
+      x-required-permissions:
+      - "ArtifactRegistryWrite"
+    post:
+      description: "Requires permission: ArtifactRegistryWrite."
+      operationId: "publish"
+      parameters:
+      - in: "path"
+        name: "owner"
+        required: true
+        schema:
+          type: "string"
+      - in: "path"
+        name: "artifactName"
+        required: true
+        schema:
+          type: "string"
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              additionalProperties: {}
+              properties:
+                alias:
+                  type: "string"
+                description:
+                  type: "string"
+                file:
+                  format: "binary"
+                  type: "string"
+                makeActive:
+                  default: "true"
+                  type: "boolean"
+                version:
+                  type: "string"
+              type: "object"
+        required: true
+      responses:
+        "201":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PublishArtifactResponse"
+          description: "Artifact published"
+      tags:
+      - "artifact-registry-rest"
+      x-required-permissions:
+      - "ArtifactRegistryWrite"
+  /api/v2/artifacts/{owner}/{artifactName}/aliases/{alias}:
+    delete:
+      description: "Requires permission: ArtifactRegistryWrite."
+      operationId: "deleteAlias"
+      parameters:
+      - in: "path"
+        name: "owner"
+        required: true
+        schema:
+          type: "string"
+      - in: "path"
+        name: "artifactName"
+        required: true
+        schema:
+          type: "string"
+      - in: "path"
+        name: "alias"
+        required: true
+        schema:
+          type: "string"
+      responses:
+        "200":
+          description: "OK"
+      tags:
+      - "artifact-registry-rest"
+      x-required-permissions:
+      - "ArtifactRegistryWrite"
+    put:
+      description: "Requires permission: ArtifactRegistryWrite."
+      operationId: "setAlias"
+      parameters:
+      - in: "path"
+        name: "owner"
+        required: true
+        schema:
+          type: "string"
+      - in: "path"
+        name: "artifactName"
+        required: true
+        schema:
+          type: "string"
+      - in: "path"
+        name: "alias"
+        required: true
+        schema:
+          type: "string"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SetAliasRequest"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SetAliasResponse"
+          description: "OK"
+      tags:
+      - "artifact-registry-rest"
+      x-required-permissions:
+      - "ArtifactRegistryWrite"
+  /api/v2/artifacts/{owner}/{artifactName}/purge:
+    post:
+      description: "Requires permission: ArtifactRegistryWrite."
+      operationId: "triggerPurge"
+      parameters:
+      - in: "path"
+        name: "owner"
+        required: true
+        schema:
+          type: "string"
+      - in: "path"
+        name: "artifactName"
+        required: true
+        schema:
+          type: "string"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PurgeResponse"
+          description: "OK"
+      tags:
+      - "artifact-registry-rest"
+      x-required-permissions:
+      - "ArtifactRegistryWrite"
+  /api/v2/artifacts/{owner}/{artifactName}/purge-config:
+    get:
+      description: "Requires permission: ArtifactRegistryRead."
+      operationId: "getPurgeConfig"
+      parameters:
+      - in: "path"
+        name: "owner"
+        required: true
+        schema:
+          type: "string"
+      - in: "path"
+        name: "artifactName"
+        required: true
+        schema:
+          type: "string"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PurgeConfig"
+          description: "OK"
+      tags:
+      - "artifact-registry-rest"
+      x-required-permissions:
+      - "ArtifactRegistryRead"
+    put:
+      description: "Requires permission: ArtifactRegistryWrite."
+      operationId: "setPurgeConfig"
+      parameters:
+      - in: "path"
+        name: "owner"
+        required: true
+        schema:
+          type: "string"
+      - in: "path"
+        name: "artifactName"
+        required: true
+        schema:
+          type: "string"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PurgeConfig"
+        required: true
+      responses:
+        "200":
+          description: "OK"
+      tags:
+      - "artifact-registry-rest"
+      x-required-permissions:
+      - "ArtifactRegistryWrite"
+  /api/v2/artifacts/{owner}/{artifactName}/rollback:
+    post:
+      description: "Requires permission: ArtifactRegistryWrite."
+      operationId: "rollback"
+      parameters:
+      - in: "path"
+        name: "owner"
+        required: true
+        schema:
+          type: "string"
+      - in: "path"
+        name: "artifactName"
+        required: true
+        schema:
+          type: "string"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RollbackRequest"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RollbackResponse"
+          description: "OK"
+      tags:
+      - "artifact-registry-rest"
+      x-required-permissions:
+      - "ArtifactRegistryWrite"
+  /api/v2/artifacts/{owner}/{artifactName}/versions:
+    get:
+      description: "Requires permission: ArtifactRegistryRead."
+      operationId: "listVersions"
+      parameters:
+      - in: "path"
+        name: "owner"
+        required: true
+        schema:
+          type: "string"
+      - in: "path"
+        name: "artifactName"
+        required: true
+        schema:
+          type: "string"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ListVersionsResponse"
+          description: "OK"
+      tags:
+      - "artifact-registry-rest"
+      x-required-permissions:
+      - "ArtifactRegistryRead"
+  /api/v2/artifacts/{owner}/{artifactName}/versions/{version}:
+    delete:
+      description: "Requires permission: ArtifactRegistryWrite."
+      operationId: "deleteVersion"
+      parameters:
+      - in: "path"
+        name: "owner"
+        required: true
+        schema:
+          type: "string"
+      - in: "path"
+        name: "artifactName"
+        required: true
+        schema:
+          type: "string"
+      - in: "path"
+        name: "version"
+        required: true
+        schema:
+          type: "string"
+      responses:
+        "200":
+          description: "OK"
+      tags:
+      - "artifact-registry-rest"
+      x-required-permissions:
+      - "ArtifactRegistryWrite"
+    get:
+      description: "Requires permission: ArtifactRegistryRead."
+      operationId: "download"
+      parameters:
+      - in: "path"
+        name: "owner"
+        required: true
+        schema:
+          type: "string"
+      - in: "path"
+        name: "artifactName"
+        required: true
+        schema:
+          type: "string"
+      - in: "path"
+        name: "version"
+        required: true
+        schema:
+          type: "string"
+      responses:
+        "200":
+          content:
+            application/octet-stream:
+              schema:
+                format: "binary"
+                type: "string"
+          description: "OK"
+      tags:
+      - "artifact-registry-rest"
+      x-required-permissions:
+      - "ArtifactRegistryRead"
+  /api/v2/auth:
+    get:
+      operationId: "get"
+      parameters:
+      - in: "header"
+        name: "X-ORIGINAL-URL"
+        required: false
+        schema:
+          type: "string"
+      responses:
+        "200":
+          description: "OK"
+      tags:
+      - "auth-rest"
+  /api/v2/config:
+    get:
+      description: "Requires permission: UIAccess."
+      operationId: "getConfig"
+      parameters:
+      - in: "query"
+        name: "skip_cache"
+        required: false
+        schema:
+          type: "boolean"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UiConfig"
+          description: "OK"
+      tags:
+      - "ui-config-rest"
+      x-required-permissions:
+      - "UIAccess"
+  /api/v2/content:
+    get:
+      description: "Requires permission: DeltaFileContentView."
+      operationId: "content"
+      parameters:
+      - in: "query"
+        name: "content"
+        required: true
+        schema:
+          type: "string"
+      responses:
+        "200":
+          content:
+            application/octet-stream:
+              schema:
+                format: "binary"
+                type: "string"
+          description: "OK"
+      tags:
+      - "content-rest"
+      x-required-permissions:
+      - "DeltaFileContentView"
+    post:
+      description: "Requires permission: DeltaFileContentView."
+      operationId: "content_1"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ContentRequest"
+        required: true
+      responses:
+        "200":
+          content:
+            application/octet-stream:
+              schema:
+                format: "binary"
+                type: "string"
+          description: "OK"
+      tags:
+      - "content-rest"
+      x-required-permissions:
+      - "DeltaFileContentView"
+  /api/v2/deltafile/annotate/{did}:
+    post:
+      description: "Requires permission: DeltaFileMetadataWrite."
+      operationId: "annotateDeltaFile"
+      parameters:
+      - in: "path"
+        name: "did"
+        required: true
+        schema:
+          format: "uuid"
+          type: "string"
+      - in: "query"
+        name: "requestParams"
+        required: true
+        schema:
+          additionalProperties:
+            type: "string"
+          type: "object"
+      responses:
+        "200":
+          content:
+            text/plain:
+              schema:
+                type: "string"
+          description: "OK"
+      tags:
+      - "delta-file-annotation-rest"
+      x-required-permissions:
+      - "DeltaFileMetadataWrite"
+  /api/v2/deltafile/annotate/{did}/allowOverwrites:
+    post:
+      description: "Requires permission: DeltaFileMetadataWrite."
+      operationId: "annotateDeltaFileAllowOverwrites"
+      parameters:
+      - in: "path"
+        name: "did"
+        required: true
+        schema:
+          format: "uuid"
+          type: "string"
+      - in: "query"
+        name: "requestParams"
+        required: true
+        schema:
+          additionalProperties:
+            type: "string"
+          type: "object"
+      responses:
+        "200":
+          content:
+            text/plain:
+              schema:
+                type: "string"
+          description: "OK"
+      tags:
+      - "delta-file-annotation-rest"
+      x-required-permissions:
+      - "DeltaFileMetadataWrite"
+  /api/v2/deltafile/export/deltaFiles:
+    post:
+      description: "Requires permission: DeltaFileExport."
+      operationId: "exportDeltaFiles"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ExportRequest"
+        required: true
+      responses:
+        "200":
+          content:
+            application/x-tar:
+              schema:
+                $ref: "#/components/schemas/StreamingResponseBody"
+          description: "OK"
+      tags:
+      - "delta-file-rest"
+      x-required-permissions:
+      - "DeltaFileExport"
+  /api/v2/deltafile/export/errors:
+    post:
+      description: "Requires permission: DeltaFileExport."
+      operationId: "exportErroredDeltaFiles"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ExportErrorsRequest"
+        required: true
+      responses:
+        "200":
+          content:
+            application/x-tar:
+              schema:
+                $ref: "#/components/schemas/StreamingResponseBody"
+          description: "OK"
+      tags:
+      - "delta-file-rest"
+      x-required-permissions:
+      - "DeltaFileExport"
+  /api/v2/deltafile/export/{did}:
+    get:
+      description: "Requires permission: DeltaFileExport."
+      operationId: "exportDeltaFile"
+      parameters:
+      - in: "path"
+        name: "did"
+        required: true
+        schema:
+          format: "uuid"
+          type: "string"
+      responses:
+        "200":
+          content:
+            application/x-tar:
+              schema:
+                $ref: "#/components/schemas/StreamingResponseBody"
+          description: "OK"
+      tags:
+      - "delta-file-rest"
+      x-required-permissions:
+      - "DeltaFileExport"
+  /api/v2/deltafile/import:
+    post:
+      description: "Requires permission: DeltaFileImport."
+      operationId: "importDeltaFiles"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ImportResponse"
+          description: "OK"
+      tags:
+      - "delta-file-rest"
+      x-required-permissions:
+      - "DeltaFileImport"
+  /api/v2/deltafile/ingress:
+    post:
+      description: "Requires permission: DeltaFileIngress."
+      operationId: "ingressData"
+      parameters:
+      - in: "header"
+        name: "Filename"
+        required: false
+        schema:
+          type: "string"
+      - in: "header"
+        name: "DataSource"
+        required: false
+        schema:
+          type: "string"
+      - in: "header"
+        name: "Metadata"
+        required: false
+        schema:
+          type: "string"
+      - in: "header"
+        name: "Content-Type"
+        required: true
+        schema:
+          type: "string"
+      responses:
+        "200":
+          content:
+            text/plain:
+              schema:
+                type: "string"
+          description: "Ingress succeeded; body is the comma-separated DID(s) created"
+        "400":
+          content:
+            text/plain:
+              schema:
+                type: "object"
+          description: "Invalid or unparseable metadata"
+        "429":
+          content:
+            text/plain:
+              schema:
+                type: "object"
+          description: "Ingress rate limit exceeded; retry after backing off"
+        "500":
+          content:
+            text/plain:
+              schema:
+                type: "object"
+          description: "Unexpected ingress failure"
+        "503":
+          content:
+            text/plain:
+              schema:
+                type: "object"
+          description: "Ingress is disabled or temporarily unavailable; retry later"
+        "507":
+          content:
+            text/plain:
+              schema:
+                type: "object"
+          description: "Insufficient storage to persist the content"
+      tags:
+      - "delta-file-rest"
+      x-required-permissions:
+      - "DeltaFileIngress"
+  /api/v2/deltafile/ingress/event:
+    post:
+      description: "Requires permission: DeltaFileIngress."
+      operationId: "ingressContentRef"
+      parameters: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/IngressEventItem"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/IngressResult"
+          description: "Ingress succeeded"
+        "400":
+          content:
+            application/json:
+              schema:
+                type: "object"
+          description: "Invalid or unparseable metadata"
+        "429":
+          content:
+            application/json:
+              schema:
+                type: "object"
+          description: "Ingress rate limit exceeded; retry after backing off"
+        "500":
+          content:
+            application/json:
+              schema:
+                type: "object"
+          description: "Unexpected ingress failure"
+        "503":
+          content:
+            application/json:
+              schema:
+                type: "object"
+          description: "Ingress is disabled or temporarily unavailable; retry later"
+        "507":
+          content:
+            application/json:
+              schema:
+                type: "object"
+          description: "Insufficient storage to persist the content"
+      tags:
+      - "delta-file-rest"
+      x-required-permissions:
+      - "DeltaFileIngress"
+  /api/v2/events:
+    get:
+      description: "Requires permission: EventRead."
+      operationId: "getEvents"
+      parameters:
+      - in: "query"
+        name: "filters"
+        required: true
+        schema:
+          additionalProperties:
+            type: "string"
+          type: "object"
+      - in: "query"
+        name: "offset"
+        required: false
+        schema:
+          default: 0
+          format: "int32"
+          type: "integer"
+      - in: "query"
+        name: "size"
+        required: false
+        schema:
+          default: 20
+          format: "int32"
+          type: "integer"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: "#/components/schemas/Event"
+                type: "array"
+          description: "OK"
+      tags:
+      - "event-controller"
+      x-required-permissions:
+      - "EventRead"
+    post:
+      description: "Requires permission: EventCreate."
+      operationId: "createEvent"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Event"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Event"
+          description: "OK"
+      tags:
+      - "event-controller"
+      x-required-permissions:
+      - "EventCreate"
+  /api/v2/events/with-count:
+    get:
+      description: "Requires permission: EventRead."
+      operationId: "getEventsWithCount"
+      parameters:
+      - in: "query"
+        name: "filters"
+        required: true
+        schema:
+          additionalProperties:
+            type: "string"
+          type: "object"
+      - in: "query"
+        name: "offset"
+        required: false
+        schema:
+          default: 0
+          format: "int32"
+          type: "integer"
+      - in: "query"
+        name: "size"
+        required: false
+        schema:
+          default: 20
+          format: "int32"
+          type: "integer"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EventsWithCount"
+          description: "OK"
+      tags:
+      - "event-controller"
+      x-required-permissions:
+      - "EventRead"
+  /api/v2/events/{id}:
+    delete:
+      description: "Requires permission: EventDelete."
+      operationId: "deleteEvent"
+      parameters:
+      - in: "path"
+        name: "id"
+        required: true
+        schema:
+          type: "string"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Event"
+          description: "OK"
+      tags:
+      - "event-controller"
+      x-required-permissions:
+      - "EventDelete"
+    get:
+      description: "Requires permission: EventRead."
+      operationId: "getEvent"
+      parameters:
+      - in: "path"
+        name: "id"
+        required: true
+        schema:
+          type: "string"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Event"
+          description: "OK"
+      tags:
+      - "event-controller"
+      x-required-permissions:
+      - "EventRead"
+  /api/v2/events/{id}/acknowledge:
+    put:
+      description: "Requires permission: EventUpdate."
+      operationId: "acknowledgeEvent"
+      parameters:
+      - in: "path"
+        name: "id"
+        required: true
+        schema:
+          type: "string"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Event"
+          description: "OK"
+      tags:
+      - "event-controller"
+      x-required-permissions:
+      - "EventUpdate"
+  /api/v2/events/{id}/unacknowledge:
+    put:
+      description: "Requires permission: EventUpdate."
+      operationId: "unacknowledgeEvent"
+      parameters:
+      - in: "path"
+        name: "id"
+        required: true
+        schema:
+          type: "string"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Event"
+          description: "OK"
+      tags:
+      - "event-controller"
+      x-required-permissions:
+      - "EventUpdate"
+  /api/v2/generate/plugin:
+    post:
+      description: "Requires permission: PluginsView."
+      operationId: "generatePlugin"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PluginGeneratorInput"
+        required: true
+      responses:
+        "200":
+          content:
+            application/octet-stream:
+              schema:
+                format: "byte"
+                type: "string"
+          description: "OK"
+      tags:
+      - "plugin-generator-rest"
+      x-required-permissions:
+      - "PluginsView"
+  /api/v2/leader/config/diff/{memberName}:
+    get:
+      description: "Requires permission: SnapshotRead."
+      operationId: "getConfigDiff"
+      parameters:
+      - in: "path"
+        name: "memberName"
+        required: true
+        schema:
+          type: "string"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ConfigDiff"
+          description: "OK"
+      tags:
+      - "leader-rest"
+      x-required-permissions:
+      - "SnapshotRead"
+  /api/v2/leader/config/plugins:
+    get:
+      description: "Requires permission: SnapshotRead."
+      operationId: "getAllMemberPlugins"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PluginsResponse"
+          description: "OK"
+      tags:
+      - "leader-rest"
+      x-required-permissions:
+      - "SnapshotRead"
+  /api/v2/leader/config/snapshot/{memberName}:
+    get:
+      description: "Requires permission: SnapshotRead."
+      operationId: "getMemberSnapshot"
+      parameters:
+      - in: "path"
+        name: "memberName"
+        required: true
+        schema:
+          type: "string"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Snapshot"
+          description: "OK"
+      tags:
+      - "leader-rest"
+      x-required-permissions:
+      - "SnapshotRead"
+  /api/v2/leader/errors/acknowledge:
+    post:
+      description: "Requires permission: DeltaFileAcknowledge."
+      operationId: "federatedAcknowledge"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FederatedActionRequest"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FederatedActionResponse"
+          description: "OK"
+      tags:
+      - "leader-rest"
+      x-required-permissions:
+      - "DeltaFileAcknowledge"
+  /api/v2/leader/errors/replay:
+    post:
+      description: "Requires permission: DeltaFileReplay."
+      operationId: "federatedReplay"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FederatedActionRequest"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FederatedActionResponse"
+          description: "OK"
+      tags:
+      - "leader-rest"
+      x-required-permissions:
+      - "DeltaFileReplay"
+  /api/v2/leader/errors/replay-and-acknowledge:
+    post:
+      description: "Requires permissions: DeltaFileAcknowledge and DeltaFileReplay."
+      operationId: "federatedReplayAndAcknowledge"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FederatedActionRequest"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FederatedActionResponse"
+          description: "OK"
+      tags:
+      - "leader-rest"
+      x-required-permissions:
+      - "DeltaFileAcknowledge"
+      - "DeltaFileReplay"
+      x-required-permissions-all: true
+  /api/v2/leader/errors/resume:
+    post:
+      description: "Requires permission: DeltaFileResume."
+      operationId: "federatedResume"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FederatedActionRequest"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FederatedActionResponse"
+          description: "OK"
+      tags:
+      - "leader-rest"
+      x-required-permissions:
+      - "DeltaFileResume"
+  /api/v2/leader/errors/search:
+    post:
+      description: "Requires permission: DeltaFileMetadataView."
+      operationId: "federatedErrorSearch"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FederatedErrorFilter"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FederatedErrorResponse"
+          description: "OK"
+      tags:
+      - "leader-rest"
+      x-required-permissions:
+      - "DeltaFileMetadataView"
+  /api/v2/leader/errors/summary/by-data-source:
+    post:
+      description: "Requires permission: DeltaFileMetadataView."
+      operationId: "errorSummaryByDataSource"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FederatedErrorFilter"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FederatedErrorSummaryResponse"
+          description: "OK"
+      tags:
+      - "leader-rest"
+      x-required-permissions:
+      - "DeltaFileMetadataView"
+  /api/v2/leader/errors/summary/by-message:
+    post:
+      description: "Requires permission: DeltaFileMetadataView."
+      operationId: "errorSummaryByMessage"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FederatedErrorFilter"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FederatedErrorSummaryResponse"
+          description: "OK"
+      tags:
+      - "leader-rest"
+      x-required-permissions:
+      - "DeltaFileMetadataView"
+  /api/v2/leader/members:
+    get:
+      description: "Requires permission: StatusView."
+      operationId: "getMembers"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LeaderDashboardData"
+          description: "OK"
+      tags:
+      - "leader-rest"
+      x-required-permissions:
+      - "StatusView"
+  /api/v2/leader/metrics/flow:
+    get:
+      description: "Requires permission: StatusView."
+      operationId: "getAllFlowMetrics"
+      parameters:
+      - in: "query"
+        name: "minutes"
+        required: false
+        schema:
+          default: 60
+          format: "int32"
+          type: "integer"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                additionalProperties:
+                  $ref: "#/components/schemas/FlowMetrics"
+                type: "object"
+          description: "OK"
+      tags:
+      - "leader-rest"
+      x-required-permissions:
+      - "StatusView"
+  /api/v2/leader/metrics/flow/{memberName}:
+    get:
+      description: "Requires permission: StatusView."
+      operationId: "getMemberFlowMetrics"
+      parameters:
+      - in: "path"
+        name: "memberName"
+        required: true
+        schema:
+          type: "string"
+      - in: "query"
+        name: "minutes"
+        required: false
+        schema:
+          default: 60
+          format: "int32"
+          type: "integer"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FlowMetrics"
+          description: "OK"
+      tags:
+      - "leader-rest"
+      x-required-permissions:
+      - "StatusView"
+  /api/v2/leader/search/federated:
+    post:
+      description: "Requires permission: DeltaFileMetadataView."
+      operationId: "federatedSearch"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DeltaFilesFilter"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FederatedSearchResponse"
+          description: "OK"
+      tags:
+      - "leader-rest"
+      x-required-permissions:
+      - "DeltaFileMetadataView"
+  /api/v2/leader/search/options:
+    get:
+      description: "Requires permission: DeltaFileMetadataView."
+      operationId: "getSearchOptions"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AggregatedSearchOptions"
+          description: "OK"
+      tags:
+      - "leader-rest"
+      x-required-permissions:
+      - "DeltaFileMetadataView"
+  /api/v2/leader/stats:
+    get:
+      description: "Requires permission: StatusView."
+      operationId: "getStats"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AggregatedStats"
+          description: "OK"
+      tags:
+      - "leader-rest"
+      x-required-permissions:
+      - "StatusView"
+  /api/v2/lookup/{lookupTableName}:
+    post:
+      description: "Requires permission: LookupTableUpdate.\n\nRequires permission:\
+        \ LookupTableUpdate."
+      operationId: "uploadTableFromCsv"
+      parameters:
+      - in: "path"
+        name: "lookupTableName"
+        required: true
+        schema:
+          type: "string"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              items:
+                additionalProperties:
+                  type: "string"
+                type: "object"
+              type: "array"
+          text/csv:
+            schema:
+              properties:
+                csv:
+                  format: "binary"
+                  type: "string"
+              type: "object"
+        required: true
+      responses:
+        "200":
+          content:
+            text/plain:
+              schema:
+                type: "string"
+          description: "OK"
+      tags:
+      - "lookup-table-rest-controller"
+      x-required-permissions:
+      - "LookupTableUpdate"
+  /api/v2/me:
+    get:
+      operationId: "me"
+      parameters: []
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: "object"
+          description: "OK"
+      tags:
+      - "me-rest"
+  /api/v2/metrics/action:
+    post:
+      description: "Requires permission: MetricsView."
+      operationId: "actionMetrics"
+      parameters:
+      - in: "query"
+        name: "minutes"
+        required: false
+        schema:
+          default: 60
+          format: "int32"
+          type: "integer"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              items:
+                type: "string"
+              type: "array"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: "#/components/schemas/ActionMetrics"
+                type: "array"
+          description: "OK"
+      tags:
+      - "system-rest"
+      x-required-permissions:
+      - "MetricsView"
+  /api/v2/metrics/flow:
+    get:
+      description: "Requires permission: StatusView."
+      operationId: "flowMetrics"
+      parameters:
+      - in: "query"
+        name: "minutes"
+        required: false
+        schema:
+          default: 60
+          format: "int32"
+          type: "integer"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FlowMetrics"
+          description: "OK"
+      tags:
+      - "system-rest"
+      x-required-permissions:
+      - "StatusView"
+  /api/v2/metrics/perflow:
+    post:
+      description: "Requires permission: MetricsView."
+      operationId: "perFlowMetrics"
+      parameters:
+      - in: "query"
+        name: "minutes"
+        required: false
+        schema:
+          default: 60
+          format: "int32"
+          type: "integer"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              items:
+                $ref: "#/components/schemas/FlowKey"
+              type: "array"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: "#/components/schemas/PerFlowMetrics"
+                type: "array"
+          description: "OK"
+      tags:
+      - "system-rest"
+      x-required-permissions:
+      - "MetricsView"
+  /api/v2/metrics/queues/action-plugins:
+    get:
+      description: "Requires permission: MetricsView."
+      operationId: "getActionPluginMapping"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                additionalProperties:
+                  type: "string"
+                type: "object"
+          description: "OK"
+      tags:
+      - "queue-metrics-rest"
+      x-required-permissions:
+      - "MetricsView"
+  /api/v2/metrics/queues/detailed:
+    get:
+      description: "Requires permission: MetricsView."
+      operationId: "getDetailedQueueMetrics"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DetailedQueueMetrics"
+          description: "OK"
+      tags:
+      - "queue-metrics-rest"
+      x-required-permissions:
+      - "MetricsView"
+  /api/v2/metrics/queues/running:
+    get:
+      description: "Requires permission: MetricsView."
+      operationId: "getRunningTasks"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RunningTasksResponse"
+          description: "OK"
+      tags:
+      - "queue-metrics-rest"
+      x-required-permissions:
+      - "MetricsView"
+  /api/v2/metrics/system/nodes:
+    get:
+      description: "Requires permission: MetricsView."
+      operationId: "nodeAppsAndMetrics"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Nodes"
+          description: "OK"
+      tags:
+      - "metrics-rest"
+      x-required-permissions:
+      - "MetricsView"
+  /api/v2/permissions:
+    get:
+      operationId: "getPermissions"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: "#/components/schemas/Permission"
+                type: "array"
+          description: "OK"
+      tags:
+      - "permissions-rest"
+  /api/v2/roles:
+    get:
+      description: "Requires permission: RoleRead."
+      operationId: "getRoles"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: "#/components/schemas/Role"
+                type: "array"
+          description: "OK"
+      tags:
+      - "roles-rest"
+      x-required-permissions:
+      - "RoleRead"
+    post:
+      description: "Requires permission: RoleCreate."
+      operationId: "createRole"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Input"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Role"
+          description: "OK"
+      tags:
+      - "roles-rest"
+      x-required-permissions:
+      - "RoleCreate"
+  /api/v2/roles/{id}:
+    delete:
+      description: "Requires permission: RoleDelete."
+      operationId: "deleteRole"
+      parameters:
+      - in: "path"
+        name: "id"
+        required: true
+        schema:
+          format: "uuid"
+          type: "string"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Role"
+          description: "OK"
+      tags:
+      - "roles-rest"
+      x-required-permissions:
+      - "RoleDelete"
+    get:
+      description: "Requires permission: RoleRead."
+      operationId: "getRole"
+      parameters:
+      - in: "path"
+        name: "id"
+        required: true
+        schema:
+          format: "uuid"
+          type: "string"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Role"
+          description: "OK"
+      tags:
+      - "roles-rest"
+      x-required-permissions:
+      - "RoleRead"
+    put:
+      description: "Requires permission: RoleUpdate."
+      operationId: "updateRole"
+      parameters:
+      - in: "path"
+        name: "id"
+        required: true
+        schema:
+          format: "uuid"
+          type: "string"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: "string"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Role"
+          description: "OK"
+      tags:
+      - "roles-rest"
+      x-required-permissions:
+      - "RoleUpdate"
+  /api/v2/sse:
+    get:
+      description: "Requires permission: UIAccess."
+      operationId: "sse"
+      responses:
+        "200":
+          content:
+            text/event-stream:
+              schema:
+                $ref: "#/components/schemas/SseEmitter"
+          description: "OK"
+      tags:
+      - "server-sent-event-rest"
+      x-required-permissions:
+      - "UIAccess"
+  /api/v2/status:
+    get:
+      description: "Requires permission: StatusView."
+      operationId: "systemStatus"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Status"
+          description: "OK"
+      tags:
+      - "system-rest"
+      x-required-permissions:
+      - "StatusView"
+  /api/v2/status/report:
+    get:
+      description: "Requires permission: StatusView."
+      operationId: "statusReport"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MemberReport"
+          description: "OK"
+      tags:
+      - "system-rest"
+      x-required-permissions:
+      - "StatusView"
+  /api/v2/status/{statusCheckId}/pauseDuration:
+    delete:
+      description: "Requires permission: StatusPause."
+      operationId: "resumeStatusCheck"
+      parameters:
+      - in: "path"
+        name: "statusCheckId"
+        required: true
+        schema:
+          type: "string"
+      responses:
+        "200":
+          description: "OK"
+      tags:
+      - "system-rest"
+      x-required-permissions:
+      - "StatusPause"
+    put:
+      description: "Requires permission: StatusPause."
+      operationId: "pauseStatusCheck"
+      parameters:
+      - in: "path"
+        name: "statusCheckId"
+        required: true
+        schema:
+          type: "string"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: "string"
+        required: true
+      responses:
+        "200":
+          description: "OK"
+      tags:
+      - "system-rest"
+      x-required-permissions:
+      - "StatusPause"
+  /api/v2/survey:
+    post:
+      description: "Requires permission: SurveyCreate."
+      operationId: "addSurveys"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: "string"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SurveyErrors"
+          description: "OK"
+      tags:
+      - "survey-rest"
+      x-required-permissions:
+      - "SurveyCreate"
+  /api/v2/system/snapshot/current:
+    get:
+      description: "Requires permission: SnapshotRead."
+      operationId: "currentSnapshot"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Snapshot"
+          description: "OK"
+      tags:
+      - "system-rest"
+      x-required-permissions:
+      - "SnapshotRead"
+  /api/v2/timeseries:
+    get:
+      description: "Requires permission: MetricsView."
+      operationId: "queryRange"
+      parameters:
+      - in: "query"
+        name: "query"
+        required: true
+        schema:
+          type: "string"
+      - in: "query"
+        name: "start"
+        required: true
+        schema:
+          format: "int64"
+          type: "integer"
+      - in: "query"
+        name: "end"
+        required: true
+        schema:
+          format: "int64"
+          type: "integer"
+      - in: "query"
+        name: "step"
+        required: true
+        schema:
+          type: "string"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: "string"
+          description: "OK"
+      tags:
+      - "system-rest"
+      x-required-permissions:
+      - "MetricsView"
+  /api/v2/users:
+    get:
+      description: "Requires permission: UserRead."
+      operationId: "getAllUsers"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: "#/components/schemas/DeltaFiUserDTO"
+                type: "array"
+          description: "OK"
+      tags:
+      - "user-rest"
+      x-required-permissions:
+      - "UserRead"
+    post:
+      description: "Requires permission: UserCreate."
+      operationId: "createUser"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Input"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DeltaFiUserDTO"
+          description: "OK"
+      tags:
+      - "user-rest"
+      x-required-permissions:
+      - "UserCreate"
+  /api/v2/users/exportable:
+    get:
+      description: "Requires permission: UserRead."
+      operationId: "exportUsersAndRoles"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: "string"
+          description: "OK"
+      tags:
+      - "user-rest"
+      x-required-permissions:
+      - "UserRead"
+  /api/v2/users/importable:
+    post:
+      description: "Requires permission: UserCreate."
+      operationId: "importUsersAndRoles"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UsersAndRoles"
+        required: true
+      responses:
+        "200":
+          content:
+            text/plain:
+              schema:
+                type: "string"
+          description: "OK"
+      tags:
+      - "user-rest"
+      x-required-permissions:
+      - "UserCreate"
+  /api/v2/users/{id}:
+    delete:
+      description: "Requires permission: UserDelete."
+      operationId: "deleteUserById"
+      parameters:
+      - in: "path"
+        name: "id"
+        required: true
+        schema:
+          format: "uuid"
+          type: "string"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DeltaFiUserDTO"
+          description: "OK"
+      tags:
+      - "user-rest"
+      x-required-permissions:
+      - "UserDelete"
+    get:
+      description: "Requires permission: UserRead."
+      operationId: "getUserById"
+      parameters:
+      - in: "path"
+        name: "id"
+        required: true
+        schema:
+          format: "uuid"
+          type: "string"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DeltaFiUserDTO"
+          description: "OK"
+      tags:
+      - "user-rest"
+      x-required-permissions:
+      - "UserRead"
+    put:
+      description: "Requires permission: UserUpdate."
+      operationId: "updateUser"
+      parameters:
+      - in: "path"
+        name: "id"
+        required: true
+        schema:
+          format: "uuid"
+          type: "string"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: "string"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DeltaFiUserDTO"
+          description: "OK"
+      tags:
+      - "user-rest"
+      x-required-permissions:
+      - "UserUpdate"
+  /api/v2/versions:
+    get:
+      description: "Requires permission: VersionsView."
+      operationId: "getRunningVersions"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Versions"
+          description: "OK"
+      tags:
+      - "system-rest"
+      x-required-permissions:
+      - "VersionsView"
+  /plugins/redeploy:
+    post:
+      description: "Requires permission: Admin."
+      operationId: "redeployAllPlugins"
+      responses:
+        "200":
+          description: "OK"
+      tags:
+      - "plugin-rest-controller"
+      x-required-permissions:
+      - "Admin"
+servers:
+- url: "/"

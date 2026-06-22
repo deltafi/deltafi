@@ -34,6 +34,7 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
     implementation 'org.springframework.boot:spring-boot-starter-security'
     implementation 'org.springframework.boot:spring-boot-starter-webmvc'
+    implementation "org.springdoc:springdoc-openapi-starter-webmvc-ui:${springdocVersion}"
     implementation 'org.springframework:spring-aspects'
 
     implementation 'com.networknt:json-schema-validator:1.5.9'
@@ -232,6 +233,27 @@ generateJava {
 
 springBoot {
     buildInfo()
+}
+
+// The OpenAPI spec generator (tagged 'openapi') boots the full app and rewrites the tracked
+// src/main/resources/openapi/openapi.yaml. Keep it out of the normal test run; invoke it
+// explicitly via the generateOpenApiSpec task (used locally and by the CI drift check).
+test {
+    useJUnitPlatform {
+        excludeTags 'openapi'
+    }
+}
+
+tasks.register('generateOpenApiSpec', Test) {
+    description = 'Boots the app and regenerates src/main/resources/openapi/openapi.yaml from the live REST controllers'
+    group = 'documentation'
+    testClassesDirs = sourceSets.test.output.classesDirs
+    classpath = sourceSets.test.runtimeClasspath
+    useJUnitPlatform {
+        includeTags 'openapi'
+    }
+    // output is a tracked source file, never up-to-date
+    outputs.upToDateWhen { false }
 }
 
 jar {

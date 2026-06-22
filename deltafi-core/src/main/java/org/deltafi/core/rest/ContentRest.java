@@ -42,7 +42,8 @@ import java.io.IOException;
 import java.util.Base64;
 
 @RestController
-@RequestMapping("/api/v2/content")
+// set produces JSON for the exception handlers which can't be set directly
+@RequestMapping(value = "/api/v2/content", produces = MediaType.APPLICATION_JSON_VALUE)
 @AllArgsConstructor
 @Slf4j
 public class ContentRest {

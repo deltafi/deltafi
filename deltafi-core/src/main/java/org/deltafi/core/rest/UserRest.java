@@ -37,9 +37,11 @@ import java.util.List;
 import java.util.UUID;
 
 import static org.deltafi.common.constant.DeltaFiConstants.ADMIN_ID;
+import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
+import static org.springframework.http.MediaType.TEXT_PLAIN_VALUE;
 
 @RestController
-@RequestMapping("/api/v2/users")
+@RequestMapping(value = "/api/v2/users", produces = APPLICATION_JSON_VALUE)
 @RequiredArgsConstructor
 public class UserRest {
 
@@ -61,7 +63,7 @@ public class UserRest {
                 .writeValueAsString(userService.exportUsersAndRoles()));
     }
 
-    @PostMapping(value = "/importable", consumes = MediaType.APPLICATION_JSON)
+    @PostMapping(value = "/importable", consumes = MediaType.APPLICATION_JSON, produces = TEXT_PLAIN_VALUE)
     @NeedsPermission.UserCreate
     public ResponseEntity<String> importUsersAndRoles(@RequestBody UsersAndRoles usersAndRoles) {
         try {

@@ -17,6 +17,7 @@
  */
 package org.deltafi.core.rest;
 
+import io.swagger.v3.oas.annotations.Hidden;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.deltafi.common.types.PluginRegistration;
@@ -50,6 +51,9 @@ public class PluginRestController {
         return ResponseEntity.ok().build();
     }
 
+    // Internal endpoint: plugins call this to register themselves at startup. It is not part of the
+    // user-facing API (unauthenticated, permitAll in SecurityConfig), so keep it out of the OpenAPI spec.
+    @Hidden
     @PostMapping(consumes = MediaType.APPLICATION_JSON)
     public ResponseEntity<String> createPlugin(@RequestBody PluginRegistration pluginRegistration) {
         log.info("Received plugin registration for {}", pluginRegistration.getPluginCoordinates());

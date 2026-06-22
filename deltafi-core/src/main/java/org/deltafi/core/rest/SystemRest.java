@@ -35,7 +35,7 @@ import java.util.List;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/api/v2")
+@RequestMapping(value = "/api/v2", produces = MediaType.APPLICATION_JSON_VALUE)
 @AllArgsConstructor
 public class SystemRest {
 

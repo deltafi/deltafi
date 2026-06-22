@@ -38,6 +38,7 @@ import org.deltafi.core.types.leader.FederatedErrorSummaryResponse;
 import org.deltafi.core.types.leader.FederatedSearchResponse;
 import org.deltafi.core.types.leader.PluginsResponse;
 import org.deltafi.core.types.snapshot.Snapshot;
+import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -53,7 +54,7 @@ import java.util.Map;
  * ABOUTME: Provides endpoints for member status, config management, and fleet-wide error handling.
  */
 @RestController
-@RequestMapping("/api/v2/leader")
+@RequestMapping(value = "/api/v2/leader", produces = MediaType.APPLICATION_JSON_VALUE)
 @RequiredArgsConstructor
 public class LeaderRest {
     private final MemberMonitorService memberMonitorService;

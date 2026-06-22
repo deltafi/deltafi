@@ -24,23 +24,45 @@ stages:
   - scan
   - release
 
-# Main build job (builds all the gradle things)
 "Core Build":
   extends:
-    - .gradle-build
+    - .gradle
   stage: build
   tags:
     - heavy
+  needs: []
   variables:
-    GRADLE_TASKS: license assemble test dockerPrepare
-  before_script:
-    - git describe --tags
+    OPENAPI_SPEC: deltafi-core/src/main/resources/openapi/openapi.yaml
+    OPENAPI_BASE_REF: dev
+  script:
+    - sdk install gradle ${GRADLE_VERSION}
+    - ${GRADLE} license assemble test dockerPrepare :deltafi-core:generateOpenApiSpec
+    # 1. Drift check (git add -N makes a not-yet-committed spec visible to git diff)
+    - git add -N "${OPENAPI_SPEC}"
+    - |
+      if ! git diff --exit-code -- "${OPENAPI_SPEC}"; then
+        echo "ERROR: ${OPENAPI_SPEC} is out of date."
+        echo "Run './gradlew :deltafi-core:generateOpenApiSpec' locally and commit the result."
+        exit 1
+      fi
+    # 2. Breaking-change check vs the integration branch
+    - curl -fsSL https://raw.githubusercontent.com/oasdiff/oasdiff/main/install.sh | sh
+    - git fetch --depth=1 origin "${OPENAPI_BASE_REF}" || true
+    - |
+      if git cat-file -e "origin/${OPENAPI_BASE_REF}:${OPENAPI_SPEC}" 2>/dev/null; then
+        git show "origin/${OPENAPI_BASE_REF}:${OPENAPI_SPEC}" > /tmp/base-openapi.yaml
+        oasdiff breaking /tmp/base-openapi.yaml "${OPENAPI_SPEC}" --fail-on ERR
+      else
+        echo "No base spec on origin/${OPENAPI_BASE_REF}; skipping breaking-change check (first run)."
+      fi
   artifacts:
     when: always
     reports:
       junit: "**/build/test-results/test/**/TEST-*.xml"
     paths:
       - "**/build"
+      - ".gradle"
+      - "${OPENAPI_SPEC}"
     exclude:
       - "**/build/tmp"
       - "**/build/classes"

@@ -97,12 +97,20 @@ public class SecurityConfig {
     public SecurityFilterChain regularFilterChain(HttpSecurity httpSecurity, UserDetailsService userDetailsService) throws Exception {
         // permitAll for the error redirect so users are prompted for credentials in basic auth mode
         // permitAll to plugins so plugins can register
+        // The OpenAPI spec requires authentication (any valid user) so tooling/codegen can fetch the
+        // REST contract, but the endpoint-by-endpoint permission map is not exposed to anonymous callers
+        // (e.g. the unauthenticated ingress server). The interactive Swagger UI is further restricted to
+        // Admin to match its Admin-only UI menu entry; "Try it out" still hits authenticated endpoints
+        // which enforce their own @NeedsPermission checks.
         return httpSecurity
                 .sessionManagement(sess -> sess.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(authorize -> authorize
                         .requestMatchers("/error").permitAll()
                         .requestMatchers("/plugins").permitAll()
+                        .requestMatchers("/v3/api-docs", "/v3/api-docs.yaml", "/v3/api-docs/**").authenticated()
+                        .requestMatchers("/swagger", "/swagger/", "/swagger-ui.html", "/swagger-ui/**")
+                                .hasAuthority(DeltaFiConstants.ADMIN_PERMISSION)
                         .anyRequest().authenticated())
                 .addFilter(requestFilter(userDetailsService))
                 .build();

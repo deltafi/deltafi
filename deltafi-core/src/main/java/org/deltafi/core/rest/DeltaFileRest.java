@@ -17,6 +17,10 @@
  */
 package org.deltafi.core.rest;
 
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -41,7 +45,7 @@ import java.util.List;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/v2/deltafile")
+@RequestMapping(value = "/api/v2/deltafile", produces = MediaType.APPLICATION_JSON_VALUE)
 @RequiredArgsConstructor
 @Slf4j
 public class DeltaFileRest {
@@ -54,6 +58,17 @@ public class DeltaFileRest {
 
     @NeedsPermission.DeltaFileIngress
     @PostMapping(value = "ingress", consumes = MediaType.ALL_VALUE, produces = MediaType.TEXT_PLAIN_VALUE)
+    // Declaring @ApiResponses replaces springdoc's auto-generated 200, so it is restated here.
+    // Error codes are produced by handleException(); the body is a plain-text message.
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Ingress succeeded; body is the comma-separated DID(s) created",
+                    content = @Content(mediaType = MediaType.TEXT_PLAIN_VALUE, schema = @Schema(type = "string"))),
+            @ApiResponse(responseCode = "400", description = "Invalid or unparseable metadata"),
+            @ApiResponse(responseCode = "429", description = "Ingress rate limit exceeded; retry after backing off"),
+            @ApiResponse(responseCode = "503", description = "Ingress is disabled or temporarily unavailable; retry later"),
+            @ApiResponse(responseCode = "507", description = "Insufficient storage to persist the content"),
+            @ApiResponse(responseCode = "500", description = "Unexpected ingress failure")
+    })
     public ResponseEntity<Object> ingressData(InputStream dataStream,
             @RequestHeader(value = "Filename", required = false) String filename,
             @RequestHeader(value = "DataSource", required = false) String dataSource,
@@ -73,6 +88,17 @@ public class DeltaFileRest {
 
     @NeedsPermission.DeltaFileIngress
     @PostMapping(path = "ingress/event")
+    // Declaring @ApiResponses replaces springdoc's auto-generated 200, so it is restated here.
+    // Error codes are produced by handleException(); the body is a plain-text message.
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Ingress succeeded",
+                    content = @Content(schema = @Schema(implementation = IngressResult.class))),
+            @ApiResponse(responseCode = "400", description = "Invalid or unparseable metadata"),
+            @ApiResponse(responseCode = "429", description = "Ingress rate limit exceeded; retry after backing off"),
+            @ApiResponse(responseCode = "503", description = "Ingress is disabled or temporarily unavailable; retry later"),
+            @ApiResponse(responseCode = "507", description = "Insufficient storage to persist the content"),
+            @ApiResponse(responseCode = "500", description = "Unexpected ingress failure")
+    })
     public ResponseEntity<Object> ingressContentRef(@RequestBody IngressEventItem ingressEventItem, @RequestHeader(value = DeltaFiConstants.USER_NAME_HEADER, defaultValue = "system") String username) {
         try {
             IngressResult ingressResult = ingressService.ingress(ingressEventItem, username);

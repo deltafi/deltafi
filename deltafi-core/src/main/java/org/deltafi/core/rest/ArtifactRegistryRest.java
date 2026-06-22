@@ -62,7 +62,7 @@ import java.util.Set;
  * </pre>
  */
 @RestController
-@RequestMapping("/api/v2/artifacts")
+@RequestMapping(value = "/api/v2/artifacts", produces = MediaType.APPLICATION_JSON_VALUE)
 @AllArgsConstructor
 @Slf4j
 public class ArtifactRegistryRest {
@@ -86,15 +86,44 @@ public class ArtifactRegistryRest {
 
     @NeedsPermission.ArtifactRegistryWrite
     @PostMapping(value = "/{owner}/{artifactName}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @io.swagger.v3.oas.annotations.Operation(
+            // The handler takes a flat multipart form plus a catch-all Map for arbitrary labels, which
+            // springdoc cannot model (it leaks the fields as query params). Declare the true body shape:
+            // named fields, a binary file, and additionalProperties:string for the dynamic labels. The
+            // handler is unchanged, so the on-the-wire contract is identical (no client breaks). Also
+            // documents the real 201 response (the handler returns ResponseEntity.status(CREATED)).
+            requestBody = @io.swagger.v3.oas.annotations.parameters.RequestBody(required = true,
+                    content = @io.swagger.v3.oas.annotations.media.Content(
+                            mediaType = MediaType.MULTIPART_FORM_DATA_VALUE,
+                            schemaProperties = {
+                                    @io.swagger.v3.oas.annotations.media.SchemaProperty(name = "version",
+                                            schema = @io.swagger.v3.oas.annotations.media.Schema(type = "string")),
+                                    @io.swagger.v3.oas.annotations.media.SchemaProperty(name = "makeActive",
+                                            schema = @io.swagger.v3.oas.annotations.media.Schema(type = "boolean", defaultValue = "true")),
+                                    @io.swagger.v3.oas.annotations.media.SchemaProperty(name = "description",
+                                            schema = @io.swagger.v3.oas.annotations.media.Schema(type = "string")),
+                                    @io.swagger.v3.oas.annotations.media.SchemaProperty(name = "alias",
+                                            schema = @io.swagger.v3.oas.annotations.media.Schema(type = "string")),
+                                    @io.swagger.v3.oas.annotations.media.SchemaProperty(name = "file",
+                                            schema = @io.swagger.v3.oas.annotations.media.Schema(type = "string", format = "binary"))
+                            },
+                            // NOTE: under springdoc 3.x / Boot 4 swagger-core this renders as untyped
+                            // additionalProperties:{} rather than {type:string}; still correct (arbitrary
+                            // string label fields allowed), just less precise. A customizer could force the type.
+                            additionalPropertiesSchema = @io.swagger.v3.oas.annotations.media.Schema(type = "string"))),
+            responses = @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "201",
+                    description = "Artifact published",
+                    content = @io.swagger.v3.oas.annotations.media.Content(mediaType = APPLICATION_JSON_VALUE,
+                            schema = @io.swagger.v3.oas.annotations.media.Schema(implementation = PublishArtifactResponse.class))))
     public ResponseEntity<PublishArtifactResponse> publish(
             @PathVariable String owner,
             @PathVariable String artifactName,
-            @RequestParam("file") MultipartFile file,
-            @RequestParam(required = false) String version,
-            @RequestParam(required = false) String description,
-            @RequestParam(defaultValue = "true") boolean makeActive,
-            @RequestParam(required = false) String alias,
-            @RequestParam Map<String, String> allParams) throws IOException {
+            @io.swagger.v3.oas.annotations.Parameter(hidden = true) @RequestParam("file") MultipartFile file,
+            @io.swagger.v3.oas.annotations.Parameter(hidden = true) @RequestParam(required = false) String version,
+            @io.swagger.v3.oas.annotations.Parameter(hidden = true) @RequestParam(required = false) String description,
+            @io.swagger.v3.oas.annotations.Parameter(hidden = true) @RequestParam(defaultValue = "true") boolean makeActive,
+            @io.swagger.v3.oas.annotations.Parameter(hidden = true) @RequestParam(required = false) String alias,
+            @io.swagger.v3.oas.annotations.Parameter(hidden = true) @RequestParam Map<String, String> allParams) throws IOException {
 
         Map<String, String> labels = extractLabels(allParams);
         String contentType = file.getContentType();
@@ -129,7 +158,8 @@ public class ArtifactRegistryRest {
     // ── Download ──────────────────────────────────────────────────────────────
 
     @NeedsPermission.ArtifactRegistryRead
-    @GetMapping("/{owner}/{artifactName}/versions/{version}")
+    @GetMapping(value = "/{owner}/{artifactName}/versions/{version}",
+            produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
     public ResponseEntity<InputStreamResource> download(
             @PathVariable String owner,
             @PathVariable String artifactName,

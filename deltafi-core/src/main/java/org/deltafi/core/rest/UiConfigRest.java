@@ -31,7 +31,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/api/v2/config")
+@RequestMapping(value = "/api/v2/config", produces = MediaType.APPLICATION_JSON_VALUE)
 public class UiConfigRest {
 
     private final DeltaFiPropertiesService propertiesService;
