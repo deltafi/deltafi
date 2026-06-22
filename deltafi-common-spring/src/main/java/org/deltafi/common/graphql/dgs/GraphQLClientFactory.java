@@ -20,7 +20,7 @@ package org.deltafi.common.graphql.dgs;
 import com.netflix.graphql.dgs.client.DgsCustomGraphQLClient;
 import com.netflix.graphql.dgs.client.DgsGraphQLClient;
 import com.netflix.graphql.dgs.client.HttpResponse;
-import com.netflix.graphql.dgs.client.Jackson2DgsJsonMapperAdapter;
+import com.netflix.graphql.dgs.client.Jackson3DgsJsonMapperAdapter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -43,8 +43,6 @@ public class GraphQLClientFactory {
      * @return a configured {@link DgsGraphQLClient}
      */
     public DgsGraphQLClient build(String coreUrl, String... headers) {
-        // DgsCustomGraphQLClient's 2-arg ctor defaults to the Jackson 3 mapper internally;
-        // pass the Jackson 2 mapper explicitly via the 3-arg ctor to match our Jackson 2 stack.
         return new DgsCustomGraphQLClient(coreUrl, (url, defaultHeaders, body) -> {
             HttpRequest.Builder requestBuilder = HttpRequest.newBuilder()
                     .uri(URI.create(url))
@@ -66,6 +64,6 @@ public class GraphQLClientFactory {
                 Thread.currentThread().interrupt();
                 throw new RuntimeException("GraphQL Request was interrupted");
             }
-        }, Jackson2DgsJsonMapperAdapter.Companion.fromOptions());
+        }, Jackson3DgsJsonMapperAdapter.Companion.fromOptions());
     }
 }

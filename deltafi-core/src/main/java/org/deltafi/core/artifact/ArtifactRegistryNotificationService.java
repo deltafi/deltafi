@@ -17,8 +17,7 @@
  */
 package org.deltafi.core.artifact;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import tools.jackson.databind.ObjectMapper;
 import io.valkey.JedisPool;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -36,7 +35,7 @@ import org.springframework.stereotype.Service;
 @Slf4j
 public class ArtifactRegistryNotificationService {
 
-    private static final ObjectMapper MAPPER = new ObjectMapper().registerModule(new JavaTimeModule());
+    private static final ObjectMapper MAPPER = new ObjectMapper();
 
     private final JedisPool jedisPool;
 

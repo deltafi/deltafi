@@ -19,10 +19,10 @@
 // ABOUTME: Subclasses implement getRows() to provide row data when requested by the core.
 package org.deltafi.actionkit.lookup;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.DeserializationFeature;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -39,9 +39,9 @@ import java.util.*;
 @RequiredArgsConstructor
 @Slf4j
 public abstract class LookupTableSupplier {
-    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper()
-            .registerModule(new JavaTimeModule())
-            .enable(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY);
+    private static final ObjectMapper OBJECT_MAPPER = JsonMapper.builder()
+            .enable(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY)
+            .build();
 
     private final LookupTableClient lookupTableClient;
     @Getter
@@ -65,7 +65,7 @@ public abstract class LookupTableSupplier {
         try {
             uploadTable(LookupTableClient.UploadFileType.JSON, OBJECT_MAPPER.writeValueAsString(
                     getRows(variables, null, null)));
-        } catch (JsonProcessingException e) {
+        } catch (JacksonException e) {
             log.error("Unable to convert rows to JSON", e);
         }
     }

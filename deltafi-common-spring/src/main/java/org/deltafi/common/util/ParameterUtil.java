@@ -17,12 +17,10 @@
  */
 package org.deltafi.common.util;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
-import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import tools.jackson.core.type.TypeReference;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.node.ObjectNode;
 import org.springframework.expression.Expression;
 import org.springframework.expression.common.LiteralExpression;
 import org.springframework.expression.common.TemplateParserContext;
@@ -36,9 +34,7 @@ import java.util.Map;
  */
 public class ParameterUtil {
 
-    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper()
-            .registerModule(new JavaTimeModule())
-            .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
     private static final String PLACEHOLDER_PREFIX = "{{";
     private static final String PLACEHOLDER_SUFFIX = "}}";
@@ -82,8 +78,8 @@ public class ParameterUtil {
             for (int i = 0; i < node.size(); i++) {
                 hasTemplate |= hasTemplate(node.get(i));
             }
-        } else if (node.isTextual()) {
-            hasTemplate |= hasTemplate(node.asText());
+        } else if (node.isString()) {
+            hasTemplate |= hasTemplate(node.asString());
         }
         return hasTemplate;
     }

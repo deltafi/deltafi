@@ -17,8 +17,10 @@
  */
 package org.deltafi.core.snapshot;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.core.type.TypeReference;
+import tools.jackson.databind.DeserializationFeature;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 import com.jayway.jsonpath.TypeRef;
 import com.netflix.graphql.dgs.DgsQueryExecutor;
 import org.deltafi.common.types.*;
@@ -38,7 +40,10 @@ import java.util.UUID;
 
 public class SystemSnapshotTestHelper {
 
-    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+    private static final ObjectMapper OBJECT_MAPPER = JsonMapper.builder()
+            .configure(DeserializationFeature.FAIL_ON_NULL_FOR_PRIMITIVES, false)
+            .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+            .build();
     private static Snapshot snapshot;
     public static final GetSystemSnapshotsByFilterProjectionRoot<?, ?> BY_FILTER_PROJECTION_ROOT = new GetSystemSnapshotsByFilterProjectionRoot<>()
             .systemSnapshots()

@@ -19,10 +19,10 @@
 // ABOUTME: Builds the plugin registration payload including actions, flows, variables, and tests.
 package org.deltafi.actionkit.registration;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import tools.jackson.core.type.TypeReference;
+import tools.jackson.databind.DeserializationFeature;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 import com.github.victools.jsonschema.generator.SchemaGenerator;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
@@ -51,9 +51,9 @@ import java.util.Map;
 @Slf4j
 @RequiredArgsConstructor
 public class PluginRegistrar {
-    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper()
-            .registerModule(new JavaTimeModule())
-            .enable(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY);
+    private static final ObjectMapper OBJECT_MAPPER = JsonMapper.builder()
+            .enable(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY)
+            .build();
 
     private static final String FLOWS_DIRECTORY = "flows";
     private static final String INTEGRATION_DIRECTORY = "integration";

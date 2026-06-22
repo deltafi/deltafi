@@ -17,8 +17,8 @@
  */
 package org.deltafi.core.services;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
 import org.deltafi.common.types.FlowType;
 import org.deltafi.common.types.PluginCoordinates;
 import org.deltafi.core.exceptions.MissingFlowException;
@@ -249,7 +249,7 @@ class DataSinkServiceTest {
     }
 
     @Test
-    void testSetRateLimitSuccess() throws JsonProcessingException {
+    void testSetRateLimitSuccess() throws JacksonException {
         String flowName = "test-data-sink";
         RateLimitInput rateLimitInput = RateLimitInput.newBuilder()
                 .unit(RateLimitUnit.FILES)
@@ -298,7 +298,7 @@ class DataSinkServiceTest {
     }
 
     @Test
-    void testSetRateLimitDatabaseUpdateFails() throws JsonProcessingException {
+    void testSetRateLimitDatabaseUpdateFails() throws JacksonException {
         String flowName = "test-data-sink";
         RateLimitInput rateLimitInput = RateLimitInput.newBuilder()
                 .unit(RateLimitUnit.BYTES)
@@ -416,7 +416,7 @@ class DataSinkServiceTest {
     }
 
     @Test
-    void testSetRateLimitDifferentUnits() throws JsonProcessingException {
+    void testSetRateLimitDifferentUnits() throws JacksonException {
         String flowName = "test-data-sink";
         RateLimitInput fileLimitInput = RateLimitInput.newBuilder()
                 .unit(RateLimitUnit.FILES)

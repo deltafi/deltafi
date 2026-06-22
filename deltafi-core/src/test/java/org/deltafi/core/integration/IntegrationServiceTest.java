@@ -17,9 +17,8 @@
  */
 package org.deltafi.core.integration;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.dataformat.yaml.YAMLFactory;
 import lombok.SneakyThrows;
 import org.deltafi.common.types.KeyValue;
 import org.deltafi.common.types.TestStatus;
@@ -48,7 +47,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class IntegrationServiceTest {
 
     private static final ObjectMapper YAML_MAPPER = new ObjectMapper(new YAMLFactory())
-            .registerModule(new JavaTimeModule());
+            ;
 
     @Mock
     private IngressService ingressService;

@@ -17,8 +17,8 @@
  */
 package org.deltafi.core.action.metadata;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
 import org.deltafi.actionkit.action.content.ActionContent;
 import org.deltafi.actionkit.action.error.ErrorResult;
 import org.deltafi.actionkit.action.transform.*;
@@ -70,7 +70,7 @@ public class MetadataToContent extends TransformAction<MetadataToContentParamete
             String jsonMetadata = OBJECT_MAPPER.writeValueAsString(filteredMetadata);
             ActionContent newContent = ActionContent.saveContent(context, jsonMetadata, params.getFilename(), MediaType.APPLICATION_JSON);
             result.addContent(newContent);
-        } catch (JsonProcessingException e) {
+        } catch (JacksonException e) {
             return new ErrorResult(context, "Error transforming metadata to content", e);
         }
 

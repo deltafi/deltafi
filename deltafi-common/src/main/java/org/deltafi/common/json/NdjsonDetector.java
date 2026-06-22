@@ -17,7 +17,8 @@
  */
 package org.deltafi.common.json;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
 
 import java.io.*;
 
@@ -47,7 +48,7 @@ public class NdjsonDetector {
             OBJECT_MAPPER.readTree(line);
 
             return true;
-        } catch (IOException e) {
+        } catch (IOException | JacksonException e) {
             return false;
         }
     }

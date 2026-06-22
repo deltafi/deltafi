@@ -17,7 +17,7 @@
  */
 package org.deltafi.common.types;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
+import tools.jackson.core.JacksonException;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -27,7 +27,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class LineageMapTest {
 
     @Test
-    void testLoadAndFind() throws JsonProcessingException {
+    void testLoadAndFind() throws JacksonException {
         String json = """
                 {
                   "file1": {
@@ -83,7 +83,7 @@ class LineageMapTest {
     }
 
     @Test
-    void testPutAndWrite() throws JsonProcessingException {
+    void testPutAndWrite() throws JacksonException {
         LineageMap lineageMap = new LineageMap();
         String key = lineageMap.add("name", "", "parent1");
         assertEquals("name", key);

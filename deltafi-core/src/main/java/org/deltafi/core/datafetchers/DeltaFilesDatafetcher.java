@@ -17,9 +17,8 @@
  */
 package org.deltafi.core.datafetchers;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
 import com.fasterxml.uuid.Generators;
 import com.netflix.graphql.dgs.*;
 import com.netflix.graphql.dgs.exceptions.DgsEntityNotFoundException;
@@ -59,7 +58,7 @@ public class DeltaFilesDatafetcher {
   final AnalyticEventService analyticEventService;
   private final CoreAuditLogger auditLogger;
 
-  static final ObjectMapper objectMapper = new ObjectMapper().registerModule(new JavaTimeModule());
+  static final ObjectMapper objectMapper = new ObjectMapper();
   private final FlowDefinitionService flowDefinitionService;
 
   @DgsData(parentType = "DeltaFile", field = "annotations")
@@ -86,7 +85,7 @@ public class DeltaFilesDatafetcher {
 
   @DgsQuery
   @NeedsPermission.DeltaFileMetadataView
-  public String rawDeltaFile(@InputArgument UUID did, @InputArgument Boolean pretty) throws JsonProcessingException {
+  public String rawDeltaFile(@InputArgument UUID did, @InputArgument Boolean pretty) throws JacksonException {
     String deltaFileJson = deltaFilesService.getRawDeltaFile(did, pretty == null || pretty);
 
     if (deltaFileJson == null) {

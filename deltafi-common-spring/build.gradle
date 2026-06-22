@@ -15,7 +15,6 @@ dependencies {
 
     api(platform("com.netflix.graphql.dgs:graphql-dgs-platform-dependencies:${dgsVersion}"))
     api 'com.netflix.graphql.dgs:graphql-dgs-client'
-    api 'com.netflix.graphql.dgs:graphql-dgs-jackson2'
     api "com.netflix.graphql.dgs.codegen:graphql-dgs-codegen-shared-core:${dgsCodegenVersion}"
 
     api(platform("org.springframework.boot:spring-boot-dependencies:${springBootVersion}"))

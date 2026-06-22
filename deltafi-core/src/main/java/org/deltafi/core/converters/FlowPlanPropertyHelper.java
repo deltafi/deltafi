@@ -65,8 +65,8 @@ public class FlowPlanPropertyHelper {
         actionConfiguration.setParameters(maskedDelegate().orElse(this).replaceMapPlaceholders(templateParameters, actionConfiguration.getName()));
 
         // fill in any unset parameters after resolving variables because the resolver prunes out keys with null values
-        setDefaultValues(ParameterUtil.toMap(actionTemplate.getParameterSchema()), actionConfiguration.getParameters());
-        setDefaultValues(ParameterUtil.toMap(actionTemplate.getParameterSchema()), actionConfiguration.getInternalParameters());
+        setDefaultValues(actionTemplate.getParameterSchema(), actionConfiguration.getParameters());
+        setDefaultValues(actionTemplate.getParameterSchema(), actionConfiguration.getInternalParameters());
 
         actionConfiguration.setJoin(actionTemplate.getJoin());
     }

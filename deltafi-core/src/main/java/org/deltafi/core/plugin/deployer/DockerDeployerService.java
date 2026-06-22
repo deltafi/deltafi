@@ -17,8 +17,8 @@
  */
 package org.deltafi.core.plugin.deployer;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
 import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.command.*;
 import com.github.dockerjava.api.command.InspectContainerResponse.ContainerState;
@@ -130,8 +130,8 @@ public class DockerDeployerService extends BaseDeployerService implements Deploy
         try {
             JsonNode json = OBJECT_MAPPER.readTree(jsonPart);
             JsonNode msgNode = json.get("message");
-            if (msgNode != null && msgNode.isTextual()) {
-                return prefix + msgNode.asText();
+            if (msgNode != null && msgNode.isString()) {
+                return prefix + msgNode.asString();
             }
         } catch (Exception ignored) {
             // Not valid JSON, return original message

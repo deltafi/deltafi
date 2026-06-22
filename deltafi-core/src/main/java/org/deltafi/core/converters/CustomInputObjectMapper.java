@@ -17,8 +17,9 @@
  */
 package org.deltafi.core.converters;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import tools.jackson.databind.DeserializationFeature;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 import com.netflix.graphql.dgs.internal.DefaultInputObjectMapper;
 import com.netflix.graphql.dgs.internal.InputObjectMapper;
 import kotlin.reflect.KClass;
@@ -34,7 +35,10 @@ import java.util.Objects;
 @Service
 public class CustomInputObjectMapper implements InputObjectMapper {
 
-    private final ObjectMapper objectMapper = new ObjectMapper().registerModule(new JavaTimeModule());
+    private final ObjectMapper objectMapper = JsonMapper.builder()
+            .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
+            .disable(DeserializationFeature.FAIL_ON_NULL_FOR_PRIMITIVES)
+            .build();
     private final InputObjectMapper defaultInputObjectMapper = new DefaultInputObjectMapper();
 
     @NotNull

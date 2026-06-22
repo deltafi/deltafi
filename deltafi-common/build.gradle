@@ -17,13 +17,12 @@ dependencies {
     testCompileOnly "org.projectlombok:lombok:${lombokVersion}"
     testAnnotationProcessor "org.projectlombok:lombok:${lombokVersion}"
 
-    api "com.fasterxml.jackson.datatype:jackson-datatype-jsr310:${jacksonVersion}"
-    api "com.fasterxml.jackson.core:jackson-databind:${jacksonVersion}"
+    api 'tools.jackson.core:jackson-databind'
 
     api 'commons-io:commons-io:2.22.0'
     api(platform("io.github.openfeign:feign-bom:${openFeignVersion}"))
     api 'io.github.openfeign:feign-core'
-    api 'io.github.openfeign:feign-jackson'
+    api 'io.github.openfeign:feign-jackson3'
     api 'io.github.openfeign:feign-slf4j'
 
     api "io.minio:minio:${minioVersion}"
@@ -36,7 +35,8 @@ dependencies {
     api "com.github.victools:jsonschema-generator:${jsonschemaGeneratorVersion}"
     api "com.github.victools:jsonschema-module-jackson:${jsonschemaGeneratorVersion}"
 
-    implementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml'
+    api(platform("org.springframework.boot:spring-boot-dependencies:${springBootVersion}"))
+    implementation 'tools.jackson.dataformat:jackson-dataformat-yaml'
     implementation "ch.qos.logback:logback-classic:${logbackVersion}"
     implementation "net.logstash.logback:logstash-logback-encoder:${logstashEncoderVersion}"
     implementation 'org.apache.maven:maven-artifact:3.9.16'

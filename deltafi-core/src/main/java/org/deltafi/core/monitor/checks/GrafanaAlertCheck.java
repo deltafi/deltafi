@@ -17,11 +17,11 @@
  */
 package org.deltafi.core.monitor.checks;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import tools.jackson.core.JacksonException;
+import tools.jackson.core.type.TypeReference;
+import tools.jackson.databind.DeserializationFeature;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.deltafi.core.monitor.MonitorProfile;
@@ -49,10 +49,9 @@ import static org.deltafi.common.constant.DeltaFiConstants.USER_NAME_HEADER;
 @ConditionalOnProperty(name = "GRAFANA_ENABLED", havingValue = "true", matchIfMissing = true)
 public class GrafanaAlertCheck extends StatusCheck {
 
-    private static final ObjectMapper MAPPER = new ObjectMapper()
-            .registerModule(new JavaTimeModule())
-            .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)
-            .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
+    private static final ObjectMapper MAPPER = JsonMapper.builder()
+            .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
+            .build();
 
 
     private static final String ALERT_API = "/api/alertmanager/grafana/api/v2/alerts?active=true&silenced=false&inhibited=false";
@@ -135,7 +134,7 @@ public class GrafanaAlertCheck extends StatusCheck {
     private List<GrafanaAlert> mapBody(String body) {
         try {
             return MAPPER.readValue(body, new TypeReference<>() {});
-        } catch (IOException e) {
+        } catch (JacksonException e) {
             log.error("Failed to read grafana alert json", e);
             return List.of();
         }

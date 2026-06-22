@@ -17,9 +17,10 @@
  */
 package org.deltafi.core.action.compress;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.SerializationFeature;
+import tools.jackson.databind.json.JsonMapper;
 import org.deltafi.actionkit.action.ResultType;
 import org.deltafi.actionkit.action.content.ActionContent;
 import org.deltafi.actionkit.action.error.ErrorResult;
@@ -45,15 +46,13 @@ public class DecompressTest {
 
     private static final String LINEAGE_CONTENT_TYPE = "application/json";
     private static final String LINEAGE_FILENAME = "Lineage.json";
-    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+    private static final ObjectMapper OBJECT_MAPPER = JsonMapper.builder()
+            .configure(SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS, true)
+            .build();
     private static final String THING_1_TXT = "thing1.txt";
     private static final String THING_2_TXT = "thing2.txt";
     private static final String FILE_A_ASCII_NO_EXT = "fileA";
     private static final String NOT_A_ZIPFILE_ZIP = "notAZipfile.zip";
-
-    static {
-        OBJECT_MAPPER.configure(SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS, true);
-    }
 
     private final Decompress action = new Decompress();
     private final DeltaFiTestRunner runner = DeltaFiTestRunner.setup("DecompressTest");
@@ -791,7 +790,7 @@ public class DecompressTest {
         String jsonLineage;
         try {
             jsonLineage = OBJECT_MAPPER.writeValueAsString(theMap);
-        } catch (JsonProcessingException e) {
+        } catch (JacksonException e) {
             jsonLineage = "ERROR";
         }
         return jsonLineage;
@@ -824,7 +823,7 @@ public class DecompressTest {
 
                 assertEquals(expectedMap.size(), actualMap.size());
             }
-        } catch (JsonProcessingException e) {
+        } catch (JacksonException e) {
             return false;
         }
 

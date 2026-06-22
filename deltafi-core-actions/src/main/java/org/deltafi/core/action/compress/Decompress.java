@@ -17,7 +17,7 @@
  */
 package org.deltafi.core.action.compress;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
+import tools.jackson.core.JacksonException;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
@@ -189,7 +189,7 @@ public class Decompress extends TransformAction<DecompressParameters> {
                 String jsonLineage;
                 try {
                     jsonLineage = stats.lineage.writeMapAsString();
-                } catch (JsonProcessingException e) {
+                } catch (JacksonException e) {
                     return new ErrorResult(context, "Cannot write lineage JSON", e);
                 }
                 ((TransformResult) result).saveContent(jsonLineage, params.getLineageFilename(), MediaType.APPLICATION_JSON);

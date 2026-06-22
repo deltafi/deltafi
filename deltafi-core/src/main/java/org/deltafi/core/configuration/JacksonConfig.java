@@ -16,8 +16,8 @@
  *    limitations under the License.
  */
 package org.deltafi.core.configuration;
-import com.fasterxml.jackson.databind.Module;
-import com.fasterxml.jackson.databind.module.SimpleModule;
+import tools.jackson.databind.JacksonModule;
+import tools.jackson.databind.module.SimpleModule;
 import org.deltafi.core.converters.DataSizeDeserializer;
 import org.springframework.boot.jackson.autoconfigure.JsonMapperBuilderCustomizer;
 import org.springframework.context.annotation.Bean;
@@ -28,7 +28,7 @@ import tools.jackson.databind.DeserializationFeature;
 @Configuration
 public class JacksonConfig {
     @Bean
-    public Module dataSizeModule() {
+    public JacksonModule dataSizeModule() {
         SimpleModule module = new SimpleModule();
         module.addDeserializer(DataSize.class, new DataSizeDeserializer());
         return module;

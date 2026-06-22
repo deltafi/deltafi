@@ -17,9 +17,8 @@
  */
 package org.deltafi.core.services;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
 import lombok.SneakyThrows;
 import org.deltafi.common.queue.valkey.ValkeyKeyedBlockingQueue;
 import org.deltafi.common.test.time.TestClock;
@@ -45,7 +44,7 @@ class CoreEventQueueTest {
     @Mock
     private ValkeyKeyedBlockingQueue valkeyKeyedBlockingQueue;
 
-    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper().registerModule(new JavaTimeModule());
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
     private static final TestClock TEST_CLOCK = new TestClock();
 
@@ -153,7 +152,7 @@ class CoreEventQueueTest {
             """.formatted(DID.toString());
 
     @Test
-    void testConvertBasic() throws JsonProcessingException {
+    void testConvertBasic() throws JacksonException {
         when(valkeyKeyedBlockingQueue.take(DGS_QUEUE_NAME)).thenReturn(GOOD_BASIC);
 
         CoreEventQueue coreEventQueue = new CoreEventQueue(valkeyKeyedBlockingQueue, TEST_CLOCK);
@@ -162,7 +161,7 @@ class CoreEventQueueTest {
     }
 
     @Test
-    void testConvertUnicode() throws JsonProcessingException {
+    void testConvertUnicode() throws JacksonException {
         when(valkeyKeyedBlockingQueue.take(DGS_QUEUE_NAME)).thenReturn(GOOD_UNICODE);
 
         CoreEventQueue coreEventQueue = new CoreEventQueue(valkeyKeyedBlockingQueue, TEST_CLOCK);
@@ -171,7 +170,7 @@ class CoreEventQueueTest {
     }
 
     @Test
-    void testExtraFieldsIgnored() throws JsonProcessingException {
+    void testExtraFieldsIgnored() throws JacksonException {
         when(valkeyKeyedBlockingQueue.take(DGS_QUEUE_NAME)).thenReturn(EXTRA_FIELDS_IGNORED);
 
         CoreEventQueue coreEventQueue = new CoreEventQueue(valkeyKeyedBlockingQueue, TEST_CLOCK);
@@ -186,7 +185,7 @@ class CoreEventQueueTest {
         CoreEventQueue coreEventQueue = new CoreEventQueue(valkeyKeyedBlockingQueue, TEST_CLOCK);
         org.assertj.core.api.Assertions.assertThatThrownBy(
                         () -> coreEventQueue.takeResult(QUEUE_NAME))
-                .isInstanceOf(JsonProcessingException.class)
+                .isInstanceOf(JacksonException.class)
                 .hasMessageContaining("from Array value");
     }
 
@@ -197,7 +196,7 @@ class CoreEventQueueTest {
         CoreEventQueue coreEventQueue = new CoreEventQueue(valkeyKeyedBlockingQueue, TEST_CLOCK);
         org.assertj.core.api.Assertions.assertThatThrownBy(
                         () -> coreEventQueue.takeResult(QUEUE_NAME))
-                .isInstanceOf(JsonProcessingException.class)
+                .isInstanceOf(JacksonException.class)
                 .hasMessageContaining("Cannot deserialize value of type `java.time.OffsetDateTime");
     }
 
@@ -208,7 +207,7 @@ class CoreEventQueueTest {
         CoreEventQueue coreEventQueue = new CoreEventQueue(valkeyKeyedBlockingQueue, TEST_CLOCK);
         org.assertj.core.api.Assertions.assertThatThrownBy(
                         () -> coreEventQueue.takeResult(QUEUE_NAME))
-                .isInstanceOf(JsonProcessingException.class)
+                .isInstanceOf(JacksonException.class)
                 .hasMessageContaining("Illegal unquoted character");
     }
 
@@ -219,8 +218,8 @@ class CoreEventQueueTest {
         CoreEventQueue coreEventQueue = new CoreEventQueue(valkeyKeyedBlockingQueue, TEST_CLOCK);
         org.assertj.core.api.Assertions.assertThatThrownBy(
                         () -> coreEventQueue.takeResult(QUEUE_NAME))
-                .isInstanceOf(JsonProcessingException.class)
-                .hasMessageContaining("Numeric value (12345678901234567890) out of range of long");
+                .isInstanceOf(JacksonException.class)
+                .hasMessageContaining("Numeric value (12345678901234567890) out of range of `long`");
     }
 
     @Test

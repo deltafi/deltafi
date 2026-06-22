@@ -17,8 +17,7 @@
  */
 package org.deltafi.core.services;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import tools.jackson.databind.ObjectMapper;
 import lombok.SneakyThrows;
 import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
 import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
@@ -50,7 +49,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 class DeltaFileExporterTest {
-    private static final ObjectMapper objectMapper = new ObjectMapper().registerModule(new JavaTimeModule());
+    private static final ObjectMapper objectMapper = new ObjectMapper();
     public static final String REFERENCED_DATA = "referenced data";
     public static final String OWNED_BY_THIS_DELTA_FILE = "owned by this DeltaFile";
     public static final String OWNED_BY_THIS_DELTA_FILE1 = "more content owned by this DeltaFile";

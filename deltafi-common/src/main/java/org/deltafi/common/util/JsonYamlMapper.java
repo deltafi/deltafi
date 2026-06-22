@@ -17,12 +17,12 @@
  */
 package org.deltafi.common.util;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.MappingIterator;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import tools.jackson.core.type.TypeReference;
+import tools.jackson.databind.DeserializationFeature;
+import tools.jackson.databind.MappingIterator;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
+import tools.jackson.dataformat.yaml.YAMLMapper;
 
 import java.io.File;
 import java.io.IOException;
@@ -38,13 +38,15 @@ import java.util.List;
  */
 public class JsonYamlMapper {
 
-    private static final ObjectMapper JSON_MAPPER = new ObjectMapper()
-            .registerModule(new JavaTimeModule())
-            .enable(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY);
+    private static final ObjectMapper JSON_MAPPER = JsonMapper.builder()
+            .enable(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY)
+            .configure(DeserializationFeature.FAIL_ON_NULL_FOR_PRIMITIVES, false)
+            .build();
 
-    private static final ObjectMapper YAML_MAPPER = new ObjectMapper(new YAMLFactory())
-            .registerModule(new JavaTimeModule())
-            .enable(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY);
+    private static final ObjectMapper YAML_MAPPER = YAMLMapper.builder()
+            .enable(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY)
+            .configure(DeserializationFeature.FAIL_ON_NULL_FOR_PRIMITIVES, false)
+            .build();
 
     private JsonYamlMapper() {}
 

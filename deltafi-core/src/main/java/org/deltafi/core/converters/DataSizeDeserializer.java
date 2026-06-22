@@ -17,17 +17,15 @@
  */
 package org.deltafi.core.converters;
 
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.databind.DeserializationContext;
-import com.fasterxml.jackson.databind.JsonDeserializer;
+import tools.jackson.core.JsonParser;
+import tools.jackson.databind.DeserializationContext;
+import tools.jackson.databind.ValueDeserializer;
 import org.springframework.util.unit.DataSize;
 
-import java.io.IOException;
-
-public class DataSizeDeserializer extends JsonDeserializer<DataSize> {
+public class DataSizeDeserializer extends ValueDeserializer<DataSize> {
     @Override
-    public DataSize deserialize(JsonParser p, DeserializationContext ctxt) throws IOException {
-        String text = p.getText();
+    public DataSize deserialize(JsonParser p, DeserializationContext ctxt) {
+        String text = p.getString();
         if (text == null || text.isEmpty()) {
             return null;
         }

@@ -17,8 +17,8 @@
  */
 package org.deltafi.core.repo;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import jakarta.persistence.Query;
@@ -123,7 +123,7 @@ public class FlowStateUpdater {
     private String toJson(Collection<String> list) {
         try {
             return list == null ? null : objectMapper.writeValueAsString(list);
-        } catch (JsonProcessingException e) {
+        } catch (JacksonException e) {
             throw new IllegalArgumentException("Error converting object to JSON", e);
         }
     }

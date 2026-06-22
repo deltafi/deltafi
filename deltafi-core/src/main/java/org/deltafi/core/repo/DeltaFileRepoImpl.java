@@ -17,10 +17,10 @@
  */
 package org.deltafi.core.repo;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.cfg.DateTimeFeature;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 import jakarta.persistence.*;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.jdbc.core.PreparedStatementCreator;
@@ -53,11 +53,10 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
     @PersistenceContext(unitName = "primary")
     private final EntityManager entityManager;
     private final JdbcTemplate jdbcTemplate;
-    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper()
-            .registerModule(new JavaTimeModule())
-            .configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false)
-            .configure(SerializationFeature.WRITE_DATE_TIMESTAMPS_AS_NANOSECONDS, true)
-            .configure(SerializationFeature.WRITE_DATES_WITH_ZONE_ID, true);
+    private static final ObjectMapper OBJECT_MAPPER = JsonMapper.builder()
+            .configure(DateTimeFeature.WRITE_DATE_TIMESTAMPS_AS_NANOSECONDS, true)
+            .configure(DateTimeFeature.WRITE_DATES_WITH_ZONE_ID, true)
+            .build();
 
     private List<DeltaFile> fetchByDidIn(List<UUID> dids) {
         if (dids.isEmpty()) {
@@ -1393,7 +1392,7 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
     private String toJson(Object object) {
         try {
             return object == null ? null : OBJECT_MAPPER.writeValueAsString(object);
-        } catch (JsonProcessingException e) {
+        } catch (JacksonException e) {
             throw new RuntimeException(e);
         }
     }

@@ -17,7 +17,7 @@
  */
 package org.deltafi.common.util;
 
-import com.fasterxml.jackson.core.type.TypeReference;
+import tools.jackson.core.type.TypeReference;
 import org.assertj.core.api.Assertions;
 import org.deltafi.common.types.*;
 import org.junit.jupiter.api.Test;

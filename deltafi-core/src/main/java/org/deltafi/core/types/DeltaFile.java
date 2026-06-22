@@ -370,6 +370,9 @@ public class DeltaFile {
   }
 
   public void addAnnotations(Map<String, String> newAnnotations) {
+    if (newAnnotations == null || newAnnotations.isEmpty()) {
+      return;
+    }
     if (annotations == null) {
       annotations = new LinkedHashSet<>();
     }

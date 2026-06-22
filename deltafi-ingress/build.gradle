@@ -15,8 +15,7 @@ dependencies {
     api project(':deltafi-common-spring')
     api 'org.springframework.boot:spring-boot-autoconfigure'
 
-    api "com.fasterxml.jackson.datatype:jackson-datatype-jsr310:${jacksonVersion}"
-    api "com.fasterxml.jackson.core:jackson-databind:${jacksonVersion}"
+    api 'tools.jackson.core:jackson-databind'
     implementation "com.fasterxml.uuid:java-uuid-generator:${javaUuidGeneratorVersion}"
 
     api 'org.slf4j:slf4j-api'

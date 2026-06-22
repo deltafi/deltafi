@@ -17,11 +17,11 @@
  */
 package org.deltafi.core.action.extract;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.json.JsonMapper;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.DeserializationFeature;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 import com.jayway.jsonpath.*;
 import org.deltafi.actionkit.action.content.ActionContent;
 import org.deltafi.actionkit.action.error.ErrorResult;
@@ -158,7 +158,7 @@ public class ExtractJson extends TransformAction<ExtractJsonParameters> {
         JsonNode rootNode = null;
         try {
             rootNode = OBJECT_MAPPER.readTree(json);
-        } catch (JsonProcessingException ignored) {
+        } catch (JacksonException ignored) {
             return false;
         }
         return rootNode != null && (allowScalar || rootNode.isArray() || rootNode.isObject());

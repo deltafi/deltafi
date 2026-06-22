@@ -17,9 +17,8 @@
  */
 package org.deltafi.core.integration;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.dataformat.yaml.YAMLFactory;
 import lombok.SneakyThrows;
 import org.deltafi.common.types.Plugin;
 import org.deltafi.common.types.PluginCoordinates;
@@ -48,7 +47,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class ConfigurationValidatorTest {
 
     private static final ObjectMapper YAML_MAPPER = new ObjectMapper(new YAMLFactory())
-            .registerModule(new JavaTimeModule());
+            ;
 
     private final RestDataSourceService restDataSourceService;
     private final TransformFlowService transformFlowService;

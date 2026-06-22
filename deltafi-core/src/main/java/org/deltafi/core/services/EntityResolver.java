@@ -17,8 +17,9 @@
  */
 package org.deltafi.core.services;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.core.JacksonException;
+import tools.jackson.core.type.TypeReference;
+import tools.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
@@ -82,7 +83,7 @@ public class EntityResolver {
     private List<String> mapResponse(String responseBody) {
         try {
             return OBJECT_MAPPER.readValue(responseBody, new TypeReference<>() {});
-        } catch (IOException e) {
+        } catch (JacksonException e) {
             log.error("Error parsing the response from {}, response of {}", entityResolverUrl, responseBody, e);
             return List.of();
         }

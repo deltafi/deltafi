@@ -17,7 +17,7 @@
  */
 package org.deltafi.common.util;
 
-import com.fasterxml.jackson.core.type.TypeReference;
+import tools.jackson.core.type.TypeReference;
 import org.deltafi.common.constant.DeprecatedSince;
 import org.springframework.core.io.Resource;
 

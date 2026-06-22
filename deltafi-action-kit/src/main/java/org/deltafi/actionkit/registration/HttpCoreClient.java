@@ -19,9 +19,10 @@
 // ABOUTME: Fails fast on 4xx, retries 5xx and network errors three times before giving up.
 package org.deltafi.actionkit.registration;
 
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.DeserializationFeature;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.deltafi.common.types.PluginRegistration;
 
@@ -37,9 +38,9 @@ import java.time.Duration;
  */
 @Slf4j
 public class HttpCoreClient implements CoreClient {
-    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper()
-            .registerModule(new JavaTimeModule())
-            .enable(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY);
+    private static final ObjectMapper OBJECT_MAPPER = JsonMapper.builder()
+            .enable(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY)
+            .build();
 
     private static final int MAX_ATTEMPTS = 3;
     private static final long INITIAL_BACKOFF_MS = 500L;
@@ -98,7 +99,7 @@ public class HttpCoreClient implements CoreClient {
                     .header("Content-Type", "application/json")
                     .POST(HttpRequest.BodyPublishers.ofByteArray(body))
                     .build();
-        } catch (IOException e) {
+        } catch (JacksonException e) {
             throw new IllegalStateException("Failed to serialize plugin registration", e);
         }
     }

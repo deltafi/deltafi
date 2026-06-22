@@ -17,10 +17,9 @@
  */
 package org.deltafi.core.datafetchers;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.dataformat.yaml.YAMLFactory;
 import com.netflix.graphql.dgs.DgsComponent;
 import com.netflix.graphql.dgs.DgsMutation;
 import com.netflix.graphql.dgs.DgsQuery;
@@ -45,11 +44,11 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 @Slf4j
 public class FlowPlanDatafetcher {
-    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper().registerModule(new JavaTimeModule());
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
     public static final ActionFamily INGRESS_FAMILY = ActionFamily.newBuilder().family("INGRESS").actionNames(List.of(DeltaFiConstants.INGRESS_ACTION)).build();
 
-    private static final ObjectMapper YAML_EXPORTER = new ObjectMapper(new YAMLFactory()).registerModule(new JavaTimeModule());
+    private static final ObjectMapper YAML_EXPORTER = new ObjectMapper(new YAMLFactory());
 
     private final DataSinkService dataSinkService;
     private final RestDataSourceService restDataSourceService;
@@ -466,7 +465,7 @@ public class FlowPlanDatafetcher {
 
     @DgsQuery
     @NeedsPermission.FlowView
-    public String exportConfigAsYaml() throws JsonProcessingException {
+    public String exportConfigAsYaml() throws JacksonException {
         Map<String, List<? extends Flow>> flowMap = new HashMap<>();
         flowMap.put("dataSinks", dataSinkService.getAll());
         flowMap.put("transformFlows", transformFlowService.getAll());

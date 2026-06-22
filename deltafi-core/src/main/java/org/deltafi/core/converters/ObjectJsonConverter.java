@@ -17,13 +17,12 @@
  */
 package org.deltafi.core.converters;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.core.JacksonException;
+import tools.jackson.core.type.TypeReference;
+import tools.jackson.databind.ObjectMapper;
 import jakarta.persistence.AttributeConverter;
 import jakarta.persistence.Converter;
 
-import java.io.IOException;
 import java.util.Map;
 
 @SuppressWarnings("unused")
@@ -35,7 +34,7 @@ public class ObjectJsonConverter implements AttributeConverter<Map<String, Objec
     public String convertToDatabaseColumn(Map<String, Object> attribute) {
         try {
             return OBJECT_MAPPER.writeValueAsString(attribute);
-        } catch (JsonProcessingException e) {
+        } catch (JacksonException e) {
             throw new IllegalArgumentException("Error converting Map to JSON", e);
         }
     }
@@ -44,7 +43,7 @@ public class ObjectJsonConverter implements AttributeConverter<Map<String, Objec
     public Map<String, Object> convertToEntityAttribute(String dbData) {
         try {
             return OBJECT_MAPPER.readValue(dbData, new TypeReference<>() {});
-        } catch (IOException e) {
+        } catch (JacksonException e) {
             throw new IllegalArgumentException("Error converting JSON to Map", e);
         }
     }

@@ -17,8 +17,8 @@
  */
 package org.deltafi.core.integration;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
 import jakarta.annotation.PreDestroy;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -133,7 +133,7 @@ public class IntegrationService {
                 testResultRepo.save(started);
                 evaluate(testId, ingressResults, config);
             }
-        } catch (JsonProcessingException e) {
+        } catch (JacksonException e) {
             errors.add("Failed to parse input metadata: " + e.getMessage());
         } catch (Exception e) {
             errors.add("Failed to ingress: " + e.getMessage());
@@ -142,7 +142,7 @@ public class IntegrationService {
         return errors;
     }
 
-    private List<IngressResult> ingress(String testId, List<TestCaseIngress> inputs) throws IngressUnavailableException, IngressRateLimitException, ObjectStorageException, IngressStorageException, IngressMetadataException, IngressException, JsonProcessingException {
+    private List<IngressResult> ingress(String testId, List<TestCaseIngress> inputs) throws IngressUnavailableException, IngressRateLimitException, ObjectStorageException, IngressStorageException, IngressMetadataException, IngressException, JacksonException {
         List<IngressResult> results = new ArrayList<>();
         for (TestCaseIngress input : inputs) {
             String contentType = StringUtils.isNoneEmpty(input.getContentType()) ? input.getContentType() : DEFAULT_CONTENT_TYPE;

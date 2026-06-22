@@ -17,7 +17,7 @@
  */
 package org.deltafi.core.services;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
 import org.deltafi.common.queue.valkey.ValkeyKeyedBlockingQueue;
 import org.deltafi.core.configuration.DeltaFiProperties;
 import org.deltafi.core.generated.types.DeltaFileStats;

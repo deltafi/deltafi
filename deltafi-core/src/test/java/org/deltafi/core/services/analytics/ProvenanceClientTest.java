@@ -17,7 +17,7 @@
  */
 package org.deltafi.core.services.analytics;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
 import org.deltafi.core.configuration.DeltaFiProperties;
 import org.deltafi.core.services.DeltaFiPropertiesService;
 import org.junit.jupiter.api.Test;

@@ -19,9 +19,9 @@
 // ABOUTME: Accepts base64-encoded JSON or direct JSON with content location, returns content stream.
 package org.deltafi.core.rest;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import com.networknt.schema.utils.StringUtils;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
+import org.apache.commons.lang3.StringUtils;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.deltafi.common.storage.s3.ObjectStorageException;
@@ -38,7 +38,6 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.io.IOException;
 import java.util.Base64;
 
 @RestController
@@ -49,7 +48,7 @@ import java.util.Base64;
 public class ContentRest {
 
     private static final ObjectMapper MAPPER = new ObjectMapper()
-            .registerModule(new JavaTimeModule());
+            ;
 
     static final String BASE64_DECODE_ERROR = "Failed to decode base64 encoded json";
     static final String JSON_PARSE_ERROR = "Failed to parse content request from json";
@@ -93,7 +92,7 @@ public class ContentRest {
         } catch (IllegalArgumentException e) {
             log.error(BASE64_DECODE_ERROR, e);
             throw new IllegalArgumentException(BASE64_DECODE_ERROR);
-        } catch (IOException e) {
+        } catch (JacksonException e) {
             log.error(JSON_PARSE_ERROR, e);
             throw new IllegalArgumentException(JSON_PARSE_ERROR);
         }

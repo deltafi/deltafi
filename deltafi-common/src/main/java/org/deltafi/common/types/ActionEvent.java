@@ -17,10 +17,9 @@
  */
 package org.deltafi.common.types;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -38,9 +37,7 @@ import java.util.UUID;
 @AllArgsConstructor
 @Builder
 public class ActionEvent {
-    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper()
-            .registerModule(new JavaTimeModule())
-            .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+    private static final ObjectMapper OBJECT_MAPPER = JsonMapper.builder().build();
 
     private UUID did;
     private String flowName;
@@ -102,7 +99,7 @@ public class ActionEvent {
     public String toString() {
         try {
             return OBJECT_MAPPER.writeValueAsString(this);
-        } catch (JsonProcessingException e) {
+        } catch (JacksonException e) {
             throw new RuntimeException(e);
         }
     }

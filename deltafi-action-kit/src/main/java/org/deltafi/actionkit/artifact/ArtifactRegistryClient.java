@@ -18,9 +18,8 @@
 package org.deltafi.actionkit.artifact;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import tools.jackson.core.type.TypeReference;
+import tools.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.deltafi.common.artifact.ArtifactRegistryConstants;
 import org.deltafi.common.http.HttpService;
@@ -60,7 +59,7 @@ import java.util.UUID;
 @SuppressWarnings("unused")
 class ArtifactRegistryClient {
 
-    private static final ObjectMapper MAPPER = new ObjectMapper().registerModule(new JavaTimeModule());
+    private static final ObjectMapper MAPPER = new ObjectMapper();
     private static final TypeReference<Map<String, String>> STRING_MAP = new TypeReference<>() {};
     private static final Map<String, String> DEFAULT_HEADERS = Map.of(
             "X-User-Permissions", "Admin",

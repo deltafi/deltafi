@@ -17,15 +17,17 @@
  */
 package org.deltafi.core.util;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.exc.UnrecognizedPropertyException;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.DeserializationFeature;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.exc.UnrecognizedPropertyException;
+import tools.jackson.databind.json.JsonMapper;
 import org.deltafi.core.exceptions.InvalidRequestException;
 
 public class UpdateMapper {
-    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper()
-            .registerModule(new JavaTimeModule());
+    private static final ObjectMapper OBJECT_MAPPER = JsonMapper.builder()
+            .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, true)
+            .build();
 
     private UpdateMapper() {}
 
@@ -38,7 +40,7 @@ public class UpdateMapper {
             return OBJECT_MAPPER.readValue(value, clazz);
         } catch (UnrecognizedPropertyException e) {
             throw new InvalidRequestException("Unknown field '" + e.getPropertyName() + "'");
-        } catch (JsonProcessingException e) {
+        } catch (JacksonException e) {
             throw new InvalidRequestException("Failed to parse JSON '" + value + "'");
         }
     }

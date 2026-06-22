@@ -17,8 +17,7 @@
  */
 package org.deltafi.actionkit.artifact;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import tools.jackson.databind.ObjectMapper;
 import io.valkey.Jedis;
 import io.valkey.JedisPool;
 import io.valkey.JedisPubSub;
@@ -43,7 +42,7 @@ import java.util.function.Consumer;
 @Slf4j
 class ArtifactVersionChangeListener implements AutoCloseable {
 
-    private static final ObjectMapper MAPPER = new ObjectMapper().registerModule(new JavaTimeModule());
+    private static final ObjectMapper MAPPER = new ObjectMapper();
     private static final String PLUGIN_PREFIX = "plugins/";
 
     private final JedisPool jedisPool;

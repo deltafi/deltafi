@@ -1201,7 +1201,7 @@ public class PluginService implements Snapshotter {
                 actionDescriptorMap.get(actionType) : getByActionClass(actionType).orElse(null);
 
         if (actionDescriptor != null) {
-            actionConfiguration.setParameterSchema(ParameterUtil.toJsonNode(actionDescriptor.getSchema()));
+            actionConfiguration.setParameterSchema(actionDescriptor.getSchema());
         }
     }
 

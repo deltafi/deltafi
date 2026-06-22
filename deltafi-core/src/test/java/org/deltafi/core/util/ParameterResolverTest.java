@@ -17,10 +17,7 @@
  */
 package org.deltafi.core.util;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import tools.jackson.databind.ObjectMapper;
 import lombok.SneakyThrows;
 import org.assertj.core.api.Assertions;
 import org.deltafi.common.types.ActionContext;
@@ -38,9 +35,7 @@ import java.util.UUID;
 
 class ParameterResolverTest {
 
-    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper()
-            .registerModule(new JavaTimeModule())
-            .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
     ParameterResolver resolver = new ParameterResolver();
 
@@ -248,11 +243,12 @@ class ParameterResolverTest {
             """;
 
 
-    private static final JsonNode JSON_SCHEMA = getJsonSchema();
+    private static final Map<String, Object> JSON_SCHEMA = getJsonSchema();
 
     @SneakyThrows
-    private static JsonNode getJsonSchema() {
-        return OBJECT_MAPPER.readValue(SCHEMA, JsonNode.class);
+    @SuppressWarnings("unchecked")
+    private static Map<String, Object> getJsonSchema() {
+        return OBJECT_MAPPER.readValue(SCHEMA, Map.class);
     }
 
 }

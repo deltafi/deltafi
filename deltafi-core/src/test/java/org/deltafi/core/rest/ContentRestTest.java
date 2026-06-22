@@ -17,10 +17,9 @@
  */
 package org.deltafi.core.rest;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.SerializationFeature;
 import org.deltafi.common.storage.s3.ObjectStorageException;
 import org.deltafi.core.exceptions.EntityNotFound;
 import org.deltafi.core.services.FetchContentService;
@@ -54,9 +53,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @AutoConfigureMockMvc(addFilters = false)
 class ContentRestTest {
 
-    public static final ObjectMapper MAPPER = new ObjectMapper()
-            .registerModule(new JavaTimeModule())
-            .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+    public static final ObjectMapper MAPPER = new ObjectMapper();
 
     private static final String DATA = "data in content storage";
     private static final UUID TEST_DID = UUID.randomUUID();
@@ -156,7 +153,7 @@ class ContentRestTest {
                 .andExpect(status().isForbidden());
     }
 
-    private String json(ContentRequest contentRequest) throws JsonProcessingException {
+    private String json(ContentRequest contentRequest) throws JacksonException {
         return MAPPER.writeValueAsString(contentRequest);
     }
 

@@ -17,7 +17,6 @@
  */
 package org.deltafi.common.types;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import lombok.*;
 
 import java.io.Serializable;
@@ -36,7 +35,7 @@ public class ActionConfiguration implements Serializable {
     private boolean templated;
     private Map<String, Object> internalParameters;
     private Map<String, Object> parameters;
-    private JsonNode parameterSchema;
+    private Map<String, Object> parameterSchema;
 
     protected JoinConfiguration join;
 

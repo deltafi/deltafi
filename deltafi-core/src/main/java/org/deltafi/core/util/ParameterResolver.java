@@ -17,10 +17,10 @@
  */
 package org.deltafi.core.util;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.fasterxml.jackson.databind.node.TextNode;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.node.ArrayNode;
+import tools.jackson.databind.node.ObjectNode;
+import tools.jackson.databind.node.StringNode;
 import lombok.Builder;
 import lombok.RequiredArgsConstructor;
 import org.deltafi.common.rules.CoercibleString;
@@ -83,8 +83,8 @@ public class ParameterResolver {
                 arrayNode.set(i, replacePlaceholders(node.get(i), actionInput));
             }
             return node;
-        } else if (node.isTextual()) {
-            return new TextNode(evaluateExpression(node.asText(), actionInput));
+        } else if (node.isString()) {
+            return new StringNode(evaluateExpression(node.asString(), actionInput));
         }
         return node;
     }

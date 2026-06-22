@@ -20,7 +20,7 @@
 package org.deltafi.common.json;
 
 import com.fasterxml.classmate.ResolvedType;
-import com.fasterxml.jackson.databind.node.ObjectNode;
+import tools.jackson.databind.node.ObjectNode;
 import com.github.victools.jsonschema.generator.*;
 import org.deltafi.common.util.DataSize;
 

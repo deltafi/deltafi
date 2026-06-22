@@ -19,9 +19,8 @@ package org.deltafi.core.services.analytics;
 
 import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonAnySetter;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
 import org.apache.commons.lang3.StringUtils;
 
 import java.time.OffsetDateTime;
@@ -32,7 +31,7 @@ import java.util.Set;
 
 public record SurveyEvent(OffsetDateTime timestamp, String dataSource, int files, long ingressBytes, Map<String, String> annotations) {
 
-    private static final ObjectMapper MAPPER = new ObjectMapper().registerModule(new JavaTimeModule());
+    private static final ObjectMapper MAPPER = new ObjectMapper();
     private static final Set<String> IGNORE_KEYS = Set.of("update_timestamp", "total_bytes", "annotations");
 
     public SurveyEvent(OffsetDateTime timestamp, @JsonAlias("dataSource") String dataSource, int files, @JsonAlias("ingress_bytes") long ingressBytes, Map<String, String> annotations) {
@@ -49,7 +48,7 @@ public record SurveyEvent(OffsetDateTime timestamp, String dataSource, int files
 
     // Add unmapped fields to the annotations array (adds to any entries passed in to the annotations field)
     @JsonAnySetter
-    public void addAnnotations(String key, Object value) throws JsonProcessingException {
+    public void addAnnotations(String key, Object value) throws JacksonException {
         if (IGNORE_KEYS.contains(key)) {
             return;
         }

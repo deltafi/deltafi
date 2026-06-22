@@ -17,9 +17,8 @@
  */
 package org.deltafi.core.rest;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import org.deltafi.core.audit.CoreAuditLogger;
 import org.deltafi.core.exceptions.InvalidRequestException;
@@ -54,11 +53,11 @@ public class UserRest {
         return userService.getAllUsers();
     }
 
-    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper().registerModule(new JavaTimeModule());
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
     @GetMapping(value = "/exportable", produces = MediaType.APPLICATION_JSON)
     @NeedsPermission.UserRead
-    public ResponseEntity<String> exportUsersAndRoles() throws JsonProcessingException {
+    public ResponseEntity<String> exportUsersAndRoles() throws JacksonException {
         return ResponseEntity.ok(OBJECT_MAPPER.writerWithDefaultPrettyPrinter()
                 .writeValueAsString(userService.exportUsersAndRoles()));
     }

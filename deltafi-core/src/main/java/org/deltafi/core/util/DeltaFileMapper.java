@@ -17,13 +17,12 @@
  */
 package org.deltafi.core.util;
 
-import com.fasterxml.jackson.core.JsonGenerator;
-import com.fasterxml.jackson.databind.JsonSerializer;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
-import com.fasterxml.jackson.databind.SerializerProvider;
-import com.fasterxml.jackson.databind.module.SimpleModule;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import tools.jackson.core.JsonGenerator;
+import tools.jackson.databind.ValueSerializer;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.SerializationContext;
+import tools.jackson.databind.json.JsonMapper;
+import tools.jackson.databind.module.SimpleModule;
 import org.deltafi.core.types.DeltaFileDTO;
 
 import java.io.IOException;
@@ -32,19 +31,14 @@ import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 
 public class DeltaFileMapper {
-    public static final ObjectMapper OBJECT_MAPPER = new ObjectMapper()
-            .registerModule(new JavaTimeModule())
-            .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
-
-    static {
-        SimpleModule simpleModule = new SimpleModule().addSerializer(OffsetDateTime.class, new JsonSerializer<>() {
-            @Override
-            public void serialize(OffsetDateTime offsetDateTime, JsonGenerator jsonGenerator, SerializerProvider serializerProvider) throws IOException {
-                jsonGenerator.writeString(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSX").withZone(ZoneOffset.UTC).format(offsetDateTime));
-            }
-        });
-        OBJECT_MAPPER.registerModule(simpleModule);
-    }
+    public static final ObjectMapper OBJECT_MAPPER = JsonMapper.builder()
+            .addModule(new SimpleModule().addSerializer(OffsetDateTime.class, new ValueSerializer<>() {
+                @Override
+                public void serialize(OffsetDateTime offsetDateTime, JsonGenerator jsonGenerator, SerializationContext serializerProvider) {
+                    jsonGenerator.writeString(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSX").withZone(ZoneOffset.UTC).format(offsetDateTime));
+                }
+            }))
+            .build();
 
     public static byte[] toJsonBytes(Object object) throws IOException {
         return OBJECT_MAPPER.writeValueAsBytes(object);

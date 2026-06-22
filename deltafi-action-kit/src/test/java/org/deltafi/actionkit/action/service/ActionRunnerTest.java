@@ -17,7 +17,7 @@
  */
 package org.deltafi.actionkit.action.service;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
+import tools.jackson.core.JacksonException;
 import org.assertj.core.api.Assertions;
 import org.deltafi.actionkit.action.content.ActionContent;
 import org.deltafi.actionkit.action.converters.ContentConverter;
@@ -67,7 +67,7 @@ class ActionRunnerTest {
     }
 
     @Test
-    void testOrphanAndLogging_Error() throws JsonProcessingException, ObjectStorageException {
+    void testOrphanAndLogging_Error() throws JacksonException, ObjectStorageException {
         List<ActionContent> inputs = List.of(new ActionContent(content(), actionContentStorageService));
 
         ErrorTestAction action = new ErrorTestAction();
@@ -114,7 +114,7 @@ class ActionRunnerTest {
     }
 
     @Test
-    void testOrphanAndLogging_Transform() throws JsonProcessingException, ObjectStorageException {
+    void testOrphanAndLogging_Transform() throws JacksonException, ObjectStorageException {
         List<ActionContent> inputs = List.of(new ActionContent(content(), actionContentStorageService));
 
         TransformTestAction action = new TransformTestAction();

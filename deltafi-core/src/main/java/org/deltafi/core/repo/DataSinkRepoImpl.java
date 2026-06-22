@@ -17,8 +17,8 @@
  */
 package org.deltafi.core.repo;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
 import org.springframework.transaction.annotation.Transactional;
 import org.deltafi.core.types.DataSink;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -88,7 +88,7 @@ public class DataSinkRepoImpl implements DataSinkRepoCustom {
     private String toJson(Object object) {
         try {
             return object == null ? null : objectMapper.writeValueAsString(object);
-        } catch (JsonProcessingException e) {
+        } catch (JacksonException e) {
             throw new RuntimeException("Error converting object to JSON", e);
         }
     }

@@ -17,10 +17,10 @@
  */
 package org.deltafi.core.lookup;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.MappingIterator;
-import com.fasterxml.jackson.dataformat.csv.CsvMapper;
-import com.fasterxml.jackson.dataformat.csv.CsvSchema;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.MappingIterator;
+import tools.jackson.dataformat.csv.CsvMapper;
+import tools.jackson.dataformat.csv.CsvSchema;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.deltafi.common.lookup.*;
@@ -318,7 +318,7 @@ public class LookupTableService implements PluginCleaner {
                     lookupTableEvent.getLookupTableName());
             lookupTable.setBackingServiceActive(false);
             saveLookupTable(lookupTableRepo.getLookupTable());
-        } catch (JsonProcessingException e) {
+        } catch (JacksonException e) {
             log.error("Unable to process results from supplier for lookup table {}",
                     lookupTable.getName(), e);
         }

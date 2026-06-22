@@ -17,7 +17,7 @@
  */
 package org.deltafi.core.action.egress;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
+import tools.jackson.core.JacksonException;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.*;
 import org.deltafi.actionkit.action.ActionKitException;
@@ -154,7 +154,7 @@ public class HttpEgressBase<P extends ActionParameters & IHttpEgressParameters> 
     }
 
     protected Map<String, String> buildHeaders(@NotNull ActionContext context, @NotNull P params,
-                                               @NotNull EgressInput input) throws JsonProcessingException {
+                                               @NotNull EgressInput input) throws JacksonException {
         return Collections.emptyMap();
     }
 }

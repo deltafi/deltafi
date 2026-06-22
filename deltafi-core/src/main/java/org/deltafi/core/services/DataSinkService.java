@@ -17,8 +17,8 @@
  */
 package org.deltafi.core.services;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.deltafi.common.types.ActionConfiguration;
 import org.deltafi.common.types.DataSinkPlan;
@@ -203,7 +203,7 @@ class DataSinkService extends FlowService<DataSinkPlan, DataSink, DataSinkSnapsh
                 rateLimitService.updateLimit(dataSinkBucketName(flowName), rateLimit.getMaxAmount(), period);
                 return true;
             }
-        } catch (JsonProcessingException e) {
+        } catch (JacksonException e) {
             log.error("Failed to serialize rate limit for data sink {}: {}", flowName, e.getMessage());
             return false;
         }

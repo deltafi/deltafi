@@ -19,9 +19,8 @@ package org.deltafi.core.action.egress;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyDescription;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
@@ -41,7 +40,7 @@ import java.util.Map;
 @Slf4j
 public class HttpEgress extends HttpEgressBase<HttpEgress.Parameters> {
 
-    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper().registerModule(new JavaTimeModule());
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
     public HttpEgress(OkHttpClient httpClient) {
         super("Egresses to an HTTP endpoint.", httpClient);
@@ -54,7 +53,7 @@ public class HttpEgress extends HttpEgressBase<HttpEgress.Parameters> {
 
     @Override
     protected Map<String, String> buildHeaders(@NotNull ActionContext context, @NotNull HttpEgress.Parameters params,
-                                               @NotNull EgressInput input) throws JsonProcessingException {
+                                               @NotNull EgressInput input) throws JacksonException {
         Map<String, String> headers = new HashMap<>(Map.of(params.getMetadataKey(),
                 OBJECT_MAPPER.writeValueAsString(StandardEgressHeaders.buildMap(context, input))));
         if (params.getExtraHeaders() != null) {

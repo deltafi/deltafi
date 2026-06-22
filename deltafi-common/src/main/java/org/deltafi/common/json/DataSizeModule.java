@@ -19,13 +19,11 @@
 // ABOUTME: Allows action parameters to use DataSize fields parsed from strings like "10MB".
 package org.deltafi.common.json;
 
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.databind.DeserializationContext;
-import com.fasterxml.jackson.databind.JsonDeserializer;
-import com.fasterxml.jackson.databind.module.SimpleModule;
+import tools.jackson.core.JsonParser;
+import tools.jackson.databind.DeserializationContext;
+import tools.jackson.databind.ValueDeserializer;
+import tools.jackson.databind.module.SimpleModule;
 import org.deltafi.common.util.DataSize;
-
-import java.io.IOException;
 
 /**
  * Jackson module that adds deserialization support for {@link DataSize} values
@@ -38,10 +36,10 @@ public class DataSizeModule extends SimpleModule {
     }
 
     /** Deserializer that parses DataSize strings like "10MB" */
-    public static class DataSizeDeserializer extends JsonDeserializer<DataSize> {
+    public static class DataSizeDeserializer extends ValueDeserializer<DataSize> {
         @Override
-        public DataSize deserialize(JsonParser p, DeserializationContext ctxt) throws IOException {
-            return DataSize.parse(p.getText());
+        public DataSize deserialize(JsonParser p, DeserializationContext ctxt) {
+            return DataSize.parse(p.getString());
         }
     }
 }

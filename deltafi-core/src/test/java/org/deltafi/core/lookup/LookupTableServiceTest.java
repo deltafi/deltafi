@@ -17,7 +17,7 @@
  */
 package org.deltafi.core.lookup;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
+import tools.jackson.core.JacksonException;
 import lombok.RequiredArgsConstructor;
 import org.deltafi.common.lookup.*;
 import org.deltafi.common.test.time.TestClock;
@@ -222,7 +222,7 @@ class LookupTableServiceTest {
     }
 
     @Test
-    void lookupNoPullThrough() throws LookupTableServiceException, JsonProcessingException {
+    void lookupNoPullThrough() throws LookupTableServiceException, JacksonException {
         List<ColumnValue> row1 = toColumnValueRow(Map.of("a", "1a", "b", "1b"));
         List<ColumnValue> row2 = toColumnValueRow(Map.of("a", "2a", "b", "2b"));
         List<ColumnValue> row3 = toColumnValueRow(Map.of("a", "3a", "b", "3b"));
@@ -239,7 +239,7 @@ class LookupTableServiceTest {
 
     @Test
     @SuppressWarnings("unchecked")
-    void pullsThrough() throws LookupTableServiceException, JsonProcessingException {
+    void pullsThrough() throws LookupTableServiceException, JacksonException {
         Map<String, String> row1 = Map.of("a", "1a", "b", "1b");
         Map<String, String> row2 = Map.of("a", "2a", "b", "2b");
 
@@ -276,7 +276,7 @@ class LookupTableServiceTest {
     }
 
     @Test
-    void pullThroughTimesOut() throws LookupTableServiceException, JsonProcessingException {
+    void pullThroughTimesOut() throws LookupTableServiceException, JacksonException {
         List<ColumnValue> row3 = toColumnValueRow(Map.of("a", "3a", "b", "3b"));
 
         // Pull-through lookup supplier returns null (signifying timeout)
@@ -345,7 +345,7 @@ class LookupTableServiceTest {
 
     @Test
     @SuppressWarnings("unchecked")
-    void refreshesTable() throws LookupTableServiceException, JsonProcessingException {
+    void refreshesTable() throws LookupTableServiceException, JacksonException {
         Map<String, String> row1 = Map.of("a", "1a", "b", "1b");
         Map<String, String> row2 = Map.of("a", "2a", "b", "2b");
         Map<String, String> row3 = Map.of("a", "3a", "b", "3b");

@@ -19,14 +19,12 @@
 // ABOUTME: Deprecated bridge kept until 3.0 so existing plugin parameter fields still deserialize.
 package org.deltafi.common.json;
 
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.databind.DeserializationContext;
-import com.fasterxml.jackson.databind.JsonDeserializer;
-import com.fasterxml.jackson.databind.module.SimpleModule;
+import tools.jackson.core.JsonParser;
+import tools.jackson.databind.DeserializationContext;
+import tools.jackson.databind.ValueDeserializer;
+import tools.jackson.databind.module.SimpleModule;
 import org.deltafi.common.constant.DeprecatedSince;
 import org.springframework.util.unit.DataSize;
-
-import java.io.IOException;
 
 /**
  * Jackson module that adds deserialization support for {@link org.springframework.util.unit.DataSize}
@@ -45,10 +43,10 @@ public class SpringDataSizeModule extends SimpleModule {
     }
 
     /** Deserializer that parses Spring DataSize strings like "10MB" */
-    public static class SpringDataSizeDeserializer extends JsonDeserializer<DataSize> {
+    public static class SpringDataSizeDeserializer extends ValueDeserializer<DataSize> {
         @Override
-        public DataSize deserialize(JsonParser p, DeserializationContext ctxt) throws IOException {
-            return DataSize.parse(p.getText());
+        public DataSize deserialize(JsonParser p, DeserializationContext ctxt) {
+            return DataSize.parse(p.getString());
         }
     }
 }

@@ -17,7 +17,7 @@
  */
 package org.deltafi.core.services;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
 import lombok.SneakyThrows;
 import org.deltafi.common.constant.DeltaFiConstants;
 import org.deltafi.common.content.ContentStorageService;

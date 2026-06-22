@@ -17,8 +17,8 @@
  */
 package org.deltafi.core.services;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.deltafi.core.types.leader.AggregatedSearchOptions;
@@ -168,7 +168,7 @@ public class AggregatedSearchOptionsService {
             JsonNode allTopics = topicsData.path("data").path("getAllTopics");
             if (allTopics.isArray()) {
                 for (JsonNode topic : allTopics) {
-                    String name = topic.path("name").asText(null);
+                    String name = topic.path("name").asString(null);
                     if (name != null) topics.add(name);
                 }
             }
@@ -188,7 +188,7 @@ public class AggregatedSearchOptionsService {
     private void addStringsFromArray(JsonNode arrayNode, Set<String> target) {
         if (arrayNode.isArray()) {
             for (JsonNode node : arrayNode) {
-                String value = node.asText(null);
+                String value = node.asString(null);
                 if (value != null && !value.isEmpty()) {
                     target.add(value);
                 }

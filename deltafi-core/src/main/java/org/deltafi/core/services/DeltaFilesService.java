@@ -17,11 +17,11 @@
  */
 package org.deltafi.core.services;
 
-import com.fasterxml.jackson.core.JsonGenerator;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.*;
-import com.fasterxml.jackson.databind.module.SimpleModule;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import tools.jackson.core.JsonGenerator;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.*;
+import tools.jackson.databind.json.JsonMapper;
+import tools.jackson.databind.module.SimpleModule;
 import com.google.common.collect.Lists;
 import com.netflix.graphql.dgs.exceptions.DgsEntityNotFoundException;
 import jakarta.annotation.PostConstruct;
@@ -76,23 +76,18 @@ import static org.deltafi.core.services.DeletePolicyService.TTL_SYSTEM_POLICY;
 @RequiredArgsConstructor
 @Slf4j
 public class DeltaFilesService {
-    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper()
-            .registerModule(new JavaTimeModule())
-            .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+    private static final ObjectMapper OBJECT_MAPPER = JsonMapper.builder()
+            .addModule(new SimpleModule().addSerializer(OffsetDateTime.class, new ValueSerializer<>() {
+                @Override
+                public void serialize(OffsetDateTime offsetDateTime, JsonGenerator jsonGenerator, SerializationContext serializerProvider) {
+                    jsonGenerator.writeString(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSX").withZone(ZoneOffset.UTC).format(offsetDateTime));
+                }
+            }))
+            .build();
     public static final String REPLAY_ACTION_NAME = "Replay";
     public static final int REQUEUE_BATCH_SIZE = 5000;
     public static final int AUTO_RESUME_BATCH_SIZE = 5000;
     private static final int UNPAUSE_BATCH_SIZE = 500;
-
-    static {
-        SimpleModule simpleModule = new SimpleModule().addSerializer(OffsetDateTime.class, new JsonSerializer<>() {
-            @Override
-            public void serialize(OffsetDateTime offsetDateTime, JsonGenerator jsonGenerator, SerializerProvider serializerProvider) throws IOException {
-                jsonGenerator.writeString(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSX").withZone(ZoneOffset.UTC).format(offsetDateTime));
-            }
-        });
-        OBJECT_MAPPER.registerModule(simpleModule);
-    }
 
     private static final ObjectWriter PRETTY_OBJECT_WRITER = OBJECT_MAPPER.writerWithDefaultPrettyPrinter();
 
@@ -183,7 +178,7 @@ public class DeltaFilesService {
         return deltaFileCacheService.get(did);
     }
 
-    public String getRawDeltaFile(UUID did, boolean pretty) throws JsonProcessingException {
+    public String getRawDeltaFile(UUID did, boolean pretty) throws JacksonException {
         DeltaFile deltaFile = getDeltaFile(did);
 
         if (deltaFile == null) {
@@ -827,16 +822,18 @@ public class DeltaFilesService {
     private void logFilterAnalytics(DeltaFile deltaFile, DeltaFileFlow flow, ActionEvent event) {
         analyticEventService.recordFilter(deltaFile, flow.getName(), flow.getType(), flow.lastAction().getName(), flow.getErrorOrFilterCause(), flow.getModified());
         analyticEventService.recordProvenance(deltaFile, flow);
-        if (!event.getFilter().getAnnotations().isEmpty()) {
-            analyticEventService.queueAnnotations(deltaFile.getDid(), event.getFilter().getAnnotations(), deltaFile.getCreated());
+        Map<String, String> filterAnnotations = event.getFilter().getAnnotations();
+        if (filterAnnotations != null && !filterAnnotations.isEmpty()) {
+            analyticEventService.queueAnnotations(deltaFile.getDid(), filterAnnotations, deltaFile.getCreated());
         }
     }
 
     private void logErrorAnalytics(DeltaFile deltaFile, DeltaFileFlow flow, ActionEvent event) {
         analyticEventService.recordError(deltaFile, flow.getName(), flow.getType(), flow.lastAction().getName(), flow.getErrorOrFilterCause(), flow.getModified());
         analyticEventService.recordProvenance(deltaFile, flow);
-        if (!event.getError().getAnnotations().isEmpty()) {
-            analyticEventService.queueAnnotations(deltaFile.getDid(), event.getError().getAnnotations(), deltaFile.getCreated());
+        Map<String, String> errorAnnotations = event.getError().getAnnotations();
+        if (errorAnnotations != null && !errorAnnotations.isEmpty()) {
+            analyticEventService.queueAnnotations(deltaFile.getDid(), errorAnnotations, deltaFile.getCreated());
         }
     }
 

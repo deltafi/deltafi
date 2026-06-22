@@ -17,11 +17,10 @@
  */
 package org.deltafi.core.util;
 
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.core.ObjectCodec;
-import com.fasterxml.jackson.databind.*;
-import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import tools.jackson.core.JsonParser;
+import tools.jackson.databind.*;
+import tools.jackson.databind.json.JsonMapper;
+import tools.jackson.databind.node.ObjectNode;
 import lombok.RequiredArgsConstructor;
 import org.deltafi.common.types.FlowType;
 import org.deltafi.core.services.FlowDefinitionService;
@@ -29,20 +28,17 @@ import org.deltafi.core.types.DeltaFileFlow;
 import org.deltafi.core.types.FlowDefinition;
 import org.springframework.stereotype.Component;
 
-import java.io.IOException;
-
 @Component
 @RequiredArgsConstructor
-public class DeltaFileFlowDeserializer extends JsonDeserializer<DeltaFileFlow> {
+public class DeltaFileFlowDeserializer extends ValueDeserializer<DeltaFileFlow> {
     private final FlowDefinitionService flowDefinitionService;
-    private final ObjectMapper plainMapper = new ObjectMapper()
-            .registerModule(new JavaTimeModule())
-            .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+    private final ObjectMapper plainMapper = JsonMapper.builder()
+            .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+            .build();
 
     @Override
-    public DeltaFileFlow deserialize(JsonParser p, DeserializationContext ctxt) throws IOException {
-        ObjectCodec codec = p.getCodec();
-        JsonNode node = codec.readTree(p);
+    public DeltaFileFlow deserialize(JsonParser p, DeserializationContext ctxt) {
+        JsonNode node = ctxt.readTree(p);
 
         if (node.get("flowDefinition") == null) {
             FlowDefinition flowDef = flowDefinitionService.getOrCreateFlow(

@@ -20,7 +20,7 @@ package org.deltafi.actionkit.lookup;
 import com.netflix.graphql.dgs.client.DefaultDgsGraphQLResponse;
 import com.netflix.graphql.dgs.client.DgsGraphQLClient;
 import com.netflix.graphql.dgs.client.DgsGraphQLResponse;
-import com.netflix.graphql.dgs.client.Jackson2DgsJsonMapperAdapter;
+import com.netflix.graphql.dgs.client.Jackson3DgsJsonMapperAdapter;
 import org.deltafi.actionkit.generated.types.Result;
 import org.deltafi.common.http.HttpService;
 import org.junit.jupiter.api.AfterEach;
@@ -101,7 +101,7 @@ class LookupTableClientTest {
     }
 
     private static DgsGraphQLResponse graphQLResponse(String json) {
-        return new DefaultDgsGraphQLResponse(json, Map.of(), Jackson2DgsJsonMapperAdapter.Companion.fromOptions());
+        return new DefaultDgsGraphQLResponse(json, Map.of(), Jackson3DgsJsonMapperAdapter.Companion.fromOptions());
     }
 
     private void stub(String responseJson) {

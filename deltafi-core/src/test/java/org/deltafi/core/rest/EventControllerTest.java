@@ -17,9 +17,8 @@
  */
 package org.deltafi.core.rest;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.SerializationFeature;
 import org.deltafi.core.audit.CoreAuditLogger;
 import org.deltafi.core.exceptions.EntityNotFound;
 import org.deltafi.core.exceptions.ValidationException;
@@ -51,9 +50,7 @@ class EventControllerTest {
     UUID EVENT_1 = UUID.randomUUID();
     UUID EVENT_2 = UUID.randomUUID();
 
-    public static final ObjectMapper MAPPER = new ObjectMapper()
-            .registerModule(new JavaTimeModule())
-            .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+    public static final ObjectMapper MAPPER = new ObjectMapper();
 
     @Autowired
     private MockMvc mockMvc;

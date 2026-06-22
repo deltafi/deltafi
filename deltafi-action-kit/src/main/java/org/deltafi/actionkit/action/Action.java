@@ -17,9 +17,9 @@
  */
 package org.deltafi.actionkit.action;
 
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import tools.jackson.databind.DeserializationFeature;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 import lombok.Getter;
 import lombok.Setter;
 import org.deltafi.actionkit.action.error.ErrorResult;
@@ -44,13 +44,14 @@ import java.util.Map;
 @Getter
 public abstract class Action<I, P extends ActionParameters, R extends ResultType> {
     @SuppressWarnings("removal")
-    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper()
-            .registerModule(new JavaTimeModule())
-            .registerModule(new DataSizeModule())
+    private static final ObjectMapper OBJECT_MAPPER = JsonMapper.builder()
+            .addModule(new DataSizeModule())
             // deprecated bridge: deserialize plugin parameter fields still typed
             // org.springframework.util.unit.DataSize; remove in 3.0
-            .registerModule(new SpringDataSizeModule())
-            .enable(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY);
+            .addModule(new SpringDataSizeModule())
+            .enable(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY)
+            .configure(DeserializationFeature.FAIL_ON_NULL_FOR_PRIMITIVES, false)
+            .build();
 
     private final ActionType actionType;
 

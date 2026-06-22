@@ -17,8 +17,8 @@
  */
 package org.deltafi.common.action.documentation;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.core.type.TypeReference;
+import tools.jackson.databind.ObjectMapper;
 import org.deltafi.common.resource.Resource;
 import org.deltafi.common.types.*;
 import org.junit.jupiter.api.Assertions;

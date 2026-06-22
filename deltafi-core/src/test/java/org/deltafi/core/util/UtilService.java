@@ -18,10 +18,11 @@
 package org.deltafi.core.util;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import tools.jackson.core.JacksonException;
+import tools.jackson.core.type.TypeReference;
+import tools.jackson.databind.DeserializationFeature;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 import com.github.victools.jsonschema.generator.*;
 import com.github.victools.jsonschema.module.jackson.JacksonModule;
 import com.github.victools.jsonschema.module.jackson.JacksonOption;
@@ -50,7 +51,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 public class UtilService {
     private final FlowDefinitionService flowDefinitionService;
 
-    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper().registerModule(new JavaTimeModule());
+    private static final ObjectMapper OBJECT_MAPPER = JsonMapper.builder()
+            .configure(DeserializationFeature.FAIL_ON_NULL_FOR_PRIMITIVES, false)
+            .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+            .build();
     private static final String FLOW = "myFlow";
     private static final Clock clock = Clock.tickMillis(ZoneOffset.UTC);
     private static final SchemaGenerator SCHEMA_GENERATOR = schemaGenerator();
@@ -275,7 +279,7 @@ public class UtilService {
     public static <T> T readResource(String resourcePath, Class<T> clazz) {
         try {
             return OBJECT_MAPPER.readValue(UtilService.class.getClassLoader().getResourceAsStream(resourcePath), clazz);
-        } catch (IOException e) {
+        } catch (JacksonException e) {
             org.junit.jupiter.api.Assertions.fail(e);
         }
         return null;
@@ -395,7 +399,7 @@ public class UtilService {
                         } else {
                             return jsonProperty.defaultValue();
                         }
-                    } catch (JsonProcessingException e) {
+                    } catch (JacksonException e) {
                         return jsonProperty.defaultValue();
                     }
                 });

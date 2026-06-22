@@ -17,11 +17,10 @@
  */
 package org.deltafi.core.services;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import tools.jackson.core.type.TypeReference;
+import tools.jackson.databind.DeserializationFeature;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.deltafi.common.types.Variable;
@@ -47,11 +46,11 @@ import java.util.function.Consumer;
 @AllArgsConstructor
 public class SystemSnapshotService {
 
-    static final ObjectMapper OBJECT_MAPPER = new ObjectMapper()
+    static final ObjectMapper OBJECT_MAPPER = JsonMapper.builder()
             .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+            .configure(DeserializationFeature.FAIL_ON_NULL_FOR_PRIMITIVES, false)
             .configure(DeserializationFeature.USE_LONG_FOR_INTS, true)
-            .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)
-            .registerModule(new JavaTimeModule());
+            .build();
 
     private static final int DEFAULT_QUERY_LIMIT = 50;
 
@@ -200,10 +199,25 @@ public class SystemSnapshotService {
 
         int version = snapshot.getSchemaVersion();
         if (SystemSnapshot.CURRENT_VERSION == version || 1 == version) {
-            return OBJECT_MAPPER.convertValue(snapshot.getSnapshot(), Snapshot.class);
+            Snapshot result = OBJECT_MAPPER.convertValue(snapshot.getSnapshot(), Snapshot.class);
+            applyResumePolicyDefaults(result);
+            return result;
         }
 
         throw new IllegalArgumentException("Invalid system snapshot schema version '" + version + "' in snapshot with id '" + snapshot.getId() + "' with reason: '" + snapshot.getReason() + "'");
+    }
+
+    // Lombok @Builder.Default does not propagate field defaults through Jackson 3 property-based
+    // constructor selection, so restore the documented default for the enabled flag after mapping.
+    private void applyResumePolicyDefaults(Snapshot snapshot) {
+        if (snapshot == null || snapshot.getResumePolicies() == null) {
+            return;
+        }
+        snapshot.getResumePolicies().forEach(policy -> {
+            if (policy.getEnabled() == null) {
+                policy.setEnabled(true);
+            }
+        });
     }
 
     private Result resetFromSnapshot(Snapshot snapshot, boolean hardReset) {

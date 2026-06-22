@@ -20,12 +20,12 @@
 package org.deltafi.actionkit.service;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.StreamReadConstraints;
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.json.JsonMapper;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import tools.jackson.core.JacksonException;
+import tools.jackson.core.StreamReadConstraints;
+import tools.jackson.core.json.JsonFactory;
+import tools.jackson.databind.DeserializationFeature;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.deltafi.common.lookup.LookupTableEvent;
@@ -46,22 +46,19 @@ import static org.deltafi.common.action.EventQueueProperties.DGS_QUEUE;
 @Slf4j
 public class ActionEventQueue {
 
-    private static final ObjectMapper OBJECT_MAPPER;
-    static {
-        ObjectMapper temp = JsonMapper.builder()
-                .defaultPropertyInclusion(JsonInclude.Value.construct(
-                        JsonInclude.Include.NON_NULL, JsonInclude.Include.NON_NULL))
-                .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
-                .configure(DeserializationFeature.USE_LONG_FOR_INTS, true)
-                .addModule(new JavaTimeModule())
-                .build();
-        StreamReadConstraints streamReadConstraints = StreamReadConstraints
-                .builder()
-                .maxStringLength(16 * 1024 * 1024)
-                .build();
-        temp.getFactory().setStreamReadConstraints(streamReadConstraints);
-        OBJECT_MAPPER = temp;
-    }
+    private static final ObjectMapper OBJECT_MAPPER = JsonMapper.builder(
+                    JsonFactory.builder()
+                            .streamReadConstraints(StreamReadConstraints.builder()
+                                    .maxStringLength(16 * 1024 * 1024)
+                                    .build())
+                            .build())
+            .changeDefaultPropertyInclusion(incl -> incl
+                    .withValueInclusion(JsonInclude.Include.NON_NULL)
+                    .withContentInclusion(JsonInclude.Include.NON_NULL))
+            .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+            .configure(DeserializationFeature.FAIL_ON_NULL_FOR_PRIMITIVES, false)
+            .configure(DeserializationFeature.USE_LONG_FOR_INTS, true)
+            .build();
 
     private final ValkeyKeyedBlockingQueue valkeyKeyedBlockingQueue;
 
@@ -70,9 +67,9 @@ public class ActionEventQueue {
      *
      * @param actionClassName Name of action for Action event request
      * @return next Action on the queue for the given action name
-     * @throws JsonProcessingException if the incoming event cannot be serialized
+     * @throws JacksonException if the incoming event cannot be serialized
      */
-    public ActionInput takeAction(String actionClassName) throws JsonProcessingException {
+    public ActionInput takeAction(String actionClassName) throws JacksonException {
         return OBJECT_MAPPER.readValue(valkeyKeyedBlockingQueue.take(actionClassName), ActionInput.class);
     }
 
@@ -80,9 +77,9 @@ public class ActionEventQueue {
      * Block until a lookup table event is available for any of the given table names.
      * @param lookupTableNames names of lookup tables to listen for
      * @return the next LookupTableEvent from the queue
-     * @throws JsonProcessingException if the incoming event cannot be deserialized
+     * @throws JacksonException if the incoming event cannot be deserialized
      */
-    public LookupTableEvent takeLookupTableEvent(String... lookupTableNames) throws JsonProcessingException {
+    public LookupTableEvent takeLookupTableEvent(String... lookupTableNames) throws JacksonException {
         String[] prefixedLookupTableNames = Arrays.stream(lookupTableNames)
                 .map(LookupTableEvent::buildKey)
                 .toArray(String[]::new);
@@ -92,9 +89,9 @@ public class ActionEventQueue {
     /**
      * Submit a lookup table event result back to the queue.
      * @param lookupTableEventResult the result to post
-     * @throws JsonProcessingException if the result cannot be serialized
+     * @throws JacksonException if the result cannot be serialized
      */
-    public void putLookupTableResult(LookupTableEventResult lookupTableEventResult) throws JsonProcessingException {
+    public void putLookupTableResult(LookupTableEventResult lookupTableEventResult) throws JacksonException {
         valkeyKeyedBlockingQueue.put(new SortedSetEntry(lookupTableEventResult.getLookupTableEventId(),
                 OBJECT_MAPPER.writeValueAsString(lookupTableEventResult), OffsetDateTime.now()));
     }
@@ -113,9 +110,9 @@ public class ActionEventQueue {
      *
      * @param result ActionEvent result to be posted to the action queue
      * @param returnAddress optional address suffix for the destination queue
-     * @throws JsonProcessingException if the outgoing event cannot be deserialized
+     * @throws JacksonException if the outgoing event cannot be deserialized
      */
-    public void putResult(ActionEvent result, String returnAddress) throws JsonProcessingException {
+    public void putResult(ActionEvent result, String returnAddress) throws JacksonException {
         valkeyKeyedBlockingQueue.put(new SortedSetEntry(queueName(returnAddress), OBJECT_MAPPER.writeValueAsString(result), OffsetDateTime.now()));
     }
 
@@ -142,7 +139,7 @@ public class ActionEventQueue {
                 values.add(actionExecution.appName());
             }
             valkeyKeyedBlockingQueue.recordLongRunningTask(actionExecution.key(), OBJECT_MAPPER.writeValueAsString(values));
-        } catch (JsonProcessingException e) {
+        } catch (JacksonException e) {
             log.error("Unable to convert long running task information to JSON", e);
         }
     }

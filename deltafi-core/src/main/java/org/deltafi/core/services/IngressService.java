@@ -17,10 +17,10 @@
  */
 package org.deltafi.core.services;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.core.JacksonException;
+import tools.jackson.core.type.TypeReference;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -112,8 +112,8 @@ public class IngressService {
 
             return keyValueMap.entrySet().stream()
                     .collect(Collectors.toMap(Map.Entry::getKey,
-                            e -> e.getValue().isTextual() ? e.getValue().asText() : e.getValue().toString()));
-        } catch (JsonProcessingException e) {
+                            e -> e.getValue().isString() ? e.getValue().asString() : e.getValue().toString()));
+        } catch (JacksonException e) {
             throw new IngressMetadataException(
                     "Could not parse metadata, metadata must be a JSON Object: " + e.getMessage());
         }

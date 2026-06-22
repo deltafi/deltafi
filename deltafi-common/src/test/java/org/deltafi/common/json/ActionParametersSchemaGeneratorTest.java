@@ -19,7 +19,7 @@ package org.deltafi.common.json;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyDescription;
-import com.fasterxml.jackson.databind.JsonNode;
+import tools.jackson.databind.JsonNode;
 import com.github.victools.jsonschema.generator.SchemaGenerator;
 import lombok.AllArgsConstructor;
 import lombok.Getter;

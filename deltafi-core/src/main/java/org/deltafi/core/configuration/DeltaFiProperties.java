@@ -17,7 +17,7 @@
  */
 package org.deltafi.core.configuration;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.deltafi.common.types.LogSeverity;

@@ -18,10 +18,9 @@
 package org.deltafi.common.types;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.dataformat.yaml.YAMLMapper;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -38,9 +37,9 @@ import java.util.Objects;
 @AllArgsConstructor
 public class PublishRules implements Serializable {
     private static final ObjectMapper YAML_MAPPER = YAMLMapper.builder()
-            .defaultPropertyInclusion(JsonInclude.Value.construct(
-                    JsonInclude.Include.NON_NULL, JsonInclude.Include.NON_NULL))
-            .addModule(new JavaTimeModule())
+            .changeDefaultPropertyInclusion(incl -> incl
+                    .withValueInclusion(JsonInclude.Include.NON_NULL)
+                    .withContentInclusion(JsonInclude.Include.NON_NULL))
             .build();
     private static final DefaultRule ERROR_RULE = new DefaultRule(DefaultBehavior.ERROR);
 
@@ -64,7 +63,7 @@ public class PublishRules implements Serializable {
     public String toString() {
         try {
             return YAML_MAPPER.writeValueAsString(this);
-        } catch (JsonProcessingException e) {
+        } catch (JacksonException e) {
             return simpleToString();
         }
     }

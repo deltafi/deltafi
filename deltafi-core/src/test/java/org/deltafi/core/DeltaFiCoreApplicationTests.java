@@ -17,13 +17,12 @@
  */
 package org.deltafi.core;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import com.fasterxml.jackson.databind.json.JsonMapper;
-import com.fasterxml.jackson.databind.module.SimpleModule;
-import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.annotation.JsonDeserialize;
+import tools.jackson.databind.json.JsonMapper;
+import tools.jackson.databind.module.SimpleModule;
+import tools.jackson.dataformat.yaml.YAMLFactory;
 import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.core.DefaultDockerClientConfig;
 import com.github.dockerjava.core.DockerClientConfig;
@@ -168,7 +167,7 @@ class DeltaFiCoreApplicationTests {
 	public static final TestClock TEST_CLOCK = new TestClock();
 
 	private static final ObjectMapper YAML_MAPPER = new ObjectMapper(new YAMLFactory())
-			.registerModule(new JavaTimeModule());
+			;
 
     static {
         configureDockerApiVersion();
@@ -420,7 +419,7 @@ class DeltaFiCoreApplicationTests {
 
 	private JsonMapper flowMapper() {
 		return JsonMapper.builder()
-				.addModule(new JavaTimeModule())
+				
 				.addModule(new SimpleModule()
 						.addDeserializer(DeltaFileFlow.class, new DeltaFileFlowDeserializer(flowDefinitionService)))
 				.addMixIn(DeltaFile.class, DeltaFileMixin.class)
@@ -2727,7 +2726,7 @@ class DeltaFiCoreApplicationTests {
 		assertEquals(0, result.get().getFlowPlans().size());
 	}
 
-	ResponseEntity<String> postPluginRegistration(PluginEntity plugin) throws JsonProcessingException {
+	ResponseEntity<String> postPluginRegistration(PluginEntity plugin) throws JacksonException {
 		PluginRegistration pluginRegistration = PluginRegistration.builder()
 				.pluginCoordinates(plugin.getPluginCoordinates())
 				.displayName(plugin.getDisplayName())
@@ -7323,7 +7322,7 @@ class DeltaFiCoreApplicationTests {
 
 	@Test
 	void testMemberMonitorServiceGetLeaderStatus() {
-		com.fasterxml.jackson.databind.node.ObjectNode statusNode = OBJECT_MAPPER.createObjectNode();
+		tools.jackson.databind.node.ObjectNode statusNode = OBJECT_MAPPER.createObjectNode();
 		statusNode.put("state", "Healthy");
 		statusNode.put("code", 0);
 		statusNode.putArray("checks");
@@ -7400,7 +7399,7 @@ class DeltaFiCoreApplicationTests {
 
 	@Test
 	void testLeaderRestEndpoint() {
-		com.fasterxml.jackson.databind.node.ObjectNode statusNode = OBJECT_MAPPER.createObjectNode();
+		tools.jackson.databind.node.ObjectNode statusNode = OBJECT_MAPPER.createObjectNode();
 		statusNode.put("state", "Healthy");
 		statusNode.put("code", 0);
 		statusNode.putArray("checks");
@@ -7426,7 +7425,7 @@ class DeltaFiCoreApplicationTests {
 
 	@Test
 	void testLeaderStatsEndpoint() {
-		com.fasterxml.jackson.databind.node.ObjectNode statusNode = OBJECT_MAPPER.createObjectNode();
+		tools.jackson.databind.node.ObjectNode statusNode = OBJECT_MAPPER.createObjectNode();
 		statusNode.put("state", "Healthy");
 		statusNode.put("code", 0);
 		statusNode.putArray("checks");
@@ -7457,7 +7456,7 @@ class DeltaFiCoreApplicationTests {
 
 	@Test
 	void testAggregatedStatsCalculation() {
-		com.fasterxml.jackson.databind.node.ObjectNode statusNode = OBJECT_MAPPER.createObjectNode();
+		tools.jackson.databind.node.ObjectNode statusNode = OBJECT_MAPPER.createObjectNode();
 		statusNode.put("state", "Healthy");
 		statusNode.put("code", 0);
 		statusNode.putArray("checks");

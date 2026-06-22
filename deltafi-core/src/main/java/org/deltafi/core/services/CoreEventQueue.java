@@ -18,13 +18,13 @@
 package org.deltafi.core.services;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.StreamReadConstraints;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.json.JsonMapper;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import tools.jackson.core.JacksonException;
+import tools.jackson.core.StreamReadConstraints;
+import tools.jackson.core.json.JsonFactory;
+import tools.jackson.core.type.TypeReference;
+import tools.jackson.databind.DeserializationFeature;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.deltafi.common.lookup.LookupTableEvent;
@@ -44,22 +44,19 @@ import java.util.*;
 @Slf4j
 public class CoreEventQueue {
 
-    private static final ObjectMapper OBJECT_MAPPER;
-    static {
-        ObjectMapper temp = JsonMapper.builder()
-                .defaultPropertyInclusion(JsonInclude.Value.construct(
-                        JsonInclude.Include.NON_NULL, JsonInclude.Include.NON_NULL))
-                .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
-                .configure(DeserializationFeature.USE_LONG_FOR_INTS, true)
-                .addModule(new JavaTimeModule())
-                .build();
-        StreamReadConstraints streamReadConstraints = StreamReadConstraints
-                .builder()
-                .maxStringLength(16 * 1024 * 1024)
-                .build();
-        temp.getFactory().setStreamReadConstraints(streamReadConstraints);
-        OBJECT_MAPPER = temp;
-    }
+    private static final ObjectMapper OBJECT_MAPPER = JsonMapper.builder(
+                    JsonFactory.builder()
+                            .streamReadConstraints(StreamReadConstraints.builder()
+                                    .maxStringLength(16 * 1024 * 1024)
+                                    .build())
+                            .build())
+            .changeDefaultPropertyInclusion(incl -> incl
+                    .withValueInclusion(JsonInclude.Include.NON_NULL)
+                    .withContentInclusion(JsonInclude.Include.NON_NULL))
+            .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+            .configure(DeserializationFeature.FAIL_ON_NULL_FOR_PRIMITIVES, false)
+            .configure(DeserializationFeature.USE_LONG_FOR_INTS, true)
+            .build();
 
     public static final String DGS_QUEUE = "dgs";
     private static final Duration LONG_RUNNING_HEARTBEAT_THRESHOLD = Duration.ofSeconds(30);
@@ -122,7 +119,7 @@ public class CoreEventQueue {
 
             try {
                 actions.add(new SortedSetEntry(actionInput.getQueueName(), OBJECT_MAPPER.writeValueAsString(actionInput), actionInput.getActionCreated()));
-            } catch (JsonProcessingException e) {
+            } catch (JacksonException e) {
                 log.error("Unable to convert action to JSON", e);
             }
         }
@@ -139,12 +136,12 @@ public class CoreEventQueue {
         return queueName;
     }
 
-    public ActionEvent takeResult(String returnAddress) throws JsonProcessingException {
+    public ActionEvent takeResult(String returnAddress) throws JacksonException {
         return convertEvent(valkeyKeyedBlockingQueue.take(queueName(returnAddress)));
 
     }
 
-    public static ActionEvent convertEvent(String element) throws JsonProcessingException {
+    public static ActionEvent convertEvent(String element) throws JacksonException {
         return OBJECT_MAPPER.readValue(element, ActionEvent.class);
     }
 
@@ -189,7 +186,7 @@ public class CoreEventQueue {
                             ctx.getDid(),
                             queuedAt));
                 }
-            } catch (JsonProcessingException e) {
+            } catch (JacksonException e) {
                 log.warn("Failed to parse queued action input: {}", e.getMessage());
             }
         });
@@ -238,7 +235,7 @@ public class CoreEventQueue {
 
                     longRunningTasks.add(new ActionExecution(clazz, action, threadNum, did, value.startTime, value.heartbeatTime, value.appName));
                 }
-            } catch (JsonProcessingException e) {
+            } catch (JacksonException e) {
                 log.error("Unable to deserialize long running task information from JSON: {} = {}", key, valueStr, e);
             }
         }
@@ -293,7 +290,7 @@ public class CoreEventQueue {
                     valkeyKeyedBlockingQueue.removeLongRunningTask(key);
                     log.info("Removed expired long-running task with key: {}", key);
                 }
-            } catch (JsonProcessingException e) {
+            } catch (JacksonException e) {
                 valkeyKeyedBlockingQueue.removeLongRunningTask(key);
                 log.error("Unable to deserialize long running task information from JSON for key: {}. Removed the key.", key, e);
             }
@@ -319,7 +316,7 @@ public class CoreEventQueue {
         return actionExecution.heartbeatTime().plus(LONG_RUNNING_HEARTBEAT_THRESHOLD).isBefore(OffsetDateTime.now());
     }
 
-    private Value parseValue(String value) throws JsonProcessingException {
+    private Value parseValue(String value) throws JacksonException {
         List<String> values = OBJECT_MAPPER.readValue(value, new TypeReference<>() {});
         if (values.size() < 2) {
             log.error("Unable to deserialize long running task time information from JSON");
@@ -337,7 +334,7 @@ public class CoreEventQueue {
         return new Value(startTime, heartbeatTime, appName);
     }
 
-    public void putLookupTableEvent(LookupTableEvent lookupTableEvent) throws JsonProcessingException {
+    public void putLookupTableEvent(LookupTableEvent lookupTableEvent) throws JacksonException {
         valkeyKeyedBlockingQueue.put(new SortedSetEntry(lookupTableEvent.getKey(),
                 OBJECT_MAPPER.writeValueAsString(lookupTableEvent), OffsetDateTime.now(clock)));
     }
@@ -353,9 +350,9 @@ public class CoreEventQueue {
      *
      * @param lookupTableEventId the id of the corresponding lookup table event
      * @return the result or null if no result is returned within a minute
-     * @throws JsonProcessingException if the result cannot be converted to a LookupTableEventResult
+     * @throws JacksonException if the result cannot be converted to a LookupTableEventResult
      */
-    public LookupTableEventResult takeLookupTableResult(String lookupTableEventId) throws JsonProcessingException {
+    public LookupTableEventResult takeLookupTableResult(String lookupTableEventId) throws JacksonException {
         String lookupTableResult = valkeyKeyedBlockingQueue.take(MAX_RESPONSE_DURATION.toSeconds(), lookupTableEventId);
         return lookupTableResult == null ? null : OBJECT_MAPPER.readValue(lookupTableResult, LookupTableEventResult.class);
     }

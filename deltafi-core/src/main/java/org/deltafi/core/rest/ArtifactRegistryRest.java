@@ -17,7 +17,7 @@
  */
 package org.deltafi.core.rest;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.deltafi.core.artifact.*;

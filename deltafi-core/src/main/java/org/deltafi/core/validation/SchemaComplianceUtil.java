@@ -17,8 +17,13 @@
  */
 package org.deltafi.core.validation;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.networknt.schema.*;
+import tools.jackson.databind.JsonNode;
+import com.networknt.schema.Error;
+import com.networknt.schema.Schema;
+import com.networknt.schema.SchemaRegistry;
+import com.networknt.schema.SchemaRegistryConfig;
+import com.networknt.schema.SpecificationVersion;
+import com.networknt.schema.path.PathType;
 import lombok.extern.slf4j.Slf4j;
 import org.deltafi.common.types.ActionConfiguration;
 import org.deltafi.common.types.ActionDescriptor;
@@ -33,42 +38,42 @@ import java.util.stream.Collectors;
 @Slf4j
 public class SchemaComplianceUtil {
 
-    private static final JsonSchemaFactory FACTORY = JsonSchemaFactory.getInstance(SpecVersion.VersionFlag.V201909);
-    private static final SchemaValidatorsConfig validatorsConfig = SchemaValidatorsConfig.builder()
-            .pathType(PathType.JSON_PATH)
-            .typeLoose(true)
-            .build();
+    private static final SchemaRegistry REGISTRY = SchemaRegistry.withDefaultDialect(
+            SpecificationVersion.DRAFT_2019_09,
+            builder -> builder.schemaRegistryConfig(SchemaRegistryConfig.builder()
+                    .pathType(PathType.JSON_PATH)
+                    .typeLoose(true)
+                    .build()));
 
     private SchemaComplianceUtil() {}
 
     public static Optional<FlowConfigError> validateParameters(ActionConfiguration actionConfig, ActionDescriptor actionDescriptor) {
-        JsonNode schemaNode = ParameterUtil.toJsonNode(actionDescriptor.getSchema());
+        Map<String, Object> schema = actionDescriptor.getSchema();
         try {
             actionConfig.setTemplated(ParameterUtil.hasTemplates(actionConfig.getParameters()));
         } catch (ParameterTemplateException e) {
             actionConfig.setTemplated(true);
-            actionConfig.setParameterSchema(schemaNode);
+            actionConfig.setParameterSchema(schema);
             return Optional.of(FlowConfigError.newBuilder().configName(actionConfig.getName()).errorType(FlowErrorType.INVALID_ACTION_PARAMETERS).message(e.getMessage()).build());
         }
 
         // if this configuration includes templates set the schema for validating after the parameters are fully resolved and return
         if (actionConfig.isTemplated()) {
-            actionConfig.setParameterSchema(schemaNode);
+            actionConfig.setParameterSchema(schema);
             return Optional.empty();
         }
 
-        return validateParameters(actionConfig.getName(), schemaNode, actionConfig.getInternalParameters());
+        return validateParameters(actionConfig.getName(), schema, actionConfig.getInternalParameters());
     }
 
-    public static Optional<FlowConfigError> validateParameters(String actionName, JsonNode schemaNode, Map<String, Object> paramMap ) {
+    public static Optional<FlowConfigError> validateParameters(String actionName, Map<String, Object> schemaMap, Map<String, Object> paramMap) {
         paramMap = Objects.requireNonNullElseGet(paramMap, HashMap::new);
-        final JsonSchema schema = FACTORY.getSchema(schemaNode, validatorsConfig);
+        JsonNode schemaNode = ParameterUtil.toJsonNode(schemaMap);
+        final Schema schema = REGISTRY.getSchema(schemaNode);
         JsonNode params = ParameterUtil.toJsonNode(paramMap);
 
-        schema.initializeValidators();
-
-        Set<ValidationMessage> errors = schema.validate(params);
-        String schemaErrors = errors.stream().map(ValidationMessage::getMessage).collect(Collectors.joining("; "));
+        List<Error> errors = schema.validate(params);
+        String schemaErrors = errors.stream().map(Error::toString).collect(Collectors.joining("; "));
         if (!schemaErrors.isBlank()) {
             return Optional.of(parameterErrors(actionName, schemaErrors));
         }

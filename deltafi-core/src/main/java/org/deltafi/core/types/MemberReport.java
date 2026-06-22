@@ -18,9 +18,11 @@
 package org.deltafi.core.types;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.fasterxml.jackson.databind.node.ObjectNode;
+import io.swagger.v3.oas.annotations.media.Schema;
+import tools.jackson.databind.node.ObjectNode;
 
 import java.time.OffsetDateTime;
+import java.util.Map;
 
 /**
  * Combined status report for leader-member monitoring.
@@ -29,7 +31,7 @@ import java.time.OffsetDateTime;
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
 public record MemberReport(
-        ObjectNode status,
+        @Schema(implementation = Map.class) ObjectNode status,
         Long errorCount,
         Long inFlightCount,
         Long warmQueuedCount,

@@ -17,9 +17,9 @@
  */
 package org.deltafi.core.monitor.checks;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
+import tools.jackson.core.JacksonException;
+import tools.jackson.core.type.TypeReference;
+import tools.jackson.dataformat.yaml.YAMLMapper;
 import io.fabric8.kubernetes.api.model.*;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.utils.PodStatusUtil;
@@ -95,7 +95,7 @@ public class K8sResourcesCheck extends StatusCheck {
                 return true;
             }
             expected = YAML_MAPPER.readValue(expectedYaml, new TypeReference<>() {});
-        } catch (JsonProcessingException e) {
+        } catch (JacksonException e) {
             resultBuilder.code(CODE_RED);
             resultBuilder.addHeader("Invalid expected list for " + type);
             return true;

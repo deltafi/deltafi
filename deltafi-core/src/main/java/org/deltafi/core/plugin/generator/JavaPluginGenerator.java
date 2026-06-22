@@ -18,9 +18,9 @@
 package org.deltafi.core.plugin.generator;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
-import com.fasterxml.jackson.databind.json.JsonMapper;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.SerializationFeature;
+import tools.jackson.databind.json.JsonMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.compress.archivers.ArchiveOutputStream;
 import org.apache.commons.compress.archivers.zip.UnixStat;
@@ -59,8 +59,9 @@ public class JavaPluginGenerator {
     private static final PropertyPlaceholderHelper PLACEHOLDER_HELPER = new PropertyPlaceholderHelper("{{", "}}", null, null, false);
     private static final ObjectMapper objectMapper = JsonMapper.builder()
             .enable(SerializationFeature.INDENT_OUTPUT)
-            .defaultPropertyInclusion(JsonInclude.Value.construct(
-                    JsonInclude.Include.NON_NULL, JsonInclude.Include.NON_NULL))
+            .changeDefaultPropertyInclusion(incl -> incl
+                    .withValueInclusion(JsonInclude.Include.NON_NULL)
+                    .withContentInclusion(JsonInclude.Include.NON_NULL))
             .build();
 
     private final EnumMap<ActionType, String> actionTemplateMap;

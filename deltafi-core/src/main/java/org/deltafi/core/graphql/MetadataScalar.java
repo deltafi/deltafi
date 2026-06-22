@@ -17,9 +17,9 @@
  */
 package org.deltafi.core.graphql;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.core.JacksonException;
+import tools.jackson.core.type.TypeReference;
+import tools.jackson.databind.ObjectMapper;
 import graphql.GraphQLContext;
 import graphql.execution.CoercedVariables;
 import graphql.language.*;
@@ -54,7 +54,7 @@ public class MetadataScalar implements Coercing<Map<String, String>, Object> {
         if (input instanceof StringValue) {
             try {
                 return OBJECT_MAPPER.readValue(((StringValue) input).getValue(), new TypeReference<>() {});
-            } catch (JsonProcessingException e) {
+            } catch (JacksonException e) {
                 throw new CoercingParseLiteralException("Value is not a Map<String, String>");
             }
         } else if (input instanceof ObjectValue objectInput){

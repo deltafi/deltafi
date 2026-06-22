@@ -17,7 +17,7 @@
  */
 package org.deltafi.core.services;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
+import tools.jackson.core.JacksonException;
 import com.netflix.graphql.dgs.exceptions.DgsEntityNotFoundException;
 import org.assertj.core.api.Assertions;
 import org.deltafi.common.constant.DeltaFiConstants;
@@ -340,7 +340,7 @@ class DeltaFilesServiceTest {
     }
 
     @Test
-    void getRawDeltaFile() throws JsonProcessingException {
+    void getRawDeltaFile() throws JacksonException {
         DeltaFileFlow ingressFlow = new DeltaFileFlow();
         Action action = Action.builder().metadata(Map.of()).build();
         ingressFlow.setActions(List.of(action));
@@ -360,7 +360,7 @@ class DeltaFilesServiceTest {
     }
 
     @Test
-    void getRawDeltaFilePretty() throws JsonProcessingException {
+    void getRawDeltaFilePretty() throws JacksonException {
         DeltaFileFlow ingressFlow = new DeltaFileFlow();
         Action action = Action.builder().metadata(Map.of()).build();
         ingressFlow.setActions(List.of(action));
@@ -378,7 +378,7 @@ class DeltaFilesServiceTest {
     }
 
     @Test
-    void getRawReturnsNullOnMissingDid() throws JsonProcessingException {
+    void getRawReturnsNullOnMissingDid() throws JacksonException {
         assertNull(deltaFilesService.getRawDeltaFile(UUID.randomUUID(), true));
         assertNull(deltaFilesService.getRawDeltaFile(UUID.randomUUID(), false));
     }
@@ -700,9 +700,9 @@ class DeltaFilesServiceTest {
     }
 
     @Test
-    void testProcessActionEventsExceptionHandling() throws JsonProcessingException {
+    void testProcessActionEventsExceptionHandling() throws JacksonException {
         when(coreEventQueue.takeResult(anyString()))
-                .thenThrow(JsonProcessingException.class);
+                .thenThrow(JacksonException.class);
         assertFalse(deltaFilesService.processActionEvents("test"));
     }
 

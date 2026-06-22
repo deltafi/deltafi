@@ -17,12 +17,12 @@
  */
 package org.deltafi.core.action.convert;
 
-import com.fasterxml.jackson.databind.*;
-import com.fasterxml.jackson.databind.node.JsonNodeFactory;
-import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.fasterxml.jackson.dataformat.csv.CsvMapper;
-import com.fasterxml.jackson.dataformat.csv.CsvSchema;
-import com.fasterxml.jackson.dataformat.xml.XmlMapper;
+import tools.jackson.databind.*;
+import tools.jackson.databind.node.JsonNodeFactory;
+import tools.jackson.databind.node.ObjectNode;
+import tools.jackson.dataformat.csv.CsvMapper;
+import tools.jackson.dataformat.csv.CsvSchema;
+import tools.jackson.dataformat.xml.XmlMapper;
 import org.deltafi.actionkit.action.content.ActionContent;
 import org.deltafi.common.types.ActionContext;
 import org.deltafi.common.types.ActionOptions;
@@ -37,7 +37,7 @@ public class Convert extends ContentSelectingTransformAction<ConvertParameters> 
 
     private static final CsvMapper CSV_MAPPER = new CsvMapper();
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
-    private static final XmlMapper XML_MAPPER = new XmlMapper();
+    private static final XmlMapper XML_MAPPER = XmlMapper.builderWithJackson2Defaults().build();
 
     public Convert() {
         super(ActionOptions.builder()
@@ -141,12 +141,7 @@ public class Convert extends ContentSelectingTransformAction<ConvertParameters> 
     }
 
     private Set<String> getKeys(JsonNode jsonNode) {
-        Set<String> keys = new HashSet<>();
-        Iterator<String> fieldNames = jsonNode.fieldNames();
-        while (fieldNames.hasNext()) {
-            keys.add(fieldNames.next());
-        }
-        return keys;
+        return new HashSet<>(jsonNode.propertyNames());
     }
 
     private String getNewFilename(String originalFilename, DataFormat outputFormat) {

@@ -17,8 +17,8 @@
  */
 package org.deltafi.core.services;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
 import com.netflix.graphql.dgs.client.codegen.GraphQLQueryRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.deltafi.common.types.DeltaFileStage;
@@ -338,8 +338,8 @@ public class FederatedErrorService {
             if (countPerFlow.isArray()) {
                 for (JsonNode item : countPerFlow) {
                     summaries.add(new FederatedErrorSummary(
-                        item.path("flow").asText(),
-                        item.path("type").asText(null),
+                        item.path("flow").asString(),
+                        item.path("type").asString(null),
                         item.path("count").asLong(0),
                         1
                     ));
@@ -350,7 +350,7 @@ public class FederatedErrorService {
             if (countPerMessage.isArray()) {
                 for (JsonNode item : countPerMessage) {
                     summaries.add(new FederatedErrorSummary(
-                        item.path("message").asText(),
+                        item.path("message").asString(),
                         null,
                         item.path("count").asLong(0),
                         1
@@ -934,7 +934,7 @@ public class FederatedErrorService {
         JsonNode errors = jsonNode.path("errors");
         if (errors.isArray() && !errors.isEmpty()) {
             for (JsonNode error : errors) {
-                String message = error.path("message").asText("");
+                String message = error.path("message").asString("");
                 if (message.contains("Unknown field argument") && message.contains("limit")) {
                     throw new LimitNotSupportedException("Member does not support limit parameter");
                 }
@@ -947,7 +947,7 @@ public class FederatedErrorService {
         int failure = 0;
 
         // Find the result array in the response (could be under different mutation names)
-        Iterator<JsonNode> fields = data.elements();
+        Iterator<JsonNode> fields = data.iterator();
         while (fields.hasNext()) {
             JsonNode resultArray = fields.next();
             if (resultArray.isArray()) {

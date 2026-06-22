@@ -24,9 +24,8 @@ dependencies {
     implementation project(':deltafi-ingress')
 
     implementation 'org.springframework.boot:spring-boot-starter-artemis'
-    implementation 'com.fasterxml.jackson.core:jackson-core'
-    implementation 'com.fasterxml.jackson.core:jackson-databind'
-    implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310'
+    implementation 'tools.jackson.core:jackson-core'
+    implementation 'tools.jackson.core:jackson-databind'
 
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testImplementation 'org.apache.activemq:artemis-jakarta-server'

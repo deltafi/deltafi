@@ -17,7 +17,7 @@
  */
 package org.deltafi.core.action.metadata;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
 import org.deltafi.actionkit.action.ResultType;
 import org.deltafi.actionkit.action.transform.TransformInput;
 import org.deltafi.test.asserters.TransformResultAssert;

@@ -21,7 +21,8 @@ components:
         name:
           type: "string"
         parameterSchema:
-          $ref: "#/components/schemas/JsonNode"
+          additionalProperties: {}
+          type: "object"
         parameters:
           additionalProperties: {}
           type: "object"
@@ -1142,7 +1143,6 @@ components:
           format: "int32"
           type: "integer"
       type: "object"
-    JsonNode: {}
     KeyValue:
       properties:
         key:
@@ -1248,6 +1248,7 @@ components:
           format: "int64"
           type: "integer"
         status:
+          additionalProperties: {}
           type: "object"
         version:
           type: "string"
@@ -1894,6 +1895,7 @@ components:
     Status:
       properties:
         status:
+          additionalProperties: {}
           type: "object"
         timestamp:
           format: "date-time"

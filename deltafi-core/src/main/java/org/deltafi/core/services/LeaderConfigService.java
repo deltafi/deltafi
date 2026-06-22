@@ -19,7 +19,7 @@
 // ABOUTME: Enables comparing configurations across leader and member instances.
 package org.deltafi.core.services;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.deltafi.common.types.KeyValue;

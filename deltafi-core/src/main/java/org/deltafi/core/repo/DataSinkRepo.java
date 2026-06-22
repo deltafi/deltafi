@@ -17,8 +17,8 @@
  */
 package org.deltafi.core.repo;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
 import org.deltafi.core.types.DataSink;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -46,7 +46,7 @@ public interface DataSinkRepo extends FlowRepo<DataSink>, DataSinkRepoCustom {
         try {
             String jsonExpectedAnnotations = objectMapper.writeValueAsString(expectedAnnotations);
             return updateExpectedAnnotations(flowName, jsonExpectedAnnotations);
-        } catch (JsonProcessingException e) {
+        } catch (JacksonException e) {
             throw new RuntimeException("Error converting expectedAnnotations to JSON", e);
         }
     }

@@ -17,9 +17,11 @@
  */
 package org.deltafi.core.action.split;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.DeserializationFeature;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 import org.deltafi.actionkit.action.content.ActionContent;
 import org.deltafi.actionkit.action.error.ErrorResult;
 import org.deltafi.actionkit.action.transform.TransformAction;
@@ -43,7 +45,9 @@ import java.util.List;
 @Component
 public class JsonArraySplit extends TransformAction<JsonArraySplitParameters> {
 
-    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+    private static final ObjectMapper OBJECT_MAPPER = JsonMapper.builder()
+            .disable(DeserializationFeature.FAIL_ON_TRAILING_TOKENS)
+            .build();
 
     public JsonArraySplit() {
         super(ActionOptions.builder()
@@ -90,7 +94,7 @@ public class JsonArraySplit extends TransformAction<JsonArraySplitParameters> {
         JsonNode rootNode = null;
         try {
             rootNode = OBJECT_MAPPER.readTree(firstContent.loadString());
-        } catch (JsonProcessingException ignored) {
+        } catch (JacksonException ignored) {
         }
 
         if (rootNode == null || !(rootNode.isArray() || rootNode.isObject())) {
@@ -126,7 +130,7 @@ public class JsonArraySplit extends TransformAction<JsonArraySplitParameters> {
                     try {
                         writeNode(params, jsonNode, firstContent, index, result);
                         ++index;
-                    } catch (JsonProcessingException e) {
+                    } catch (JacksonException e) {
                         return new ErrorResult(context, "JSON write error", e);
                     }
                 }
@@ -148,7 +152,7 @@ public class JsonArraySplit extends TransformAction<JsonArraySplitParameters> {
             try {
                 writeNode(params, jsonNode, content, index, result);
                 ++index;
-            } catch (JsonProcessingException e) {
+            } catch (JacksonException e) {
                 return new ErrorResult(context, "JSON write error", e);
             }
         }
@@ -169,7 +173,7 @@ public class JsonArraySplit extends TransformAction<JsonArraySplitParameters> {
                                 return "JSON object not found on line " + lineNum;
                             }
                             nodes.add(lineNode);
-                        } catch (JsonProcessingException e) {
+                        } catch (JacksonException e) {
                             if (nodes.isEmpty()) {
                                 // Content is likely valid json, but not 1 object per line
                                 return null;
@@ -189,7 +193,7 @@ public class JsonArraySplit extends TransformAction<JsonArraySplitParameters> {
 
     private void writeNode(JsonArraySplitParameters params,
                            JsonNode jsonNode, ActionContent content,
-                           int index, TransformResult result) throws JsonProcessingException {
+                           int index, TransformResult result) throws JacksonException {
         String contentName = content.getName();
         if (params.getContentSuffix() != null) {
             contentName += params.getContentSuffix() + index;

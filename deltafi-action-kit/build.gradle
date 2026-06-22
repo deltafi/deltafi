@@ -16,6 +16,10 @@ dependencies {
 
     implementation 'com.google.code.findbugs:jsr305:3.0.2'
 
+    // Required by com.netflix.graphql.dgs.client.Jackson3DgsJsonMapperAdapter, which the DGS client
+    // uses internally to build its JsonMapper. Not transitively provided by graphql-dgs-client.
+    runtimeOnly 'tools.jackson.module:jackson-module-kotlin'
+
     testImplementation platform("org.junit:junit-bom:${jupiterVersion}")
     testRuntimeOnly platform("org.junit:junit-bom:${jupiterVersion}")
     testImplementation "org.mockito:mockito-junit-jupiter"

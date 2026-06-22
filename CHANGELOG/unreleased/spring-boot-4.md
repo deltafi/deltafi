@@ -24,13 +24,13 @@ Document any changes on this branch here.
 - 
 
 ### Upgrade and Migration
-- Spring boot 4 upgrade
+- Spring boot 4 stack upgrade
   - Gradle 9.5.1 required (bumped alongside this upgrade).
-  - spring-boot: 3.5.14 → 4.0.7
+  - spring-boot: 3.5.14 → 4.1.0
   - spring-framework (transitive): 6.x → 7.x
   - hibernate-core (transitive): 6.6.x → 7.2.12
   - hypersistence-utils-hibernate-63 → hypersistence-utils-hibernate-71 (artifact suffix flip for Hibernate 7 API)
-  - DGS framework: 10.6.0 → 11.1.0
+  - DGS framework: 10.6.0 → 12.0.1
   - artemis-jms-server → artemis-jakarta-server (test runtime in `artemis-ingress`)
   - spring-boot-starter-cache + caffeine: promoted `testImplementation` → `api` in `deltafi-action-kit`
   - spring-boot-flyway: added as `testImplementation` in `deltafi-core` (split out of `spring-boot-autoconfigure` in SB4)

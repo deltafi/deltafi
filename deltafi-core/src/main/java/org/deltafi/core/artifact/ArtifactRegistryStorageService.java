@@ -17,8 +17,7 @@
  */
 package org.deltafi.core.artifact;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import tools.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.deltafi.common.artifact.ArtifactRegistryConstants;
@@ -57,7 +56,7 @@ public class ArtifactRegistryStorageService {
     static final String MANIFEST_NAME = "manifest.json";
     static final String PURGE_CONFIG_NAME = "purge.json";
 
-    private static final ObjectMapper MAPPER = new ObjectMapper().registerModule(new JavaTimeModule());
+    private static final ObjectMapper MAPPER = new ObjectMapper();
 
     private final ObjectStorageService objectStorageService;
     private final String bucketName;

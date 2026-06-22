@@ -27,8 +27,8 @@ import org.deltafi.core.generated.types.FlowErrorType;
 import org.deltafi.core.generated.types.FlowState;
 import org.deltafi.core.generated.types.RateLimit;
 import org.deltafi.core.generated.types.RateLimitInput;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
 import org.deltafi.core.repo.RestDataSourceRepo;
 import org.deltafi.core.types.snapshot.Snapshot;
 import org.deltafi.core.types.snapshot.RestDataSourceSnapshot;
@@ -152,7 +152,7 @@ public class RestDataSourceService extends DataSourceService<RestDataSourcePlan,
                 rateLimitService.updateLimit(flowName, rateLimit.getMaxAmount(), period);
                 return true;
             }
-        } catch (JsonProcessingException e) {
+        } catch (JacksonException e) {
             log.error("Failed to serialize rate limit for dataSource {}: {}", flowName, e.getMessage());
             return false;
         }

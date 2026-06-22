@@ -17,7 +17,7 @@
  */
 package org.deltafi.core.services;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
 import org.deltafi.common.types.DeltaFileStage;
 import org.deltafi.common.types.FlowType;
 import org.deltafi.core.configuration.DeltaFiProperties;
@@ -82,7 +82,6 @@ class FederatedErrorServiceTest {
     @BeforeEach
     void setUp() {
         objectMapper = new ObjectMapper();
-        objectMapper.findAndRegisterModules();
 
         lenient().when(deltaFiPropertiesService.getDeltaFiProperties()).thenReturn(deltaFiProperties);
         lenient().when(deltaFiProperties.getMemberRequestTimeout()).thenReturn(10000);

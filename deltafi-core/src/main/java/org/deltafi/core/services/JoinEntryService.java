@@ -17,9 +17,8 @@
  */
 package org.deltafi.core.services;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
 import com.fasterxml.uuid.Generators;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -48,7 +47,7 @@ public class JoinEntryService {
     private final JoinEntryRepo joinEntryRepo;
     private final JoinEntryDidRepo joinEntryDidRepo;
 
-    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper().registerModule(new JavaTimeModule());
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
     public JoinEntry upsertAndLock(JoinDefinition joinDefinition, OffsetDateTime joinDate, Integer minNum,
                                    Integer maxNum, int flowDepth, UUID did) {
@@ -67,7 +66,7 @@ public class JoinEntryService {
         String joinDefinitionJson;
         try {
             joinDefinitionJson = OBJECT_MAPPER.writeValueAsString(joinDefinition);
-        } catch (JsonProcessingException e) {
+        } catch (JacksonException e) {
             log.error("Failed to serialize join definition", e);
             return null;
         }

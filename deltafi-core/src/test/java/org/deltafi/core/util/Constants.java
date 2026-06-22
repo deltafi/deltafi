@@ -17,8 +17,9 @@
  */
 package org.deltafi.core.util;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import tools.jackson.databind.DeserializationFeature;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 import graphql.scalars.id.UUIDScalar;
 import graphql.schema.Coercing;
 
@@ -30,7 +31,10 @@ import java.util.Map;
 import java.util.UUID;
 
 public class Constants {
-    public static final ObjectMapper OBJECT_MAPPER = new ObjectMapper().registerModule(new JavaTimeModule());
+    public static final ObjectMapper OBJECT_MAPPER = JsonMapper.builder()
+            .configure(DeserializationFeature.FAIL_ON_NULL_FOR_PRIMITIVES, false)
+            .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+            .build();
     public static final Map<Class<?>, Coercing<?, ?>> SCALARS = Map.of(UUID.class, UUIDScalar.INSTANCE.getCoercing());
 
     public static final OffsetDateTime START_TIME = OffsetDateTime.of(2021, 7, 11, 13, 44, 22, 183, ZoneOffset.UTC);

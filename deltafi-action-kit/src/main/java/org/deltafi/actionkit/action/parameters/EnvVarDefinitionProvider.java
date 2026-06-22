@@ -21,7 +21,7 @@ package org.deltafi.actionkit.action.parameters;
 // ABOUTME: Adds x-deltafi-type marker for UI detection.
 
 import com.fasterxml.classmate.ResolvedType;
-import com.fasterxml.jackson.databind.node.ObjectNode;
+import tools.jackson.databind.node.ObjectNode;
 import com.github.victools.jsonschema.generator.*;
 
 /**

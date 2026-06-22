@@ -17,8 +17,8 @@
  */
 package org.deltafi.core.services;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
 import com.fasterxml.uuid.Generators;
 import lombok.AllArgsConstructor;
 import org.deltafi.common.types.KeyValue;
@@ -234,7 +234,7 @@ public class PluginVariableService implements PluginCleaner, Snapshotter {
             List<Variable> sortedVariables = variables.stream()
                     .sorted(Comparator.comparing(Variable::getName)).toList();
             return OBJECT_MAPPER.writeValueAsString(sortedVariables);
-        } catch (JsonProcessingException e) {
+        } catch (JacksonException e) {
             throw new IllegalArgumentException("Error converting variables to JSON", e);
         }
     }

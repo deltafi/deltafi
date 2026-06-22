@@ -19,10 +19,10 @@
 // ABOUTME: Runs as a Spring Boot command-line application, scanning for action beans and producing docs.
 package org.deltafi.actionkit.documentation;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import tools.jackson.core.type.TypeReference;
+import tools.jackson.databind.DeserializationFeature;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 import com.github.victools.jsonschema.generator.SchemaGenerator;
 import lombok.RequiredArgsConstructor;
 import org.deltafi.actionkit.ActionKitAutoConfiguration;
@@ -97,9 +97,9 @@ public class ActionsDocumentationGenerator implements CommandLineRunner {
         }
     }
 
-    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper()
-            .registerModule(new JavaTimeModule())
-            .enable(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY);
+    private static final ObjectMapper OBJECT_MAPPER = JsonMapper.builder()
+            .enable(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY)
+            .build();
 
     private ActionDescriptor buildActionDescriptor(Action<?, ?, ?> action) {
         Map<String, Object> schema = OBJECT_MAPPER.convertValue(

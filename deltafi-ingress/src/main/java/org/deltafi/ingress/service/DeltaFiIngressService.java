@@ -17,9 +17,8 @@
  */
 package org.deltafi.ingress.service;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.deltafi.common.types.IngressEventItem;
 import org.deltafi.common.uuid.UUIDGenerator;
@@ -34,7 +33,7 @@ import java.net.http.*;
 @Slf4j
 public class DeltaFiIngressService {
 
-    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper().registerModule(new JavaTimeModule());
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
     private final HttpClient httpClient;
     private final String appName;
@@ -70,7 +69,7 @@ public class DeltaFiIngressService {
         }
     }
 
-    HttpRequest buildRequest(IngressRequest<?> ingressRequest) throws JsonProcessingException {
+    HttpRequest buildRequest(IngressRequest<?> ingressRequest) throws JacksonException {
         HttpRequest.Builder requestBuilder = switch (ingressRequest) {
             case IngressRequest.ByValue ingressByValue -> requestBuilder(ingressByValue);
             case IngressRequest.ByRef ingressByRef -> requestBuilder(ingressByRef);
@@ -82,7 +81,7 @@ public class DeltaFiIngressService {
         return requestBuilder.build();
     }
 
-    HttpRequest.Builder requestBuilder(ByValue ingressByValue) throws JsonProcessingException {
+    HttpRequest.Builder requestBuilder(ByValue ingressByValue) throws JacksonException {
         String fullurl = baseUrl + "api/v2/deltafile/ingress";
         HttpRequest.Builder requestBuilder = HttpRequest.newBuilder()
                 .uri(URI.create(fullurl))
@@ -103,7 +102,7 @@ public class DeltaFiIngressService {
         return requestBuilder;
     }
 
-    HttpRequest.Builder requestBuilder(ByRef ingressByRef) throws JsonProcessingException {
+    HttpRequest.Builder requestBuilder(ByRef ingressByRef) throws JacksonException {
         IngressEventItem ingressEventItem = IngressEventItem.builder()
                 .did(ingressByRef.did())
                 .flowName(ingressByRef.dataSource())

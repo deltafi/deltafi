@@ -17,10 +17,11 @@
  */
 package org.deltafi.common.types;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
+import tools.jackson.core.JacksonException;
+import tools.jackson.core.type.TypeReference;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.SerializationFeature;
+import tools.jackson.databind.json.JsonMapper;
 
 import java.util.HashMap;
 import java.util.List;
@@ -28,11 +29,9 @@ import java.util.Map;
 import java.util.UUID;
 
 public class LineageMap {
-    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
-
-    static {
-        OBJECT_MAPPER.configure(SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS, true);
-    }
+    private static final ObjectMapper OBJECT_MAPPER = JsonMapper.builder()
+            .configure(SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS, true)
+            .build();
 
     private final Map<String, LineageData> lineage;
 
@@ -40,11 +39,11 @@ public class LineageMap {
         lineage = new HashMap<>();
     }
 
-    public String writeMapAsString() throws JsonProcessingException {
+    public String writeMapAsString() throws JacksonException {
         return OBJECT_MAPPER.writeValueAsString(lineage);
     }
 
-    public void readMapFromString(String json) throws JsonProcessingException {
+    public void readMapFromString(String json) throws JacksonException {
         lineage.clear();
         lineage.putAll(OBJECT_MAPPER.readValue(json, new TypeReference<>() {
         }));

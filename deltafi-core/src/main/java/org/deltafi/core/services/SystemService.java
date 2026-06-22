@@ -17,10 +17,11 @@
  */
 package org.deltafi.core.services;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import tools.jackson.core.JacksonException;
+import tools.jackson.core.type.TypeReference;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.node.ObjectNode;
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -45,7 +46,7 @@ import java.util.*;
 public class SystemService {
 
     private static final ObjectMapper MAPPER = new ObjectMapper()
-            .registerModule(new JavaTimeModule());
+            ;
     static final List<String> METRIC_KEYS = List.of("gauge.node.memory.usage", "gauge.node.memory.limit",
             "gauge.node.disk-minio.usage", "gauge.node.disk-minio.limit",
             "gauge.node.disk-postgres.usage", "gauge.node.disk-postgres.limit",
@@ -87,7 +88,7 @@ public class SystemService {
             ObjectNode statusJson = MAPPER.readValue(status, ObjectNode.class);
             statusJson.put("version", buildProperties.getVersion());
             return new Status(statusJson);
-        } catch (IOException ioException) {
+        } catch (JacksonException jacksonException) {
             throw new SystemStatusException("Unable to parse the system status");
         }
     }
@@ -339,7 +340,7 @@ public class SystemService {
         }
     }
 
-    public record Status(ObjectNode status, OffsetDateTime timestamp) {
+    public record Status(@Schema(implementation = Map.class) ObjectNode status, OffsetDateTime timestamp) {
         public Status(ObjectNode status) {
             this(status, OffsetDateTime.now());
         }

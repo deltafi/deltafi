@@ -21,8 +21,8 @@
  */
 package org.deltafi.core.services.analytics;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
 import lombok.extern.slf4j.Slf4j;
@@ -181,7 +181,7 @@ public class AnalyticsClient {
                 // 4xx errors - data is rejected and will never be accepted, don't retry
                 log.error("Analytics events rejected: HTTP {} - {}. Dropping {} events.", response.statusCode(), response.body(), batch.size());
             }
-        } catch (JsonProcessingException e) {
+        } catch (JacksonException e) {
             log.error("Failed to serialize analytics events: {}", e.getMessage(), e);
         } catch (Exception e) {
             if (failedLastTime) {
@@ -240,7 +240,7 @@ public class AnalyticsClient {
                 // 4xx errors - data is rejected and will never be accepted, don't retry
                 log.error("Annotations rejected: HTTP {} - {}. Dropping {} annotations.", response.statusCode(), response.body(), batch.size());
             }
-        } catch (JsonProcessingException e) {
+        } catch (JacksonException e) {
             log.error("Failed to serialize annotations: {}", e.getMessage(), e);
         } catch (Exception e) {
             log.error("Failed to send annotations: {}", e.getMessage(), e);

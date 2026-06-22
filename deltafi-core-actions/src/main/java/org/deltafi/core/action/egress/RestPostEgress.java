@@ -17,9 +17,8 @@
  */
 package org.deltafi.core.action.egress;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.OkHttpClient;
 import org.deltafi.actionkit.action.egress.EgressInput;
@@ -36,7 +35,7 @@ import java.util.Map;
 @Slf4j
 @Deprecated
 public class RestPostEgress extends HttpEgressBase<RestPostEgressParameters> {
-    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper().registerModule(new JavaTimeModule());
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
     public RestPostEgress(OkHttpClient httpClient) {
         super("Egress to an HTTP endpoint using POST", httpClient);
@@ -44,7 +43,7 @@ public class RestPostEgress extends HttpEgressBase<RestPostEgressParameters> {
 
     @Override
     protected Map<String, String> buildHeaders(@NotNull ActionContext context, @NotNull RestPostEgressParameters params,
-                                               @NotNull EgressInput input) throws JsonProcessingException {
+                                               @NotNull EgressInput input) throws JacksonException {
         return Map.of(params.getMetadataKey(),
                 OBJECT_MAPPER.writeValueAsString(StandardEgressHeaders.buildMap(context, input)));
     }

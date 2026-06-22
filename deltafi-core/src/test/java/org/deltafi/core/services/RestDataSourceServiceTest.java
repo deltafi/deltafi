@@ -17,8 +17,8 @@
  */
 package org.deltafi.core.services;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
 import org.deltafi.common.types.FlowType;
 import org.deltafi.common.types.PluginCoordinates;
 import org.deltafi.core.exceptions.MissingFlowException;
@@ -107,7 +107,7 @@ class RestDataSourceServiceTest {
     }
 
     @Test
-    void testSetRateLimitSuccess() throws JsonProcessingException {
+    void testSetRateLimitSuccess() throws JacksonException {
         String flowName = "test-flow";
         RateLimitInput rateLimitInput = RateLimitInput.newBuilder()
                 .unit(RateLimitUnit.FILES)
@@ -156,7 +156,7 @@ class RestDataSourceServiceTest {
     }
 
     @Test
-    void testSetRateLimitDatabaseUpdateFails() throws JsonProcessingException {
+    void testSetRateLimitDatabaseUpdateFails() throws JacksonException {
         String flowName = "test-flow";
         RateLimitInput rateLimitInput = RateLimitInput.newBuilder()
                 .unit(RateLimitUnit.BYTES)
@@ -270,7 +270,7 @@ class RestDataSourceServiceTest {
     }
 
     @Test
-    void testSetRateLimitDifferentUnits() throws JsonProcessingException {
+    void testSetRateLimitDifferentUnits() throws JacksonException {
         String flowName = "test-flow";
         RateLimitInput fileLimitInput = RateLimitInput.newBuilder()
                 .unit(RateLimitUnit.FILES)
@@ -299,7 +299,7 @@ class RestDataSourceServiceTest {
     }
 
     @Test
-    void testSetRateLimitDifferentAmounts() throws JsonProcessingException {
+    void testSetRateLimitDifferentAmounts() throws JacksonException {
         String flowName = "test-flow";
         RateLimitInput rateLimitInput = RateLimitInput.newBuilder()
                 .unit(RateLimitUnit.FILES)
@@ -328,7 +328,7 @@ class RestDataSourceServiceTest {
     }
 
     @Test
-    void testSetRateLimitDifferentDuration() throws JsonProcessingException {
+    void testSetRateLimitDifferentDuration() throws JacksonException {
         String flowName = "test-flow";
         RateLimitInput rateLimitInput = RateLimitInput.newBuilder()
                 .unit(RateLimitUnit.FILES)

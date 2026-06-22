@@ -17,11 +17,11 @@
  */
 package org.deltafi.core.rest;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import tools.jackson.core.JacksonException;
+import tools.jackson.core.type.TypeReference;
+import tools.jackson.databind.DeserializationFeature;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.deltafi.core.security.NeedsPermission;
@@ -43,16 +43,17 @@ import java.util.List;
 @Slf4j
 public class SurveyRest {
 
-    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper()
-            .registerModule(new JavaTimeModule())
+    private static final ObjectMapper OBJECT_MAPPER = JsonMapper.builder()
             .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
-            .enable(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY);
+            .disable(DeserializationFeature.FAIL_ON_NULL_FOR_PRIMITIVES)
+            .enable(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY)
+            .build();
 
     private final AnalyticEventService analyticEventService;
 
     @PostMapping(produces = MediaType.APPLICATION_JSON_VALUE)
     @NeedsPermission.SurveyCreate
-    public ResponseEntity<SurveyErrors> addSurveys(@RequestBody String body) throws JsonProcessingException {
+    public ResponseEntity<SurveyErrors> addSurveys(@RequestBody String body) throws JacksonException {
         // parse string body here to support single json entry as a list
         List<SurveyEvent> surveys = OBJECT_MAPPER.readValue(body, new TypeReference<>() {});
 
@@ -66,7 +67,7 @@ public class SurveyRest {
         return ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED).body(new Error("Survey analytics are disabled"));
     }
 
-    @ExceptionHandler(JsonProcessingException.class)
+    @ExceptionHandler(JacksonException.class)
     public ResponseEntity<Error> handleInvalidBody() {
         return ResponseEntity.badRequest().body(new Error("Invalid request body"));
     }

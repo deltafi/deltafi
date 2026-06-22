@@ -17,9 +17,9 @@
  */
 package org.deltafi.core.converters;
 
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import tools.jackson.databind.DeserializationFeature;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.deltafi.common.resource.Resource;
 import org.deltafi.common.types.ActionConfiguration;
@@ -43,9 +43,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 @Slf4j
 class DataSourcePlanConverterTest {
-    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper()
+    private static final ObjectMapper OBJECT_MAPPER = JsonMapper.builder()
             .enable(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY)
-            .registerModule(new JavaTimeModule());
+            .build();
     final RestDataSourcePlanConverter restDataSourcePlanConverter = new RestDataSourcePlanConverter();
     final TimedDataSourcePlanConverter timedDataSourcePlanConverter = new TimedDataSourcePlanConverter();
     final OnErrorDataSourcePlanConverter onErrorDataSourcePlanConverter = new OnErrorDataSourcePlanConverter();

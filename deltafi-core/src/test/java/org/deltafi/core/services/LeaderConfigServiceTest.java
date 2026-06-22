@@ -17,7 +17,7 @@
  */
 package org.deltafi.core.services;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
 import org.deltafi.common.types.KeyValue;
 import org.deltafi.common.types.PluginCoordinates;
 import org.deltafi.common.types.VariableDataType;

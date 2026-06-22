@@ -17,9 +17,8 @@
  */
 package org.deltafi.core.action.egress;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.OkHttpClient;
 import org.apache.commons.lang3.StringUtils;
@@ -40,7 +39,7 @@ import java.util.TreeMap;
 @Slf4j
 public class DeltaFiEgress extends HttpEgressBase<DeltaFiEgressParameters> {
     public static final String INGRESS_URL_PATH = "/api/v2/deltafile/ingress";
-    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper().registerModule(new JavaTimeModule());
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
     private final String localIngressUrl;
 
     public DeltaFiEgress(OkHttpClient httpClient, @Value("${CORE_URL:Unknown}") String coreUrl) {
@@ -69,7 +68,7 @@ public class DeltaFiEgress extends HttpEgressBase<DeltaFiEgressParameters> {
 
     @Override
     protected Map<String, String> buildHeaders(@NotNull ActionContext context, @NotNull DeltaFiEgressParameters params,
-                                               @NotNull EgressInput input) throws JsonProcessingException {
+                                               @NotNull EgressInput input) throws JacksonException {
         Map<String, String> metadataMap = new TreeMap<>(input.getMetadata());
         metadataMap.put("originalDid", context.getDid().toString());
         metadataMap.put("originalSystem", context.getSystemName());

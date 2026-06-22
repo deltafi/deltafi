@@ -17,9 +17,7 @@
  */
 package org.deltafi.core.monitor;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import tools.jackson.databind.ObjectMapper;
 import jakarta.annotation.PreDestroy;
 import lombok.extern.slf4j.Slf4j;
 import org.deltafi.common.queue.valkey.ValkeyKeyedBlockingQueue;
@@ -39,9 +37,7 @@ import static org.deltafi.common.queue.valkey.ValkeyKeyedBlockingQueue.SSE_VALKE
 public class MonitorService {
     private static final String SSE_STATUS_CHANNEL = SSE_VALKEY_CHANNEL_PREFIX + ".status";
 
-    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper()
-            .registerModule(new JavaTimeModule())
-            .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
     private final ValkeyKeyedBlockingQueue valkeyQueue;
     private final StatusCheckRepo statusCheckRepo;

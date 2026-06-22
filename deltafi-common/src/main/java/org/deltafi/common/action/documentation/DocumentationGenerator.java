@@ -17,8 +17,8 @@
  */
 package org.deltafi.common.action.documentation;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.deltafi.common.types.ActionDescriptor;
 import org.deltafi.common.types.ActionOptions;
@@ -224,7 +224,7 @@ public class DocumentationGenerator {
         Set<String> required = new HashSet<>();
         JsonNode requiredNode = objectSchema.get("required");
         if (requiredNode != null) {
-            requiredNode.forEach(node -> required.add(node.textValue()));
+            requiredNode.forEach(node -> required.add(node.stringValue()));
         }
 
         List<List<String>> rows = new ArrayList<>();
@@ -235,7 +235,7 @@ public class DocumentationGenerator {
             }
             JsonNode fieldSchema = entry.getValue();
             JsonNode defaultNode = fieldSchema.get("default");
-            String defaultValue = defaultNode != null ? defaultNode.asText() : "";
+            String defaultValue = defaultNode != null ? renderDefault(defaultNode) : "";
             String description = extractDescription(fieldSchema);
             rows.add(List.of(
                     "`" + escapePipes(fieldName) + "`",
@@ -314,6 +314,15 @@ public class DocumentationGenerator {
 
     // --- schema helpers (shared with the type-expression logic) ---
 
+    /** Render a default value: only scalar leaves get a cell; containers (arrays/objects) are summarized as blank. */
+    @SuppressWarnings("deprecation")
+    private static String renderDefault(JsonNode defaultNode) {
+        if (defaultNode.isValueNode() && !defaultNode.isNull()) {
+            return defaultNode.asText();
+        }
+        return "";
+    }
+
     /** Extract a field's description, preferring the field-level allOf override over the type's own description. */
     private static String extractDescription(JsonNode fieldSchema) {
         JsonNode allOfNode = fieldSchema.get("allOf");
@@ -323,10 +332,10 @@ public class DocumentationGenerator {
             if (descriptionNode == null) {
                 descriptionNode = allOfNode.get(0).get("description");
             }
-            return descriptionNode != null ? descriptionNode.textValue() : null;
+            return descriptionNode != null ? descriptionNode.stringValue() : null;
         }
         JsonNode descriptionNode = fieldSchema.get("description");
-        return descriptionNode != null ? descriptionNode.textValue() : null;
+        return descriptionNode != null ? descriptionNode.stringValue() : null;
     }
 
     /** The named type a field references (directly, allOf-wrapped, or as array items), with whether it is a list. */
@@ -355,7 +364,7 @@ public class DocumentationGenerator {
     }
 
     private static String defName(JsonNode refNode) {
-        String ref = refNode.textValue();
+        String ref = refNode.stringValue();
         return ref.substring(ref.lastIndexOf('/') + 1);
     }
 
@@ -388,7 +397,7 @@ public class DocumentationGenerator {
         }
         if ("string".equals(type) && node.has("enum")) {
             List<String> values = new ArrayList<>();
-            node.get("enum").forEach(value -> values.add(value.asText()));
+            node.get("enum").forEach(value -> values.add(value.asString()));
             return "string (" + String.join(" | ", values) + ")";
         }
         return type != null ? type : "object";
@@ -464,7 +473,7 @@ public class DocumentationGenerator {
         }
         JsonNode ref = node.get("$ref");
         if (ref != null && defs != null) {
-            String defName = ref.textValue().substring(ref.textValue().lastIndexOf('/') + 1);
+            String defName = ref.stringValue().substring(ref.stringValue().lastIndexOf('/') + 1);
             JsonNode resolved = defs.get(defName);
             if (resolved != null) {
                 return resolved;
@@ -489,6 +498,7 @@ public class DocumentationGenerator {
         return null;
     }
 
+    @SuppressWarnings("deprecation")
     private static String variantLabel(JsonNode branch, String discriminator) {
         if (discriminator != null) {
             JsonNode constNode = branch.get(PROPERTIES).get(discriminator).get("const");
@@ -502,7 +512,7 @@ public class DocumentationGenerator {
 
     private static String text(JsonNode node, String field) {
         JsonNode value = node.get(field);
-        return value == null ? null : value.textValue();
+        return value == null ? null : value.stringValue();
     }
 
     // --- input/output/conditions ---

@@ -37,7 +37,7 @@ dependencies {
     implementation "org.springdoc:springdoc-openapi-starter-webmvc-ui:${springdocVersion}"
     implementation 'org.springframework:spring-aspects'
 
-    implementation 'com.networknt:json-schema-validator:1.5.9'
+    implementation 'com.networknt:json-schema-validator:3.0.4'
 
     implementation 'com.netflix.graphql.dgs:dgs-starter'
     implementation 'com.netflix.graphql.dgs:graphql-dgs-extended-scalars'
@@ -55,7 +55,8 @@ dependencies {
     implementation "org.flywaydb:flyway-database-postgresql:${flywayVersion}"
     implementation 'jakarta.annotation:jakarta.annotation-api'
     implementation 'com.bucket4j:bucket4j_jdk17-jedis:8.19.0'
-    implementation "com.fasterxml.jackson.dataformat:jackson-dataformat-csv:${jacksonVersion}"
+    implementation 'tools.jackson.dataformat:jackson-dataformat-csv'
+    implementation 'tools.jackson.dataformat:jackson-dataformat-yaml'
 
     compileOnly 'com.github.spotbugs:spotbugs-annotations:4.9.8'
 
