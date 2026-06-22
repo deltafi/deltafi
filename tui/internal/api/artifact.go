@@ -71,7 +71,7 @@ type PublishArtifactResponse struct {
 	PluginName   string `json:"pluginName,omitempty"`
 	ArtifactName string `json:"artifactName"`
 	Version      string `json:"version"`
-	IsActive     bool   `json:"isActive"`
+	IsActive     bool   `json:"active"`
 	Sha256       string `json:"sha256"`
 }
 

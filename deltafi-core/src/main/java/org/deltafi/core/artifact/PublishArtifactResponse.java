@@ -31,6 +31,6 @@ public class PublishArtifactResponse {
     private String pluginName;
     private String artifactName;
     private String version;
-    private boolean isActive;
+    private boolean active;
     private String sha256;
 }

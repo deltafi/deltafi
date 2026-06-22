@@ -159,7 +159,7 @@ public class ArtifactRegistryService {
                 .pluginName(pluginName)
                 .artifactName(artifactName)
                 .version(version)
-                .isActive(makeActive)
+                .active(makeActive)
                 .sha256(sha256)
                 .build();
     }
