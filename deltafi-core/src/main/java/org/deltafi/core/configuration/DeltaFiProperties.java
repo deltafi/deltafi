@@ -44,122 +44,133 @@ public class DeltaFiProperties {
 
     private List<MemberConfig> cachedMemberConfigs;
 
-    @PropertyInfo(group = PropertyGroup.UI_CONTROLS, description = "Name of the DeltaFi system", defaultValue = "DeltaFi")
-    private String systemName = "DeltaFi";
+    @PropertyInfo(group = PropertyGroup.INGRESS_CONTROLS, description = "The threshold for automatic disable of ingress.  If the available storage for ingress drops below this requirement, ingress will be temporarily disabled until the system frees up storage.", defaultValue = "1000", dataType = VariableDataType.NUMBER)
+    private long ingressDiskSpaceRequirementInMb = 1000;
+    @PropertyInfo(group = PropertyGroup.INGRESS_CONTROLS, description = "Enables or disables all ingress", defaultValue = "true", dataType = VariableDataType.BOOLEAN)
+    private boolean ingressEnabled = true;
 
+    @PropertyInfo(group = PropertyGroup.EGRESS_CONTROLS, description = "Enables or disables all egress. When this is false all DeltaFiles will go to a paused state when they reach a DataSink until this value is set back to true.", defaultValue = "true", dataType = VariableDataType.BOOLEAN)
+    private boolean egressEnabled = true;
+
+    @PropertyInfo(group = PropertyGroup.DATA_RETENTION, description = "Number of days that a DeltaFile should live, any records older will be removed", defaultValue = "13", dataType = VariableDataType.NUMBER)
+    private int ageOffDays = 13;
+    @PropertyInfo(group = PropertyGroup.DATA_RETENTION, description = "Threshold for content storage usage check", defaultValue = "90", dataType = VariableDataType.NUMBER)
+    private int checkContentStoragePercentThreshold = 90;
+    @PropertyInfo(group = PropertyGroup.DATA_RETENTION, description = "[Duration or ISO 8601] Frequency that the delete action is triggered", defaultValue = "PT5M")
+    private Duration deleteFrequency = Duration.ofMinutes(5);
+    @PropertyInfo(group = PropertyGroup.DATA_RETENTION, description = "Maximum deletes per policy iteration loop", defaultValue = "1000", dataType = VariableDataType.NUMBER)
+    private int deletePolicyBatchSize = 1000;
+    @PropertyInfo(group = PropertyGroup.DATA_RETENTION, description = "The max percentage of disk space to use. When the system exceeds this percentage, content will be removed to lower the disk space usage.", defaultValue = "80.0")
+    private double diskSpacePercentThreshold = 80.0;
+    @PropertyInfo(group = PropertyGroup.DATA_RETENTION, description = "The max percentage of disk space to use for database metadata. When the metadata size exceeds this percentage, deltaFiles will be removed to lower the metadata disk space usage.", defaultValue = "40.0")
+    private double metadataDiskSpacePercentThreshold = 40.0;
+
+    @PropertyInfo(group = PropertyGroup.DATABASE_CONTROLS, description = "Enable pg_squeeze extension. Postgres must be manually restarted if this is changed from true to false", defaultValue = "false", dataType = VariableDataType.BOOLEAN)
+    private boolean autoCleanPostgres = false;
+    @PropertyInfo(group = PropertyGroup.DATABASE_CONTROLS, description = "Maximum DeltaFiles to insert in a batch", defaultValue = "1000", dataType = VariableDataType.NUMBER)
+    private int insertBatchSize = 1000;
+
+    @PropertyInfo(group = PropertyGroup.DATA_FLOW_CONTROLS, description = "[Duration or ISO 8601] Max time to allow an action to run before restarting the pod. Null (or 0) indicates disabled, which is the default. To enable, this value must be greater than 30 seconds and should be less than the requeueDuration. To disable this feature use 'Revert' (or set the value to 0)")
+    private Duration actionExecutionTimeout;
+    @PropertyInfo(group = PropertyGroup.DATA_FLOW_CONTROLS, description = "[Duration or ISO 8601] Minimum time to allow an action to remain running before a warning is generated . Null (or 0) indicates disabled, which is the default. To disable this feature use 'Revert' (or set the value to 0)")
+    private Duration actionExecutionWarning;
+    @PropertyInfo(group = PropertyGroup.DATA_FLOW_CONTROLS, description = "The maximum number of flows a DeltaFile may traverse", defaultValue = "32", dataType = VariableDataType.NUMBER)
+    private int maxFlowDepth = 32;
+    @PropertyInfo(group = PropertyGroup.DATA_FLOW_CONTROLS, description = "Minimum severity for action log messages. Choose: TRACE, INFO, WARNING, ERROR, or USER", defaultValue = "INFO")
+    private LogSeverity minimumActionLogSeverity = LogSeverity.INFO;
     @PropertyInfo(group = PropertyGroup.DATA_FLOW_CONTROLS, description = "[Duration or ISO 8601] Time to wait for an action to finish processing a DeltaFile before requeuing the action", defaultValue = "PT5M")
     private Duration requeueDuration = Duration.ofMinutes(5);
 
     @PropertyInfo(group = PropertyGroup.ERROR_CONTROLS, description = "[Duration or ISO 8601] Frequency that the auto-resume check is triggered", defaultValue = "PT1M")
     private Duration autoResumeCheckFrequency = Duration.ofMinutes(1);
-
     @PropertyInfo(group = PropertyGroup.ERROR_CONTROLS, description = "Globally enable or disable auto-resume. When false the scheduled auto-resume task skips all work regardless of individual rule state.", defaultValue = "true", dataType = VariableDataType.BOOLEAN)
     private boolean autoResumeEnabled = true;
 
-    @PropertyInfo(group = PropertyGroup.PERFORMANCE_CONTROLS, description = "The number of threads used in core processing", defaultValue = "16", dataType = VariableDataType.NUMBER)
-    private int coreServiceThreads = 16;
-
-    @PropertyInfo(group = PropertyGroup.PERFORMANCE_CONTROLS, description = "The number of incoming events for core to queue internally for processing", defaultValue = "64", dataType = VariableDataType.NUMBER)
-    private int coreInternalQueueSize = 64;
-
-    @PropertyInfo(group = PropertyGroup.PERFORMANCE_CONTROLS, description = "Maximum allowed number of threads", defaultValue = "8", dataType = VariableDataType.NUMBER)
-    private int scheduledServiceThreads = 8;
-
-    @PropertyInfo(group = PropertyGroup.METRICS_AND_ANALYTICS, description = "Enable reporting of metrics to VictoriaMetrics", defaultValue = "true", refreshable = false, dataType = VariableDataType.BOOLEAN)
-    private boolean metricsEnabled = true;
-
-    @PropertyInfo(group = PropertyGroup.METRICS_AND_ANALYTICS, description = "Enable analytics storage in TimescaleDB", defaultValue = "true", dataType = VariableDataType.BOOLEAN)
-    private boolean timescaleAnalyticsEnabled = true;
-
-    @PropertyInfo(group = PropertyGroup.METRICS_AND_ANALYTICS, description = "Name of the analytics group used to aggregate metrics. This provides a level of grouping more specific than data source.")
-    private String analyticsGroupName;
-
-    @PropertyInfo(group = PropertyGroup.METRICS_AND_ANALYTICS, description = "Comma-separated list of allowed analytics annotation keys to be promoted into metrics. Only these annotations will be used for grouping/filtering in analytics.", dataType = VariableDataType.SET)
-    private String allowedAnalyticsAnnotations;
-
-    @PropertyInfo(group = PropertyGroup.METRICS_AND_ANALYTICS, description = "Enable analytics export to the Parquet-based analytics collector", defaultValue = "true", dataType = VariableDataType.BOOLEAN)
-    private boolean parquetAnalyticsEnabled = true;
-
-    @PropertyInfo(group = PropertyGroup.METRICS_AND_ANALYTICS, description = "Number of days to retain Parquet analytics data before automatic deletion", defaultValue = "30", dataType = VariableDataType.NUMBER)
-    private int parquetAnalyticsAgeOffDays = 30;
-
-    @PropertyInfo(group = PropertyGroup.METRICS_AND_ANALYTICS, description = "Enable provenance tracking for DeltaFile lineage export", defaultValue = "false", dataType = VariableDataType.BOOLEAN)
-    private boolean provenanceEnabled = false;
-
-    @PropertyInfo(group = PropertyGroup.METRICS_AND_ANALYTICS, description = "Number of days to retain provenance data before automatic deletion", defaultValue = "3", dataType = VariableDataType.NUMBER)
-    private int provenanceAgeOffDays = 3;
-
-    @PropertyInfo(group = PropertyGroup.METRICS_AND_ANALYTICS, description = "Comma-separated list of annotation keys to include in provenance records", dataType = VariableDataType.SET)
-    private String provenanceAnnotationsAllowed;
-
-    @PropertyInfo(group = PropertyGroup.DATA_RETENTION, description = "Number of days that a DeltaFile should live, any records older will be removed", defaultValue = "13", dataType = VariableDataType.NUMBER)
-    private int ageOffDays = 13;
-
-    @PropertyInfo(group = PropertyGroup.DATA_RETENTION, description = "The max percentage of disk space to use. When the system exceeds this percentage, content will be removed to lower the disk space usage.", defaultValue = "80.0")
-    private double diskSpacePercentThreshold = 80.0;
-
-    @PropertyInfo(group = PropertyGroup.DATA_RETENTION, description = "The max percentage of disk space to use for database metadata. When the metadata size exceeds this percentage, deltaFiles will be removed to lower the metadata disk space usage.", defaultValue = "40.0")
-    private double metadataDiskSpacePercentThreshold = 40.0;
-
-    @PropertyInfo(group = PropertyGroup.DATA_RETENTION, description = "[Duration or ISO 8601] Frequency that the delete action is triggered", defaultValue = "PT5M")
-    private Duration deleteFrequency = Duration.ofMinutes(5);
-
-    @PropertyInfo(group = PropertyGroup.DATA_RETENTION, description = "Maximum deletes per policy iteration loop", defaultValue = "1000", dataType = VariableDataType.NUMBER)
-    private int deletePolicyBatchSize = 1000;
-
-    @PropertyInfo(group = PropertyGroup.DATABASE_CONTROLS, description = "Maximum DeltaFiles to insert in a batch", defaultValue = "1000", dataType = VariableDataType.NUMBER)
-    private int insertBatchSize = 1000;
-
-    @PropertyInfo(group = PropertyGroup.PERFORMANCE_CONTROLS, description = "[Duration or ISO 8601] Sync all DeltaFiles that have not been modified for this duration", defaultValue = "PT30S")
-    private Duration cacheSyncDuration = Duration.ofSeconds(30);
-
-    @PropertyInfo(group = PropertyGroup.EGRESS_CONTROLS, description = "Enables or disables all egress. When this is false all DeltaFiles will go to a paused state when they reach a DataSink until this value is set back to true.", defaultValue = "true", dataType = VariableDataType.BOOLEAN)
-    private boolean egressEnabled = true;
-
-    @PropertyInfo(group = PropertyGroup.INGRESS_CONTROLS, description = "Enables or disables all ingress", defaultValue = "true", dataType = VariableDataType.BOOLEAN)
-    private boolean ingressEnabled = true;
-
-    @PropertyInfo(group = PropertyGroup.INGRESS_CONTROLS, description = "The threshold for automatic disable of ingress.  If the available storage for ingress drops below this requirement, ingress will be temporarily disabled until the system frees up storage.", defaultValue = "1000", dataType = VariableDataType.NUMBER)
-    private long ingressDiskSpaceRequirementInMb = 1000;
-
+    @PropertyInfo(group = PropertyGroup.PLUGIN_CONTROLS, description = "[Duration or ISO 8601] Max time to wait for a plugin deployment to succeed", defaultValue = "PT3M")
+    private Duration pluginDeployTimeout = Duration.ofMinutes(3);
     @PropertyInfo(group = PropertyGroup.PLUGIN_CONTROLS, description = "Default imagePullSecret used in plugin deployments")
     private String pluginImagePullSecret;
 
-    @PropertyInfo(group = PropertyGroup.PLUGIN_CONTROLS, description = "[Duration or ISO 8601] Max time to wait for a plugin deployment to succeed", defaultValue = "PT3M")
-    private Duration pluginDeployTimeout = Duration.ofMinutes(3);
+    @PropertyInfo(group = PropertyGroup.JOIN_CONTROLS, description = "The amount of time to wait before timing out while waiting to acquire the join lock", defaultValue = "30000", dataType = VariableDataType.NUMBER)
+    private long joinAcquireLockTimeoutMs = 30000;
+    @PropertyInfo(group = PropertyGroup.JOIN_CONTROLS, description = "[Duration or ISO 8601] Frequency that database locks on join entries are checked against the join.maxLockDuration", defaultValue = "PT1M")
+    private Duration joinLockCheckInterval = Duration.ofMinutes(1);
+    @PropertyInfo(group = PropertyGroup.JOIN_CONTROLS, description = "[Duration or ISO 8601] Maximum duration a database lock can be held on a join entry before it is automatically unlocked", defaultValue = "PT1M")
+    private Duration joinMaxLockDuration = Duration.ofMinutes(1);
 
-    @PropertyInfo(group = PropertyGroup.DATA_FLOW_CONTROLS, description = "[Duration or ISO 8601] Max time to allow an action to run before restarting the pod. Null (or 0) indicates disabled, which is the default. To enable, this value must be greater than 30 seconds and should be less than the requeueDuration. To disable this feature use 'Revert' (or set the value to 0)")
-    private Duration actionExecutionTimeout;
+    @PropertyInfo(group = PropertyGroup.METRICS_AND_ANALYTICS, description = "Comma-separated list of allowed analytics annotation keys to be promoted into metrics. Only these annotations will be used for grouping/filtering in analytics.", dataType = VariableDataType.SET)
+    private String allowedAnalyticsAnnotations;
+    @PropertyInfo(group = PropertyGroup.METRICS_AND_ANALYTICS, description = "Name of the analytics group used to aggregate metrics. This provides a level of grouping more specific than data source.")
+    private String analyticsGroupName;
+    @PropertyInfo(group = PropertyGroup.METRICS_AND_ANALYTICS, description = "Enable reporting of metrics to VictoriaMetrics", defaultValue = "true", refreshable = false, dataType = VariableDataType.BOOLEAN)
+    private boolean metricsEnabled = true;
+    @PropertyInfo(group = PropertyGroup.METRICS_AND_ANALYTICS, description = "Number of days to retain Parquet analytics data before automatic deletion", defaultValue = "30", dataType = VariableDataType.NUMBER)
+    private int parquetAnalyticsAgeOffDays = 30;
+    @PropertyInfo(group = PropertyGroup.METRICS_AND_ANALYTICS, description = "Enable analytics export to the Parquet-based analytics collector", defaultValue = "true", dataType = VariableDataType.BOOLEAN)
+    private boolean parquetAnalyticsEnabled = true;
+    @PropertyInfo(group = PropertyGroup.METRICS_AND_ANALYTICS, description = "Number of days to retain provenance data before automatic deletion", defaultValue = "3", dataType = VariableDataType.NUMBER)
+    private int provenanceAgeOffDays = 3;
+    @PropertyInfo(group = PropertyGroup.METRICS_AND_ANALYTICS, description = "Comma-separated list of annotation keys to include in provenance records", dataType = VariableDataType.SET)
+    private String provenanceAnnotationsAllowed;
+    @PropertyInfo(group = PropertyGroup.METRICS_AND_ANALYTICS, description = "Enable provenance tracking for DeltaFile lineage export", defaultValue = "false", dataType = VariableDataType.BOOLEAN)
+    private boolean provenanceEnabled = false;
+    @PropertyInfo(group = PropertyGroup.METRICS_AND_ANALYTICS, description = "Enable analytics storage in TimescaleDB", defaultValue = "true", dataType = VariableDataType.BOOLEAN)
+    private boolean timescaleAnalyticsEnabled = true;
 
-    @PropertyInfo(group = PropertyGroup.DATA_FLOW_CONTROLS, description = "[Duration or ISO 8601] Minimum time to allow an action to remain running before a warning is generated . Null (or 0) indicates disabled, which is the default. To disable this feature use 'Revert' (or set the value to 0)")
-    private Duration actionExecutionWarning;
+    @PropertyInfo(group = PropertyGroup.PERFORMANCE_CONTROLS, description = "[Duration or ISO 8601] Sync all DeltaFiles that have not been modified for this duration", defaultValue = "PT30S")
+    private Duration cacheSyncDuration = Duration.ofSeconds(30);
+    @PropertyInfo(group = PropertyGroup.PERFORMANCE_CONTROLS, description = "The number of incoming events for core to queue internally for processing", defaultValue = "64", dataType = VariableDataType.NUMBER)
+    private int coreInternalQueueSize = 64;
+    @PropertyInfo(group = PropertyGroup.PERFORMANCE_CONTROLS, description = "The number of threads used in core processing", defaultValue = "16", dataType = VariableDataType.NUMBER)
+    private int coreServiceThreads = 16;
+    @PropertyInfo(group = PropertyGroup.PERFORMANCE_CONTROLS, description = "Maximum size for in memory action queues before tasks are moved to on-disk queues", defaultValue = "5000", dataType = VariableDataType.NUMBER)
+    private int inMemoryQueueSize = 5000;
+    @PropertyInfo(group = PropertyGroup.PERFORMANCE_CONTROLS, description = "Maximum depth of the shared result-return queue before requeue and cold-to-warm scheduling pause, allowing the queue to drain rather than re-dispatching work faster than the cluster can process it", defaultValue = "5000", dataType = VariableDataType.NUMBER)
+    private int requeueBacklogThreshold = 5000;
+    @PropertyInfo(group = PropertyGroup.PERFORMANCE_CONTROLS, description = "Maximum allowed number of threads", defaultValue = "8", dataType = VariableDataType.NUMBER)
+    private int scheduledServiceThreads = 8;
 
     @PropertyInfo(group = PropertyGroup.SYSTEM_MONITORING, description = "Threshold for Action Queue size check", defaultValue = "10", dataType = VariableDataType.NUMBER)
     private int checkActionQueueSizeThreshold = 10;
-
     @PropertyInfo(group = PropertyGroup.SYSTEM_MONITORING, description = "Minimum number for cold queue size before checking if growing", defaultValue = "10000", dataType = VariableDataType.NUMBER)
     private int checkColdQueueMinimumGrowing = 10000;
-
     @PropertyInfo(group = PropertyGroup.SYSTEM_MONITORING, description = "Threshold for cold queue size warning", defaultValue = "75000", dataType = VariableDataType.NUMBER)
     private int checkColdQueueWarningThreshold = 75000;
-
-    @PropertyInfo(group = PropertyGroup.DATA_RETENTION, description = "Threshold for content storage usage check", defaultValue = "90", dataType = VariableDataType.NUMBER)
-    private int checkContentStoragePercentThreshold = 90;
-
-    @PropertyInfo(group = PropertyGroup.SYSTEM_MONITORING, description = "Pending delete lag warning threshold. System status becomes degraded when any node has more pending deletes than the configured value.", defaultValue = "100000", dataType = VariableDataType.NUMBER)
-    private int checkDeleteLagWarningThreshold = 100_000;
-
     @PropertyInfo(group = PropertyGroup.SYSTEM_MONITORING, description = "Pending delete lag error threshold. System status becomes unhealthy when any node has more pending deletes than the configured value.", defaultValue = "500000", dataType = VariableDataType.NUMBER)
     private int checkDeleteLagErrorThreshold = 500_000;
-
+    @PropertyInfo(group = PropertyGroup.SYSTEM_MONITORING, description = "Pending delete lag warning threshold. System status becomes degraded when any node has more pending deletes than the configured value.", defaultValue = "100000", dataType = VariableDataType.NUMBER)
+    private int checkDeleteLagWarningThreshold = 100_000;
     @PropertyInfo(group = PropertyGroup.SYSTEM_MONITORING, description = "Certificate expiration error threshold (days). System status becomes unhealthy when any certificate expires within this timeframe.", defaultValue = "4", dataType = VariableDataType.NUMBER)
     private int checkSslExpirationErrorThreshold = 4;
-
     @PropertyInfo(group = PropertyGroup.SYSTEM_MONITORING, description = "Certificate expiration warning threshold (days). System status becomes degraded when any certificate expires within this timeframe.", defaultValue = "14", dataType = VariableDataType.NUMBER)
     private int checkSslExpirationWarningThreshold = 14;
-
     @PropertyInfo(group = PropertyGroup.SYSTEM_MONITORING, description = "Leader-member monitoring configuration. Only configured on leader instances. JSON object mapping member names to their config: {\"site1\": {\"url\": \"https://site1.example.com\", \"tags\": [\"east\"]}, \"site2\": {\"url\": \"https://site2.example.com\", \"tags\": [\"west\", \"production\"]}}", defaultValue = "{}", refreshable = true, dataType = VariableDataType.STRING)
     private String leaderConfig = "{}";
+    @PropertyInfo(group = PropertyGroup.SYSTEM_MONITORING, description = "Interval between polling cycles for each member (milliseconds). Healthy members are polled at this interval, unhealthy members at 1/6 of this interval.", defaultValue = "30000", refreshable = true, dataType = VariableDataType.NUMBER)
+    private int memberPollingInterval = 30000;
+    @PropertyInfo(group = PropertyGroup.SYSTEM_MONITORING, description = "Timeout for individual HTTP requests to members (milliseconds). Must be less than memberPollingTimeout.", defaultValue = "10000", dataType = VariableDataType.NUMBER)
+    private int memberRequestTimeout = 10000;
+
+    @PropertyInfo(group = PropertyGroup.UI_CONTROLS, description = "Message of the day displayed to users when they visit the UI (supports Markdown)")
+    private String messageOfTheDay;
+    @PropertyInfo(group = PropertyGroup.UI_CONTROLS, description = "Background color of the security banner")
+    private String securityBannerBackgroundColor;
+    @PropertyInfo(group = PropertyGroup.UI_CONTROLS, description = "Toggles the security banner display", defaultValue = "false", dataType = VariableDataType.BOOLEAN)
+    private boolean securityBannerEnabled = false;
+    @PropertyInfo(group = PropertyGroup.UI_CONTROLS, description = "Text to display in the security banner")
+    private String securityBannerText;
+    @PropertyInfo(group = PropertyGroup.UI_CONTROLS, description = "Color of the text in the security banner")
+    private String securityBannerTextColor;
+    @PropertyInfo(group = PropertyGroup.UI_CONTROLS, description = "Name of the DeltaFi system", defaultValue = "DeltaFi")
+    private String systemName = "DeltaFi";
+    @PropertyInfo(group = PropertyGroup.UI_CONTROLS, description = "Background color of the top bar")
+    private String topBarBackgroundColor;
+    @PropertyInfo(group = PropertyGroup.UI_CONTROLS, description = "Text color of the top bar")
+    private String topBarTextColor;
+    @PropertyInfo(group = PropertyGroup.UI_CONTROLS, description = "Maximum number of bytes the UI will retrieve from the backend when viewing content", defaultValue = "32768", dataType = VariableDataType.NUMBER)
+    private long uiContentPreviewSize = 32768; // 32KB
+    @PropertyInfo(group = PropertyGroup.UI_CONTROLS, description = "Display times in UTC", defaultValue = "true", dataType = VariableDataType.BOOLEAN)
+    private boolean uiUseUTC = true;
 
     public void setLeaderConfig(String leaderConfig) {
         // Parse and validate in one pass, caching the result
@@ -276,12 +287,6 @@ public class DeltaFiProperties {
         return configs;
     }
 
-    @PropertyInfo(group = PropertyGroup.SYSTEM_MONITORING, description = "Interval between polling cycles for each member (milliseconds). Healthy members are polled at this interval, unhealthy members at 1/6 of this interval.", defaultValue = "30000", refreshable = true, dataType = VariableDataType.NUMBER)
-    private int memberPollingInterval = 30000;
-
-    @PropertyInfo(group = PropertyGroup.SYSTEM_MONITORING, description = "Timeout for individual HTTP requests to members (milliseconds). Must be less than memberPollingTimeout.", defaultValue = "10000", refreshable = true, dataType = VariableDataType.NUMBER)
-    private int memberRequestTimeout = 10000;
-
     /**
      * Get the timeout for polling operations (80% of polling interval).
      * This ensures requests complete before the next polling cycle.
@@ -314,60 +319,6 @@ public class DeltaFiProperties {
         }
         this.memberRequestTimeout = memberRequestTimeout;
     }
-
-    @PropertyInfo(group = PropertyGroup.UI_CONTROLS, description = "Display times in UTC", defaultValue = "true", dataType = VariableDataType.BOOLEAN)
-    private boolean uiUseUTC = true;
-
-    @PropertyInfo(group = PropertyGroup.UI_CONTROLS, description = "Maximum number of bytes the UI will retrieve from the backend when viewing content", defaultValue = "32768", dataType = VariableDataType.NUMBER)
-    private long uiContentPreviewSize = 32768; // 32KB
-
-    @PropertyInfo(group = PropertyGroup.UI_CONTROLS, description = "Background color of the top bar")
-    private String topBarBackgroundColor;
-
-    @PropertyInfo(group = PropertyGroup.UI_CONTROLS, description = "Text color of the top bar")
-    private String topBarTextColor;
-
-    @PropertyInfo(group = PropertyGroup.UI_CONTROLS, description = "Text to display in the security banner")
-    private String securityBannerText;
-
-    @PropertyInfo(group = PropertyGroup.UI_CONTROLS, description = "Background color of the security banner")
-    private String securityBannerBackgroundColor;
-
-    @PropertyInfo(group = PropertyGroup.UI_CONTROLS, description = "Color of the text in the security banner")
-    private String securityBannerTextColor;
-
-    @PropertyInfo(group = PropertyGroup.UI_CONTROLS, description = "Toggles the security banner display", defaultValue = "false", dataType = VariableDataType.BOOLEAN)
-    private boolean securityBannerEnabled = false;
-
-    @PropertyInfo(group = PropertyGroup.UI_CONTROLS, description = "Message of the day displayed to users when they visit the UI (supports Markdown)")
-    private String messageOfTheDay;
-
-    @PropertyInfo(group = PropertyGroup.PERFORMANCE_CONTROLS, description = "Maximum size for in memory action queues before tasks are moved to on-disk queues", defaultValue = "5000", dataType = VariableDataType.NUMBER)
-    private int inMemoryQueueSize = 5000;
-
-    @PropertyInfo(group = PropertyGroup.PERFORMANCE_CONTROLS, description = "Maximum depth of the shared result-return queue before requeue and cold-to-warm scheduling pause, allowing the queue to drain rather than re-dispatching work faster than the cluster can process it", defaultValue = "5000", dataType = VariableDataType.NUMBER)
-    private int requeueBacklogThreshold = 5000;
-
-    @PropertyInfo(group = PropertyGroup.DATA_FLOW_CONTROLS, description = "The maximum number of flows a DeltaFile may traverse", defaultValue = "32", dataType = VariableDataType.NUMBER)
-    private int maxFlowDepth = 32;
-
-    @PropertyInfo(group = PropertyGroup.JOIN_CONTROLS, description = "The amount of time to wait before timing out while waiting to acquire the join lock", defaultValue = "30000", dataType = VariableDataType.NUMBER)
-    private long joinAcquireLockTimeoutMs = 30000;
-
-    @PropertyInfo(group = PropertyGroup.JOIN_CONTROLS, description = "[Duration or ISO 8601] Maximum duration a database lock can be held on a " +
-            "join entry before it is automatically unlocked", defaultValue = "PT1M")
-    private Duration joinMaxLockDuration = Duration.ofMinutes(1);
-
-    @PropertyInfo(group = PropertyGroup.JOIN_CONTROLS, description = "[Duration or ISO 8601] Frequency that database locks on join entries are " +
-            "checked against the join.maxLockDuration", defaultValue = "PT1M")
-    private Duration joinLockCheckInterval = Duration.ofMinutes(1);
-
-    @PropertyInfo(group = PropertyGroup.DATABASE_CONTROLS, description = "Enable pg_squeeze extension. Postgres must be manually restarted if this is changed from true to false", defaultValue = "false", dataType = VariableDataType.BOOLEAN)
-    private boolean autoCleanPostgres = false;
-
-    @PropertyInfo(group = PropertyGroup.DATA_FLOW_CONTROLS, description = "Minimum severity for action log messages. "
-            + "Choose: TRACE, INFO, WARNING, ERROR, or USER", defaultValue = "INFO")
-    private LogSeverity minimumActionLogSeverity = LogSeverity.INFO;
 
     public long getIngressDiskSpaceRequirementInBytes() {
         return ingressDiskSpaceRequirementInMb * 1000000;
