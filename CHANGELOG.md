@@ -5,6 +5,161 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 All [Unreleased] changes can be viewed in GitLab.
 
+## [2.58.0] - 2026-06-23
+
+### Added
+- Added a drawer popout that shows the action documentation when you click on an action from the Plugins page
+- Added a reference button to the action form in the Transform Flow Builder that opens the action documentation
+- Added color themes, text style, and accents to UI 
+- Added an `ArtifactFactory` that is a framework-agnostic interface for the artifact registry letting plugins declare artifact handles via a fluent builder (an alternative to `@PluginArtifact` injection)
+- Added a `TestArtifactFactory` in deltafi-action-kit-test to simplify testing actions that use the `ArtifactFactory`
+- Added cold, warm, pause, and rate limit to the in-flight deltafile chart on System Performance dashboard
+- Added `deltafi.storage.inMemory` option to `site/values.yaml` to run s3proxy with in-memory storage instead of filesystem storage. When enabled, content is stored in s3proxy's memory and content deletion uses the S3 API directly instead of the filesystem-based fast delete process.
+- Added a `ttlSeconds` field to the lookup `LookupResults` type, indicating how long a client may cache the result before re-querying core. It is derived from the table's `refreshDuration` (and `lastRefresh` for supplier-fed tables); it is null when the table isn't cacheable (pull-through, or no `refreshDuration`).
+- Added a `delete_flow` MCP tool that deletes system flows by name and type (transform, rest-data-source, timed-data-source, on-error-data-source, data-sink). Flows must be stopped before deletion. Plugin flows are still removed by uninstalling or upgrading their plugin, and the tool says so when asked to delete one.
+- Added an ordered operations pipeline to ModifyMetadata. Beyond the existing add/copy/delete, you can now bulk-edit metadata by regex without listing keys:
+    - DELETE_MATCHING — delete all keys matching a regex
+    - REPLACE_KEY — rename keys by regex (e.g. make every key HTTP-header-safe)
+    - REPLACE_VALUE — rewrite values by regex, optionally scoped to matching key
+- Added the option to launch the SPeL editor for boolean fields and map values when editing action parameters
+- Added an OpenAPI spec for the Rest endpoints
+- Added a Swagger UI (Admin only) that can be used to run/test Rest endpoints similar to the GraphiQL page
+- Gradle security scanning organized into three layers:
+  - **Scan** — `:project:grype` and `:project:trivy` stream tool output for ad-hoc human use (no artifacts).
+  - **Report** (artifacts, never gate on findings):
+    - Per-subproject `:project:grypeReport` and `:project:trivyReport` emit `<project>/build/reports/security/{grype,trivy}.{json,md}`.
+    - Root `:grypeReport` and `:trivyReport` aggregate every per-subproject result, scan the configured `securityScan.referencedImages`, and emit `build/reports/security/{grype,trivy}.{json,md}`.
+    - `:securitySourceReport` (trivy fs), `:securityConfigReport` (Checkov), `:securitySecretsReport` (trivy secrets) emit `build/reports/security/{source,config,secrets}.{json,md}`.
+    - `:securityReport` stitches all five tool reports into `build/reports/security/security.md` with a per-tool at-a-glance table.
+  - **Gate** (read existing JSON, evaluate threshold):
+    - Per-tool: `:grypeGate`, `:trivyGate`, `:securitySourceGate`, `:securityConfigGate`, `:securitySecretsGate`.
+    - Aggregate: `:securityGate` depends on all five sub-gates.
+    - Thresholds come from `securityScan.failOn.{grypeImage, trivyImage, trivyFs, checkov, trivySecret}`; `-PfailOn=<severity>` overrides for the invocation.
+- DB warmup tasks: `:grypeDbWarmup` and `:trivyDbWarmup` run once per build. All in-task tool invocations skip the in-tool DB update (`grype --no-db-auto-update`, `trivy --skip-db-update --skip-java-db-update`).
+- `:sbom` per image + `:collectSboms` aggregator (CycloneDX, syft).
+- `trivyDbAccess` build service (`maxParallelUsages=1`) serializes every trivy-bearing task across the build to prevent boltdb cache contention that otherwise produces silently-empty JSON output.
+- `securityScan` DSL extension: `failOn` per tool, `suppressionsDir`, `referencedImages`, `toolImages`, `sarif`, `ignoreUnfixed`, `sourcePath`, `secretsPath`, `configPaths`, `skipDirs`, `configSkipPaths`, `sbomDir`, `reportDir`.
+- `referencedImages` is auto-populated from `tui/internal/orchestration/orchestrator.go` `*Container` defaults (excluding `Java*Container` dev/IDE images).
+- Downstream DeltaFi plugins using `org.deltafi.plugin-convention` automatically inherit the full scan/report/gate task set.
+
+### Changed
+- Action documentation now shows parameters in a typed table (type/required/default) with nested parameter types documented and cross-linked in a dedicated Types section
+- Core action documentation is now generated at build time and bundled into the docs image and TUI distribution, so it always reflects the current actions instead of relying on checked-in markdown that could drift.
+- Restyled the DeltaFile stats on the Dashboard page to match the summary-bar look used on the Fleet Errors page
+- Updated `deltafi plugin generate` to generate Gradle 9 scaffolding for Java
+- Removed gradle license plugin and implemented license convention plugin locally
+- Reworked lookup-table caching in the Java action-kit. The new cache honors the per-result `ttlSeconds`, so each table is cached only for its own refresh window. 
+- Lookup result rows are now returned as unmodifiable maps.
+- Cache shape now declared in code via `@Bean CacheSpec` beans next to each `@Cacheable` usage. Existing `cache.caches.*` YAML still overrides any same-named coded default.
+- Caffeine is now part of the action-kit runtime classpath (promoted `testImplementation` → `api`). Plugin developers no longer need to add it explicitly to use the standard caching layer; those preferring a different cache implementation can still substitute their own `CacheManager` bean.
+- New `org.deltafi.test-summary` precompiled-script plugin published from `gradle-plugin`. Downstream DeltaFi plugins that apply `org.deltafi.plugin-convention` now get a pretty boxed summary of test results across subprojects automatically.
+- New `org.deltafi.git-version` precompiled-script plugin published from `gradle-plugin`. Derives the project version from `git describe --tags` with no external plugin dependency.
+
+### Fixed
+- Fixed issue where topics dropdown wasnt staying populated in the UI 'Add Data Source' dialog 
+- Fixed error rows colors in datatable to make it easier to read in dark mode.
+- Fixed SpEL editor colors to make it easier to read in dark mode.
+- Fixed hardcoded colors to by dynamic so they work correctly in dark mode.
+- Fixed an issue where applying changes to `Data Sources`, `Transforms`, and `Data Sinks` by plugin from the GUI was quietly failing
+- Grafana charts had aggregation issue for bytes/files in/out due to misused aggregation function
+- Fixed UUID validation in the GUI DeltaFile Viewer and Import Metadata dialog rejecting valid DIDs. The validation only accepted UUID versions 0-5, but DeltaFi generates UUIDv7 DIDs (e.g. for joined DeltaFiles), so those DIDs could not be entered manually.
+- Fixed silent default-value bugs in `DeltaFileFlowDTO` and `Property` where Lombok `@Builder` was ignoring field initializers. Builders now correctly default `DeltaFileFlowDTO.input`/`actions`/`publishTopics`/`pendingAnnotations`/`pendingActions` to empty values and `Property.editable` to `true`.
+- Fixed an issue where the duplicate check before re-queuing an action could incorrectly report no match on a deep queue, causing duplicate action inputs to be enqueued
+- Fixed an issue where S3 clients were rebuilt on every action invocation (a params equality bug defeated caching) and recreated hourly without being closed, leaking connections. They are now reused per configuration and closed on shutdown.
+- Fixed a bug in the `deltafi artifacts publish` command where the `active` field was not properly read
+- Fixed the `deltafi docs` command exiting immediately in Core Development mode instead of opening the documentation browser (it was resolving the docs directory incorrectly).
+- Fixed folders in the `deltafi docs` browser appearing empty — documentation in nested subdirectories now displays correctly.
+- Migrated `SftpIngress` from `com.jcraft.jsch.Session.setPassword(String)` (deprecated in jsch 2.28+) to the `setPassword(byte[])` overload using UTF-8 bytes.
+
+### Removed
+- Removed the commited core-actions markdown files that are no longer used
+- Unused `spring-retry` dependency from `deltafi-core` (no `@Retryable` methods existed in the codebase).
+- `com.github.hierynomus.license` plugin dropped from the generated Java plugin template (`build.gradle.tmpl`); plugin developers no longer inherit a stale Spring 6 transitive dependency at build time.
+- Dropped the unused `io.rest-assured:rest-assured` testImplementation dependency from `deltafi-core-actions/build.gradle`. No source code in the repo imported it; all 545 deltafi-core-actions tests pass without it.
+
+### Deprecated
+- Marked the `@org.deltafi.actionkit.action.parameters.annotation.Size` annotation for removal in 3.0. Plugins should migrate to `@org.deltafi.common.json.Size` for `minLength`/`maxLength` JSON schema hints.
+- Marked `ActionDescriptor.description` for removal in 3.0. Plugins should populate `ActionOptions.description` via `actionOptions` instead.
+
+### Security
+- Action documentation HTML is sanitized with DOMPurify before rendering, preventing a malicious or careless plugin's docs from injecting script into an operator's browser session
+
+### Tech-Debt/Refactor
+- Refactored the deltafi-action-kit artifact subsystem so the registry client, cache, version listener, and handle primitives are plain Java with no Spring coupling, isolating Spring wiring to the action-kit configuration
+- Replaced the `com.palantir.docker` gradle plugin with an internal `org.deltafi.docker` plugin that preserves the same task layout (`dockerClean`, `dockerPrepare`, `docker`, `dockerTag`, `dockerTag<Name>`, `dockerfileZip`) and DSL (`docker { name; dockerfile; tag(name, image); copySpec; files(...) }`). Applied transparently via `docker-conventions` (internal modules) and `org.deltafi.plugin-convention` (external plugin authors); no consumer build.gradle changes required.
+- Enabled `-Xlint:unchecked` permanently for `compileJava` and `compileTestJava` in `buildSrc/src/main/groovy/java-conventions.gradle` so unchecked-operation regressions surface at build time.
+- Clean up unchecked warnings in Java codebase
+- Cleaned up a warning in DocumentationGenerator class
+- Migrated the platform from Jackson 2 (`com.fasterxml.jackson`) to Jackson 3 (`tools.jackson`) across all modules, including the DGS GraphQL client, Feign clients, and the YAML/XML/CSV dataformat modules. The `jacksonVersion` pin was dropped in favor of the versions managed by Spring Boot.
+- Cleaned up Java compile and javadoc warnings across the build. Standardized javadoc doclint (`Xdoclint:all,-missing`) and registered the standard `@apiNote`/`@implSpec`/`@implNote` tags. Enabled `-Xlint:deprecation` permanently so deprecated-API regressions are visible.
+- Migrated deprecated Jackson APIs (`ObjectMapper.setSerializationInclusion` → builder-based `defaultPropertyInclusion`, `JsonNode.fields()` → `properties()`), DGS `Coercing` signatures (now take `GraphQLContext` and `Locale`), Feign `Client.Default`/`Retryer.Default` → `DefaultClient`/`DefaultRetryer`, Spring `PropertyPlaceholderHelper` 4-arg constructor → 5-arg, and Mockito `withSettings().lenient()` → `.strictness(Strictness.LENIENT)`.
+- Added a CI check that regenerates the committed OpenAPI spec and fails on uncommitted drift or a backward-incompatible (breaking) change
+- Reordered and grouped system properties
+- Bumped DGS codegen 6.3.0 → 8.5.0
+- Bumped DGS framework 10.5.0 → 10.6.0
+- Centralized several previously-inline dependency pins into `gradle.properties`
+- Migrated the `org.deltafi.test-summary` precompiled-script plugin (and its `buildSrc` twin) from `Test.afterSuite(Closure)` to `Test.addTestListener(TestListener)`. The `afterSuite` form is deprecated in Gradle 9.5+ for removal in Gradle 10.
+- Gradle 10 deprecations
+  - Switched the `com.adarshr.test-logger` configuration block in the root `build.gradle` to explicit `propName = value` assignment syntax. The space-separated Groovy DSL form is deprecated in Gradle 9.5+ for removal in Gradle 10.
+  - Replaced the manual `sourcesJar`/`javadocJar` `Jar` tasks and the `artifacts { archives ... }` block in the root `build.gradle` Maven publication setup with the `java { withSourcesJar(); withJavadocJar() }` shortcut. The `archives` configuration is deprecated for artifact declaration in Gradle 9.5+ and removed in Gradle 10; the `java` plugin's shortcuts register the artifacts on `components.java`, so the Maven publication continues to include sources and javadoc jars.
+  - Captured `project.name` at configuration time inside the `test-summary-conventions` precompiled-script plugin so the `afterSuite` test listener no longer dereferences `testTask.project` at execution time. Execution-time `Task.project` access is deprecated in Gradle 9.5+ for removal in Gradle 10 and is incompatible with the configuration cache.
+- Replaced `Project.exec(Closure)` (deprecated for Gradle 9.0) with an injected `ExecOperations` helper in `deltafi-python/build.gradle`.
+- Updated gradle scripts for all Gradle 9.0 deprecations
+
+### Upgrade and Migration
+- Upgraded JSON schema generator to 5.0.0.
+- Upgraded from Jackson 2 to Jackson 3 (aligned with the Spring Boot BOM)
+- Plugins built against the action kit now resolve Jackson via the `tools.jackson` coordinates rather than `com.fasterxml.jackson`; plugins that reference Jackson types directly will need to update their imports when rebuilding against this release.
+- Upgrade Java base image to deltafi/deltafi-java-jre:21.0.11-alpine-1
+- Spring boot 4 stack upgrade
+  - Gradle 9.5.1 required (bumped alongside this upgrade).
+  - spring-boot: 3.5.14 → 4.1.0
+  - spring-framework (transitive): 6.x → 7.x
+  - hibernate-core (transitive): 6.6.x → 7.2.12
+  - hypersistence-utils-hibernate-63 → hypersistence-utils-hibernate-71 (artifact suffix flip for Hibernate 7 API)
+  - DGS framework: 10.6.0 → 12.0.1
+  - artemis-jms-server → artemis-jakarta-server (test runtime in `artemis-ingress`)
+  - spring-boot-starter-cache + caffeine: promoted `testImplementation` → `api` in `deltafi-action-kit`
+  - spring-boot-flyway: added as `testImplementation` in `deltafi-core` (split out of `spring-boot-autoconfigure` in SB4)
+  - spring-boot-jdbc-test: added as `testImplementation` in `deltafi-core` (provides `@JdbcTest`, `@AutoConfigureTestDatabase`)
+  - spring-boot-resttestclient: added as `testImplementation` in `deltafi-core` (provides `TestRestTemplate`)
+  - spring-boot-restclient: added as `testImplementation` in `deltafi-core` (provides `RestTemplateBuilder`)
+  - spring-boot-webmvc-test: added as `testImplementation` in `deltafi-core` (provides `@WebMvcTest`, `@AutoConfigureMockMvc`)
+- Updated go dependencies for golang apps
+- **Plugin authors:** The `org.deltafi.actionkit.lookup.LookupTableClient` (and `CachingLookupTableClient`) constructor signature changed from `(String, GraphQLClient, HttpService)` to `(String, DgsGraphQLClient, HttpService)`. Plugins that **inject** `LookupTableClient` via Spring (the common pattern, used by all in-tree plugin examples) are unaffected. Plugins that **construct** these directly will need to update the second argument's type. Same migration applies if you inject the raw GraphQL client bean: `@Autowired GraphQLClient` → `@Autowired DgsGraphQLClient`. Both interfaces expose the same `executeQuery` overloads.
+- `software.amazon.awssdk:bom`: 2.42.11 → 2.46.4
+- `com.fasterxml.jackson.core:jackson-databind` (and Jackson family): 2.21.2 → 2.22.0
+- `org.projectlombok:lombok`: 1.18.44 → 1.18.46
+- `com.squareup.okhttp3:okhttp`: 4.12.0 → 5.3.2 (major)
+- `io.github.openfeign:feign-core` (and Feign family): 13.11 → 13.12
+- `org.junit:junit-bom`: 6.0.0 → 6.1.0
+- `org.testcontainers:testcontainers` (and Testcontainers family): 1.21.3 → 1.21.4
+- `de.undercouch.download` Gradle plugin: 5.6.0 → 5.7.0
+- `com.gradle.plugin-publish` Gradle plugin: 1.2.1 → 2.1.1 (major)
+- `org.apache.nifi:nifi-flowfile-packager`: 2.4.0 / 2.5.0 → 2.9.0
+- `com.github.ben-manes.caffeine:caffeine`: 3.2.0 / 3.2.2 → 3.2.4
+- `com.fasterxml.uuid:java-uuid-generator`: 5.1.0 / 5.1.1 → 5.2.0
+- `com.github.docker-java:docker-java-core` and `docker-java-transport-httpclient5`: 3.6.0 → 3.7.1
+- `ch.qos.logback:logback-classic`: 1.5.18 → 1.5.34
+- `org.apache.activemq:activemq-client` and `activemq-broker`: 6.2.4 → 6.2.6
+- `com.github.spotbugs:spotbugs-annotations`: 4.9.4 → 4.9.8
+- `io.dropwizard.metrics:metrics-core`: 4.2.37 → 4.2.39
+- `com.github.mwiede:jsch`: 2.27.3 → 2.28.2
+- `io.nats:jnats`: 2.21.5 → 2.25.3
+- `io.valkey:valkey-java`: 5.4.0 → 5.5.0
+- `com.bucket4j:bucket4j_jdk17-jedis`: 8.14.0 → 8.19.0
+- `org.tukaani:xz`: 1.10 → 1.12
+- `org.apache.commons:commons-text`: 1.14.0 → 1.15.0
+- `commons-io:commons-io`: 2.20.0 → 2.22.0
+- `org.apache.commons:commons-lang3`: 3.19.0 → 3.20.0
+- `io.fabric8:kubernetes-client`: 6.14.0 → 7.7.0 (major)
+- `jakarta.annotation:jakarta.annotation-api`: removed dead `1.2.2.1-jre17` pin in `deltafi-core/build.gradle`; now resolves to whatever the Spring Boot BOM provides (currently 2.1.1). The previous pin did not exist on Maven Central and was already being overridden by the BOM at resolution time, so this is a documentation fix rather than a behavior change.
+- `com.jayway.jsonpath:json-path`: 2.9.0 → 3.0.0 (major)
+- `net.logstash.logback:logstash-logback-encoder`: 8.0 → 9.0 (major)
+- `org.flywaydb:flyway-core` and `flyway-database-postgresql`: 11.13.2 → 12.8.1 (major)
+- Gradle wrapper: 8.5 → 9.5.1 (major). Downstream plugin authors who consume `org.deltafi.plugin-convention` should regenerate their wrappers via `./gradlew wrapper --gradle-version 9.5.1` after bumping the convention plugin's version. 
+- Bumped Gradle from 8.5 to 9.5.1
+
 ## [2.56.0] - 2026-06-03
 
 ### Added
@@ -6335,7 +6490,8 @@ No changes.  UI update only
 ### Security
 - Forced all projects to log4j 2.17.0 to avoid CVEs
 
-[Unreleased]: https://gitlab.com/deltafi/deltafi/-/compare/2.56.0...main
+[Unreleased]: https://gitlab.com/deltafi/deltafi/-/compare/2.58.0...main
+[2.58.0]: https://gitlab.com/deltafi/deltafi/-/compare/2.56.0...2.58.0
 [2.56.0]: https://gitlab.com/deltafi/deltafi/-/compare/2.55.4...2.56.0
 [2.55.4]: https://gitlab.com/deltafi/deltafi/-/compare/2.55.3...2.55.4
 [2.55.3]: https://gitlab.com/deltafi/deltafi/-/compare/2.55.2...2.55.3
