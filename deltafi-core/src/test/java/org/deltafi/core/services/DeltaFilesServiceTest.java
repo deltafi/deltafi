@@ -26,6 +26,7 @@ import org.deltafi.common.content.Segment;
 import org.deltafi.common.test.time.TestClock;
 import org.deltafi.common.test.uuid.TestUUIDGenerator;
 import org.deltafi.common.types.*;
+import org.deltafi.common.util.ParameterTemplateException;
 import org.deltafi.core.MockDeltaFiPropertiesService;
 import org.deltafi.core.exceptions.MissingFlowException;
 import org.deltafi.core.generated.types.DeltaFilesFilter;
@@ -95,6 +96,7 @@ class DeltaFilesServiceTest {
     private final PluginService pluginService;
     private final FlowCacheService flowCacheService;
     private final ResumeTrigger resumeTrigger;
+    private final ParameterResolver parameterResolver;
 
     @Captor
     ArgumentCaptor<DeltaFile> deltaFileCaptor;
@@ -148,6 +150,7 @@ class DeltaFilesServiceTest {
         this.pluginService = pluginService;
         this.flowCacheService = flowCacheService;
         this.resumeTrigger = resumeTrigger;
+        this.parameterResolver = parameterResolver;
         PlatformTransactionManager mockTxManager = mock(PlatformTransactionManager.class);
         Mockito.lenient().when(mockTxManager.getTransaction(Mockito.any())).thenReturn(mock(TransactionStatus.class));
         TransactionTemplate transactionTemplate = new TransactionTemplate(mockTxManager);
@@ -1120,6 +1123,41 @@ class DeltaFilesServiceTest {
         assertEquals(deltaFile.getDid(), result.getDid());
         assertFalse(result.getSuccess());
         assertEquals("DeltaFile with did " + deltaFile.getDid() + " had no errors", result.getError());
+    }
+
+    @Test
+    void resumeWithUnresolvableTemplatedParam_leavesActionStuckInFlight() throws ParameterTemplateException {
+        // On resume the flow holds two same-named actions: the prior attempt (RETRIED) and the requeued
+        // retry (QUEUED). When templated param resolution then fails, handleParamResolverError must error
+        // the QUEUED retry -- otherwise the flow stays IN_FLIGHT with an action that was never enqueued.
+        UUID did = UUID.randomUUID();
+        OffsetDateTime now = OffsetDateTime.now(testClock);
+        DeltaFile deltaFile = utilService.buildErrorDeltaFile(did, "dataSource", "cause", "context", now);
+        deltaFile.getFlow("dataSource").setId(UUID.randomUUID());
+
+        // advance() must be stubbed: it is the source of the inputs that flow into finalizeInput. Mimic
+        // production by appending the requeued action (real domain call) and returning its input.
+        when(stateMachine.advance(anyList())).thenAnswer(invocation -> {
+            List<StateMachineInput> inputs = invocation.getArgument(0);
+            DeltaFileFlow flow = inputs.getFirst().flow();
+            Action queued = flow.queueNewAction("ErrorAction", null, ActionType.TRANSFORM, false, now);
+            return List.of(WrappedActionInput.builder()
+                    .deltaFile(deltaFile)
+                    .actionContext(ActionContext.builder()
+                            .did(did).flowId(flow.getId()).actionName(queued.getName()).joinedDids(List.of()).build())
+                    .actionParams(Map.of("retryCount", "{{ metadata['retryCount'] }}"))
+                    .build());
+        });
+        doThrow(new ParameterTemplateException("retryCount: string found, integer expected"))
+                .when(parameterResolver).resolve(any());
+        when(deltaFileCacheService.get(did)).thenReturn(deltaFile);
+
+        deltaFilesService.resumeDeltaFiles(List.of(deltaFile), List.of());
+
+        verify(deltaFileRepo).saveAndFlush(deltaFileCaptor.capture());
+        DeltaFileFlow savedFlow = deltaFileCaptor.getValue().getFlow("dataSource");
+        assertEquals(ERROR, savedFlow.lastAction().getState(), "retry action left QUEUED -> stuck in flight");
+        assertNotEquals(DeltaFileFlowState.IN_FLIGHT, savedFlow.getState());
     }
 
     private List<ActionConfiguration> mockActions(String... names) {

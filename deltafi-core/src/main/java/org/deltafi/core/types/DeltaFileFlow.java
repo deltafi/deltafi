@@ -397,6 +397,18 @@ public class DeltaFileFlow {
                 .orElse(null);
     }
 
+    public Action getQueuedAction(String actionName) {
+        return getActions().stream()
+                .filter(action -> queuedWithName(action,  actionName))
+                .findFirst()
+                .orElse(null);
+    }
+
+    private boolean queuedWithName(Action action, String actionName) {
+        return action.getName().equals(actionName)
+                && (ActionState.QUEUED.equals(action.getState()) || ActionState.COLD_QUEUED.equals(action.getState()));
+    }
+
     public Action getPendingAction(String actionName, UUID did) {
         Action action = lastAction();
         if (action == null || !action.getName().equals(actionName) || action.terminal()) {

@@ -2617,7 +2617,7 @@ public class DeltaFilesService {
             return;
         }
         DeltaFileFlow deltaFileFlow = deltaFile.getFlow(input.getActionContext().getFlowId());
-        Action failedAction = deltaFileFlow.getAction(input.getActionContext().getActionName());
+        Action failedAction = deltaFileFlow.getQueuedAction(input.getActionContext().getActionName());
 
         OffsetDateTime now = OffsetDateTime.now(clock);
         failedAction.error(now, now, now, "Missing one or more parent DeltaFiles", errorContext);
@@ -2635,7 +2635,7 @@ public class DeltaFilesService {
             return;
         }
         DeltaFileFlow deltaFileFlow = deltaFile.getFlow(input.getActionContext().getFlowId());
-        Action failedAction = deltaFileFlow.getAction(input.getActionContext().getActionName());
+        Action failedAction = deltaFileFlow.getQueuedAction(input.getActionContext().getActionName());
 
         OffsetDateTime now = OffsetDateTime.now(clock);
         failedAction.error(now, now, now, "Unable to resolve templated action parameter", errorContext);
