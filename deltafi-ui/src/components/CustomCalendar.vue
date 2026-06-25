@@ -78,6 +78,23 @@ const formattedValue = computed(() => {
   return `${dayjs(new Date(startTimeDate.value)).format(timestampFormat)}  -  ${dayjs(new Date(endTimeDate.value)).format(timestampFormat)}`;
 });
 
+// Keep the displayed range in sync when the bound dates change externally
+watch(
+  () => [props.startTimeDate, props.endTimeDate],
+  ([newStart, newEnd]) => {
+    if (newStart) startTimeDate.value = newStart;
+    if (newEnd) endTimeDate.value = newEnd;
+
+    const resetDefault = props.resetDefault;
+    const isDefaultRange = resetDefault && newStart && newEnd && newStart.getTime() === resetDefault[0].getTime() && newEnd.getTime() === resetDefault[1].getTime();
+    if (isDefaultRange) {
+      tmpHelperButtonSelected.value = false;
+      helperButtonSelected.value = false;
+      helperButtonText.value = null;
+    }
+  }
+);
+
 const defaultStartTimeDate = computed(() => {
   const date = dayjs().utc();
   return props.startTimeDate || (uiConfig.useUTC ? date : date.local()).startOf("day");
