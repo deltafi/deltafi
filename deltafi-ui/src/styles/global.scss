@@ -1457,6 +1457,16 @@ html.dark-mode {
     color: var(--df-body-color);
   }
 
+  /* Filtered rows: Bootstrap's light-yellow .table-warning is unreadable against
+     light dark-mode text. Tint the dark surface with yellow (opaque so the
+     tr/td/th layers don't double-composite) and keep light text. */
+  .table-warning,
+  .table-warning > th,
+  .table-warning > td {
+    background-color: color-mix(in srgb, var(--yellow-400) 28%, var(--surface-card));
+    color: var(--df-body-color);
+  }
+
   .modal-content {
     background-color: var(--surface-card);
     border-color: var(--df-border-color);
