@@ -55,6 +55,8 @@ import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import java.io.*;
@@ -2561,9 +2563,22 @@ public class DeltaFilesService {
             return;
         }
 
+        List<WrappedActionInput> toQueue = finalizeInput(actionInputs);
+        if (TransactionSynchronizationManager.isSynchronizationActive()) {
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                @Override
+                public void afterCommit() {
+                    putActions(toQueue, checkUnique);
+                }
+            });
+        } else {
+            putActions(toQueue, checkUnique);
+        }
+    }
+
+    private void putActions(List<WrappedActionInput> actionInputs, boolean checkUnique) {
         try {
-            List<WrappedActionInput> toQueue = finalizeInput(actionInputs);
-            coreEventQueue.putActions(toQueue, checkUnique);
+            coreEventQueue.putActions(actionInputs, checkUnique);
         } catch (Exception e) {
             log.error("Failed to queue action(s)", e);
             throw new EnqueueActionException("Failed to queue action(s)", e);

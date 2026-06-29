@@ -50,6 +50,8 @@ import org.springframework.core.env.Environment;
 import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionStatus;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import java.time.Duration;
@@ -1983,6 +1985,67 @@ class DeltaFilesServiceTest {
 
         verify(resumeTrigger).signalBacklog();
         verify(metricService).increment(any());
+    }
+
+    @Test
+    void resumeDeltaFiles_doesNotDispatchActionsUntilTransactionCommits() {
+        DeltaFile deltaFile = fullFlowExemplarService.postTransformDeltaFile(UUID.randomUUID());
+        DeltaFileFlow flow = deltaFile.lastFlow();
+        OffsetDateTime now = OffsetDateTime.now(testClock);
+        flow.setState(DeltaFileFlowState.ERROR);
+        flow.lastAction().error(now, now, now, "egress unavailable", "connection refused");
+        deltaFile.updateState(now);
+
+        WrappedActionInput actionInput = mock(WrappedActionInput.class);
+        ActionContext actionContext = mock(ActionContext.class);
+        when(actionInput.getActionContext()).thenReturn(actionContext);
+        when(actionContext.getJoinedDids()).thenReturn(List.of());
+        when(stateMachine.advance(any())).thenReturn(List.of(actionInput));
+
+        TransactionSynchronizationManager.initSynchronization();
+        try {
+            List<RetryResult> results = deltaFilesService.resumeDeltaFiles(List.of(deltaFile), List.of());
+
+            assertThat(results).singleElement().extracting(RetryResult::getSuccess).isEqualTo(true);
+            verify(coreEventQueue, never()).putActions(any(), anyBoolean());
+
+            List<TransactionSynchronization> synchronizations =
+                    TransactionSynchronizationManager.getSynchronizations();
+            assertThat(synchronizations).hasSize(1);
+            synchronizations.forEach(TransactionSynchronization::afterCommit);
+
+            verify(coreEventQueue).putActions(List.of(actionInput), false);
+        } finally {
+            TransactionSynchronizationManager.clearSynchronization();
+        }
+    }
+
+    @Test
+    void resumeDeltaFiles_doesNotDispatchActionsWhenTransactionRollsBack() {
+        DeltaFile deltaFile = fullFlowExemplarService.postTransformDeltaFile(UUID.randomUUID());
+        DeltaFileFlow flow = deltaFile.lastFlow();
+        OffsetDateTime now = OffsetDateTime.now(testClock);
+        flow.setState(DeltaFileFlowState.ERROR);
+        flow.lastAction().error(now, now, now, "egress unavailable", "connection refused");
+        deltaFile.updateState(now);
+
+        WrappedActionInput actionInput = mock(WrappedActionInput.class);
+        ActionContext actionContext = mock(ActionContext.class);
+        when(actionInput.getActionContext()).thenReturn(actionContext);
+        when(actionContext.getJoinedDids()).thenReturn(List.of());
+        when(stateMachine.advance(any())).thenReturn(List.of(actionInput));
+
+        TransactionSynchronizationManager.initSynchronization();
+        try {
+            deltaFilesService.resumeDeltaFiles(List.of(deltaFile), List.of());
+
+            TransactionSynchronizationManager.getSynchronizations().forEach(
+                    synchronization -> synchronization.afterCompletion(TransactionSynchronization.STATUS_ROLLED_BACK));
+
+            verify(coreEventQueue, never()).putActions(any(), anyBoolean());
+        } finally {
+            TransactionSynchronizationManager.clearSynchronization();
+        }
     }
 
     @Test
