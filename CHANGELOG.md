@@ -5,6 +5,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 All [Unreleased] changes can be viewed in GitLab.
 
+## [2.58.1] - 2026-06-30
+
+### Fixed
+- On the DeltaFiles Search page, clearing the filters now also resets the date/time picker. Previously the old timeframe and its highlighted shortcut (e.g. "Last 1 Hour") stayed on screen even though the search had been cleared. The Fleet Search page gets the same fix, since both share the search date toolbar.
+- Improved readability of highlighted table rows in dark mode, which previously had yellow backgrounds that made the text hard to read.
+- Fixed auto-resumed DeltaFiles becoming stuck In-Flight when an action returned before the resume transaction committed.
+- Fixed a bug where resuming a DeltaFile could get stuck in flight when there is an error evaluating SPeL parameters
+
+### Tech-Debt/Refactor
+- Update clustermonitor dependencies for CVE mitigation
+- Update golang dependencies for TUI
+
 ## [2.58.0] - 2026-06-23
 
 ### Added
@@ -6490,7 +6502,8 @@ No changes.  UI update only
 ### Security
 - Forced all projects to log4j 2.17.0 to avoid CVEs
 
-[Unreleased]: https://gitlab.com/deltafi/deltafi/-/compare/2.58.0...main
+[Unreleased]: https://gitlab.com/deltafi/deltafi/-/compare/2.58.1...main
+[2.58.1]: https://gitlab.com/deltafi/deltafi/-/compare/2.58.0...2.58.1
 [2.58.0]: https://gitlab.com/deltafi/deltafi/-/compare/2.56.0...2.58.0
 [2.56.0]: https://gitlab.com/deltafi/deltafi/-/compare/2.55.4...2.56.0
 [2.55.4]: https://gitlab.com/deltafi/deltafi/-/compare/2.55.3...2.55.4
