@@ -1,7 +1,7 @@
 Category,Name,Description
 Administration,Admin,Full system access
-ArtifactRegistryRead,Artifacts,Read artifacts from the artifact registry
-ArtifactRegistryWrite,Artifacts,Write artifacts to the artifact registry
+Artifacts,ArtifactRegistryRead,Read artifacts from the artifact registry
+Artifacts,ArtifactRegistryWrite,Write artifacts to the artifact registry
 General,UIAccess,Access to the UI
 General,StatusView,View system status
 General,StatusPause,Pause and resume system status checks
