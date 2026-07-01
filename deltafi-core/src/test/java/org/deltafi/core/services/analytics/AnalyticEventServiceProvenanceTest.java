@@ -110,6 +110,24 @@ class AnalyticEventServiceProvenanceTest {
     }
 
     @Test
+    void recordProvenance_recordsCompleteWhenFlowPendingAnnotations() {
+        when(deltaFiProperties.isProvenanceEnabled()).thenReturn(true);
+        when(deltaFiProperties.getSystemName()).thenReturn("system");
+
+        DeltaFile deltaFile = createTestDeltaFile();
+        DeltaFileFlow sinkFlow = createFlow("MySink", FlowType.DATA_SINK, DeltaFileFlowState.PENDING_ANNOTATIONS);
+        deltaFile.getFlows().add(sinkFlow);
+
+        analyticEventService.recordProvenance(deltaFile, sinkFlow);
+
+        ArgumentCaptor<ProvenanceClient.ProvenanceRecord> captor =
+                ArgumentCaptor.forClass(ProvenanceClient.ProvenanceRecord.class);
+        verify(provenanceClient).writeRecord(captor.capture());
+
+        assertEquals("COMPLETE", captor.getValue().finalState());
+    }
+
+    @Test
     void recordProvenance_setsDataSinkForDataSinkFlows() {
         when(deltaFiProperties.isProvenanceEnabled()).thenReturn(true);
         when(deltaFiProperties.getSystemName()).thenReturn("system");

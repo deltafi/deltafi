@@ -387,7 +387,9 @@ public class AnalyticEventService {
         List<String> transforms = buildTransformPath(deltaFile, terminalFlow);
         Map<String, String> annotations = filterProvenanceAnnotations(Annotation.toMap(deltaFile.getAnnotations()));
         String dataSink = terminalFlow.isDataSink() ? terminalFlow.getName() : null;
-        String finalState = terminalFlow.getState().name();
+        // A flow awaiting annotations has already egressed; its provenance outcome is COMPLETE
+        DeltaFileFlowState flowState = terminalFlow.getState();
+        String finalState = (flowState == DeltaFileFlowState.PENDING_ANNOTATIONS ? DeltaFileFlowState.COMPLETE : flowState).name();
         UUID parentDid = deltaFile.getParentDids().isEmpty() ? null : deltaFile.getParentDids().getFirst();
 
         provenanceClient.writeRecord(ProvenanceClient.ProvenanceRecord.from(

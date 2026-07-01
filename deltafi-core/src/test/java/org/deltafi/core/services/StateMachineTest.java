@@ -174,6 +174,49 @@ class StateMachineTest {
     }
 
     @Test
+    void testModeEgressRecordsProvenanceWithFinalizedFlowState() {
+        DeltaFile deltaFile = utilService.emptyDeltaFile(UUID.randomUUID(), TRANSFORM_FLOW);
+        deltaFile.setStage(DeltaFileStage.IN_FLIGHT);
+
+        DeltaFileFlow deltaFileFlow = deltaFile.firstFlow();
+        deltaFileFlow.getFlowDefinition().setType(FlowType.TRANSFORM);
+        deltaFileFlow.setTestMode(true);
+
+        TransformFlow transformFlow = TransformFlowMaker.builder()
+                .name(TRANSFORM_FLOW)
+                .testMode(true)
+                .flowState(FlowState.RUNNING).build().makeTransformFlow();
+        when(transformFlowService.getActiveFlowByName(TRANSFORM_FLOW)).thenReturn(transformFlow);
+
+        DataSink dataSinkConfig = DataSinkMaker.builder().build().makeDataSink();
+        when(dataSinkService.getActiveFlowByName("dataSink"))
+                .thenReturn(dataSinkConfig);
+
+        DeltaFileFlow dataSink = new DeltaFileFlow();
+        dataSink.setFlowDefinition(FlowDefinition.builder().name("dataSink").type(FlowType.DATA_SINK).build());
+        dataSink.setTestMode(true);
+        dataSink.setTestModeReason("test mode reason");
+        dataSink.setPendingActions(new ArrayList<>(dataSinkConfig.allActionConfigurations().stream().map(ActionConfiguration::getName).toList()));
+        deltaFile.getFlows().add(dataSink);
+        when(publisherService.subscribers(transformFlow, deltaFile, deltaFileFlow))
+                .thenReturn(Set.of(dataSink));
+
+        when(deltaFiPropertiesService.getDeltaFiProperties()).thenReturn(new DeltaFiProperties());
+
+        // capture the flow state at the instant provenance is recorded - it must already be terminal
+        DeltaFileFlowState[] stateWhenRecorded = new DeltaFileFlowState[1];
+        Mockito.doAnswer(invocation -> {
+            stateWhenRecorded[0] = ((DeltaFileFlow) invocation.getArgument(1)).getState();
+            return null;
+        }).when(analyticEventService).recordProvenance(Mockito.any(), Mockito.any());
+
+        StateMachineInput stateMachineInput = new StateMachineInput(deltaFile, deltaFileFlow);
+        stateMachine.advance(List.of(stateMachineInput));
+
+        assertThat(stateWhenRecorded[0]).isEqualTo(DeltaFileFlowState.FILTERED);
+    }
+
+    @Test
     void advancesInTransformationFlowWithJoiningTransformAction() {
         DeltaFile deltaFile = utilService.emptyDeltaFile(UUID.randomUUID(), TRANSFORM_FLOW);
 
