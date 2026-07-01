@@ -188,6 +188,13 @@
                 class="p-button-sm"
                 @click="goToPipelineView"
             />
+            <Button
+                v-tooltip.top="'Search DeltaFiles associated with this ' + formatTypeLong(selectedNode.type)"
+                label="Search DeltaFiles"
+                icon="pi pi-search"
+                class="p-button-outlined p-button-sm"
+                @click="goToSearch(selectedNode)"
+            />
           </div>
 
           <!-- Action chain for flows -->
@@ -806,6 +813,32 @@ function goToPipelineView() {
   if (selectedNode.value) {
     router.push(`/pipeline/${selectedNode.value.type}/${selectedNode.value.name}`);
   }
+}
+
+// Map a node's type to the corresponding DeltaFile search filter param.
+// Data sources come in several flavors but all filter on the same param.
+function searchParamForNode(node) {
+  switch (node.type) {
+    case "TRANSFORM":
+      return "transforms";
+    case "DATA_SINK":
+      return "dataSinks";
+    case "TOPIC":
+      return "topics";
+    case "REST_DATA_SOURCE":
+    case "TIMED_DATA_SOURCE":
+    case "ON_ERROR_DATA_SOURCE":
+      return "dataSources";
+    default:
+      return null;
+  }
+}
+
+// Navigate to the DeltaFile search page pre-filtered to this node's flow/topic.
+function goToSearch(node) {
+  const param = searchParamForNode(node);
+  if (!param) return;
+  router.push({ path: "/deltafile/search", query: { [param]: node.name } });
 }
 
 function showDataflow() {

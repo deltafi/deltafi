@@ -164,6 +164,15 @@
           </button>
         </div>
         <div class="panel-content">
+          <div class="panel-actions">
+            <Button
+              v-tooltip.top="'Search DeltaFiles associated with this ' + formatNodeType(selectedNode.type)"
+              label="Search DeltaFiles"
+              icon="pi pi-search"
+              class="p-button-outlined p-button-sm"
+              @click="goToSearch(selectedNode)"
+            />
+          </div>
           <div v-if="selectedNode.type === 'TOPIC'">
             <p class="text-muted">
               Topics connect publishers to subscribers. Click on connected flows to see their details.
@@ -835,6 +844,32 @@ function onFlowSelected(event) {
   }
 }
 
+// Map a node's type to the corresponding DeltaFile search filter param.
+// Data sources come in several flavors but all filter on the same param.
+function searchParamForNode(node) {
+  switch (node.type) {
+    case "TRANSFORM":
+      return "transforms";
+    case "DATA_SINK":
+      return "dataSinks";
+    case "TOPIC":
+      return "topics";
+    case "REST_DATA_SOURCE":
+    case "TIMED_DATA_SOURCE":
+    case "ON_ERROR_DATA_SOURCE":
+      return "dataSources";
+    default:
+      return null;
+  }
+}
+
+// Navigate to the DeltaFile search page pre-filtered to this node's flow/topic.
+function goToSearch(node) {
+  const param = searchParamForNode(node);
+  if (!param) return;
+  router.push({ path: "/deltafile/search", query: { [param]: node.name } });
+}
+
 async function onSelectNode(node) {
   // Show details in bottom panel
   selectedNode.value = node;
@@ -1373,6 +1408,12 @@ onUnmounted(() => {
   flex: 1;
   overflow-y: auto;
   padding: 1rem;
+}
+
+.panel-actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
 }
 
 /* Loading indicator */
