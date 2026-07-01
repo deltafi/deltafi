@@ -57,16 +57,21 @@ const dateTypeModel = computed({
   set: (value) => emit("update:dateType", value),
 });
 
-const onDateChange = (startDate, endDate) => {
-  emit("dateChange", startDate, endDate);
+const onDateChange = (startDate, endDate, relativeRange = null) => {
+  emit("dateChange", startDate, endDate, relativeRange);
 };
 
 const refreshUpdateDateTime = () => {
   return customCalendarRef.value?.refreshUpdateDateTime();
 };
 
+const applyHelperRange = (name) => {
+  return customCalendarRef.value?.applyHelperRange(name);
+};
+
 defineExpose({
   refreshUpdateDateTime,
+  applyHelperRange,
 });
 </script>
 

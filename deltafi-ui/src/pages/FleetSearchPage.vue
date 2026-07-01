@@ -67,6 +67,7 @@
       <div>
         <PageHeader heading="Fleet Search">
           <SearchDateToolbar
+            ref="searchToolbarRef"
             v-model:date-type="model.queryDateTypeOptions"
             :date-type-options="queryDateTypes"
             :start-time-date="model.startTimeDate"
@@ -167,6 +168,7 @@ const {
 } = useDeltaFileSearchFilters({ storageKey: "fleet-search-persisted-params" });
 
 const sidebarOpen = ref(false);
+const searchToolbarRef = ref(null);
 const formattedDataSourceNames = ref([]);
 
 // Dropdown options derived from aggregated options
@@ -253,6 +255,11 @@ onBeforeMount(async () => {
   // Open sidebar if there are active filters
   sidebarOpen.value = activeAdvancedOptions.value;
   await nextTick();
+  // Re-evaluate a persisted relative helper range against the current time so
+  // the window slides forward on revisit (see DeltaFileSearchPage for details).
+  if (model.value.relativeTimeRange) {
+    searchToolbarRef.value?.applyHelperRange(model.value.relativeTimeRange);
+  }
   executeSearch();
   setupFilterWatchers(executeSearch);
 });
@@ -292,8 +299,8 @@ const removeAnnotationItem = (item) => {
   model.value.annotations.splice(index, 1);
 };
 
-const onDateChange = (startDate, endDate) => {
-  updateDateRange(startDate, endDate);
+const onDateChange = (startDate, endDate, relativeRange = null) => {
+  updateDateRange(startDate, endDate, relativeRange);
 };
 
 const executeSearch = async () => {

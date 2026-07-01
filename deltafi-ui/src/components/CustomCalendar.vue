@@ -120,11 +120,11 @@ const resetDateTime = async (value) => {
   helperButtonSelected.value = false;
   helperButtonText.value = null;
   if (props.resetDefault) {
-    emit("update:startTimeDate:endTimeDate", props.resetDefault[0], props.resetDefault[1]);
+    emit("update:startTimeDate:endTimeDate", props.resetDefault[0], props.resetDefault[1], null);
   } else if (props.startTimeDate) {
-    emit("update:startTimeDate:endTimeDate", props.startTimeDate, props.endTimeDate);
+    emit("update:startTimeDate:endTimeDate", props.startTimeDate, props.endTimeDate, null);
   } else {
-    emit("update:startTimeDate:endTimeDate", new Date(defaultStartTimeDate.value.format(timestampFormat)), new Date(defaultEndTimeDate.value.format(timestampFormat)));
+    emit("update:startTimeDate:endTimeDate", new Date(defaultStartTimeDate.value.format(timestampFormat)), new Date(defaultEndTimeDate.value.format(timestampFormat)), null);
   }
   randomKey.value = Math.random();
   if (value) {
@@ -156,7 +156,7 @@ const updateInputDateTime = async (startDate, endDate) => {
   startTimeDate.value = startDate;
   endTimeDate.value = endDate;
   showCalendar();
-  emit("update:startTimeDate:endTimeDate", startDate, endDate);
+  emit("update:startTimeDate:endTimeDate", startDate, endDate, helperButtonText.value);
 };
 
 const tempEndDate = ref(null);
@@ -221,12 +221,28 @@ const refreshUpdateDateTime = () => {
   const refreshValue = _.find(helperButtons.value, { name: helperButtonText.value });
 
   if (refreshValue) {
-    emit("update:startTimeDate:endTimeDate", refreshValue.from, refreshValue.to);
+    emit("update:startTimeDate:endTimeDate", refreshValue.from, refreshValue.to, helperButtonText.value);
   }
+};
+
+// Re-apply a previously-selected helper range (e.g. restored from persistence),
+// re-evaluating it against the current time so the window slides forward and
+// restores the helper-button selection state (label + range highlight).
+const applyHelperRange = (name) => {
+  const match = _.find(helperButtons.value, { name });
+  if (!match) return;
+  helperButtonSelected.value = true;
+  tmpHelperButtonSelected.value = true;
+  helperButtonText.value = name;
+  tmpHelperButtonText.value = name;
+  startTimeDate.value = match.from;
+  endTimeDate.value = match.to;
+  emit("update:startTimeDate:endTimeDate", match.from, match.to, name);
 };
 
 defineExpose({
   refreshUpdateDateTime,
+  applyHelperRange,
   setDateTimeToday,
   resetDateTime,
 });
@@ -390,6 +406,14 @@ html.dark-mode {
 
   .vdpr-datepicker__calendar-table td:hover {
     background-color: var(--surface-hover);
+  }
+
+  /* Restore the selected-range highlight: the td override above has higher
+     specificity than the library's .highlighted rule, so re-apply it here. */
+  .vdpr-datepicker__calendar-table td.highlighted,
+  .vdpr-datepicker__calendar-table td.highlighted:hover {
+    background-color: #3a86ff;
+    color: #fff;
   }
 
   .vdpr-datepicker__calendar-table .faded {

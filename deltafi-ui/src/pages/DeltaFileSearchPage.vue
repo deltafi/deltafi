@@ -248,6 +248,12 @@ onBeforeMount(async () => {
   loadPersistedParams();
   fetchDropdownOptions();
   await nextTick();
+  // If a relative helper range (e.g. "Last 3 Days") was persisted, re-evaluate
+  // it against the current time so the window slides forward and picks up files
+  // created since it was last applied.
+  if (model.value.relativeTimeRange) {
+    searchToolbarRef.value?.applyHelperRange(model.value.relativeTimeRange);
+  }
   await fetchDeltaFilesDataNoDebounce();
   collapsedSearchOption.value = !activeAdvancedOptions.value;
   setupWatchers();
@@ -324,8 +330,8 @@ const fetchDeltaFilesDataNoDebounce = async () => {
   totalRecords.value = data.data.deltaFiles.totalCount;
 };
 
-const onDateChange = (startDate, endDate) => {
-  updateDateRange(startDate, endDate);
+const onDateChange = (startDate, endDate, relativeRange = null) => {
+  updateDateRange(startDate, endDate, relativeRange);
 };
 
 const refreshDeltaFilesData = async () => {

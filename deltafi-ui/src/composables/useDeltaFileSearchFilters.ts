@@ -38,6 +38,10 @@ export interface SearchFilterModel {
   // Search filter options
   startTimeDate: Date;
   endTimeDate: Date;
+  // Name of the relative helper range (e.g. "Last 3 Days") when one is active.
+  // Persisted so the window can be re-evaluated against "now" on revisit; null
+  // for an explicit/manual date range.
+  relativeTimeRange: string | null;
   fileName: string | null;
   pendingAnnotations: boolean | null;
   validatedAnnotations: Array<{ key: string; value: string; valid: boolean }>;
@@ -139,6 +143,7 @@ const PERSISTED_FIELDS = [
   "queryDateTypeOptions",
   "startTimeDate",
   "endTimeDate",
+  "relativeTimeRange",
 ];
 
 export interface UseDeltaFileSearchFiltersOptions {
@@ -176,6 +181,7 @@ export default function useDeltaFileSearchFilters(options: UseDeltaFileSearchFil
     sortField: "modified",
     startTimeDate: new Date(defaultStartTimeDate.value.format(TIMESTAMP_FORMAT)),
     endTimeDate: new Date(defaultEndTimeDate.value.format(TIMESTAMP_FORMAT)),
+    relativeTimeRange: null,
     fileName: null,
     pendingAnnotations: null,
     validatedAnnotations: [],
@@ -417,10 +423,12 @@ export default function useDeltaFileSearchFilters(options: UseDeltaFileSearchFil
     savePersistedParams();
   };
 
-  // Update date range
-  const updateDateRange = (startDate: Date, endDate: Date) => {
+  // Update date range. `relativeRange` is the helper-button name (e.g.
+  // "Last 3 Days") when the range came from one, or null for a manual range.
+  const updateDateRange = (startDate: Date, endDate: Date, relativeRange: string | null = null) => {
     model.value.startTimeDate = startDate;
     model.value.endTimeDate = endDate;
+    model.value.relativeTimeRange = relativeRange;
   };
 
   // Watch for changes and persist (only after initialization)
