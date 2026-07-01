@@ -4,7 +4,7 @@ FROM alpine:latest AS docker-src
 RUN apk add --no-cache bash curl ca-certificates jq
 
 # https://docs.docker.com/engine/release-notes/28/
-ARG DOCKER_VERSION=29.5.3
+ARG DOCKER_VERSION=29.6.1
 
 # Download and install the latest Docker CLI static binary for the current architecture
 RUN set -e; \

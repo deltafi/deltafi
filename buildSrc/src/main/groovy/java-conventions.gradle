@@ -18,6 +18,15 @@ dependencies {
     testAnnotationProcessor "org.projectlombok:lombok:${lombokVersion}"
 }
 
+configurations.all {
+    resolutionStrategy {
+        dependencySubstitution {
+            // CVE-2026-0636: force bouncycastle past the 1.81 pulled transitively by io.minio:minio
+            substitute module('org.bouncycastle:bcprov-jdk18on') using module("org.bouncycastle:bcprov-jdk18on:${bouncyCastleVersion}") because 'CVE-2026-0636'
+        }
+    }
+}
+
 tasks.register('allDeps', DependencyReportTask)
 
 javadoc {

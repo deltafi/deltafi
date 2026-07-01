@@ -54,7 +54,7 @@ securityScan {
     // Auto-populated from tui/internal/orchestration/orchestrator.go when present.
     // Override or extend to scan additional externally-pulled images.
     referencedImages = [
-        'deltafi/grafana:12.4.3-0',
+        'deltafi/grafana:12.4.5-0',
         'deltafi/timescaledb:2.19.3-pg16-10',
         // ...
     ]
