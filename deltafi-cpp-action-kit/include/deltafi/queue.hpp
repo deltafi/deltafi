@@ -55,31 +55,35 @@ public:
 
     // Publish data to the named queue with current timestamp as score.
     void put(const std::string& queue_name, const std::string& data) {
-        std::lock_guard lock(shared_mu_);
         double score = static_cast<double>(
             std::chrono::duration_cast<std::chrono::milliseconds>(
                 std::chrono::system_clock::now().time_since_epoch()).count());
-        shared_conn_->zadd(queue_name, score, data);
+        with_shared([&](internal::RespConnection& conn) {
+            conn.zadd(queue_name, score, data);
+        });
     }
 
     // Update the heartbeat timestamp for an action.
     void heartbeat(const std::string& action_name) {
-        std::lock_guard lock(shared_mu_);
-        shared_conn_->hset(heartbeat_key, action_name,
-                           format_time(std::chrono::system_clock::now()));
+        with_shared([&](internal::RespConnection& conn) {
+            conn.hset(heartbeat_key, action_name,
+                      format_time(std::chrono::system_clock::now()));
+        });
     }
 
     // Record a long-running task execution.
     void set_long_running_task(const std::string& key,
                                 const std::string& value) {
-        std::lock_guard lock(shared_mu_);
-        shared_conn_->hset(long_running_task_key, key, value);
+        with_shared([&](internal::RespConnection& conn) {
+            conn.hset(long_running_task_key, key, value);
+        });
     }
 
     // Remove a long-running task entry.
     void remove_long_running_task(const std::string& key) {
-        std::lock_guard lock(shared_mu_);
-        shared_conn_->hdel(long_running_task_key, key);
+        with_shared([&](internal::RespConnection& conn) {
+            conn.hdel(long_running_task_key, key);
+        });
     }
 
     // Create a dedicated subscription connection.
@@ -97,6 +101,23 @@ private:
     std::string password_;
     std::unique_ptr<internal::RespConnection> shared_conn_;
     std::mutex shared_mu_;
+
+    // Execute op against the shared connection. If the connection is broken,
+    // rebuild it via connect_with_retry and retry op once. The mutex is held
+    // for the whole sequence so concurrent callers serialize on the rebuild.
+    template <typename F>
+    void with_shared(F&& op) {
+        std::lock_guard lock(shared_mu_);
+        try {
+            op(*shared_conn_);
+            return;
+        } catch (const std::exception& ex) {
+            spdlog::warn("Redis op failed, reconnecting: {}", ex.what());
+        }
+        shared_conn_.reset();
+        shared_conn_ = internal::connect_with_retry(url_, password_);
+        op(*shared_conn_);
+    }
 };
 
 } // namespace deltafi

@@ -228,8 +228,17 @@ private:
                     process(raw);
                 });
             } catch (const std::exception& ex) {
-                if (!stop.stop_requested()) {
-                    spdlog::error("[{}] poll error: {}", name_, ex.what());
+                if (stop.stop_requested()) break;
+                spdlog::error("[{}] poll error, reconnecting: {}",
+                              name_, ex.what());
+                poller_conn_.reset();
+                try {
+                    poller_conn_ = queue_.create_poller_connection();
+                } catch (const std::exception& reconnect_ex) {
+                    if (stop.stop_requested()) break;
+                    spdlog::error("[{}] reconnect failed: {}",
+                                  name_, reconnect_ex.what());
+                    std::this_thread::sleep_for(std::chrono::seconds(1));
                 }
             }
         }

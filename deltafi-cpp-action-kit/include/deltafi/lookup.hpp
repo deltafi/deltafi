@@ -453,8 +453,17 @@ private:
                 queue_.put(event.id, result_json);
 
             } catch (const std::exception& ex) {
-                if (!stop.stop_requested()) {
-                    spdlog::error("[lookup-supplier] poll error: {}", ex.what());
+                if (stop.stop_requested()) break;
+                spdlog::error("[lookup-supplier] poll error, reconnecting: {}",
+                              ex.what());
+                conn_.reset();
+                try {
+                    conn_ = queue_.create_poller_connection();
+                } catch (const std::exception& reconnect_ex) {
+                    if (stop.stop_requested()) break;
+                    spdlog::error("[lookup-supplier] reconnect failed: {}",
+                                  reconnect_ex.what());
+                    std::this_thread::sleep_for(std::chrono::seconds(1));
                 }
             }
         }

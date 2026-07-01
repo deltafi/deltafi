@@ -127,9 +127,10 @@ else
 	@echo "$(ACTION_KIT_VERSION)" > $(DOCKER_BUILD_DIR)/deltafi-cpp-action-kit/VERSION
 	@rm -rf $(DOCKER_BUILD_DIR)/.clone
 endif
-	@cp -r $(CURDIR) $(DOCKER_BUILD_DIR)/deltafi-cpp-hello-world
-	@rm -rf $(DOCKER_BUILD_DIR)/deltafi-cpp-hello-world/.docker-build \
-		$(DOCKER_BUILD_DIR)/deltafi-cpp-hello-world/build
+	# Copy plugin source, excluding the staging dir (a child of CURDIR) and local build
+	@mkdir -p $(DOCKER_BUILD_DIR)/deltafi-cpp-hello-world
+	@tar -C $(CURDIR) --exclude=./.docker-build --exclude=./build -cf - . \
+		| tar -C $(DOCKER_BUILD_DIR)/deltafi-cpp-hello-world -xf -
 
 # Docker targets
 docker: docker-build docker-tag
