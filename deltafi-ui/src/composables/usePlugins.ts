@@ -55,6 +55,8 @@ export default function usePlugins() {
           description: true,
           defaultValue: true,
           dataType: true,
+          required: true,
+          masked: true,
         }
       },
     };

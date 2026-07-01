@@ -33,8 +33,9 @@
       </span>
     </span>
     <ProgressBar v-else mode="indeterminate" style="height: 0.5em" />
+    <PageHeader heading="Plugin Variables" />
     <div v-for="plugin in pluginsList" v-show="pluginHasMatch(plugin)" :key="plugin.displayName">
-      <PluginVariablesPanel v-if="plugin.variables.length" :header-prop="'Plugin Properties - ' + plugin.displayName" :plugin-coordinates-prop="plugin.pluginCoordinates" :variables-prop="plugin.variables" :filter-text-prop="filterText" class="mb-3" @updated="loadPlugins" />
+      <PluginVariablesPanel v-if="plugin.variables.length" :header-prop="plugin.displayName" :plugin-coordinates-prop="plugin.pluginCoordinates" :variables-prop="plugin.variables" :filter-text-prop="filterText" class="mb-3" @updated="loadPlugins" />
     </div>
     <ScrollTop target="window" :threshold="10" icon="pi pi-arrow-up" />
   </div>

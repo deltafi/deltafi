@@ -18,7 +18,7 @@
 
 <template>
   <div>
-    <span role="button" tabindex="0" @click="show()" @keydown.enter="show()">
+    <span role="button" tabindex="0" class="edit-trigger" @click="show()" @keydown.enter="show()">
       <slot />
     </span>
     <Dialog v-model:visible="dialogVisible" :maximizable="false" :modal="true" :dismissable-mask="false" :closable="false" :draggable="false" :style="{ width: '30vw', minWidth: '400px' }" :aria-label="'Editing ' + localProperty.key" @show="onShow" @keydown.esc="hide">
@@ -34,7 +34,9 @@
         <ListEdit v-if="localProperty.dataType === 'LIST' || localProperty.dataType === 'SET'" v-model="localProperty.value" />
         <MapEdit v-if="localProperty.dataType === 'MAP'" v-model="localProperty.value" />
         <span v-if="localProperty.dataType === 'STRING'">
-          <TextArea v-if="textArea" v-model="localProperty.value" style="width: 100%" rows="5" />
+          <Password v-if="localProperty.masked" v-model="localProperty.value" :feedback="false" toggle-mask input-style="width: 100%" style="width: 100%" placeholder="Enter a new value" />
+          <small v-if="localProperty.masked" class="d-block text-muted mt-1">This value is sensitive. Leave blank to keep the current value.</small>
+          <TextArea v-else-if="textArea" v-model="localProperty.value" style="width: 100%" rows="5" />
           <InputText v-else v-model="localProperty.value" style="width: 100%" @paste="onPaste" />
         </span>
         <InputNumber v-if="localProperty.dataType === 'NUMBER'" v-model="localProperty.value" style="width: 100%" />
@@ -72,6 +74,7 @@ import Checkbox from "primevue/checkbox";
 import Dialog from "primevue/dialog";
 import InputNumber from "primevue/inputnumber";
 import InputText from "primevue/inputtext";
+import Password from "primevue/password";
 import TextArea from "primevue/textarea";
 
 const { setPluginVariableValues, errors: pluginErrors } = usePlugins();
@@ -159,6 +162,13 @@ const normalizeSetValue = () => {
 };
 
 const save = async (setNull = false) => {
+  // For masked (sensitive) variables an empty field means "keep the current value".
+  // Never resend the masked placeholder or an empty value, which would overwrite the stored secret.
+  if (!setNull && localProperty.value.masked && (localProperty.value.value === null || localProperty.value.value === "")) {
+    hide();
+    return;
+  }
+
   saving.value = true;
   let response = null;
   let updateSuccessful = false;
@@ -225,6 +235,14 @@ const revert = async () => {
 const onShow = () => {
   localProperty.value = JSON.parse(JSON.stringify(property.value));
 
+  // Masked variables arrive with a placeholder value; start blank so the user enters a fresh secret
+  // and we never echo the mask back to the backend.
+  if (localProperty.value.masked) {
+    localProperty.value.value = "";
+    setFocus();
+    return;
+  }
+
   if (localProperty.value.value === null && localProperty.value.defaultValue !== null) localProperty.value.value = localProperty.value.defaultValue;
 
   if (localProperty.value.dataType === "BOOLEAN" && localProperty.value.value !== null) {
@@ -240,9 +258,13 @@ const onShow = () => {
 </script>
 
 <style>
+.edit-trigger {
+  display: block;
+}
+
 .subtitle {
   font-size: 0.75rem;
   font-weight: 300;
-  color: var(--gray-700);
+  color: var(--text-color-secondary);
 }
 </style>

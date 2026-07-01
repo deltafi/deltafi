@@ -25,7 +25,7 @@
           <i v-if="propertySet.description" v-tooltip.right="propertySet.description" class="ml-2 text-muted fas fa-info-circle fa-fw" />
         </span>
       </template>
-      <DataTable aria-label="System properties" sort-field="key" :sort-order="1" :value="visibleProperties" edit-mode="cell" class="p-datatable-sm p-datatable-gridlines property-set-table" striped-rows :row-hover="true" data-key="key">
+      <DataTable aria-label="System properties" sort-field="key" :sort-order="1" :value="visibleProperties" edit-mode="cell" class="p-datatable-sm p-datatable-gridlines property-set-table" :table-style="{ 'table-layout': 'fixed', width: '100%' }" striped-rows :row-hover="true" data-key="key">
         <template #empty> No properties in this property set. </template>
         <Column header="Key" field="key" :sortable="true" :style="{ width: '50%' }">
           <template #body="property">
@@ -37,35 +37,33 @@
           <template #body="{ data }">
             <template v-if="!$hasPermission('SystemPropertiesUpdate') || data.editable === false">
               <div class="value-disabled">
-                <span v-if="data.value !== data.defaultValue" class="override-icon">
+                <span v-if="data.value !== data.defaultValue">
                   <i v-tooltip.left="'Default value has been overridden'" class="fas fa fa-gavel mr-2 text-muted" />
                 </span>
-                <span v-if="data.value == null"><em>null</em></span>
-                <span v-else-if="data.value === ''"><em>empty string</em></span>
+                <span v-if="data.value == null || data.value === ''"></span>
                 <template v-else-if="COLLECTION_TYPES.includes(data.dataType)">
                   <Chip v-for="item in viewList(data.value)" :key="item" v-tooltip.bottom="item.length > 20 ? item : undefined" :label="item" class="mr-1 mb-1 truncate-chip" />
                 </template>
-                <span v-else>{{ data.value }}</span>
+                <span v-else class="value-text">{{ data.value }}</span>
               </div>
             </template>
             <template v-else>
-              <div v-if="data.dataType === 'BOOLEAN'" class="mt-1 ml-1">
-                <SystemPropertySwitch :property-name="data.key" @changed="onSaved($event)" />
-                <span v-if="data.value !== data.defaultValue" class="override-icon" style="vertical-align: top;">
-                  <i v-tooltip.right="'Default value has been overridden'" class="fas fa fa-gavel ml-2 mt-1 text-muted" />
+              <div v-if="data.dataType === 'BOOLEAN'" class="d-flex align-items-center p-2">
+                <span v-if="data.value !== data.defaultValue">
+                  <i v-tooltip.right="'Default value has been overridden'" class="fas fa fa-gavel mr-2 text-muted" />
                 </span>
+                <SystemPropertySwitch :property-name="data.key" @changed="onSaved($event)" />
               </div>
               <PropertyEditDialog v-else :property="data" @saved="onSaved($event)">
                 <div class="value-clickable">
-                  <span v-if="data.value !== data.defaultValue" class="override-icon">
+                  <span v-if="data.value !== data.defaultValue">
                     <i v-tooltip.left="'Default value has been overridden'" class="fas fa fa-gavel mr-2 text-muted" />
                   </span>
-                  <span v-if="data.value == null"><em>null</em></span>
-                  <span v-else-if="data.value === ''"><em>empty string</em></span>
+                  <span v-if="data.value == null || data.value === ''"></span>
                   <template v-else-if="COLLECTION_TYPES.includes(data.dataType)">
                     <Chip v-for="item in viewList(data.value)" :key="item" v-tooltip.bottom="item.length > 20 ? item : undefined" :label="item" class="mr-1 mb-1 truncate-chip" />
                   </template>
-                  <span v-else>{{ data.value }}</span>
+                  <span v-else class="value-text">{{ data.value }}</span>
                 </div>
               </PropertyEditDialog>
             </template>
@@ -129,6 +127,11 @@ const onSaved = (property) => {
 
 <style>
 .property-set-table {
+  td {
+    overflow-wrap: anywhere;
+    word-break: break-word;
+  }
+
   td.value-column {
     padding: 0 !important;
   }
@@ -139,6 +142,7 @@ const onSaved = (property) => {
     width: 100%;
     display: flex;
     flex-wrap: wrap;
+    align-items: center;
   }
 
   .value-clickable {
@@ -147,15 +151,26 @@ const onSaved = (property) => {
     width: 100%;
     display: flex;
     flex-wrap: wrap;
+    align-items: center;
   }
 
   .value-clickable>* {
     flex: 0 0 auto;
   }
 
+  .value-text {
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+    white-space: normal;
+  }
+
   .truncate-chip {
     max-width: 200px;
     overflow: hidden;
+    background: var(--surface-hover);
+    border: 1px solid var(--surface-border);
 
     .p-chip-label {
       min-width: 0;

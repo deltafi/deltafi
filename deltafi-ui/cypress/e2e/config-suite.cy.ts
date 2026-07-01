@@ -527,8 +527,8 @@
         cy.get("span.p-panel-title").contains("Common Properties");
       });
 
-      it("displays Plugin Properties panels", () => {
-        cy.contains("Plugin Properties").should("exist");
+      it("displays Plugin Variables table", () => {
+        cy.get(".plugin-variables-table").should("exist");
       });
 
       it("page container exists", () => {
