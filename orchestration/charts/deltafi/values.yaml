@@ -27,6 +27,9 @@ deltafi:
     image: deltafi/deltafi-core-actions:2.58.1
   core:
     image: deltafi/deltafi-core:2.58.1
+    # Max size for a single multipart upload to core (e.g. artifact registry publish).
+    # Spring DataSize format (5GB, 500MB, ...)
+    maxUploadSize: 5GB
     ssl:
       secret: ssl-secret
   ingress:

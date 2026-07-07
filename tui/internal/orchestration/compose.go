@@ -723,6 +723,7 @@ func (o *ComposeOrchestrator) writeCommonEnv(path string) error {
 		"INGRESS_URL":                        "http://deltafi-core:8080",
 		"LOCAL_STORAGE_ARTIFACTS":            localArtifactStorage,
 		"LOCAL_STORAGE_CONTENT":              localContentStorage,
+		"MAX_UPLOAD_SIZE":                    o.getValueOr(values, "deltafi.core.maxUploadSize", "5GB"),
 		"METRICS_PERIOD_SECONDS":             "10",
 		"MINIO_PARTSIZE":                     "5242880",
 		"MINIO_URL":                          o.getValueOr(values, "deltafi.storage.url", "http://deltafi-s3proxy:9000"),

@@ -373,6 +373,8 @@ volumeMounts:
   value: "10"
 - name: SERVER_PORT
   value: "9292"
+- name: MAX_UPLOAD_SIZE
+  value: {{ .Values.deltafi.core.maxUploadSize | default "5GB" | quote }}
 {{ include "commonEnvVars" . }}
 {{ include "globalEnvVars" . }}
 {{ include "postgresEnvVars" . }}

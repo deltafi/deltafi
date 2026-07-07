@@ -18,6 +18,7 @@ tags:
 
 deltafi:
   core:
+    maxUploadSize: 5GB
     ssl:
       secret: ssl-secret
   ingress:
