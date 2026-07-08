@@ -19,74 +19,83 @@ package org.deltafi.common.types;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.*;
-import lombok.experimental.SuperBuilder;
 
 import java.util.Arrays;
 import java.util.List;
 
-@JsonInclude(JsonInclude.Include.NON_EMPTY)
 @Data
-@NoArgsConstructor(force = true)
-@RequiredArgsConstructor
+@NoArgsConstructor
+@AllArgsConstructor
 @Builder
+@JsonInclude(JsonInclude.Include.NON_EMPTY)
 public class ActionOptions {
-    @JsonInclude(JsonInclude.Include.NON_EMPTY)
     @Data
-    @NoArgsConstructor(force = true)
-    @RequiredArgsConstructor
+    @NoArgsConstructor
+    @AllArgsConstructor
     @Builder
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public static class KeyedDescription {
-        private final String key;
-        private final String description;
+        private String key;
+        private String description;
     }
 
-    @JsonInclude(JsonInclude.Include.NON_EMPTY)
     @Data
-    @NoArgsConstructor(force = true)
-    @RequiredArgsConstructor
+    @NoArgsConstructor
+    @AllArgsConstructor
     @Builder
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public static class ContentSpec {
-        private final String name;
-        private final String mediaType;
-        private final String description;
+        private String name;
+        private String mediaType;
+        private String description;
     }
 
-    @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    @Data
-    @NoArgsConstructor(force = true)
-    @SuperBuilder
-    public static class InputSpec {
-        private final String contentSummary;
-        private final List<ContentSpec> contentSpecs;
-
-        private final String metadataSummary;
-        private final List<KeyedDescription> metadataDescriptions;
+    public interface IOSpec {
+        String getContentSummary();
+        List<ContentSpec> getContentSpecs();
+        String getMetadataSummary();
+        List<KeyedDescription> getMetadataDescriptions();
     }
 
-    @JsonInclude(JsonInclude.Include.NON_EMPTY)
     @Data
-    @EqualsAndHashCode(callSuper = true)
-    @NoArgsConstructor(force = true)
-    @SuperBuilder
-    public static class OutputSpec extends InputSpec {
-        private final boolean passthrough;
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @Builder
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public static class InputSpec implements IOSpec {
+        private String contentSummary;
+        private List<ContentSpec> contentSpecs;
 
-        private final String annotationsSummary;
-        private final List<KeyedDescription> annotationDescriptions;
+        private String metadataSummary;
+        private List<KeyedDescription> metadataDescriptions;
     }
 
-    @JsonInclude(JsonInclude.Include.NON_EMPTY)
     @Data
-    @NoArgsConstructor(force = true)
-    @RequiredArgsConstructor
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @Builder
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public static class OutputSpec implements IOSpec {
+        private String contentSummary;
+        private List<ContentSpec> contentSpecs;
+
+        private String metadataSummary;
+        private List<KeyedDescription> metadataDescriptions;
+
+        private boolean passthrough;
+
+        private String annotationsSummary;
+        private List<KeyedDescription> annotationDescriptions;
+    }
+
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @Builder
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public static class DescriptionWithConditions {
-        private final String description;
-        private final List<String> conditions;
-
-        public DescriptionWithConditions(String description) {
-            this.description = description;
-            this.conditions = null;
-        }
+        private String description;
+        private List<String> conditions;
     }
 
     @SuppressWarnings("unused")
@@ -97,7 +106,8 @@ public class ActionOptions {
         }
 
         public ActionOptionsBuilder filters(String... filters) {
-            return filters(Arrays.stream(filters).map(DescriptionWithConditions::new).toList());
+            return filters(Arrays.stream(filters)
+                    .map(description -> new DescriptionWithConditions(description, null)).toList());
         }
 
         public ActionOptionsBuilder errors(List<DescriptionWithConditions> errors) {
@@ -106,7 +116,8 @@ public class ActionOptions {
         }
 
         public ActionOptionsBuilder errors(String... errors) {
-            return errors(Arrays.stream(errors).map(DescriptionWithConditions::new).toList());
+            return errors(Arrays.stream(errors)
+                    .map(description -> new DescriptionWithConditions(description, null)).toList());
         }
 
         public ActionOptionsBuilder notes(List<String> notes) {
@@ -119,15 +130,15 @@ public class ActionOptions {
         }
     }
 
-    private final String description;
+    private String description;
 
-    private final InputSpec inputSpec;
+    private InputSpec inputSpec;
 
-    private final OutputSpec outputSpec;
+    private OutputSpec outputSpec;
 
-    private final List<DescriptionWithConditions> filters;
-    private final List<DescriptionWithConditions> errors;
-    private final List<String> notes;
+    private List<DescriptionWithConditions> filters;
+    private List<DescriptionWithConditions> errors;
+    private List<String> notes;
 
-    private final String details;
+    private String details;
 }

@@ -517,7 +517,7 @@ public class DocumentationGenerator {
 
     // --- input/output/conditions ---
 
-    private static void appendIO(MarkdownBuilder docs, ActionOptions.InputSpec ioSpec) {
+    private static void appendIO(MarkdownBuilder docs, ActionOptions.IOSpec ioSpec) {
         if (ioSpec.getContentSummary() != null || ioSpec.getContentSpecs() != null) {
             docs.append("### Content\n\n");
             if (ioSpec.getContentSummary() != null) {

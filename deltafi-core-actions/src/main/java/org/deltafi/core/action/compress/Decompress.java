@@ -92,14 +92,17 @@ public class Decompress extends TransformAction<DecompressParameters> {
                                 .description("Set to 'true' if the 'passThroughUnsupported' parameter results in pass through content.")
                                 .build()))
                         .build())
-                .errors(List.of(new ActionOptions.DescriptionWithConditions("On content that cannot be decompressed", List.of("""
-                        Occurs when a format is provided and all content is not in the format."""))))
-                .notes(List.of("""
+                .errors(List.of(ActionOptions.DescriptionWithConditions.builder()
+                        .description("On content that cannot be decompressed")
+                        .conditions(List.of("""
+                                Occurs when a format is provided and all content is not in the format."""))
+                        .build()))
+                .notes("""
                         Compressed content in tar format will use an in-place decompression. This will result in much
                         quicker decompression than other formats since no additional writes will be made to the content
                         storage subsystem.""", """
                         This action is typically used before a Split action to extract content from an ingested file
-                        before processing each one individually."""))
+                        before processing each one individually.""")
                 .build());
     }
 

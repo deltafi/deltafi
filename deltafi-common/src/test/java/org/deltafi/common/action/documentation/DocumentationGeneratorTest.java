@@ -124,15 +124,23 @@ public class DocumentationGeneratorTest {
                                                 .build()))
                                 .build())
                         .filters(List.of(
-                                new ActionOptions.DescriptionWithConditions("Filter 1",
-                                        List.of("Condition A", "Condition B")),
-                                new ActionOptions.DescriptionWithConditions("Filter 2",
-                                        List.of("Condition C", "Condition D"))))
+                                ActionOptions.DescriptionWithConditions.builder()
+                                        .description("Filter 1")
+                                        .conditions(List.of("Condition A", "Condition B"))
+                                        .build(),
+                                ActionOptions.DescriptionWithConditions.builder()
+                                        .description("Filter 2")
+                                        .conditions(List.of("Condition C", "Condition D"))
+                                        .build()))
                         .errors(List.of(
-                                new ActionOptions.DescriptionWithConditions("Error 1",
-                                        List.of("Condition A", "Condition B")),
-                                new ActionOptions.DescriptionWithConditions("Error 2",
-                                        List.of("Condition C", "Condition D"))))
+                                ActionOptions.DescriptionWithConditions.builder()
+                                        .description("Error 1")
+                                        .conditions(List.of("Condition A", "Condition B"))
+                                        .build(),
+                                ActionOptions.DescriptionWithConditions.builder()
+                                        .description("Error 2")
+                                        .conditions(List.of("Condition C", "Condition D"))
+                                        .build()))
                         .notes("Note 1", "Note 2")
                         .details("The details")
                         .build())

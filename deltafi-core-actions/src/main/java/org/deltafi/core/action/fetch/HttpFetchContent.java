@@ -63,10 +63,16 @@ public class HttpFetchContent extends TransformAction<HttpFetchContentParameters
                                 If responseCodeAnnotationName is set, the response code will be set in the named
                                 annotation.""")
                         .build()))
-                .errors(List.of(new ActionOptions.DescriptionWithConditions("On an IO error communicating with the given URL"),
-                        new ActionOptions.DescriptionWithConditions("On a response code not equal to 200", List.of("""
-                                If responseCodeAnnotationName is set, the response code will be set in the named
-                                annotation."""))))
+                .errors(List.of(
+                        ActionOptions.DescriptionWithConditions.builder()
+                                .description("On an IO error communicating with the given URL")
+                                .build(),
+                        ActionOptions.DescriptionWithConditions.builder()
+                                .description("On a response code not equal to 200")
+                                .conditions(List.of("""
+                                        If responseCodeAnnotationName is set, the response code will be set in the named
+                                        annotation."""))
+                                .build()))
                 .build());
         this.httpClient = httpClient;
     }
