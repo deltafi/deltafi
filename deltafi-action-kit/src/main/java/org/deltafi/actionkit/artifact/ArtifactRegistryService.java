@@ -17,11 +17,7 @@
  */
 package org.deltafi.actionkit.artifact;
 
-import org.deltafi.common.artifact.ArtifactRegistryConstants;
-
-import java.io.Closeable;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
 
 /**
  * Artifact registry API for plugins: publish new versions and fetch existing ones.
@@ -39,18 +35,7 @@ import java.io.InputStream;
  *         Files.newInputStream(modelPath));
  * }</pre>
  */
-@SuppressWarnings("unused")
-public class ArtifactRegistryService {
-
-    private final ArtifactRegistryClient client;
-
-    // Package-private: constructed only by ArtifactFactory (directly for non-Spring plugins, or
-    // via the Spring ArtifactConfiguration bean) so the plugin-owner namespace is always bound
-    // correctly. Never instantiated by plugin code.
-    ArtifactRegistryService(ArtifactRegistryClient client) {
-        this.client = client;
-    }
-
+public interface ArtifactRegistryService {
     /**
      * Publish a new artifact version scoped to this plugin. The {@code active} alias is updated.
      *
@@ -61,11 +46,8 @@ public class ArtifactRegistryService {
      * @return the server's publish response including the assigned version and SHA-256 digest
      * @throws IOException if the HTTP request fails or the server returns a non-2xx status
      */
-    public PublishArtifactResponse publishArtifact(
-            String artifactName, ArtifactManifest manifest,
-            InputStream data) throws IOException {
-        return client.publishArtifact(artifactName, manifest, data, true);
-    }
+    PublishArtifactResponse publishArtifact(String artifactName, ArtifactManifest manifest, InputStream data)
+            throws IOException;
 
     /**
      * Publish a new artifact version scoped to this plugin.
@@ -78,11 +60,8 @@ public class ArtifactRegistryService {
      * @return the server's publish response including the assigned version and SHA-256 digest
      * @throws IOException if the HTTP request fails or the server returns a non-2xx status
      */
-    public PublishArtifactResponse publishArtifact(
-            String artifactName, ArtifactManifest manifest,
-            InputStream data, boolean makeActive) throws IOException {
-        return client.publishArtifact(artifactName, manifest, data, makeActive);
-    }
+    PublishArtifactResponse publishArtifact(String artifactName, ArtifactManifest manifest, InputStream data,
+            boolean makeActive) throws IOException;
 
     /**
      * Publish a new artifact version to the shared namespace (visible to all plugins).
@@ -95,11 +74,8 @@ public class ArtifactRegistryService {
      * @return the server's publish response including the assigned version and SHA-256 digest
      * @throws IOException if the HTTP request fails or the server returns a non-2xx status
      */
-    public PublishArtifactResponse publishSharedArtifact(
-            String artifactName, ArtifactManifest manifest,
-            InputStream data) throws IOException {
-        return client.publishSharedArtifact(artifactName, manifest, data, true);
-    }
+    PublishArtifactResponse publishSharedArtifact(String artifactName, ArtifactManifest manifest, InputStream data)
+            throws IOException;
 
     /**
      * Publish a new artifact version to the shared namespace (visible to all plugins).
@@ -112,11 +88,8 @@ public class ArtifactRegistryService {
      * @return the server's publish response including the assigned version and SHA-256 digest
      * @throws IOException if the HTTP request fails or the server returns a non-2xx status
      */
-    public PublishArtifactResponse publishSharedArtifact(
-            String artifactName, ArtifactManifest manifest,
-            InputStream data, boolean makeActive) throws IOException {
-        return client.publishSharedArtifact(artifactName, manifest, data, makeActive);
-    }
+    PublishArtifactResponse publishSharedArtifact(String artifactName, ArtifactManifest manifest, InputStream data,
+            boolean makeActive) throws IOException;
 
     /**
      * Fetch an active plugin-scoped artifact and return an {@link ArtifactHandle}.
@@ -128,9 +101,7 @@ public class ArtifactRegistryService {
      * @throws ArtifactNotFoundException if the artifact or alias does not exist (HTTP 404)
      * @throws IOException               if the request fails for any other reason
      */
-    public ArtifactHandle getArtifact(String artifactName) throws IOException {
-        return getArtifact(artifactName, ArtifactRegistryConstants.ACTIVE_ALIAS);
-    }
+    ArtifactHandle getArtifact(String artifactName) throws IOException;
 
     /**
      * Fetch a plugin-scoped artifact by alias and return an {@link ArtifactHandle}.
@@ -144,9 +115,7 @@ public class ArtifactRegistryService {
      * @throws ArtifactNotFoundException if the artifact or alias does not exist (HTTP 404)
      * @throws IOException               if the request fails for any other reason
      */
-    public ArtifactHandle getArtifact(String artifactName, String alias) throws IOException {
-        return fetchHandle(client.getPluginName(), artifactName, alias);
-    }
+    ArtifactHandle getArtifact(String artifactName, String alias) throws IOException;
 
     /**
      * Fetch the active version of a shared artifact and return an {@link ArtifactHandle}.
@@ -158,9 +127,7 @@ public class ArtifactRegistryService {
      * @throws ArtifactNotFoundException if the artifact or alias does not exist (HTTP 404)
      * @throws IOException               if the request fails for any other reason
      */
-    public ArtifactHandle getSharedArtifact(String artifactName) throws IOException {
-        return getSharedArtifact(artifactName, ArtifactRegistryConstants.ACTIVE_ALIAS);
-    }
+    ArtifactHandle getSharedArtifact(String artifactName) throws IOException;
 
     /**
      * Fetch a shared artifact by alias and return an {@link ArtifactHandle}.
@@ -174,9 +141,7 @@ public class ArtifactRegistryService {
      * @throws ArtifactNotFoundException if the artifact or alias does not exist (HTTP 404)
      * @throws IOException               if the request fails for any other reason
      */
-    public ArtifactHandle getSharedArtifact(String artifactName, String alias) throws IOException {
-        return fetchHandle(ArtifactRegistryConstants.SHARED_OWNER, artifactName, alias);
-    }
+    ArtifactHandle getSharedArtifact(String artifactName, String alias) throws IOException;
 
     // ── Streaming access ──────────────────────────────────────────────────────
 
@@ -199,9 +164,7 @@ public class ArtifactRegistryService {
      * @throws ArtifactNotFoundException if the artifact or alias does not exist (HTTP 404)
      * @throws IOException               if the request fails for any other reason
      */
-    public ArtifactStream streamArtifact(String artifactName) throws IOException {
-        return streamArtifact(artifactName, ArtifactRegistryConstants.ACTIVE_ALIAS);
-    }
+    ArtifactStream streamArtifact(String artifactName) throws IOException;
 
     /**
      * Open a streaming connection to a plugin-scoped artifact by alias without buffering the
@@ -215,9 +178,7 @@ public class ArtifactRegistryService {
      * @throws ArtifactNotFoundException if the artifact or alias does not exist (HTTP 404)
      * @throws IOException               if the request fails for any other reason
      */
-    public ArtifactStream streamArtifact(String artifactName, String alias) throws IOException {
-        return fetchStream(client.getPluginName(), artifactName, alias);
-    }
+    ArtifactStream streamArtifact(String artifactName, String alias) throws IOException;
 
     /**
      * Open a streaming connection to the active version of a shared artifact without buffering
@@ -230,9 +191,7 @@ public class ArtifactRegistryService {
      * @throws ArtifactNotFoundException if the artifact or alias does not exist (HTTP 404)
      * @throws IOException               if the request fails for any other reason
      */
-    public ArtifactStream streamSharedArtifact(String artifactName) throws IOException {
-        return streamSharedArtifact(artifactName, ArtifactRegistryConstants.ACTIVE_ALIAS);
-    }
+    ArtifactStream streamSharedArtifact(String artifactName) throws IOException;
 
     /**
      * Open a streaming connection to a shared artifact by alias without buffering the bytes
@@ -246,17 +205,7 @@ public class ArtifactRegistryService {
      * @throws ArtifactNotFoundException if the artifact or alias does not exist (HTTP 404)
      * @throws IOException               if the request fails for any other reason
      */
-    public ArtifactStream streamSharedArtifact(String artifactName, String alias) throws IOException {
-        return fetchStream(ArtifactRegistryConstants.SHARED_OWNER, artifactName, alias);
-    }
-
-    private ArtifactStream fetchStream(String owner, String artifactName, String alias) throws IOException {
-        ArtifactStream stream = client.stream(owner, artifactName, alias);
-        if (stream == null) {
-            throw new ArtifactNotFoundException(owner, artifactName, alias);
-        }
-        return stream;
-    }
+    ArtifactStream streamSharedArtifact(String artifactName, String alias) throws IOException;
 
     /**
      * A streaming artifact response that holds the manifest metadata and the open HTTP body
@@ -275,18 +224,10 @@ public class ArtifactRegistryService {
      * @param manifest artifact metadata (version, content-type, sha256, labels, etc.)
      * @param stream   the raw artifact bytes as an open stream; caller must close
      */
-    public record ArtifactStream(ArtifactManifest manifest, InputStream stream) implements Closeable {
+    record ArtifactStream(ArtifactManifest manifest, InputStream stream) implements Closeable {
         @Override
         public void close() throws IOException {
             stream.close();
         }
-    }
-
-    private ArtifactHandle fetchHandle(String owner, String artifactName, String alias) throws IOException {
-        FetchedArtifact fetched = client.download(owner, artifactName, alias);
-        if (fetched == null) {
-            throw new ArtifactNotFoundException(owner, artifactName, alias);
-        }
-        return new DirectArtifactHandle(client, owner, artifactName, alias, fetched);
     }
 }

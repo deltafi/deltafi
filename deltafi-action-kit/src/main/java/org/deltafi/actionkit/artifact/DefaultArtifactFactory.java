@@ -51,7 +51,7 @@ class DefaultArtifactFactory implements ArtifactFactory {
         return new DefaultArtifactFactory(
                 cacheManager,
                 new PluginArtifactFactory(cacheManager, pluginName),
-                new ArtifactRegistryService(client));
+                new DefaultArtifactRegistryService(client));
     }
 
     @Override
