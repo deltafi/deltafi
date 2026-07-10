@@ -50,6 +50,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -128,19 +129,25 @@ public class ActionRunner implements AutoCloseable {
     private void startActions() {
         for (Action<?, ?, ?> action : allActions) {
             log.info("Starting action: {} (thread {})", action.getClassCanonicalName(), action.getThreadNum());
-            executor.submit(() -> listen(action, actionsProperties.getActionPollingInitialDelayMs()));
+            scheduleListen(action, actionsProperties.getActionPollingInitialDelayMs());
         }
 
         markRunning();
     }
 
-    private void listen(Action<?, ?, ?> action, long delayMs) {
+    void scheduleListen(Action<?, ?, ?> action, long delayMs) {
+        executor.submit(() -> listen(action, delayMs));
+    }
+
+    void listen(Action<?, ?, ?> action, long delayMs) {
+        boolean madeProgress = false;
         try {
-            Thread.sleep(delayMs);
+            Thread.sleep(jitteredDelayMs(delayMs));
             ActionContentStorageService actionContentStorageService = new ActionContentStorageService(contentStorageService);
             while (!Thread.currentThread().isInterrupted()) {
                 log.trace("{} listening", action.getClassCanonicalName());
                 ActionInput actionInput = actionEventQueue.takeAction(action.getClassCanonicalName());
+                madeProgress = true;
                 actionInput.getActionContext().setActionVersion(buildInfo.version());
                 actionInput.getActionContext().setHostname(hostnameService.getHostname());
                 actionInput.getActionContext().setStartTime(OffsetDateTime.now());
@@ -151,10 +158,30 @@ public class ActionRunner implements AutoCloseable {
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
         } catch (Throwable e) {
-            log.error("Unexpected exception caught at {} thread execution level: ", action.getClassCanonicalName(), e);
-            executor.submit(() -> listen(action, actionsProperties.getActionPollingPeriodMs()));
+            long nextDelayMs = nextBackoffMs(delayMs, madeProgress);
+            if (madeProgress) {
+                log.error("Unexpected exception caught at {} thread execution level: ", action.getClassCanonicalName(), e);
+            } else {
+                log.error("{} could not reach the event queue, retrying in {}ms: {}",
+                        action.getClassCanonicalName(), nextDelayMs, e.getMessage());
+            }
+            scheduleListen(action, nextDelayMs);
+            return;
         }
         log.warn("Shutting down action thread: {}", action.getClassCanonicalName());
+    }
+
+    long nextBackoffMs(long currentDelayMs, boolean madeProgress) {
+        long base = actionsProperties.getActionPollingPeriodMs();
+        if (madeProgress) {
+            return base;
+        }
+        return Math.min(Math.max(currentDelayMs, base) * 2, actionsProperties.getActionPollingMaxBackoffMs());
+    }
+
+    // Spread reconnect attempts across threads so they don't all retry in lockstep (thundering herd).
+    long jitteredDelayMs(long delayMs) {
+        return delayMs - ThreadLocalRandom.current().nextLong(delayMs / 2 + 1);
     }
 
     void executeAction(Action<?, ?, ?> action, ActionInput actionInput, String returnAddress) {

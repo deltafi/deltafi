@@ -24,6 +24,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"sync"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -64,34 +65,12 @@ func (e *erroringTaker) Take(ctx context.Context, queueName string) ([]byte, err
 	return nil, ctx.Err()
 }
 
-func TestWaitBackoff_CancelledContextReturnsFalse(t *testing.T) {
-	ctx, cancel := context.WithCancel(context.Background())
-	cancel()
-	if waitBackoff(ctx) {
-		t.Fatal("waitBackoff should return false when ctx is already cancelled")
-	}
-}
-
-func TestWaitBackoff_ElapsesThenReturnsTrue(t *testing.T) {
-	old := pollErrorBackoff
-	pollErrorBackoff = 10 * time.Millisecond
-	defer func() { pollErrorBackoff = old }()
-
-	start := time.Now()
-	if !waitBackoff(context.Background()) {
-		t.Fatal("waitBackoff should return true after the backoff elapses")
-	}
-	if elapsed := time.Since(start); elapsed < 10*time.Millisecond {
-		t.Fatalf("waitBackoff returned after %v, want at least the backoff duration", elapsed)
-	}
-}
-
 func TestPollQueue_BacksOffInsteadOfSpinningOnError(t *testing.T) {
-	old := pollErrorBackoff
+	oldBase, oldMax := pollBackoffBase, pollBackoffMax
 	// Long enough that a second Take cannot occur within the test window if
 	// the poller correctly backs off after the first error.
-	pollErrorBackoff = time.Hour
-	defer func() { pollErrorBackoff = old }()
+	pollBackoffBase, pollBackoffMax = time.Hour, time.Hour
+	defer func() { pollBackoffBase, pollBackoffMax = oldBase, oldMax }()
 
 	ft := &erroringTaker{called: make(chan struct{}, 1)}
 	ctx, cancel := context.WithCancel(context.Background())
@@ -112,9 +91,9 @@ func TestPollQueue_BacksOffInsteadOfSpinningOnError(t *testing.T) {
 }
 
 func TestPollQueue_BacksOffThenRecovers(t *testing.T) {
-	old := pollErrorBackoff
-	pollErrorBackoff = time.Millisecond
-	t.Cleanup(func() { pollErrorBackoff = old })
+	oldBase := pollBackoffBase
+	pollBackoffBase = time.Millisecond
+	t.Cleanup(func() { pollBackoffBase = oldBase })
 
 	connErr := errors.New("connection refused")
 	raw := []byte(`{"deltaFileMessages":[],"actionContext":{"did":"d1","actionName":"A"},"actionParams":{},"queueName":"A"}`)
@@ -150,6 +129,73 @@ func TestPollQueue_BacksOffThenRecovers(t *testing.T) {
 
 	if got := ft.calls.Load(); got < 3 {
 		t.Fatalf("Take called %d times, want at least 3 (2 errors + 1 success)", got)
+	}
+}
+
+func TestPollQueue_EscalatesThenResetsOnSuccess(t *testing.T) {
+	var mu sync.Mutex
+	var slept []time.Duration
+	oldSleep := pollSleep
+	pollSleep = func(ctx context.Context, d time.Duration) bool {
+		mu.Lock()
+		slept = append(slept, d)
+		mu.Unlock()
+		return ctx.Err() == nil
+	}
+	t.Cleanup(func() { pollSleep = oldSleep })
+
+	connErr := errors.New("connection refused")
+	raw := []byte(`{"deltaFileMessages":[],"actionContext":{"did":"d1","actionName":"A"},"actionParams":{},"queueName":"A"}`)
+	ft := &erroringTaker{
+		called: make(chan struct{}, 8),
+		responses: []takerResponse{
+			{nil, connErr}, // sleep ~jitter(100ms), escalate -> 200ms
+			{nil, connErr}, // sleep ~jitter(200ms), escalate -> 400ms
+			{nil, connErr}, // sleep ~jitter(400ms), escalate -> 800ms
+			{raw, nil},     // healthy read resets backoff to 100ms
+			{nil, connErr}, // sleep ~jitter(100ms) again (reset took effect)
+		},
+	}
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	ch := make(chan []byte, 1)
+	done := make(chan struct{})
+	go func() {
+		pollQueue(ctx, "A", ft, ch)
+		close(done)
+	}()
+
+	deadline := time.After(2 * time.Second)
+	for {
+		mu.Lock()
+		n := len(slept)
+		mu.Unlock()
+		if n >= 4 {
+			break
+		}
+		select {
+		case <-deadline:
+			t.Fatalf("only %d sleeps recorded, want >= 4", n)
+		case <-time.After(time.Millisecond):
+		}
+	}
+	cancel()
+	<-done
+
+	mu.Lock()
+	defer mu.Unlock()
+	// escalate 100->200->400 across consecutive errors, then reset to 100 after the success
+	bands := []struct{ lo, hi time.Duration }{
+		{50 * time.Millisecond, 100 * time.Millisecond},
+		{100 * time.Millisecond, 200 * time.Millisecond},
+		{200 * time.Millisecond, 400 * time.Millisecond},
+		{50 * time.Millisecond, 100 * time.Millisecond},
+	}
+	for i, b := range bands {
+		if slept[i] < b.lo || slept[i] > b.hi {
+			t.Errorf("sleep[%d] = %v, want within [%v, %v]", i, slept[i], b.lo, b.hi)
+		}
 	}
 }
 

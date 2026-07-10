@@ -58,6 +58,7 @@ missing required feature/mandate · **MINOR** cosmetic/idiomatic/doc.
 | Requirement | Java | Go | C++ | Python |
 |---|:--:|:--:|:--:|:--:|
 | ZSET + `BZPOPMIN` intake on action-named queue | ✅ | ✅ | ✅ | ✅ |
+| Poll-loop error backoff: capped exponential + jitter (100ms→5s), reset on read (§8) | ✅ | ✅ | ❌ | ✅ |
 | `ZADD` epoch-ms publish to `dgs` / `dgs-{returnAddress}` | ✅ | ✅ | ✅ | ✅ |
 | Heartbeat + long-running-task hashes (correct keys) | ✅ | ✅ | ✅ | ✅ |
 | Report in-flight tasks w/ startTime (threshold is core-side, §8 relaxed) | ✅ | ✅ | ✅ | ✅ |

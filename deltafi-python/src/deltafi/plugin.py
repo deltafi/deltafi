@@ -37,6 +37,7 @@ import yaml
 
 from deltafi.action import Action, Join
 from deltafi.actioneventqueue import ActionEventQueue
+from deltafi.backoff import POLL_BACKOFF_BASE_S, backoff_after_error
 from deltafi.artifact import Artifact, ArtifactCacheManager, ArtifactRegistryClient, ArtifactVersionChangeListener, _LazyArtifactHandle
 from deltafi.domain import Event, ActionExecution
 from deltafi.exception import ExpectedContentException, MissingMetadataException
@@ -450,9 +451,11 @@ class Plugin(object):
         action_logger = get_logger(action_thread.logger_name())
         action_logger.info(f"Listening on {action_thread.name}")
 
+        backoff = POLL_BACKOFF_BASE_S
         while True:
             try:
                 event_string = self.queue.take(action_thread.name)
+                backoff = POLL_BACKOFF_BASE_S
                 event = Event.create(json.loads(event_string), self.content_service, action_logger)
                 start_time = time.time()
                 action_logger.debug(f"Processing event for did {event.context.did}")
@@ -482,22 +485,28 @@ class Plugin(object):
                 if event.return_address:
                     topic += f"-{event.return_address}"
                 self.queue.put(topic, json.dumps(response))
-            except BaseException as e:
+            except Exception as e:
                 action_logger.error(f"Unexpected {type(e)} error: {build_error_context(e)}")
-                time.sleep(1)
+                backoff = backoff_after_error(backoff)
 
     def _handle_lookup_table_supplier_events(self):
         event_keys = ["lookup-table-event-" + key for key in self.lookup_table_suppliers.keys()]
         self.logger.debug(f"Listening for the following lookup table supplier events: {event_keys}")
+        backoff = POLL_BACKOFF_BASE_S
         while True:
-            event_string = self.queue.take(event_keys)
-            lookup_table_event = LookupTableEvent.create(json.loads(event_string))
-            rows = self.lookup_table_suppliers[lookup_table_event.lookup_table_name].get_rows(
-                lookup_table_event.variables, lookup_table_event.matching_column_values,
-                lookup_table_event.result_columns)
-            lookup_table_event_result = LookupTableEventResult(lookup_table_event_id=lookup_table_event.id,
-                lookup_table_name=lookup_table_event.lookup_table_name, rows=rows)
-            self.queue.put(lookup_table_event.id, json.dumps(lookup_table_event_result.json()))
+            try:
+                event_string = self.queue.take(event_keys)
+                backoff = POLL_BACKOFF_BASE_S
+                lookup_table_event = LookupTableEvent.create(json.loads(event_string))
+                rows = self.lookup_table_suppliers[lookup_table_event.lookup_table_name].get_rows(
+                    lookup_table_event.variables, lookup_table_event.matching_column_values,
+                    lookup_table_event.result_columns)
+                lookup_table_event_result = LookupTableEventResult(lookup_table_event_id=lookup_table_event.id,
+                    lookup_table_name=lookup_table_event.lookup_table_name, rows=rows)
+                self.queue.put(lookup_table_event.id, json.dumps(lookup_table_event_result.json()))
+            except Exception as e:
+                self.logger.error(f"Unexpected {type(e)} error in lookup table supplier handler: {build_error_context(e)}")
+                backoff = backoff_after_error(backoff)
 
     @staticmethod
     def orphaned_content_check(logger, context, result, response):

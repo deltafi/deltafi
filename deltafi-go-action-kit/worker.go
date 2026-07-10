@@ -103,25 +103,9 @@ func (w *actionWorker) start(pollCtx, workerCtx context.Context, wg *sync.WaitGr
 	}
 }
 
-// pollErrorBackoff is the delay applied after a queue read error before the
-// poller retries. It prevents a tight reconnect loop (and the accompanying log
-// flood) when Valkey is unavailable.
-var pollErrorBackoff = 5 * time.Second
-
 // queuePoller reads work events from a named queue.
 type queuePoller interface {
 	Take(ctx context.Context, queueName string) ([]byte, error)
-}
-
-// waitBackoff blocks for pollErrorBackoff or until ctx is cancelled. It returns
-// false if ctx was cancelled, signalling the caller to stop.
-func waitBackoff(ctx context.Context) bool {
-	select {
-	case <-ctx.Done():
-		return false
-	case <-time.After(pollErrorBackoff):
-		return true
-	}
 }
 
 // poll runs the BZPOPMIN loop, sending raw JSON event payloads to the work channel.
@@ -129,10 +113,12 @@ func (w *actionWorker) poll(ctx context.Context, ch chan<- []byte) {
 	pollQueue(ctx, w.name, w.queue, ch)
 }
 
-// pollQueue repeatedly takes events from the queue and forwards them to ch,
-// backing off after read errors so a downed Valkey does not cause a tight spin.
+// pollQueue repeatedly takes events from the queue and forwards them to ch. On a read
+// error it applies capped exponential backoff with jitter (100ms -> 5s) so a downed
+// Valkey does not cause a tight spin, resetting to the base delay after a healthy read.
 func pollQueue(ctx context.Context, name string, q queuePoller, ch chan<- []byte) {
 	defer close(ch)
+	backoff := pollBackoffBase
 	for {
 		if ctx.Err() != nil {
 			return
@@ -143,12 +129,14 @@ func pollQueue(ctx context.Context, name string, q queuePoller, ch chan<- []byte
 			if ctx.Err() != nil {
 				return
 			}
-			log.Printf("[%s] poll error: %v", name, err)
-			if !waitBackoff(ctx) {
+			log.Printf("[%s] poll error (retry in ~%v): %v", name, backoff, err)
+			var ok bool
+			if backoff, ok = backoffAfterError(ctx, backoff); !ok {
 				return
 			}
 			continue
 		}
+		backoff = pollBackoffBase // healthy read (event or idle timeout) resets backoff
 		if raw == nil {
 			continue // timeout, retry
 		}

@@ -389,6 +389,23 @@ suitable client exists (C++ does this over Asio) — but the **observable protoc
   incoming event carried a non-empty `returnAddress` (routes the result to the originating core
   instance).
 
+**Poll-loop error backoff (resilience).** Every queue poll loop — the action intake loop above
+and the lookup-supplier intake loop (§9.2) — must distinguish a *healthy* read (an event, or an
+idle timeout with no work) from a *read error* (Valkey unreachable, connection refused, pool
+exhausted). A healthy read proceeds normally; the blocking pop parks server-side while idle, so
+an idle system never busy-polls. On a **read error** the loop **MUST NOT** retry tightly — it
+applies **capped exponential backoff with jitter** before the next attempt:
+- base **100 ms**, doubling on each consecutive error, capped at **5 s**;
+- **jitter** each delay into `[delay/2, delay]` so many action threads do not reconnect in
+  lockstep (thundering herd);
+- **reset to base** after any healthy read;
+- the wait **MUST be cancellable by shutdown** so SIGTERM/SIGINT still drains promptly.
+
+Rationale: without this, a downed Valkey turns every poll loop into a CPU-pegging retry storm
+that also churns TCP sockets fast enough to exhaust kernel socket-buffer memory
+(`net.ipv4.tcp_mem`), hanging the node until restart. The reference values (100 ms → 5 s, half-to-full
+jitter) are shared by the Java, Go, and Python kits.
+
 **Incoming event** (`ActionInput`, JSON):
 ```
 {

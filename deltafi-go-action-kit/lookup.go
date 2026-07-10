@@ -651,6 +651,7 @@ func startLookupTableSupplierRunner(ctx context.Context, wg *sync.WaitGroup, que
 	}
 
 	wg.Go(func() {
+		backoff := pollBackoffBase
 		for {
 			if ctx.Err() != nil {
 				return
@@ -661,12 +662,14 @@ func startLookupTableSupplierRunner(ctx context.Context, wg *sync.WaitGroup, que
 				if ctx.Err() != nil {
 					return
 				}
-				log.Printf("[lookup-supplier] poll error: %v", err)
-				if !waitBackoff(ctx) {
+				log.Printf("[lookup-supplier] poll error (retry in ~%v): %v", backoff, err)
+				var ok bool
+				if backoff, ok = backoffAfterError(ctx, backoff); !ok {
 					return
 				}
 				continue
 			}
+			backoff = pollBackoffBase // healthy read resets backoff
 			if raw == nil {
 				continue
 			}

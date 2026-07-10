@@ -33,6 +33,7 @@ import java.util.Map;
 public class ActionsProperties {
     private long actionPollingInitialDelayMs = 3000L;
     private long actionPollingPeriodMs = 100L;
+    private long actionPollingMaxBackoffMs = 5000L;
     // TODO: find a more interactive way to set this via the UI
     // for now, allow customization through the shipped application.yaml
     private Map<String, Integer> actionThreads = new HashMap<>();
