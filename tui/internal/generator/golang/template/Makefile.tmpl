@@ -30,6 +30,15 @@ ACTION_KIT_MODULE := gitlab.com/deltafi/deltafi/deltafi-go-action-kit/v2
 BUILD_DIR ?= $(realpath $(CURDIR))
 VERSION ?= $(shell git describe --tags --always --dirty=-local 2>/dev/null || echo latest)
 
+# Plugin identity is read from plugin.yaml and stamped into the binary via
+# -ldflags at docker build time. awk strips the "key:" prefix and any
+# surrounding quotes, preserving the rest of the value verbatim (including any
+# colons, e.g. in a description); values are passed to docker as --build-arg.
+PLUGIN_GROUP_ID    := $(shell awk '/^groupId:/     {sub(/^groupId:[ \t]*/,"");     gsub(/^"|"$$/,""); print; exit}' plugin.yaml 2>/dev/null)
+PLUGIN_ARTIFACT_ID := $(shell awk '/^artifactId:/  {sub(/^artifactId:[ \t]*/,"");  gsub(/^"|"$$/,""); print; exit}' plugin.yaml 2>/dev/null)
+PLUGIN_DOMAIN      := $(shell awk '/^domain:/      {sub(/^domain:[ \t]*/,"");      gsub(/^"|"$$/,""); print; exit}' plugin.yaml 2>/dev/null)
+PLUGIN_DESCRIPTION := $(shell awk '/^description:/ {sub(/^description:[ \t]*/,""); gsub(/^"|"$$/,""); print; exit}' plugin.yaml 2>/dev/null)
+
 # Auto-detect if go is installed
 HAS_GO := $(shell command -v go 2> /dev/null)
 USE_DOCKER ?= $(if $(HAS_GO),false,true)
@@ -80,7 +89,11 @@ endif
 # Docker image build args/contexts. The single Dockerfile selects between
 # published-mode and local-mode via KIT_SOURCE; in local mode the action kit
 # working copy is mounted via --build-context.
-DOCKER_BUILD_ARGS     := --build-arg VERSION=$(VERSION)
+DOCKER_BUILD_ARGS     := --build-arg VERSION=$(VERSION) \
+                         --build-arg PLUGIN_GROUP_ID=$(PLUGIN_GROUP_ID) \
+                         --build-arg PLUGIN_ARTIFACT_ID=$(PLUGIN_ARTIFACT_ID) \
+                         --build-arg PLUGIN_DOMAIN=$(PLUGIN_DOMAIN) \
+                         --build-arg PLUGIN_DESCRIPTION='$(PLUGIN_DESCRIPTION)'
 DOCKER_BUILD_CONTEXTS :=
 ifeq ($(LOCAL_GO_ACTION_KIT),true)
   DOCKER_BUILD_ARGS     += --build-arg KIT_SOURCE=local --build-arg ACTIONKIT_VERSION=$(ACTIONKIT_VERSION)
@@ -131,6 +144,7 @@ GOTOOLCMD = $(GOWORK_ENV) $(TOOLING_CMD_PREFIX) go
 GOBUILD   = $(GOCMD) build -modcacherw
 GOCLEAN   = $(GOCMD) clean
 GOTEST    = $(GOTOOLCMD) test -modcacherw
+GOTEST_RACE_RUN ?= CGO_ENABLED=1 $(GOTEST) -v -race ./...
 GOGET     = $(GOCMD) get -modcacherw
 GOVET     = $(GOCMD) vet -modcacherw
 GOFIX     = $(GOCMD) fix -modcacherw
@@ -145,7 +159,7 @@ LINT_MODULE = github.com/golangci/golangci-lint/cmd/golangci-lint@latest
 # Output
 BIN_DIR = ./bin
 
-.PHONY: all build clean test lint fmt deps tidy very-clean docker docker-build docker-tag publish install help check-env sync-action-kit buildx-builder
+.PHONY: all build clean test acceptance-test lint fmt deps tidy very-clean docker docker-build docker-tag publish install help check-env check-plugin-yaml sync-action-kit buildx-builder jsonFromParams paramsFromJson
 
 all: check-env build test
 
@@ -165,7 +179,27 @@ else
 	@rm -f go.work go.work.sum
 endif
 
-check-env: sync-action-kit
+
+# Validate plugin.yaml is present and has all required keys before running any
+# build target. Values are read into the PLUGIN_* variables at the top of this
+# Makefile; this rule converts missing values into a clear error message.
+check-plugin-yaml:
+	@if [ ! -f plugin.yaml ]; then \
+		echo "ERROR: plugin.yaml not found in $(CURDIR)" >&2; \
+		echo "Create plugin.yaml with required keys: groupId, artifactId, domain, description" >&2; \
+		exit 1; \
+	fi
+	@missing=""; \
+	[ -z "$(PLUGIN_GROUP_ID)" ] && missing="$$missing groupId"; \
+	[ -z "$(PLUGIN_ARTIFACT_ID)" ] && missing="$$missing artifactId"; \
+	[ -z "$(PLUGIN_DOMAIN)" ] && missing="$$missing domain"; \
+	[ -z "$(PLUGIN_DESCRIPTION)" ] && missing="$$missing description"; \
+	if [ -n "$$missing" ]; then \
+		echo "ERROR: plugin.yaml is missing required keys:$$missing" >&2; \
+		exit 1; \
+	fi
+
+check-env: check-plugin-yaml sync-action-kit
 	@mkdir -p $(GOPATH)
 	@if [ "$(USE_DOCKER)" = "false" ] && [ "$(GO_VERSION_CHECK)" = "0" ]; then \
 		echo "WARNING: Go $(MIN_GO_VERSION) is required. Consider using USE_DOCKER=true"; \
@@ -189,6 +223,7 @@ help:
 	@echo "  clean            - Remove build artifacts"
 	@echo "  very-clean       - Remove build artifacts and cached modules"
 	@echo "  test             - Run tests"
+	@echo "  acceptance-test  - Run all tests with the race detector"
 	@echo "  lint             - Run linter and vet"
 	@echo "  fmt              - Format code"
 	@echo "  tidy             - Format code and tidy modules"
@@ -200,6 +235,8 @@ help:
 	@echo "  docker-tag       - Tag Docker image with version"
 	@echo "  publish          - Build and publish multi-architecture Docker container"
 	@echo "  install          - Build Docker image and install plugin into DeltaFi"
+	@echo "  jsonFromParams   - Regenerate action_params.json from each _params.go"
+	@echo "  paramsFromJson   - Regenerate action_params.go from each _params.json"
 	@echo ""
 	@echo "Build options:"
 	@echo "  USE_DOCKER=true|false             - Use Docker for building (auto-detected: $(USE_DOCKER))"
@@ -215,6 +252,10 @@ build: tidy
 test: tidy
 	@echo "Running all tests"
 	@$(GOTEST) -v ./...
+
+acceptance-test: tidy
+	@echo "Running all tests with the race detector"
+	@$(GOTEST_RACE_RUN)
 
 clean: check-env
 	$(GOCLEAN)
@@ -274,3 +315,13 @@ upgrade: check-env deps-up tidy lint
 
 deps-up: check-env
 	@$(GOGET) -u ./...
+
+# Schema round-trip targets. jsonFromParams writes <actions/*_action_params.json>
+# alongside each *_action_params.go. paramsFromJson does the reverse (overwrites
+# the .go files with regenerated source; fields alphabetize, comments drop —
+# see the kit's cmd/actionkit-schemagen for details).
+jsonFromParams:
+	@go run gitlab.com/deltafi/deltafi/deltafi-go-action-kit/v2/cmd/actionkit-schemagen json ./actions
+
+paramsFromJson:
+	@go run gitlab.com/deltafi/deltafi/deltafi-go-action-kit/v2/cmd/actionkit-schemagen params ./actions

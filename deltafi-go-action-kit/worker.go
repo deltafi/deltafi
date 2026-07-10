@@ -30,12 +30,19 @@ import (
 	"time"
 )
 
+// eventQueue is the subset of queue operations a worker depends on: polling for
+// work and publishing results. *actionEventQueue satisfies it; tests use a fake.
+type eventQueue interface {
+	queuePoller
+	Put(ctx context.Context, queueName string, data []byte) error
+}
+
 // actionWorker manages polling and execution for a single registered action.
 type actionWorker struct {
 	name           string
 	action         any
 	actionType     string
-	queue          *actionEventQueue
+	queue          eventQueue
 	contentService ContentServiceBase
 	lookupClient   LookupClientBase
 	artifactClient ArtifactClientBase
@@ -44,6 +51,7 @@ type actionWorker struct {
 	appName        string
 	dispatcher     *actionDispatcher
 	paramDefaults  any
+	actionClass    string
 }
 
 // queueEvent is the deserialized ActionInput from the Redis queue.
@@ -78,36 +86,67 @@ type queueActionContext struct {
 }
 
 // start launches the poller and worker goroutines for this action.
-func (w *actionWorker) start(ctx context.Context, wg *sync.WaitGroup) {
+func (w *actionWorker) start(pollCtx, workerCtx context.Context, wg *sync.WaitGroup) {
 	ch := make(chan []byte, w.workerCount)
 
 	// Start poller
 	wg.Go(func() {
-		w.poll(ctx, ch)
+		w.poll(pollCtx, ch)
 	})
 
 	// Start workers
 	for i := 0; i < w.workerCount; i++ {
+		threadNum := i
 		wg.Go(func() {
-			w.work(ctx, ch)
+			w.work(workerCtx, ch, threadNum)
 		})
+	}
+}
+
+// pollErrorBackoff is the delay applied after a queue read error before the
+// poller retries. It prevents a tight reconnect loop (and the accompanying log
+// flood) when Valkey is unavailable.
+var pollErrorBackoff = 5 * time.Second
+
+// queuePoller reads work events from a named queue.
+type queuePoller interface {
+	Take(ctx context.Context, queueName string) ([]byte, error)
+}
+
+// waitBackoff blocks for pollErrorBackoff or until ctx is cancelled. It returns
+// false if ctx was cancelled, signalling the caller to stop.
+func waitBackoff(ctx context.Context) bool {
+	select {
+	case <-ctx.Done():
+		return false
+	case <-time.After(pollErrorBackoff):
+		return true
 	}
 }
 
 // poll runs the BZPOPMIN loop, sending raw JSON event payloads to the work channel.
 func (w *actionWorker) poll(ctx context.Context, ch chan<- []byte) {
+	pollQueue(ctx, w.name, w.queue, ch)
+}
+
+// pollQueue repeatedly takes events from the queue and forwards them to ch,
+// backing off after read errors so a downed Valkey does not cause a tight spin.
+func pollQueue(ctx context.Context, name string, q queuePoller, ch chan<- []byte) {
 	defer close(ch)
 	for {
 		if ctx.Err() != nil {
 			return
 		}
 
-		raw, err := w.queue.Take(ctx, w.name)
+		raw, err := q.Take(ctx, name)
 		if err != nil {
 			if ctx.Err() != nil {
 				return
 			}
-			log.Printf("[%s] poll error: %v", w.name, err)
+			log.Printf("[%s] poll error: %v", name, err)
+			if !waitBackoff(ctx) {
+				return
+			}
 			continue
 		}
 		if raw == nil {
@@ -123,7 +162,7 @@ func (w *actionWorker) poll(ctx context.Context, ch chan<- []byte) {
 }
 
 // work receives events from the channel, executes the action, and publishes results.
-func (w *actionWorker) work(ctx context.Context, ch <-chan []byte) {
+func (w *actionWorker) work(ctx context.Context, ch <-chan []byte, threadNum int) {
 	for raw := range ch {
 		event, err := deserializeQueueEvent(raw)
 		if err != nil {
@@ -131,7 +170,7 @@ func (w *actionWorker) work(ctx context.Context, ch <-chan []byte) {
 			continue
 		}
 
-		actionEvent := w.execute(ctx, event)
+		actionEvent := w.execute(ctx, event, threadNum)
 
 		// Publish result
 		resultJSON, err := json.Marshal(actionEvent)
@@ -148,13 +187,17 @@ func (w *actionWorker) work(ctx context.Context, ch <-chan []byte) {
 }
 
 // execute runs the action with panic recovery and returns an ActionEvent.
-func (w *actionWorker) execute(ctx context.Context, event *queueEvent) *ActionEvent {
+func (w *actionWorker) execute(ctx context.Context, event *queueEvent, threadNum int) *ActionEvent {
 	startTime := time.Now()
 	actx := w.buildActionContext(ctx, event)
 
 	// Track for heartbeat long-running task reporting
-	w.tracker.start(actx.DID, actx.ActionName, w.appName)
-	defer w.tracker.stop(actx.DID, actx.ActionName)
+	actionClass := w.actionClass
+	if actionClass == "" {
+		actionClass = actx.ActionName
+	}
+	w.tracker.start(actx.DID, actionClass, actx.ActionName, threadNum, w.appName)
+	defer w.tracker.stop(actx.DID, actionClass, actx.ActionName, threadNum)
 
 	var actionEvent *ActionEvent
 

@@ -17,13 +17,10 @@ func init() {
 		WithOptionsYAML({{.ActionFileName}}Options)
 }
 
-// {{.ActionClassName}}Params defines the action's configurable parameters.
-type {{.ActionClassName}}Params struct{}
-
 // {{.ActionClassName}} implements the egress action.
 type {{.ActionClassName}} struct{}
 
-func (a *{{.ActionClassName}}) Egress(deltafile *actionkit.Deltafile, params {{.ActionClassName}}Params) *actionkit.Deltafile {
+func (a *{{.ActionClassName}}) Egress(deltafile *actionkit.EgressDeltafile, params {{.ActionClassName}}Params) *actionkit.EgressDeltafile {
 
 	if !deltafile.HasContent() {
 		return deltafile.Errorf("No content provided")

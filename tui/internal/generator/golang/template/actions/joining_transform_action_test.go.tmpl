@@ -25,7 +25,7 @@ func Test{{.ActionClassName}}_Join(t *testing.T) {
 	result := actionkit.RunJoin(t, &{{.ActionClassName}}{}, []*actionkit.Deltafile{in1, in2}, joined, {{.ActionClassName}}Params{})
 
 	require.True(t, result.HasContent())
-	assert.Len(t, result.GetNewContentSlice(), 2)
+	assert.Len(t, result.GetNewContentList(), 2)
 }
 
 func Test{{.ActionClassName}}_Transform(t *testing.T) {

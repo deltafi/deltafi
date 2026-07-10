@@ -11,99 +11,118 @@ Java and Python action kits already exist. This document describes the Go implem
 ```
 deltafi-go-action-kit/            # Library — flat package: actionkit
   go.mod
-  actionkit.go                    # PluginCoordinates, ActionContext, Variable, FlowPlan, SafeStringMap
-  action.go                       # Action interfaces (Transform, Egress, TimedIngress, Join, ArtifactAware)
+  actionkit.go                    # PluginCoordinates, ActionContext (internal), Variable, FlowPlan, SafeStringMap
+  action.go                       # Action type constants, ArtifactAware optional interface
   artifact.go                     # ArtifactClient, publish/get/stream, caching, version change callbacks
-  content.go                      # Segment, ActionContent, ContentService (MinIO), content operations
+  content.go                      # Segment, ActionContent, ContentService (MinIO), package-level Save helpers
   datasize.go                     # DataSize parameter type (human-readable byte sizes)
+  deltafile.go                    # Deltafile — primary action object; content/metadata/annotation/children
+  dispatch.go                     # Per-action typed closures built at registration; event builders for the 4 action types
+  egress_deltafile.go             # EgressDeltafile — restricted view passed to Egress actions
   envvar.go                       # EnvVar parameter type (UPPER_SNAKE_CASE env var references)
   errors.go                       # Domain-specific error types (MissingMetadataError, ExpectedContentError)
   event.go                        # ActionEvent wire format (JSON published to result queue)
+  globals.go                      # Package-level Lookup / GetArtifact / PublishArtifact / StreamArtifact
   heartbeat.go                    # Heartbeat goroutine and long-running task reporting
-  input.go                        # TransformInput, EgressInput, IngressInput, parameter coercion
+  httpclient.go                   # Shared HTTP transports used by registration, artifact, and lookup clients
+  input.go                        # Type-aware parameter coercion (string → numeric/bool, map → struct)
   log.go                          # LogMessage and LogSeverity constants
   lookup.go                       # LookupClient, LookupTableSupplier, pull-through supplier runner
+  lookup_query.go                 # LookupQueryBuilder — fluent query construction with client-side exclusion
   options.go                      # ActionOptions, InputSpec, OutputSpec, ContentSpec
   plugin.go                       # Plugin struct, RunPlugin(), lifecycle orchestration
   queue.go                        # ActionEventQueue (Redis/Valkey BZPOPMIN/ZADD operations)
   registration.go                 # pluginRegistration payload, HTTP POST to core with retry
   registry.go                     # Global action/supplier/watch registries, Registration builder
-  result.go                       # Result types: Transform, TransformResults, Egress, Ingress, Error, Filter
   schema.go                       # JSON Schema generation with $ref resolution and default coercion
-  testing.go                      # InMemoryContentStore, MockLookupClient, MockArtifactClient, TestContext
+  testing.go                      # InMemoryContentStore, MockLookupClient, MockArtifactClient, TestContext, RunX helpers
+  timed_ingress_deltafile.go      # TimedIngressDeltafile (action container) + IngressDeltafile (per-item write-only)
   worker.go                       # Poller, worker pool, action execution, join dispatch, orphan cleanup
+  cmd/
+    actionkit-schemagen/          # Standalone CLI for jsonFromParams / paramsFromJson round-trip
 ```
 
 ---
 
 ## Type Model Diagram
 
+Actions are plain Go structs. Each action type is identified by the presence of a conventionally-named method (`Transform`, `Egress`, `Ingress`, `Join`) on the struct. The generic `RegisterX` functions enforce method signatures at compile time via interface constraints — there are no Go `interface`s for the action types themselves, and there is no reflection at the invocation hot path (each registration builds a typed closure that calls the action method directly).
+
 ```mermaid
 classDiagram
     direction LR
 
-    class TransformAction {
-        <<interface>>
-        +Transform(ctx, TransformInput) Result, error
-    }
-    class EgressAction {
-        <<interface>>
-        +Egress(ctx, EgressInput) Result, error
-    }
-    class TimedIngressAction {
-        <<interface>>
-        +Ingress(ctx, IngressInput) Result, error
-    }
-    class JoinAction {
-        <<interface>>
-        +Join(ctx, []TransformInput) TransformInput, error
-    }
-    class ArtifactAware {
-        <<interface>>
-        +ConfigureArtifacts(client *ArtifactClient)
-    }
-
-    class TransformInput {
-        +ActionContext *ActionContext
-        +Content []ActionContent
-        +Metadata map~string,string~
-        +Params map~string,any~
-        +HasContent() bool
-        +FirstContent() *ActionContent
-        +ContentAt(int) *ActionContent, error
-        +ContentNamed(string) *ActionContent
-        +GetMetadata(string) string, error
-        +ParseParameters(dest any) error
-    }
-    class EgressInput {
-        +ActionContext *ActionContext
-        +Content []ActionContent
-        +Metadata map~string,string~
-        +Params map~string,any~
-        +HasContent() bool
-        +FirstContent() *ActionContent
-        +ParseParameters(dest any) error
-    }
-    class IngressInput {
-        +ActionContext *ActionContext
-        +Params map~string,any~
-        +ParseParameters(dest any) error
-    }
-
-    class ActionContext {
-        +DID string
-        +DeltaFileName string
+    class Deltafile {
+        +Did string
+        +Name string
         +DataSource string
         +FlowName string
         +FlowID string
         +ActionName string
         +Memo string
-        +ContentService ContentServiceBase
-        +LookupClient LookupClientBase
-        +ArtifactClient ArtifactClientBase
-        +Join *JoinConfiguration
-        +JoinedDIDs []string
-        +ChildContext() *ActionContext
+        +Context() context.Context
+        +HasContent() bool
+        +ContentCount() int
+        +ContentAt(int) *ActionContent
+        +FirstContent() *ActionContent
+        +ContentNamed(string) *ActionContent
+        +GetContentList() []ActionContent
+        +GetNewContentList() []ActionContent
+        +SaveStringContent(name, mediaType, data) *ActionContent, error
+        +SaveBytesContent(name, mediaType, data) *ActionContent, error
+        +SaveReaderContent(name, mediaType, r) *ActionContent, error
+        +AddContent(c) *Deltafile
+        +AddContentList(cs) *Deltafile
+        +PassthroughContent() *Deltafile
+        +AddChild(name) *Deltafile
+        +GetChildren() []*Deltafile
+        +GetMetadata(key) string, error
+        +GetMetadataOrDefault(key, def) string
+        +GetMetadataMap() map~string,string~
+        +AddMetadata(key, value) *Deltafile
+        +AddMetadataMap(m) *Deltafile
+        +DeleteMetadataKeys(keys...) *Deltafile
+        +ClearMetadata() *Deltafile
+        +AddAnnotation(key, value) *Deltafile
+        +Errorf(format, args...) *Deltafile
+        +Filterf(format, args...) *Deltafile
+        +SetErrorContext(ctx) *Deltafile
+        +LogInfo/LogWarn/LogError(format, args...) *Deltafile
+    }
+
+    class EgressDeltafile {
+        +Did/Name/DataSource/FlowName/FlowID/ActionName/Memo string
+        +Context() context.Context
+        +HasContent/ContentCount/FirstContent/ContentAt/ContentNamed/GetContentList
+        +GetMetadata/GetMetadataOrDefault/GetMetadataMap
+        +AddAnnotation(key, value) *EgressDeltafile
+        +Errorf/Filterf/SetErrorContext *EgressDeltafile
+        +LogInfo/LogWarn/LogError *EgressDeltafile
+        %% No Save*, no AddContent, no AddChild, no AddMetadata*
+    }
+
+    class TimedIngressDeltafile {
+        +Memo/FlowName/ActionName string
+        +Context() context.Context
+        +NewItem(name) *IngressDeltafile
+        +SetMemo/SetStatus/SetStatusMessage/SetExecuteImmediate *TimedIngressDeltafile
+        +Errorf/SetErrorContext *TimedIngressDeltafile
+        +LogInfo/LogWarn/LogError *TimedIngressDeltafile
+    }
+
+    class IngressDeltafile {
+        +Did string
+        +Name string
+        +SaveStringContent/SaveBytesContent/SaveReaderContent
+        +AddContent/AddContentList *IngressDeltafile
+        +AddMetadata/AddMetadataMap *IngressDeltafile
+        +AddAnnotation(key, value) *IngressDeltafile
+        %% Write-only; no reads, no error/filter, no logging
+    }
+
+    class ArtifactAware {
+        <<optional interface>>
+        +ConfigureArtifacts(client *ArtifactClient)
     }
 
     class ActionContent {
@@ -111,14 +130,17 @@ classDiagram
         +MediaType string
         +Segments []Segment
         +Tags []string
-        +LoadBytes(ctx, cs) []byte, error
-        +LoadString(ctx, cs) string, error
-        +LoadReader(ctx, cs) ReadCloser, error
+        +LoadBytes() []byte, error
+        +LoadString() string, error
+        +LoadReader() ReadCloser, error
         +Size() int64
         +Copy() ActionContent
         +Subcontent(offset, size) ActionContent
+        +SubcontentNamed(offset, size, name, mediaType) ActionContent
         +Append(other)
         +Prepend(other)
+        +SetName/SetMediaType
+        +AddTag/RemoveTag/HasTag
     }
     class Segment {
         +UUID string
@@ -127,49 +149,26 @@ classDiagram
         +DID string
     }
 
-    class Result {
-        <<interface>>
-        +toActionEvent(actx, start) *ActionEvent
-    }
-    class TransformResult { }
-    class TransformResults { }
-    class EgressResult { }
-    class IngressResult { }
-    class ErrorResult { }
-    class FilterResult { }
-
-    TransformAction ..> TransformInput
-    EgressAction ..> EgressInput
-    TimedIngressAction ..> IngressInput
-    JoinAction ..> TransformInput
-
-    TransformInput --> ActionContext
-    EgressInput --> ActionContext
-    IngressInput --> ActionContext
-    TransformInput --> ActionContent
-    EgressInput --> ActionContent
+    Deltafile --> ActionContent
+    EgressDeltafile --> Deltafile : wraps
+    TimedIngressDeltafile --> IngressDeltafile : NewItem
+    IngressDeltafile --> Deltafile : wraps
     ActionContent --> Segment
-    ActionContext --> ContentServiceBase
-    ActionContext --> LookupClientBase
-    ActionContext --> ArtifactClientBase
-
-    Result <|.. TransformResult
-    Result <|.. TransformResults
-    Result <|.. EgressResult
-    Result <|.. IngressResult
-    Result <|.. ErrorResult
-    Result <|.. FilterResult
 
     class Registration {
         +Name string
         +Action any
-        +RegisterTransform(name, action) *Registration
-        +RegisterJoinTransform(name, action) *Registration
-        +RegisterEgress(name, action) *Registration
-        +RegisterIngress(name, action) *Registration
         +Describe(desc) *Registration
-        +WithParams(paramType) *Registration
+        +WithParams(defaults) *Registration
         +WithOptions(ActionOptions) *Registration
+        +WithOptionsYAML(yaml) *Registration
+    }
+
+    class RegistrationFunctions {
+        +RegisterTransform[P](name, action with Transform method) *Registration
+        +RegisterJoinTransform[P](name, action with Transform+Join methods) *Registration
+        +RegisterEgress[P](name, action with Egress method) *Registration
+        +RegisterIngress[P](name, action with Ingress method) *Registration
     }
 
     class ContentServiceBase {
@@ -181,6 +180,17 @@ classDiagram
         +Delete(ctx, segments) error
     }
 ```
+
+### Method signatures enforced at registration
+
+| Action type | Required method(s) | Registered via |
+|---|---|---|
+| Transform | `Transform(*Deltafile, P) *Deltafile` | `RegisterTransform[P]` |
+| Joining transform | `Transform(*Deltafile, P) *Deltafile` and `Join([]*Deltafile, *Deltafile, P) *Deltafile` | `RegisterJoinTransform[P]` |
+| Egress | `Egress(*EgressDeltafile, P) *EgressDeltafile` | `RegisterEgress[P]` |
+| Timed ingress | `Ingress(*TimedIngressDeltafile, P) *TimedIngressDeltafile` | `RegisterIngress[P]` |
+
+`P` is the action's parameter struct type, inferred by Go from the method signature. Returning the same Deltafile-shaped object is a convention for chaining; the dispatcher inspects the receiver's state (children, errored, filtered, items) to build the wire event, so the returned value is otherwise unused.
 
 ---
 
@@ -196,7 +206,7 @@ sequenceDiagram
     participant Workers
     participant Heartbeat
 
-    Main->>Plugin: RunPlugin(config)
+    Main->>Plugin: RunPlugin() — identity from link-time globals or plugin.yaml
     Plugin->>Plugin: Register actions from global registry
     Plugin->>Plugin: Load flows/ variables/ integration tests from disk
 
@@ -257,18 +267,18 @@ sequenceDiagram
     Worker->>Channel: Receive raw JSON
     Worker->>Worker: Deserialize queueEvent
     Worker->>Worker: Build ActionContext (+ ContentService, LookupClient, ArtifactClient)
-    Worker->>Worker: Build typed input (TransformInput / EgressInput / IngressInput)
+    Worker->>Worker: Build action object (Deltafile / EgressDeltafile / TimedIngressDeltafile) and parse params
 
-    alt JoinAction and Join config present
-        Worker->>Worker: Build []TransformInput (one per DeltaFileMessage)
-        Worker->>Action: Join(ctx, []TransformInput) → merged TransformInput
-        Worker->>Action: Transform(ctx, mergedInput)
+    alt Joining transform and Join config present
+        Worker->>Worker: Build []*Deltafile (one per DeltaFileMessage) + empty joined *Deltafile
+        Worker->>Action: Join(inputs, joined, params)
+        Worker->>Action: Transform(joinedDf, params)
     else Normal action
-        Worker->>Action: Transform/Egress/Ingress(ctx, input)
+        Worker->>Action: Transform / Egress / Ingress(df-or-wrapper, params)
     end
 
-    Action-->>Worker: Result (or panic recovered → ErrorResult)
-    Worker->>Worker: Convert Result → ActionEvent JSON
+    Action-->>Worker: Side effects on the receiver (errored / filtered / children / items)
+    Worker->>Worker: Convert receiver state → ActionEvent JSON
 
     Worker->>Redis: ZADD dgs[-returnAddress] timestamp eventJSON
 
@@ -280,6 +290,53 @@ sequenceDiagram
 
 ---
 
+## Parameter File Convention and Schema Round-Trip
+
+Each action's typed parameter struct lives in its own file beside the action:
+
+```
+actions/
+  foo_action.go               # action struct, init(), action method
+  foo_action_params.go        # FooActionParams struct (and any nested param-shape types)
+  foo_action_params.json      # optional — generated by jsonFromParams
+  foo_action.yaml             # ActionOptions for the DeltaFi UI
+  foo_action_test.go
+```
+
+Splitting the params struct into a sibling file keeps the action's logic separate from its public configuration surface and gives the round-trip tooling a deterministic location to read from and write to.
+
+The kit ships a single binary, `cmd/actionkit-schemagen`, that converts between the two representations:
+
+```sh
+go run gitlab.com/deltafi/deltafi/deltafi-go-action-kit/v2/cmd/actionkit-schemagen json   ./actions
+go run gitlab.com/deltafi/deltafi/deltafi-go-action-kit/v2/cmd/actionkit-schemagen params ./actions
+```
+
+Each plugin's `Makefile` exposes these as `jsonFromParams` and `paramsFromJson` targets. Both directions are pure file-by-file AST/text — the plugin does **not** need to compile for either to work.
+
+### `jsonFromParams` (Go → JSON Schema)
+
+Walks `*_action_params.go`, parses each file with `go/ast`, locates the `*Params` struct (and any named companion structs defined in the same file), and writes a `*_action_params.json` schema next to each. The AST generator reproduces the kit's reflect-based `GenerateSchema` output byte-for-byte for the supported subset, so the schemas on disk match exactly what the kit sends to core during plugin registration. Equivalence is locked in by golden tests in the schemagen package.
+
+The supported subset, mirroring the reflect path:
+
+* Field types: Go primitives (`bool`, `int*`, `uint*`, `float32/64`, `string`), pointers, slices, string-keyed maps, named struct types defined in the same file, and `actionkit.DataSize` / `actionkit.EnvVar`.
+* Struct tags: `json`, `description`, `default`, `enum`, `required`, `minimum`, `maximum`.
+* Output features: `additionalProperties: false`, `title` on named struct schemas (used by `paramsFromJson` to recover Go type names on the reverse trip), and the kit's `x-deltafi-type` markers for DataSize/EnvVar.
+
+### `paramsFromJson` (JSON Schema → Go)
+
+Walks `*_action_params.json`, parses each schema, and writes the matching `*_action_params.go` source. The reverse direction is canonical, not diff-clean against a hand-written original:
+
+* Fields emit in alphabetical order.
+* Doc comments on Go types are not represented in JSON Schema, so they are lost; the kit emits boilerplate comments instead.
+* Slice-of-named-struct fields (`[]Foo`) round-trip as slice-of-pointer (`[]*Foo`).
+* Pointer-vs-value choice is normalized to pointer for nested struct fields.
+
+Round-tripping is idempotent from the first JSON onward (Go → JSON → Go → JSON gives the same JSON in steps 1 and 4).
+
+---
+
 ## Action Code Examples
 
 ### Transform Action with Typed Parameters
@@ -288,10 +345,9 @@ sequenceDiagram
 package actions
 
 import (
-    "context"
-    "fmt"
+    "strings"
 
-    ak "github.com/deltafi/deltafi/deltafi-go-action-kit"
+    ak "gitlab.com/deltafi/deltafi/deltafi-go-action-kit/v2"
 )
 
 type UpperParams struct {
@@ -303,35 +359,30 @@ type UpperTransform struct{}
 func init() {
     ak.RegisterTransform("UpperTransform", &UpperTransform{}).
         Describe("Uppercases content and prepends a prefix").
-        WithParams(UpperParams{})
+        WithParams(UpperParams{Prefix: "HELLO"})
 }
 
-func (a *UpperTransform) Transform(ctx context.Context, input ak.TransformInput) (ak.Result, error) {
-    actx := input.ActionContext
-    var params UpperParams
-    if err := input.ParseParameters(&params); err != nil {
-        return actx.Errorf("parse parameters: %v", err), nil
-    }
-
-    content := input.FirstContent()
-    data, err := content.LoadString(ctx)
+func (a *UpperTransform) Transform(df *ak.Deltafile, params UpperParams) *ak.Deltafile {
+    content, err := df.FirstContent()
     if err != nil {
-        return nil, err
+        return df.Errorf("no content provided")
     }
-
-    output := fmt.Sprintf("%s: %s", params.Prefix, strings.ToUpper(data))
-    saved, err := actx.SaveString(ctx, output, content.Name, "text/plain")
+    data, err := content.LoadString()
     if err != nil {
-        return nil, err
+        return df.Errorf("load content: %v", err)
     }
-
-    result := ak.NewTransformResult(actx)
-    result.AddContent(*saved)
-    return result, nil
+    if _, err := df.SaveStringContent(
+        content.Name, "text/plain",
+        params.Prefix+": "+strings.ToUpper(data)); err != nil {
+        return df.Errorf("save content: %v", err)
+    }
+    return df
 }
 ```
 
 ### Egress Action
+
+`Egress` actions receive an `*EgressDeltafile` — a constrained view that exposes content/metadata reads, logging, annotations, and error/filter signaling, but not output-content or metadata mutations.
 
 ```go
 type FileEgress struct{}
@@ -341,25 +392,25 @@ func init() {
         Describe("Writes content to a local file")
 }
 
-func (a *FileEgress) Egress(ctx context.Context, input ak.EgressInput) (ak.Result, error) {
-    actx := input.ActionContext
-    content := input.FirstContent()
-    data, err := content.LoadBytes(ctx)
+func (a *FileEgress) Egress(df *ak.EgressDeltafile, params struct{}) *ak.EgressDeltafile {
+    content, err := df.FirstContent()
     if err != nil {
-        return nil, err
+        return df.Errorf("no content provided")
     }
-
+    data, err := content.LoadBytes()
+    if err != nil {
+        return df.Errorf("load content: %v", err)
+    }
     if err := os.WriteFile("/tmp/"+content.Name, data, 0644); err != nil {
-        return actx.Errorf("write file: %v", err), nil
+        return df.Errorf("write file: %v", err)
     }
-
-    result := ak.NewEgressResult(actx)
-    result.LogInfo(fmt.Sprintf("Wrote %d bytes to %s", len(data), content.Name))
-    return result, nil
+    return df.LogInfo("Wrote %d bytes to %s", len(data), content.Name)
 }
 ```
 
 ### Timed Ingress Action with Memo
+
+A timed ingress action receives a single `*TimedIngressDeltafile` that carries per-cycle context (`Memo`, `FlowName`, `ActionName`), spawns ingress items via `NewItem`, and records event-level state (`SetMemo`, `SetStatus`, `SetExecuteImmediate`, `Errorf`, `LogInfo`/`LogWarn`/`LogError`). Each `NewItem` returns an `*IngressDeltafile` — a write-only Deltafile view that exposes only the writes the wire event carries (`Save*`, `AddContent`, `AddMetadata`, `AddAnnotation`).
 
 ```go
 type PollingIngress struct{}
@@ -369,31 +420,25 @@ func init() {
         Describe("Creates a DeltaFile on each invocation with an incrementing counter")
 }
 
-func (a *PollingIngress) Ingress(ctx context.Context, input ak.IngressInput) (ak.Result, error) {
+func (a *PollingIngress) Ingress(deltafile *ak.TimedIngressDeltafile, params struct{}) *ak.TimedIngressDeltafile {
     counter := 0
-    if input.ActionContext.Memo != "" {
-        fmt.Sscanf(input.ActionContext.Memo, "%d", &counter)
+    if deltafile.Memo != "" {
+        fmt.Sscanf(deltafile.Memo, "%d", &counter)
     }
     counter++
 
-    content, err := ak.SaveContentString(ctx, input.ActionContext.ContentService,
-        input.ActionContext, fmt.Sprintf("message %d", counter),
-        "message.txt", "text/plain")
-    if err != nil {
-        return nil, err
+    item := deltafile.NewItem(fmt.Sprintf("msg-%d.txt", counter))
+    if _, err := item.SaveStringContent(
+        "message.txt", "text/plain", fmt.Sprintf("message %d", counter)); err != nil {
+        return deltafile.Errorf("save content: %v", err)
     }
-
-    item := ak.NewIngressResultItem(fmt.Sprintf("msg-%d.txt", counter))
-    item.AddContent(*content)
-
-    result := ak.NewIngressResult(input.ActionContext)
-    result.AddItem(*item)
-    result.SetMemo(fmt.Sprintf("%d", counter))
-    return result, nil
+    return deltafile.SetMemo(strconv.Itoa(counter))
 }
 ```
 
-### Join Action
+### Joining Transform Action
+
+A joining transform implements both `Join` and `Transform`. `Join` is called first with one input `*Deltafile` per joined DeltaFile and an empty `joined *Deltafile` to populate; the kit then invokes `Transform` on a freshly built Deltafile that carries the content/metadata produced by `Join`.
 
 ```go
 type MergingTransform struct{}
@@ -403,23 +448,22 @@ func init() {
         Describe("Merges multiple DeltaFiles into one")
 }
 
-// Join is called before Transform when multiple DeltaFileMessages arrive.
-func (a *MergingTransform) Join(ctx context.Context, inputs []ak.TransformInput) (ak.TransformInput, error) {
-    return ak.DefaultJoin(inputs), nil
+func (a *MergingTransform) Join(inputs []*ak.Deltafile, joined *ak.Deltafile, params struct{}) *ak.Deltafile {
+    for _, in := range inputs {
+        joined.AddContentList(in.GetContentList())
+        joined.AddMetadataMap(in.GetMetadataMap())
+    }
+    return joined
 }
 
-func (a *MergingTransform) Transform(ctx context.Context, input ak.TransformInput) (ak.Result, error) {
-    result := ak.NewTransformResult(input.ActionContext)
-    for _, c := range input.Content {
-        result.AddContent(c)
-    }
-    return result, nil
+func (a *MergingTransform) Transform(df *ak.Deltafile, params struct{}) *ak.Deltafile {
+    return df.LogInfo("merged %d content items", df.ContentCount())
 }
 ```
 
 ### Multi-Child Split Transform
 
-Split actions are transform actions that create children via `df.NewChild(name)`:
+Split actions are transform actions that create children via `df.AddChild(name)`. When children are present after the action returns, the kit emits a multi-child transform event automatically; if no children are added, a single transform event is emitted instead. The same action method can choose either outcome at runtime.
 
 ```go
 type SplitTransform struct{}
@@ -429,9 +473,9 @@ func init() {
         Describe("Splits each input content item into a separate child DeltaFile")
 }
 
-func (a *SplitTransform) Transform(df *ak.Deltafile, params SplitParams) *ak.Deltafile {
-    for _, content := range df.GetContentSlice() {
-        child := df.NewChild(content.Name)
+func (a *SplitTransform) Transform(df *ak.Deltafile, params struct{}) *ak.Deltafile {
+    for _, content := range df.GetContentList() {
+        child := df.AddChild(content.Name)
         child.AddContent(content)
         child.AddMetadataMap(df.GetMetadataMap())
     }
@@ -441,24 +485,104 @@ func (a *SplitTransform) Transform(df *ak.Deltafile, params SplitParams) *ak.Del
 
 ---
 
-## Lookup Table Service
+## Result Precedence
 
-### LookupClient API
+The dispatcher converts a `*Deltafile` returned by a transform action into an `*ActionEvent` using a fixed precedence order.
 
-The `LookupClient` is created automatically by the plugin and made available on every `ActionContext`. Actions query lookup tables through it:
+1. **Nil return** — if the action returns `nil`, the dispatcher emits an error event with the message `"action returned nil Deltafile"`.
+2. **Children present** — if `len(df.children) > 0`, the dispatcher emits a multi-child transform event immediately. **This check runs before the error/filter check.** Calling both `AddChild` and `Errorf` on the same Deltafile drops the error silently — splits and error paths must be mutually exclusive.
+3. **Error state** — when `hasError` is true, the dispatcher emits an error event. Output content is suppressed; annotations and log messages are carried onto the event.
+4. **Filter state** — when `hasFilter` is true, the dispatcher emits a filter event. Output content is suppressed; annotations and log messages are carried onto the event.
+5. **Normal transform** — output content, metadata changes, annotations, and log messages are collected into a transform event.
+
+### Errorf / Filterf are mutually exclusive
+
+`Errorf` and `Filterf` each clear the other's flag, so the last call wins:
 
 ```go
-results, err := input.ActionContext.LookupClient.Lookup(ctx, "my-table", &actionkit.LookupOptions{
-    MatchingColumnValues: map[string][]string{"status": {"active"}},
-    ResultColumns:        []string{"name", "value"},
-    SortColumn:           "name",
-    SortDirection:        actionkit.SortASC,
-    Offset:               intPtr(0),
-    Limit:                intPtr(100),
-})
-
-// results.TotalCount, results.Rows ([]map[string]string), results.Created, results.Modified
+df.Filterf("no match").Errorf("boom") // → error event (Errorf called last)
+df.Errorf("boom").Filterf("no match") // → filter event (Filterf called last)
 ```
+
+### Children short-circuit the error/filter check — a footgun
+
+```go
+func (a *SplitAction) Transform(df *ak.Deltafile, params P) *ak.Deltafile {
+    child := df.AddChild("part-1")
+    child.AddContent(content)
+    if somethingWrong {
+        return df.Errorf("abort") // Errorf has no effect — children take precedence
+    }
+    return df
+}
+```
+
+If an error arises after children have been added, do not call `Errorf` on the parent — it will be dropped. Arrange the code so that children are added only after all error conditions have been checked.
+
+### Annotations vs. content on error/filter events
+
+Annotations added via `df.AddAnnotation` **do** appear on error and filter events (they are stored in `ErrorEvent.Annotations` / `FilterEvent.Annotations`). Output content added via `Save*` or `AddContent` does **not** — `event.Transform` is empty or nil on error and filter events. Metadata changes (`df.AddMetadata` / `df.DeleteMetadataKeys`) are likewise **not** carried onto error or filter events; metadata mutations are only emitted as part of a normal transform event.
+
+---
+
+## Concurrency Contract
+
+Registered action structs are **shared singletons**: the same instance is used by all worker goroutines concurrently. The kit passes a fresh `*Deltafile` (or `*EgressDeltafile` / `*TimedIngressDeltafile`) and a freshly parsed `params` value to each invocation, but the action struct itself is shared.
+
+Any field written during `Transform`, `Egress`, or `Ingress` is therefore a data race unless protected by a mutex or other concurrency primitive.
+
+### Keep actions stateless
+
+The idiomatic pattern is a stateless struct:
+
+```go
+type UpperTransform struct{} // no mutable fields
+
+func (a *UpperTransform) Transform(df *ak.Deltafile, p UpperParams) *ak.Deltafile {
+    // all state lives in df and p — safe under concurrent invocations
+}
+```
+
+### Guard shared state when needed
+
+When an action holds state — for example, artifact data cached via `ConfigureArtifacts` — use a concurrency-safe container:
+
+```go
+type MyTransform struct {
+    config actionkit.SafeStringMap // reads and writes safe across goroutines
+}
+```
+
+`SafeStringMap` is provided by the kit for this purpose. For arbitrary shared data, a `sync.RWMutex`-protected field works.
+
+### Verify with the race detector
+
+Run `go test -race ./...` (or `make test`) to surface data races under concurrent load. When testing with multiple worker goroutines, set `ACTION_THREADS` to a value greater than 1 so the race detector sees actual concurrent calls.
+
+### Per-execution instances are not provided
+
+A factory API that creates a new action instance per execution is intentionally absent — it would obscure the shared-singleton model and encourage accidental per-call allocation. Favor stateless actions; when state is genuinely needed, protect it explicitly.
+
+---
+
+## Lookup Table Service
+
+### Lookup API
+
+Action code queries lookup tables via the package-level `actionkit.Lookup` function. The plugin's `LookupClient` is initialized during `RunPlugin` and stored in package-level state, so action authors do not plumb a client through. Queries are built with `LookupQuery()`, a fluent `*LookupQueryBuilder`:
+
+```go
+results, err := actionkit.Lookup("my-table",
+    actionkit.LookupQuery().
+        WithMatch("status", "active").
+        WithResultColumns("name", "value").
+        WithSort("name", actionkit.SortASC).
+        WithLimit(100))
+
+// results.TotalCount, results.Rows ([]Row; access values with Row.Get(col)), results.Created, results.Modified
+```
+
+Pass `nil` as the query to fetch all rows. `WithMatch` may be chained multiple times to add columns or accumulate values for the same column; `ExcludingMatch` adds rows-to-drop criteria that are applied client-side after the query returns.
 
 ### Caching
 
@@ -475,7 +599,7 @@ Plugins can serve as lookup table data sources by implementing `LookupTableSuppl
 type LookupTableSupplier interface {
     Table() LookupTableDefinition
     GetRows(ctx, variables map[string]string, matchingColumnValues map[string][]string,
-            resultColumns []string) ([]map[string]string, error)
+            resultColumns []string) ([]Row, error)
 }
 ```
 
@@ -499,15 +623,13 @@ client.UploadTable(ctx, "my-table", "text/csv", csvData)
 
 ## Artifact Registry Service
 
-### ArtifactClient API
+### Artifact API
 
-The `ArtifactClient` is created automatically by the plugin and made available on every `ActionContext`. It publishes and retrieves artifacts via core's REST API (`/api/v2/artifacts`). Artifacts are scoped to the plugin's namespace or the `shared` namespace.
+Action code uses the package-level functions in `globals.go` to publish and retrieve artifacts. The plugin's `ArtifactClient` is initialized during `RunPlugin` and stored in package-level state, so action authors do not plumb a client through. Artifacts are scoped to the plugin's namespace or the `shared` namespace; pass an empty alias to default to `"active"`.
 
 ```go
-actx := input.ActionContext
-
-// Publish
-resp, err := actx.ArtifactClient.PublishArtifact(ctx, "model.bin", reader, "application/octet-stream",
+// Publish to the plugin's namespace
+resp, err := actionkit.PublishArtifact("model.bin", reader, "application/octet-stream",
     &actionkit.PublishOptions{
         Version:     "2.1",
         Description: "Trained ML model",
@@ -517,18 +639,20 @@ resp, err := actx.ArtifactClient.PublishArtifact(ctx, "model.bin", reader, "appl
     })
 
 // Get (fully downloads into memory, cached)
-fetched, err := actx.ArtifactClient.GetArtifact(ctx, "model.bin", "active")
+fetched, err := actionkit.GetArtifact("model.bin", "active")
 // fetched.Data, fetched.Manifest.Version, fetched.Manifest.SHA256, ...
 
 // Stream (bypasses cache, caller must close Reader)
-stream, err := actx.ArtifactClient.StreamArtifact(ctx, "model.bin", "active")
+stream, err := actionkit.StreamArtifact("model.bin", "active")
 defer stream.Reader.Close()
 
 // Shared namespace variants
-actx.ArtifactClient.PublishSharedArtifact(...)
-actx.ArtifactClient.GetSharedArtifact(...)
-actx.ArtifactClient.StreamSharedArtifact(...)
+actionkit.PublishSharedArtifact(...)
+actionkit.GetSharedArtifact(...)
+actionkit.StreamSharedArtifact(...)
 ```
+
+The package-level helpers delegate to the same `*ArtifactClient` instance that is passed to `ArtifactAware.ConfigureArtifacts` (see below); when an action needs to register version-change callbacks it works against the client directly.
 
 ### Caching
 
@@ -597,6 +721,95 @@ Plugin-level watches fire before registration, ensuring data is available when c
 2. After registration, `ConfigureArtifacts()` is called on each `ArtifactAware` action
 3. `FireStartupCallbacks()` fires any callbacks added during step 2
 4. The pub/sub listener starts for ongoing version change events
+
+---
+
+## Artifact Watch-and-Cache Pattern
+
+The idiomatic way to consume an artifact in an action is to implement `ArtifactAware`, register version-change callbacks in `ConfigureArtifacts`, and cache parsed data in concurrency-safe fields on the action struct. Callbacks fire once at startup (after plugin registration) and again on each version change — avoiding a remote fetch on every action invocation.
+
+### Pattern summary
+
+1. **Implement `ArtifactAware`** by adding `ConfigureArtifacts(*ArtifactClient)` to the action struct.
+2. **Register callbacks** with `OnUpdateFetch` or `OnUpdateFetchWithDefault`. `OnUpdateFetchWithDefault` publishes a default artifact the first time the artifact is absent, then fetches it.
+3. **Cache parsed state** in a `SafeStringMap` or other concurrency-safe field — the callback may fire from any goroutine.
+4. **Read cached state** inside `Transform` / `Egress` — avoid calling `GetArtifact` on every execution.
+5. **Use `StreamArtifact`** inside an `OnUpdate` callback for large artifacts that should never be loaded into memory.
+
+### Example (from hello-world `transform_action.go`)
+
+```go
+type HelloWorldGoTransformAction struct {
+    extraMetadata    actionkit.SafeStringMap
+    extraAnnotations actionkit.SafeStringMap
+}
+
+func (a *HelloWorldGoTransformAction) ConfigureArtifacts(client *actionkit.ArtifactClient) {
+    client.OnUpdateFetchWithDefault("metadata.json", "",
+        actionkit.ArtifactDefault{
+            Data:        []byte(`{"custom": "value"}`),
+            ContentType: "application/json",
+            Description: "Default extra metadata",
+        },
+        func(fetched *actionkit.FetchedArtifact, err error) {
+            a.ExtraMetadataCallback(fetched, err)
+        })
+    client.OnSharedUpdateFetchWithDefault("annotations.json", "",
+        actionkit.ArtifactDefault{...},
+        func(fetched *actionkit.FetchedArtifact, err error) {
+            a.ExtraAnnotationsCallback(fetched, err)
+        })
+}
+
+func (a *HelloWorldGoTransformAction) ExtraMetadataCallback(artifact *actionkit.FetchedArtifact, err error) {
+    if err != nil {
+        log.Printf("Unable to read metadata.json: %v", err)
+        a.extraMetadata.Store(nil)
+        return
+    }
+    var metadata map[string]string
+    if err := json.Unmarshal(artifact.Data, &metadata); err != nil {
+        a.extraMetadata.Store(nil)
+        return
+    }
+    a.extraMetadata.Store(metadata)
+}
+
+func (a *HelloWorldGoTransformAction) Transform(df *actionkit.Deltafile, params P) *actionkit.Deltafile {
+    // Read cached state — no remote call.
+    a.extraMetadata.ForEach(func(k, v string) { df.AddMetadata(k, v) })
+    ...
+}
+```
+
+### Callback registration variants
+
+| Method | Behavior |
+|--------|----------|
+| `client.OnUpdate(name, alias, fn)` | Raw event callback — no automatic fetch |
+| `client.OnUpdateFetch(name, alias, fn)` | Fetches artifact on each version change |
+| `client.OnUpdateFetchWithDefault(name, alias, default, fn)` | As above; publishes `default` if artifact is absent at startup |
+| `client.OnSharedUpdate(...)` | Raw callback in the shared artifact namespace |
+| `client.OnSharedUpdateFetch(...)` | Auto-fetch in the shared namespace |
+| `client.OnSharedUpdateFetchWithDefault(...)` | Auto-fetch with default in the shared namespace |
+
+Pass an empty alias to default to the `"active"` alias.
+
+### Large artifacts
+
+When an artifact is too large to load into memory, use `StreamArtifact` inside an `OnUpdate` callback:
+
+```go
+client.OnUpdate("large-model.bin", "active", func(event actionkit.VersionChangedEvent) {
+    stream, err := actionkit.StreamArtifact("large-model.bin", "active")
+    if err != nil {
+        // handle
+        return
+    }
+    defer stream.Reader.Close()
+    // process stream incrementally; update cached state when done
+})
+```
 
 ---
 
@@ -692,11 +905,12 @@ func init() {
 
 ### Builder Chain
 
-`RegisterTransform(name, action)` / `RegisterJoinTransform` / `RegisterEgress` / `RegisterIngress` → `*Registration` with methods:
+`RegisterTransform[P](name, action)` / `RegisterJoinTransform[P]` / `RegisterEgress[P]` / `RegisterIngress[P]` → `*Registration` with methods:
 
 - `.Describe(desc)` — Sets human-readable description
-- `.WithParams(paramType)` — Sets parameter struct type for JSON schema generation
+- `.WithParams(defaults)` — Sets a parameter struct instance whose field values become defaults when the flow does not specify a value. The instance's type must match the generic parameter `P` used at registration.
 - `.WithOptions(ActionOptions)` — Sets input/output specs, error/filter conditions, notes. If `options.Description` is non-empty and no description was set, it populates the description.
+- `.WithOptionsYAML(yaml)` — Parses an inline YAML string into `ActionOptions` and applies them. Typically the YAML lives in an `//go:embed`-ed `.yaml` file next to the action source.
 
 ### Global Registries
 
@@ -745,21 +959,20 @@ tc := actionkit.NewTestContext("test-did-123")
 
 content := tc.Content("file.txt", "text/plain", "hello world")
 
-input := actionkit.TransformInput{
-    ActionContext: tc.ActionContext,
-    Content:       []actionkit.ActionContent{content},
-    Metadata:      map[string]string{"key": "value"},
-}
+// Build the object the action will receive
+deltafile := tc.NewDeltafile(content)            // *Deltafile — pass to RunTransform, RunEgress (which wraps internally), or as a Join input/joined target
+timed := tc.NewTimedIngressDeltafile()           // *TimedIngressDeltafile — pass to RunIngress
 ```
 
-The `ActionContext` is pre-populated with test values (DID, flow name, action name, etc.) and wired to the in-memory content store.
+The `ActionContext` inside `TestContext` is pre-populated with test values (DID, flow name, action name, etc.) and wired to the in-memory content store, so `content.LoadString()` and friends work without explicit plumbing.
 
 ### Action Runners
 
 ```go
-event := actionkit.RunTransform(t, &MyTransform{}, input)   // fails test on Go error
-event := actionkit.RunEgress(t, &MyEgress{}, input)
-event := actionkit.RunIngress(t, &MyIngress{}, input)
+event := actionkit.RunTransform(t, &MyTransform{}, deltafile, params) // splits, errors, filters all detected from receiver state
+event := actionkit.RunEgress(t, &MyEgress{}, deltafile, params)       // wraps the Deltafile in an EgressDeltafile internally
+event := actionkit.RunIngress(t, &MyIngress{}, timed, params)         // takes a *TimedIngressDeltafile
+event := actionkit.RunJoin(t, &MyJoin{}, inputs, joined, params)      // returns the merged *Deltafile (no event wrapping)
 ```
 
 ### Result Assertions
@@ -772,76 +985,49 @@ event.RequireEgress(t)              // asserts type=EGRESS
 event.RequireIngress(t)             // asserts type=INGRESS, returns *IngressEvent
 ```
 
-### ResultEvent
-
-For lower-level inspection, `ResultEvent(result, actx)` converts any `Result` to an `*ActionEvent` with all fields exported.
-
----
-
-## Multi-Child Splitting
-
-Transform actions can produce multiple child DeltaFiles from a single input using `TransformResults`:
-
-```go
-results := actionkit.NewTransformResults(actx)
-
-child1 := actionkit.NewChildTransformResult(actx, "part-1.txt")
-child1.AddContent(content1)
-child1.AddMetadata("index", "1")
-results.AddChild(*child1)
-
-child2 := actionkit.NewChildTransformResult(actx, "part-2.txt")
-child2.AddContent(content2)
-results.AddChild(*child2)
-
-return results, nil
-```
-
-`NewChildTransformResult` calls `actx.ChildContext()`, which generates a new UUID for the child DeltaFile while inheriting the parent's flow context, content service, lookup client, and artifact client.
-
-Each child produces a separate `TransformEvent` in the `ActionEvent.Transform` array, each with its own DID, content, metadata, and annotations.
-
 ---
 
 ## Content Operations
 
+Content lives in MinIO. The kit exposes content writes as methods on the receiver Deltafile (or `IngressDeltafile` for ingress items) and content reads as methods on `ActionContent`. Action code does not plumb `ctx` or the underlying `ContentService` — the kit wires both automatically when the Deltafile is constructed and when content is returned from a save.
+
 ### Save
 
 ```go
-// Byte slice
-content, err := actionkit.SaveContent(ctx, cs, actx, data, "output.json", "application/json")
+// Transform / Join — on *Deltafile
+saved, err := df.SaveStringContent("out.txt", "text/plain", "hello")
+saved, err := df.SaveBytesContent("out.bin", "application/octet-stream", data)
+saved, err := df.SaveReaderContent("out.bin", "application/octet-stream", reader)
 
-// String
-content, err := actionkit.SaveContentString(ctx, cs, actx, jsonStr, "output.json", "application/json")
+df.AddContent(saved)                  // append an ActionContent to the output (already-saved content)
+df.AddContentList(contents)
+df.PassthroughContent()               // copy all input content to the output
 
-// Streaming (size=-1 for unknown)
-content, err := actionkit.SaveContentFromReader(ctx, cs, actx, reader, size, "output.bin", "application/octet-stream")
+// Timed ingress — on *IngressDeltafile (write-only Deltafile view)
+item := deltafile.NewItem("name")
+saved, err := item.SaveStringContent(...)
+item.AddContent(saved).AddMetadata("k", "v").AddAnnotation("note", "first")
 ```
 
-All save helpers track segments on the ActionContext for orphan cleanup.
+The `Save*` methods that hit storage track segments on the internal `ActionContext` so that any segments not present on the returned event are deleted as orphans after the action completes.
 
 ### Load
 
-Content received through an action input (TransformInput, EgressInput, etc.)
-and content returned from the SaveContent helpers is wired to its
-ActionContext, so load methods only need the cancellation context:
+`ActionContent` returned by a save call or read from an input Deltafile is wired to its `ActionContext`, so the load methods take no arguments:
 
 ```go
-data, err := content.LoadBytes(ctx)          // []byte
-str, err := content.LoadString(ctx)           // string
-reader, err := content.LoadReader(ctx)        // io.ReadCloser (caller must close)
+data, err := content.LoadBytes()      // []byte
+str, err := content.LoadString()      // string
+reader, err := content.LoadReader()   // io.ReadCloser (caller must close)
 ```
 
-Content constructed directly (via struct literal or `Store.CreateContent`
-without going through TestContext.Content) has no ActionContext back-reference
-and will return an error from these methods. Load such content explicitly via
-`cs.Load(ctx, content.Segments)`.
+Content constructed directly via struct literal or via `Store.CreateContent` without going through `TestContext.Content` has no back-reference and will return `errUnboundContent`; load such content explicitly via `cs.Load(ctx, content.Segments)`.
 
 ### Manipulate (no I/O)
 
 ```go
-copied := content.Copy()                                      // deep copy
-sub := content.Subcontent(offset, size)                        // byte range view
+copied := content.Copy()                                       // deep copy (retains binding)
+sub := content.Subcontent(offset, size)                         // byte range view
 sub := content.SubcontentNamed(offset, size, "part", "text/plain")
 
 content.Append(other)      // append other's segments
@@ -855,6 +1041,51 @@ total := content.Size()    // sum of segment sizes
 ```
 
 `Subcontent` adjusts segment offsets and sizes to reference a byte range without fetching data from storage.
+
+---
+
+## Streaming Best Practices
+
+The kit provides content save and load APIs that stream through storage without buffering the full payload in memory. Use the streaming variants whenever content could be large.
+
+### Saving output content
+
+| Method | When to use |
+|--------|-------------|
+| `df.SaveStringContent(name, mediaType, str)` | Small, already-in-memory strings only |
+| `df.SaveBytesContent(name, mediaType, data)` | Small, already-in-memory byte slices only |
+| `df.SaveReaderContent(name, mediaType, r)` | Preferred for large or generated output read from an existing reader |
+| `df.SaveWriterContent(name, mediaType, fn)` | Preferred when writing incrementally to an `io.Writer` |
+| `df.SaveContentBatch(items)` | Saves multiple reader-based items; collects per-item errors without aborting early |
+| `df.SaveWriterContentBatch(writes)` | Writer-callback variant of batch saves |
+
+Prefer `SaveReaderContent` or `SaveWriterContent` over loading content into `[]byte` and re-saving it:
+
+```go
+// Instead of: data, _ := content.LoadBytes(); df.SaveBytesContent(...)
+reader, err := content.LoadReader()
+if err != nil {
+    return df.Errorf("load: %v", err)
+}
+defer reader.Close()
+saved, err := df.SaveReaderContent(content.Name, content.MediaType, reader)
+```
+
+### Writer callbacks run on a separate goroutine
+
+`SaveWriterContent` (and the batch variants) pipe the writer callback through `io.Pipe`. The callback runs on a goroutine while the upload consumes its output concurrently — the full payload is never buffered:
+
+```go
+saved, err := df.SaveWriterContent("out.json", "application/json", func(w io.Writer) error {
+    return json.NewEncoder(w).Encode(result) // runs on its own goroutine
+})
+```
+
+If the callback returns an error, the save is aborted. If the storage upload fails first, the callback goroutine is unblocked via `io.Pipe.CloseWithError`.
+
+### Loading large input
+
+Prefer `content.LoadReader()` over `content.LoadBytes()` when the source content may be large. `LoadReader` returns a streaming reader backed by an S3 GET request; `LoadBytes` reads the full content into a `[]byte` first.
 
 ---
 

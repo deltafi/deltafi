@@ -22,6 +22,7 @@ package actionkit
 
 import (
 	"encoding/json"
+	"log"
 	"maps"
 	"reflect"
 	"slices"
@@ -30,6 +31,23 @@ import (
 
 	"github.com/invopop/jsonschema"
 )
+
+// jsonToMap round-trips v through JSON into a map. On failure it logs a warning
+// and returns (nil, false) so callers surface the problem instead of silently
+// registering an action with an empty parameter schema.
+func jsonToMap(v any) (map[string]any, bool) {
+	data, err := json.Marshal(v)
+	if err != nil {
+		log.Printf("schema generation: failed to marshal %T: %v", v, err)
+		return nil, false
+	}
+	var m map[string]any
+	if err := json.Unmarshal(data, &m); err != nil {
+		log.Printf("schema generation: failed to unmarshal schema map: %v", err)
+		return nil, false
+	}
+	return m, true
+}
 
 // GenerateSchema produces a JSON Schema map from a Go struct type.
 // Returns an empty map if paramType is nil.
@@ -52,13 +70,8 @@ func GenerateSchema(paramType any) map[string]any {
 	schema := reflector.Reflect(paramType)
 
 	// Round-trip through JSON to get a plain map
-	data, err := json.Marshal(schema)
-	if err != nil {
-		return map[string]any{}
-	}
-
-	var raw map[string]any
-	if err := json.Unmarshal(data, &raw); err != nil {
+	raw, ok := jsonToMap(schema)
+	if !ok {
 		return map[string]any{}
 	}
 
@@ -73,6 +86,19 @@ func GenerateSchema(paramType any) map[string]any {
 
 	// Apply dedicated struct tags (description, default, enum, required, minimum, maximum)
 	applyDedicatedTags(result, paramType)
+
+	// Stamp the top-level title with the Go type name so round-trip tools
+	// (e.g. JSON-to-Go) can recover it. Nested struct titles are preserved
+	// during $ref inlining (see postProcessSchema).
+	if _, exists := result["title"]; !exists {
+		t := reflect.TypeOf(paramType)
+		for t.Kind() == reflect.Pointer {
+			t = t.Elem()
+		}
+		if t.Kind() == reflect.Struct && t.Name() != "" {
+			result["title"] = t.Name()
+		}
+	}
 
 	// Remove fields that DeltaFi core doesn't expect
 	delete(result, "$schema")
@@ -110,6 +136,8 @@ func lookupDef(ref string, defs map[string]any) map[string]any {
 
 // postProcessSchema recursively walks a schema map to:
 //   - resolve $ref pointers by inlining definitions
+//   - preserve the original $ref target name as "title" so round-trip
+//     generators (e.g. JSON-to-Go) can recover the source struct name
 //   - set additionalProperties: false on struct-typed objects
 //   - coerce default values to their proper JSON types
 func postProcessSchema(schema map[string]any, defs map[string]any) {
@@ -119,6 +147,12 @@ func postProcessSchema(schema map[string]any, defs map[string]any) {
 			resolved = deepCopyMap(resolved)
 			delete(schema, "$ref")
 			maps.Copy(schema, resolved)
+			const prefix = "#/$defs/"
+			if strings.HasPrefix(ref, prefix) {
+				if _, exists := schema["title"]; !exists {
+					schema["title"] = ref[len(prefix):]
+				}
+			}
 		}
 	}
 
@@ -190,17 +224,13 @@ func coerceDefault(val any, schema map[string]any) any {
 	return val
 }
 
-// deepCopyMap creates an independent copy of a map[string]any tree via JSON round-trip.
+// deepCopyMap creates an independent copy of a map[string]any tree via JSON
+// round-trip. If the copy fails (logged by jsonToMap) it returns the original.
 func deepCopyMap(m map[string]any) map[string]any {
-	data, err := json.Marshal(m)
-	if err != nil {
-		return m
+	if result, ok := jsonToMap(m); ok {
+		return result
 	}
-	var result map[string]any
-	if err := json.Unmarshal(data, &result); err != nil {
-		return m
-	}
-	return result
+	return m
 }
 
 // applyDedicatedTags reads description, default, enum, required, minimum, and
@@ -230,8 +260,7 @@ func applyDedicatedTags(schema map[string]any, paramType any) {
 		}
 	}
 
-	for i := 0; i < t.NumField(); i++ {
-		field := t.Field(i)
+	for field := range t.Fields() {
 		jsonName := field.Tag.Get("json")
 		if idx := strings.IndexByte(jsonName, ','); idx >= 0 {
 			jsonName = jsonName[:idx]

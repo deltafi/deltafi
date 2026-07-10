@@ -3,4 +3,4 @@
 !deltafi-core-actions/build
 !deltafi-core-actions/build/docs
 !deltafi-core-actions/build/docs/**
-tui/.go/
+**/.go/

@@ -120,7 +120,7 @@ The `deltafi-go-action-kit/v2` package includes test helpers for unit testing ac
 - `NewTestContext(did)` — creates a `TestContext` with a pre-configured `ActionContext` wired to an in-memory content store
 - `TestContext.Content(name, mediaType, data)` — creates an `ActionContent` from a string for use as input
 - `TestContext.NewDeltafile(contents...)` — creates a `*Deltafile` wired to the test context
-- `TestContext.NewIngressInput()` — creates an `*IngressInput` for ingress action tests
+- `TestContext.NewTimedIngressDeltafile()` — creates a `*TimedIngressDeltafile` for ingress action tests
 - `RunTransform`, `RunEgress`, `RunIngress` — generic test runners that execute actions and return `*ActionEvent`
 - `RequireTransform`, `RequireSingleTransform`, `RequireError`, `RequireFilter`, `RequireEgress`, `RequireIngress` — result assertions on `*ActionEvent`
 - `MockLookupClient` — configurable mock for lookup table queries with full query semantics
@@ -190,7 +190,7 @@ func TestErrorResult(t *testing.T) {
 
 ### Testing Split Actions
 
-Split actions are transform actions that create children via `df.NewChild(name)`:
+Split actions are transform actions that create children via `df.AddChild(name)`:
 
 ```go
 func TestMySplitAction(t *testing.T) {
@@ -212,9 +212,9 @@ func TestMySplitAction(t *testing.T) {
 func TestMyIngressAction(t *testing.T) {
     tc := actionkit.NewTestContext("test-did")
     tc.ActionContext.Memo = "5" // simulate previous memo
-    input := tc.NewIngressInput()
+    timed := tc.NewTimedIngressDeltafile()
 
-    event := actionkit.RunIngress(t, &MyIngressAction{}, input, MyIngressParams{})
+    event := actionkit.RunIngress(t, &MyIngressAction{}, timed, MyIngressParams{})
 
     ie := event.RequireIngress(t)
     assert.Len(t, ie.IngressItems, 1)

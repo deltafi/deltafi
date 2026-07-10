@@ -41,9 +41,32 @@ import (
 
 const healthProbeFile = "/tmp/running"
 
-// PluginConfig holds optional overrides for plugin configuration.
-// Zero values are ignored and defaults from environment variables are used.
-type PluginConfig struct {
+// Plugin identity variables. These are normally set at link time via -ldflags
+// (the Makefile extracts values from plugin.yaml and passes them through to
+// the linker). When unset, RunPlugin falls back to reading ./plugin.yaml at
+// startup, which keeps `go run .` working from a plugin source directory.
+//
+//	go build -ldflags "\
+//	  -X gitlab.com/deltafi/deltafi/deltafi-go-action-kit/v2.PluginVersion=<version> \
+//	  -X gitlab.com/deltafi/deltafi/deltafi-go-action-kit/v2.PluginGroupID=<groupId> \
+//	  -X gitlab.com/deltafi/deltafi/deltafi-go-action-kit/v2.PluginArtifactID=<artifactId> \
+//	  -X 'gitlab.com/deltafi/deltafi/deltafi-go-action-kit/v2.PluginDomain=<domain>' \
+//	  -X 'gitlab.com/deltafi/deltafi/deltafi-go-action-kit/v2.PluginDescription=<description>'"
+var (
+	PluginVersion     = "0.0.0-dev"
+	PluginGroupID     = ""
+	PluginArtifactID  = ""
+	PluginDomain      = ""
+	PluginDescription = ""
+)
+
+// pluginYAMLPath is the dev-mode fallback file used when the link-time plugin
+// identity variables above are empty.
+const pluginYAMLPath = "plugin.yaml"
+
+// pluginConfig is the internal configuration assembled from plugin.yaml,
+// the build-time version variable, and environment variables.
+type pluginConfig struct {
 	CoreURL         string
 	ValkeyURL       string
 	ValkeyPassword  string
@@ -60,9 +83,51 @@ type PluginConfig struct {
 	Domain          string // Action name prefix (e.g. "org.deltafi.go-hello-world"), mirrors Java's package name
 }
 
+// pluginYAMLMeta is the schema parsed from each plugin's embedded plugin.yaml.
+// Version is provided separately at build time, not from YAML.
+type pluginYAMLMeta struct {
+	GroupID     string `yaml:"groupId"`
+	ArtifactID  string `yaml:"artifactId"`
+	Domain      string `yaml:"domain"`
+	Description string `yaml:"description"`
+}
+
+// parsePluginYAML parses the plugin.yaml content and validates required fields.
+func parsePluginYAML(data []byte) (*pluginYAMLMeta, error) {
+	var meta pluginYAMLMeta
+	if err := yaml.Unmarshal(data, &meta); err != nil {
+		return nil, fmt.Errorf("parse: %w", err)
+	}
+	if meta.GroupID == "" {
+		return nil, errors.New("groupId is required")
+	}
+	if meta.ArtifactID == "" {
+		return nil, errors.New("artifactId is required")
+	}
+	return &meta, nil
+}
+
+// resolvePluginIdentity returns the plugin's identity, preferring the link-time
+// variables and falling back to ./plugin.yaml when those are unset.
+func resolvePluginIdentity() (*pluginYAMLMeta, error) {
+	if PluginGroupID != "" && PluginArtifactID != "" {
+		return &pluginYAMLMeta{
+			GroupID:     PluginGroupID,
+			ArtifactID:  PluginArtifactID,
+			Domain:      PluginDomain,
+			Description: PluginDescription,
+		}, nil
+	}
+	data, err := os.ReadFile(pluginYAMLPath)
+	if err != nil {
+		return nil, fmt.Errorf("link-time identity unset and %s unreadable: %w", pluginYAMLPath, err)
+	}
+	return parsePluginYAML(data)
+}
+
 // plugin is the main entry point for a DeltaFi action kit plugin.
 type plugin struct {
-	config           PluginConfig
+	config           pluginConfig
 	coordinates      PluginCoordinates
 	domain           string
 	actions          []registeredAction
@@ -83,8 +148,8 @@ type artifactWatch struct {
 
 // newPlugin creates a new plugin with configuration from environment variables
 // and optional overrides.
-func newPlugin(config *PluginConfig) (*plugin, error) {
-	cfg := PluginConfig{
+func newPlugin(config *pluginConfig) (*plugin, error) {
+	cfg := pluginConfig{
 		CoreURL:         envOrDefault("CORE_URL", "http://deltafi-core-service"),
 		ValkeyURL:       envOrDefault("VALKEY_URL", "deltafi-valkey-master:6379"),
 		ValkeyPassword:  envOrDefault("VALKEY_PASSWORD", ""),
@@ -208,13 +273,13 @@ func (p *plugin) RegisterAction(reg *Registration) error {
 		desc = "No description provided"
 	}
 	p.actions = append(p.actions, registeredAction{
-		name:        p.qualifiedName(reg.Name),
-		action:      reg.Action,
-		actionType:  reg.dispatcher.actionTypeString(),
-		description: desc,
-		paramType:   reg.paramType,
-		options:     reg.options,
-		dispatcher:  reg.dispatcher,
+		name:          p.qualifiedName(reg.Name),
+		action:        reg.Action,
+		actionType:    reg.dispatcher.actionTypeString(),
+		description:   desc,
+		paramDefaults: reg.paramDefaults,
+		options:       reg.options,
+		dispatcher:    reg.dispatcher,
 	})
 	return nil
 }
@@ -266,13 +331,43 @@ func (p *plugin) lookupTables() []LookupTableDefinition {
 	return tables
 }
 
-// RunPlugin creates a plugin, registers all actions from the global registry,
-// loads flows and variables from the "flows/" directory, and runs the full lifecycle.
-// This is the standard entry point for DeltaFi Go plugins.
-func RunPlugin(config *PluginConfig) {
-	log.SetFlags(log.LstdFlags | log.Lshortfile)
+// RunPlugin registers all actions from the global registry, loads flows and
+// variables from the "flows/" directory, and runs the full lifecycle. This is
+// the standard entry point for DeltaFi Go plugins.
+//
+// Plugin identity (groupId, artifactId, domain, description) is read from the
+// link-time [PluginGroupID], [PluginArtifactID], [PluginDomain], and
+// [PluginDescription] variables. If those are empty, RunPlugin falls back to
+// parsing ./plugin.yaml — convenient for `go run .` during development.
+//
+// plugin.yaml schema:
+//
+//	groupId:     org.example
+//	artifactId:  my-plugin
+//	domain:      org.example.my-plugin
+//	description: One-line plugin description
+//
+// Infrastructure settings (Valkey/MinIO/core URLs, image coordinates, worker
+// thread counts) continue to come from environment variables.
+func RunPlugin() {
+	configureStructuredLogging()
 
-	plugin, err := newPlugin(config)
+	meta, err := resolvePluginIdentity()
+	if err != nil {
+		log.Fatalf("plugin identity: %v", err)
+	}
+
+	cfg := &pluginConfig{
+		Coordinates: &PluginCoordinates{
+			GroupID:    meta.GroupID,
+			ArtifactID: meta.ArtifactID,
+			Version:    PluginVersion,
+		},
+		Domain:      meta.Domain,
+		Description: meta.Description,
+	}
+
+	plugin, err := newPlugin(cfg)
 	if err != nil {
 		log.Fatalf("Failed to create plugin: %v", err)
 	}
@@ -474,7 +569,7 @@ func (p *plugin) Run(ctx context.Context) error {
 	if err != nil {
 		return fmt.Errorf("failed to connect to redis: %w", err)
 	}
-	defer queue.Close()
+	defer func() { _ = queue.Close() }()
 	log.Println("Connected to Redis")
 
 	// Connect to MinIO
@@ -575,6 +670,8 @@ func (p *plugin) Run(ctx context.Context) error {
 
 	// Start workers
 	tracker := newInFlightTracker()
+	workerCtx, cancelWorkers := context.WithCancel(context.Background())
+	defer cancelWorkers()
 
 	for _, ra := range p.actions {
 		count := p.workerCount(ra.name)
@@ -590,9 +687,10 @@ func (p *plugin) Run(ctx context.Context) error {
 			tracker:        tracker,
 			appName:        appName,
 			dispatcher:     ra.dispatcher,
-			paramDefaults:  ra.paramType,
+			paramDefaults:  ra.paramDefaults,
+			actionClass:    ra.name,
 		}
-		w.start(ctx, &wg)
+		w.start(ctx, workerCtx, &wg)
 		log.Printf("Started %d worker(s) for %s (%s)", count, ra.name, ra.actionType)
 	}
 
@@ -622,11 +720,12 @@ func (p *plugin) Run(ctx context.Context) error {
 	case <-done:
 		log.Println("All workers drained successfully")
 	case <-time.After(30 * time.Second):
+		cancelWorkers()
 		log.Println("Warning: worker drain timed out after 30s")
 	}
 
 	// Remove health probe
-	os.Remove(healthProbeFile)
+	_ = os.Remove(healthProbeFile)
 
 	return nil
 }

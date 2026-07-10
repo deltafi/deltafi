@@ -40,3 +40,12 @@ type ExpectedContentError struct {
 func (e *ExpectedContentError) Error() string {
 	return fmt.Sprintf("content index %d out of range (have %d)", e.Index, e.Count)
 }
+
+// failCause returns err's message, or a placeholder when err is nil so the
+// Fail helpers never panic on a nil error.
+func failCause(err error) string {
+	if err == nil {
+		return "nil error"
+	}
+	return err.Error()
+}

@@ -1,5 +1,5 @@
 // ABOUTME: Entry point for the {{.PluginName}} DeltaFi plugin.
-// ABOUTME: Configures plugin coordinates and delegates lifecycle to the action kit.
+// ABOUTME: Delegates lifecycle to the action kit; plugin.yaml provides metadata.
 
 package main
 
@@ -7,11 +7,6 @@ import (
 	actionkit "gitlab.com/deltafi/deltafi/deltafi-go-action-kit/v2"
 	_ "{{.ModulePath}}/actions"
 	_ "{{.ModulePath}}/suppliers"
-)
-
-var (
-	version     = "0.0.0-dev"
-	description = "{{.Description}}"
 )
 
 // Uncomment to watch a plugin artifact and receive updates when it changes:
@@ -35,13 +30,5 @@ var (
 // }
 
 func main() {
-	actionkit.RunPlugin(&actionkit.PluginConfig{
-		Coordinates: &actionkit.PluginCoordinates{
-			GroupID:    "{{.GroupID}}",
-			ArtifactID: "{{.PluginName}}",
-			Version:    version,
-		},
-		Domain:      "{{.Domain}}",
-		Description: description,
-	})
+	actionkit.RunPlugin()
 }

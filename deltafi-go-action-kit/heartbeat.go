@@ -30,17 +30,18 @@ import (
 )
 
 const (
-	heartbeatInterval        = 10 * time.Second
-	longRunningTaskThreshold = 30 * time.Second
+	heartbeatInterval = 10 * time.Second
 )
 
 // actionExecution tracks an in-flight action execution.
 type actionExecution struct {
-	DID           string `json:"did"`
-	ActionName    string `json:"actionName"`
-	StartTime     string `json:"startTime"`
-	HeartbeatTime string `json:"heartbeatTime"`
-	AppName       string `json:"appName"`
+	DID           string
+	Clazz         string
+	ActionName    string
+	ThreadNum     int
+	StartTime     string
+	HeartbeatTime string
+	AppName       string
 }
 
 // inFlightTracker tracks currently executing actions for long-running task reporting.
@@ -55,23 +56,25 @@ func newInFlightTracker() *inFlightTracker {
 	}
 }
 
-func (t *inFlightTracker) start(did, actionName, appName string) {
+func (t *inFlightTracker) start(did, clazz, actionName string, threadNum int, appName string) {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 	now := formatTime(time.Now())
-	t.tasks[did+":"+actionName] = &actionExecution{
+	t.tasks[longRunningTaskKeyFor(clazz, actionName, threadNum, did)] = &actionExecution{
 		DID:           did,
+		Clazz:         clazz,
 		ActionName:    actionName,
+		ThreadNum:     threadNum,
 		StartTime:     now,
 		HeartbeatTime: now,
 		AppName:       appName,
 	}
 }
 
-func (t *inFlightTracker) stop(did, actionName string) {
+func (t *inFlightTracker) stop(did, clazz, actionName string, threadNum int) {
 	t.mu.Lock()
 	defer t.mu.Unlock()
-	delete(t.tasks, did+":"+actionName)
+	delete(t.tasks, longRunningTaskKeyFor(clazz, actionName, threadNum, did))
 }
 
 func (t *inFlightTracker) snapshot() []*actionExecution {
@@ -84,6 +87,23 @@ func (t *inFlightTracker) snapshot() []*actionExecution {
 		result = append(result, &snapshot)
 	}
 	return result
+}
+
+func longRunningTaskKeyFor(clazz, actionName string, threadNum int, did string) string {
+	return fmt.Sprintf("%s:%s#%d:%s", clazz, actionName, threadNum, did)
+}
+
+func longRunningTaskRecord(exec *actionExecution) (string, string, error) {
+	key := longRunningTaskKeyFor(exec.Clazz, exec.ActionName, exec.ThreadNum, exec.DID)
+	values := []string{exec.StartTime, exec.HeartbeatTime}
+	if exec.AppName != "" {
+		values = append(values, exec.AppName)
+	}
+	data, err := json.Marshal(values)
+	if err != nil {
+		return "", "", err
+	}
+	return key, string(data), nil
 }
 
 // startHeartbeat runs a goroutine that sends heartbeats and reports long-running tasks.
@@ -117,23 +137,16 @@ func startHeartbeat(ctx context.Context, wg *sync.WaitGroup, queue *actionEventQ
 				// Build the set of currently long-running task keys
 				currentKeys := make(map[string]bool)
 				for _, exec := range tracker.snapshot() {
-					startTime, err := time.Parse(time.RFC3339Nano, exec.StartTime)
+					key, data, err := longRunningTaskRecord(exec)
 					if err != nil {
 						continue
 					}
-					if time.Since(startTime) >= longRunningTaskThreshold {
-						key := fmt.Sprintf("%s:%s", exec.DID, exec.ActionName)
-						currentKeys[key] = true
+					currentKeys[key] = true
 
-						data, err := json.Marshal(exec)
-						if err != nil {
-							continue
-						}
-						if err := queue.SetLongRunningTask(ctx, key, string(data)); err != nil && ctx.Err() == nil {
-							log.Printf("failed to report long-running task %s: %v", key, err)
-						}
-						reportedKeys[key] = true
+					if err := queue.SetLongRunningTask(ctx, key, data); err != nil && ctx.Err() == nil {
+						log.Printf("failed to report long-running task %s: %v", key, err)
 					}
+					reportedKeys[key] = true
 				}
 
 				// Remove completed tasks that were previously reported to Redis

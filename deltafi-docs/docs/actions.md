@@ -252,7 +252,7 @@ Or in Go save content via the Deltafile:
 
 ```go
 // Save content directly through the Deltafile (stores to MinIO and adds to output)
-df.SaveStringContent(data, fileName, "text/plain")
+df.SaveStringContent(fileName, "text/plain", data)
 
 // You can also manipulate existing content without saving to disk:
 copied := existingContent.Copy()
@@ -365,7 +365,7 @@ The `join` method may be overridden by an action to change the default behavior:
 ```go
 func (a *MyJoiningAction) Join(inputs []*actionkit.Deltafile, joined *actionkit.Deltafile, params MyParams) *actionkit.Deltafile {
     for _, input := range inputs {
-        joined.AddContentSlice(input.GetContentSlice())
+        joined.AddContentList(input.GetContentList())
         joined.AddMetadataMap(input.GetMetadataMap())
     }
     return joined

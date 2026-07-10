@@ -70,7 +70,7 @@ func TestArtifactClient_PublishArtifact(t *testing.T) {
 		}
 
 		w.WriteHeader(http.StatusCreated)
-		json.NewEncoder(w).Encode(PublishResponse{
+		_ = json.NewEncoder(w).Encode(PublishResponse{
 			ArtifactName: "my-model",
 			Version:      "1.0.0",
 			IsActive:     true,
@@ -117,7 +117,7 @@ func TestArtifactClient_PublishSharedArtifact(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		capturedPath = r.URL.Path
 		w.WriteHeader(http.StatusCreated)
-		json.NewEncoder(w).Encode(PublishResponse{
+		_ = json.NewEncoder(w).Encode(PublishResponse{
 			ArtifactName: "shared-model",
 			Version:      "v1",
 			IsActive:     true,
@@ -139,7 +139,7 @@ func TestArtifactClient_PublishSharedArtifact(t *testing.T) {
 
 func TestArtifactClient_PublishArtifact_WithAllOptions(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		r.ParseMultipartForm(10 << 20)
+		_ = r.ParseMultipartForm(10 << 20)
 
 		if r.FormValue("makeActive") != "false" {
 			t.Errorf("makeActive = %q, want %q", r.FormValue("makeActive"), "false")
@@ -152,7 +152,7 @@ func TestArtifactClient_PublishArtifact_WithAllOptions(t *testing.T) {
 		}
 
 		w.WriteHeader(http.StatusCreated)
-		json.NewEncoder(w).Encode(PublishResponse{ArtifactName: "m", Version: "v1"})
+		_ = json.NewEncoder(w).Encode(PublishResponse{ArtifactName: "m", Version: "v1"})
 	}))
 	defer server.Close()
 
@@ -171,7 +171,7 @@ func TestArtifactClient_PublishArtifact_WithAllOptions(t *testing.T) {
 func TestArtifactClient_PublishArtifact_Error(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusConflict)
-		w.Write([]byte("version already exists"))
+		_, _ = w.Write([]byte("version already exists"))
 	}))
 	defer server.Close()
 
@@ -196,7 +196,7 @@ func TestArtifactClient_GetArtifact(t *testing.T) {
 		w.Header().Set("X-Artifact-Source-Prefix", "plugins/org.deltafi.test")
 		w.Header().Set("X-Artifact-Labels", `{"env":"prod","tier":"1"}`)
 		w.Header().Set("Content-Type", "application/octet-stream")
-		w.Write([]byte("artifact-data"))
+		_, _ = w.Write([]byte("artifact-data"))
 	}))
 	defer server.Close()
 
@@ -240,7 +240,7 @@ func TestArtifactClient_GetArtifact_WithAlias(t *testing.T) {
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		capturedPath = r.URL.Path
-		w.Write([]byte("v2-data"))
+		_, _ = w.Write([]byte("v2-data"))
 	}))
 	defer server.Close()
 
@@ -263,7 +263,7 @@ func TestArtifactClient_GetSharedArtifact(t *testing.T) {
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		capturedPath = r.URL.Path
-		w.Write([]byte("shared-data"))
+		_, _ = w.Write([]byte("shared-data"))
 	}))
 	defer server.Close()
 
@@ -300,7 +300,7 @@ func TestArtifactClient_GetArtifact_NotFound(t *testing.T) {
 func TestArtifactClient_GetArtifact_ServerError(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte("internal error"))
+		_, _ = w.Write([]byte("internal error"))
 	}))
 	defer server.Close()
 
@@ -318,7 +318,7 @@ func TestArtifactClient_StreamArtifact(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("X-Artifact-Version", "v3")
 		w.Header().Set("X-Artifact-Sha256", "sha-stream")
-		w.Write([]byte("streamed-data"))
+		_, _ = w.Write([]byte("streamed-data"))
 	}))
 	defer server.Close()
 
@@ -349,7 +349,7 @@ func TestArtifactClient_StreamSharedArtifact(t *testing.T) {
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		capturedPath = r.URL.Path
-		w.Write([]byte("shared-stream"))
+		_, _ = w.Write([]byte("shared-stream"))
 	}))
 	defer server.Close()
 
@@ -398,14 +398,14 @@ func TestArtifactClient_PublishArtifact_LargeData(t *testing.T) {
 	var receivedSize int
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		r.ParseMultipartForm(10 << 20)
+		_ = r.ParseMultipartForm(10 << 20)
 		file, _, _ := r.FormFile("file")
 		data, _ := io.ReadAll(file)
 		receivedSize = len(data)
 		file.Close()
 
 		w.WriteHeader(http.StatusCreated)
-		json.NewEncoder(w).Encode(PublishResponse{ArtifactName: "big", Version: "v1"})
+		_ = json.NewEncoder(w).Encode(PublishResponse{ArtifactName: "big", Version: "v1"})
 	}))
 	defer server.Close()
 
@@ -421,11 +421,83 @@ func TestArtifactClient_PublishArtifact_LargeData(t *testing.T) {
 	}
 }
 
+type blockingArtifactReader struct {
+	sent    bool
+	release <-chan struct{}
+}
+
+func (r *blockingArtifactReader) Read(p []byte) (int, error) {
+	if !r.sent {
+		r.sent = true
+		return copy(p, "streamed-artifact-data"), nil
+	}
+	<-r.release
+	return 0, io.EOF
+}
+
+func TestArtifactClient_PublishArtifact_StreamsRequestBody(t *testing.T) {
+	serverRead := make(chan struct{})
+	releaseReader := make(chan struct{})
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		mr, err := r.MultipartReader()
+		if err != nil {
+			t.Errorf("MultipartReader: %v", err)
+			w.WriteHeader(http.StatusBadRequest)
+			return
+		}
+		part, err := mr.NextPart()
+		if err != nil {
+			t.Errorf("NextPart: %v", err)
+			w.WriteHeader(http.StatusBadRequest)
+			return
+		}
+		defer part.Close()
+
+		buf := make([]byte, len("streamed"))
+		if _, err := io.ReadFull(part, buf); err != nil {
+			t.Errorf("ReadFull: %v", err)
+			w.WriteHeader(http.StatusBadRequest)
+			return
+		}
+		close(serverRead)
+
+		if _, err := io.Copy(io.Discard, part); err != nil {
+			t.Errorf("drain part: %v", err)
+			w.WriteHeader(http.StatusBadRequest)
+			return
+		}
+		w.WriteHeader(http.StatusCreated)
+		_ = json.NewEncoder(w).Encode(PublishResponse{ArtifactName: "streamed", Version: "v1"})
+	}))
+	defer server.Close()
+
+	client := newArtifactClient(server.URL, "owner")
+	done := make(chan error, 1)
+	go func() {
+		_, err := client.PublishArtifact(ctx(), "streamed", &blockingArtifactReader{release: releaseReader}, "application/octet-stream", nil)
+		done <- err
+	}()
+
+	select {
+	case <-serverRead:
+	case err := <-done:
+		t.Fatalf("PublishArtifact finished before server read streamed data: %v", err)
+	case <-time.After(2 * time.Second):
+		t.Fatal("server did not receive artifact bytes before source reader reached EOF; upload appears to be buffered before the request starts")
+	}
+
+	close(releaseReader)
+	if err := <-done; err != nil {
+		t.Fatalf("PublishArtifact failed: %v", err)
+	}
+}
+
 func TestArtifactClient_GetArtifact_Cached(t *testing.T) {
 	callCount := 0
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		callCount++
-		w.Write([]byte("data"))
+		_, _ = w.Write([]byte("data"))
 	}))
 	defer server.Close()
 
@@ -472,15 +544,15 @@ func TestArtifactClient_GetArtifact_CacheDisabled(t *testing.T) {
 	callCount := 0
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		callCount++
-		w.Write([]byte("data"))
+		_, _ = w.Write([]byte("data"))
 	}))
 	defer server.Close()
 
 	client := newArtifactClient(server.URL, "owner")
 	client.SetCacheTTL(0)
 
-	client.GetArtifact(ctx(), "model", "")
-	client.GetArtifact(ctx(), "model", "")
+	getArtifact(t, client, "model")
+	getArtifact(t, client, "model")
 
 	if callCount != 2 {
 		t.Errorf("with TTL=0, expected 2 server calls, got %d", callCount)
@@ -491,21 +563,21 @@ func TestArtifactClient_ClearCache(t *testing.T) {
 	callCount := 0
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		callCount++
-		w.Write([]byte("data"))
+		_, _ = w.Write([]byte("data"))
 	}))
 	defer server.Close()
 
 	client := newArtifactClient(server.URL, "owner")
 	client.SetCacheTTL(1 * time.Minute)
 
-	client.GetArtifact(ctx(), "model", "")
+	getArtifact(t, client, "model")
 	if callCount != 1 {
 		t.Fatalf("expected 1 call, got %d", callCount)
 	}
 
 	client.ClearCache()
 
-	client.GetArtifact(ctx(), "model", "")
+	getArtifact(t, client, "model")
 	if callCount != 2 {
 		t.Errorf("after ClearCache, expected 2 calls, got %d", callCount)
 	}
@@ -516,7 +588,7 @@ func TestArtifactClient_GetArtifact_FailureCached(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		callCount++
 		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte("error"))
+		_, _ = w.Write([]byte("error"))
 	}))
 	defer server.Close()
 
@@ -557,10 +629,10 @@ func TestArtifactClient_GetArtifact_FailureRecovery(t *testing.T) {
 		callCount++
 		if callCount == 1 {
 			w.WriteHeader(http.StatusInternalServerError)
-			w.Write([]byte("error"))
+			_, _ = w.Write([]byte("error"))
 			return
 		}
-		w.Write([]byte("recovered-data"))
+		_, _ = w.Write([]byte("recovered-data"))
 	}))
 	defer server.Close()
 
@@ -588,28 +660,30 @@ func TestArtifactClient_PublishInvalidatesCache(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == http.MethodGet {
 			callCount++
-			w.Write([]byte("data"))
+			_, _ = w.Write([]byte("data"))
 			return
 		}
 		// POST (publish)
 		w.WriteHeader(http.StatusCreated)
-		json.NewEncoder(w).Encode(PublishResponse{ArtifactName: "model", Version: "v2"})
+		_ = json.NewEncoder(w).Encode(PublishResponse{ArtifactName: "model", Version: "v2"})
 	}))
 	defer server.Close()
 
 	client := newArtifactClient(server.URL, "owner")
 
 	// Populate cache
-	client.GetArtifact(ctx(), "model", "")
+	getArtifact(t, client, "model")
 	if callCount != 1 {
 		t.Fatalf("expected 1 call, got %d", callCount)
 	}
 
 	// Publish should invalidate
-	client.PublishArtifact(ctx(), "model", strings.NewReader("new"), "text/plain", nil)
+	if _, err := client.PublishArtifact(ctx(), "model", strings.NewReader("new"), "text/plain", nil); err != nil {
+		t.Fatalf("PublishArtifact: %v", err)
+	}
 
 	// Next get should miss cache
-	client.GetArtifact(ctx(), "model", "")
+	getArtifact(t, client, "model")
 	if callCount != 2 {
 		t.Errorf("after publish, expected 2 calls, got %d", callCount)
 	}
@@ -619,7 +693,7 @@ func TestArtifactClient_StreamBypasses_Cache(t *testing.T) {
 	callCount := 0
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		callCount++
-		w.Write([]byte("stream-data"))
+		_, _ = w.Write([]byte("stream-data"))
 	}))
 	defer server.Close()
 
@@ -691,7 +765,7 @@ func TestVersionChangedEvent_Owner(t *testing.T) {
 func TestArtifactClient_OnUpdate_CallbackFired(t *testing.T) {
 	callCount := 0
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte("data"))
+		_, _ = w.Write([]byte("data"))
 	}))
 	defer server.Close()
 
@@ -717,7 +791,7 @@ func TestArtifactClient_OnUpdate_CacheInvalidatedBeforeCallback(t *testing.T) {
 	fetchCount := 0
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		fetchCount++
-		w.Write([]byte("data-v" + strings.TrimPrefix(r.URL.Path, "/api/v2/artifacts/owner/model/versions/")))
+		_, _ = w.Write([]byte("data-v" + strings.TrimPrefix(r.URL.Path, "/api/v2/artifacts/owner/model/versions/")))
 	}))
 	defer server.Close()
 
@@ -725,7 +799,7 @@ func TestArtifactClient_OnUpdate_CacheInvalidatedBeforeCallback(t *testing.T) {
 	client.SetCacheTTL(1 * time.Minute) // long TTL so cache doesn't expire
 
 	// Populate cache
-	client.GetArtifact(ctx(), "model", "")
+	getArtifact(t, client, "model")
 	if fetchCount != 1 {
 		t.Fatalf("expected 1 fetch, got %d", fetchCount)
 	}
@@ -913,7 +987,7 @@ func TestArtifactClient_HandleVersionChanged_InvalidatesCache(t *testing.T) {
 	callCount := 0
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		callCount++
-		w.Write([]byte("data"))
+		_, _ = w.Write([]byte("data"))
 	}))
 	defer server.Close()
 
@@ -921,7 +995,7 @@ func TestArtifactClient_HandleVersionChanged_InvalidatesCache(t *testing.T) {
 	client.SetCacheTTL(1 * time.Minute)
 
 	// Populate cache
-	client.GetArtifact(ctx(), "model", "")
+	getArtifact(t, client, "model")
 	if callCount != 1 {
 		t.Fatalf("expected 1 fetch, got %d", callCount)
 	}
@@ -930,7 +1004,7 @@ func TestArtifactClient_HandleVersionChanged_InvalidatesCache(t *testing.T) {
 	client.handleVersionChanged(`{"prefix":"plugins/owner","artifactName":"model","alias":"active","newVersion":"v2"}`)
 
 	// Next get should miss cache
-	client.GetArtifact(ctx(), "model", "")
+	getArtifact(t, client, "model")
 	if callCount != 2 {
 		t.Errorf("expected 2 fetches after version change, got %d", callCount)
 	}
@@ -939,7 +1013,7 @@ func TestArtifactClient_HandleVersionChanged_InvalidatesCache(t *testing.T) {
 func TestArtifactClient_OnUpdateFetch(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("X-Artifact-Version", "v1")
-		w.Write([]byte("fetched-data"))
+		_, _ = w.Write([]byte("fetched-data"))
 	}))
 	defer server.Close()
 
@@ -993,7 +1067,7 @@ func TestArtifactClient_OnUpdateFetchWithDefault(t *testing.T) {
 		if r.Method == http.MethodPost {
 			publishCount++
 			// Verify the published data
-			r.ParseMultipartForm(10 << 20)
+			_ = r.ParseMultipartForm(10 << 20)
 			file, _, _ := r.FormFile("file")
 			data, _ := io.ReadAll(file)
 			file.Close()
@@ -1001,7 +1075,7 @@ func TestArtifactClient_OnUpdateFetchWithDefault(t *testing.T) {
 				t.Errorf("published data = %q", string(data))
 			}
 			w.WriteHeader(http.StatusCreated)
-			json.NewEncoder(w).Encode(PublishResponse{ArtifactName: "config.json", Version: "1"})
+			_ = json.NewEncoder(w).Encode(PublishResponse{ArtifactName: "config.json", Version: "1"})
 			return
 		}
 		fetchCount++
@@ -1011,7 +1085,7 @@ func TestArtifactClient_OnUpdateFetchWithDefault(t *testing.T) {
 			return
 		}
 		// Second fetch: return the published data
-		w.Write([]byte(`{"key":"default"}`))
+		_, _ = w.Write([]byte(`{"key":"default"}`))
 	}))
 	defer server.Close()
 
@@ -1052,10 +1126,10 @@ func TestArtifactClient_OnUpdateFetchWithDefault_AlreadyExists(t *testing.T) {
 		if r.Method == http.MethodPost {
 			publishCount++
 			w.WriteHeader(http.StatusCreated)
-			json.NewEncoder(w).Encode(PublishResponse{})
+			_ = json.NewEncoder(w).Encode(PublishResponse{})
 			return
 		}
-		w.Write([]byte("existing-data"))
+		_, _ = w.Write([]byte("existing-data"))
 	}))
 	defer server.Close()
 
@@ -1078,10 +1152,53 @@ func TestArtifactClient_OnUpdateFetchWithDefault_AlreadyExists(t *testing.T) {
 	}
 }
 
+func TestArtifactClient_OnUpdateFetchWithDefault_DoesNotPublishDefaultOnServerError(t *testing.T) {
+	publishCount := 0
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == http.MethodPost {
+			publishCount++
+			w.WriteHeader(http.StatusCreated)
+			_ = json.NewEncoder(w).Encode(PublishResponse{ArtifactName: "config.json", Version: "1"})
+			return
+		}
+		w.WriteHeader(http.StatusInternalServerError)
+		_, _ = w.Write([]byte("temporary registry failure"))
+	}))
+	defer server.Close()
+
+	client := newArtifactClient(server.URL, "owner")
+	var receivedErr error
+	var received *FetchedArtifact
+
+	client.OnUpdateFetchWithDefault("config.json", "",
+		ArtifactDefault{
+			Data:        []byte(`{"key":"default"}`),
+			ContentType: "application/json",
+			Description: "test default",
+		},
+		func(fetched *FetchedArtifact, err error) {
+			received = fetched
+			receivedErr = err
+		})
+
+	client.FireStartupCallbacks()
+
+	if publishCount != 0 {
+		t.Fatalf("default artifact was published after a non-404 fetch error; publishCount = %d", publishCount)
+	}
+	if received != nil {
+		t.Fatalf("received fetched artifact after server error: %+v", received)
+	}
+	if receivedErr == nil || !strings.Contains(receivedErr.Error(), "HTTP 500") {
+		t.Fatalf("receivedErr = %v, want original HTTP 500 fetch error", receivedErr)
+	}
+}
+
 func TestArtifactClient_OnUpdateFetch_FiredOnVersionChange(t *testing.T) {
 	callCount := 0
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte("data"))
+		_, _ = w.Write([]byte("data"))
 	}))
 	defer server.Close()
 
@@ -1101,7 +1218,7 @@ func TestArtifactClient_OnSharedUpdateFetch(t *testing.T) {
 	var capturedPath string
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		capturedPath = r.URL.Path
-		w.Write([]byte("shared-data"))
+		_, _ = w.Write([]byte("shared-data"))
 	}))
 	defer server.Close()
 
@@ -1124,7 +1241,7 @@ func TestArtifactClient_OnSharedUpdateFetch(t *testing.T) {
 
 func TestArtifactClient_FireStartupCallbacks_Incremental(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte("data"))
+		_, _ = w.Write([]byte("data"))
 	}))
 	defer server.Close()
 
@@ -1161,7 +1278,7 @@ func TestArtifactClient_OnUpdateFetchWithDefault_PublishFails(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == http.MethodPost {
 			w.WriteHeader(http.StatusInternalServerError)
-			w.Write([]byte("publish failed"))
+			_, _ = w.Write([]byte("publish failed"))
 			return
 		}
 		w.WriteHeader(http.StatusNotFound)
@@ -1190,4 +1307,13 @@ func TestArtifactClient_OnUpdateFetchWithDefault_PublishFails(t *testing.T) {
 
 func ctx() context.Context {
 	return context.Background()
+}
+
+// getArtifact fetches an artifact and fails the test on error, discarding the
+// result. Used by tests that exercise caching/invalidation via call counts.
+func getArtifact(t *testing.T, client *ArtifactClient, name string) {
+	t.Helper()
+	if _, err := client.GetArtifact(ctx(), name, ""); err != nil {
+		t.Fatalf("GetArtifact: %v", err)
+	}
 }

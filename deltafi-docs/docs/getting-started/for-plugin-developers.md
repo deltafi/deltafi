@@ -243,7 +243,7 @@ func (a *MyTransformAction) Transform(df *actionkit.Deltafile, params MyTransfor
 
     transformed := strings.ToUpper(data)
 
-    if _, err := df.SaveStringContent(transformed, "output.txt", "text/plain"); err != nil {
+    if _, err := df.SaveStringContent("output.txt", "text/plain", transformed); err != nil {
         return df.Errorf("Failed to save content").SetErrorContext(err.Error())
     }
 

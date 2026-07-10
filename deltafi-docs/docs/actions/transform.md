@@ -151,17 +151,17 @@ df.ActionName     // action name
 df.FirstContent()           // *ActionContent, error
 df.ContentAt(index)         // *ActionContent, error
 df.ContentNamed(name)       // *ActionContent, error
-df.GetContentSlice()        // []ActionContent
+df.GetContentList()        // []ActionContent
 df.HasContent()             // bool
 
 // Output content
-df.SaveStringContent(data, name, mediaType)   // *ActionContent, error
-df.SaveBytesContent(data, name, mediaType)    // *ActionContent, error
+df.SaveStringContent(name, mediaType, data)   // *ActionContent, error
+df.SaveBytesContent(name, mediaType, data)    // *ActionContent, error
 df.AddContent(content)                         // *Deltafile (chainable)
 df.PassthroughContent()                        // *Deltafile (chainable)
 
 // Child DeltaFiles
-df.NewChild(childName)        // *Deltafile (chainable)
+df.AddChild(childName)        // *Deltafile (chainable)
 
 // Metadata
 df.GetMetadata(key)                  // string, error
@@ -183,10 +183,47 @@ The `Transform` method always returns a `*Deltafile`. The kit inspects the retur
 
 * `Errorf` was called — the DeltaFile is errored.
 * `Filterf` was called — the DeltaFile is filtered.
-* One or more children were added via `NewChild` — each child becomes a new DeltaFile that continues through the flow.
+* One or more children were added via `AddChild` — each child becomes a new DeltaFile that continues through the flow.
 * Otherwise, the action succeeds, and any saved content, metadata changes, and annotations are applied to the DeltaFile.
 
+### File layout
+
+Each Go action lives in two files inside the plugin's `actions/` directory:
+
+* `<name>_action.go` — the action struct, `init()` registration, and the action method (`Transform`, `Egress`, etc.)
+* `<name>_action_params.go` — the typed `*Params` struct only
+
+Splitting params into a sibling file keeps the action code focused on logic and gives the schema round-trip tooling (described below) a deterministic location to read from and write to.
+
+### Parameter struct tags
+
+The kit reads the following struct tags when generating JSON Schema:
+
+| Tag | Effect |
+|---|---|
+| `json:"name"` | parameter name displayed in the DeltaFi UI |
+| `description:"..."` | human-readable description |
+| `default:"..."` | default value (string form; coerced to the field type) |
+| `enum:"a,b,c"` | allowed values (renders as a dropdown) |
+| `required:"true"` | marks the parameter as required |
+| `minimum:"0"` / `maximum:"100"` | numeric bounds |
+
+Supported field types: Go primitives (`bool`, `int`, `string`, `float64`), slices, string-keyed maps, pointers to other structs declared in the same params file, and the kit's `actionkit.DataSize` and `actionkit.EnvVar` helpers.
+
+### Schema round-trip tooling
+
+The kit ships a `cmd/actionkit-schemagen` binary, invoked from every plugin's Makefile:
+
+```sh
+make jsonFromParams   # writes actions/<name>_action_params.json from each _params.go
+make paramsFromJson   # writes actions/<name>_action_params.go   from each _params.json
+```
+
+`jsonFromParams` produces schemas that are byte-for-byte identical to what the kit sends to core during plugin registration (the AST tool reuses the same `actionkit.GenerateSchema` pathway). `paramsFromJson` regenerates the Go source from a schema; the output is canonical (fields alphabetize, comments drop, slice-of-struct fields come back as slice-of-pointer-to-struct) but functionally equivalent.
+
 ### Example
+
+`actions/hello_world_go_transform_action.go`:
 
 ```go
 package actions
@@ -198,13 +235,14 @@ import (
 )
 
 func init() {
-    actionkit.RegisterTransform("HelloWorldGoTransformAction", &HelloWorldGoTransform{}).
+    actionkit.RegisterTransform("HelloWorldGoTransformAction", &HelloWorldGoTransformAction{}).
+        WithParams(HelloWorldGoTransformParams{}).
         Describe("Add some content noting that we did a really good job")
 }
 
-type HelloWorldGoTransform struct{}
+type HelloWorldGoTransformAction struct{}
 
-func (a *HelloWorldGoTransform) Transform(df *actionkit.Deltafile, params HelloWorldGoTransformParams) *actionkit.Deltafile {
+func (a *HelloWorldGoTransformAction) Transform(df *actionkit.Deltafile, params HelloWorldGoTransformParams) *actionkit.Deltafile {
     if strings.HasPrefix(df.Did, "2") {
         return df.Filterf("We prefer dids that do not start with 2")
     }
@@ -221,7 +259,7 @@ func (a *HelloWorldGoTransform) Transform(df *actionkit.Deltafile, params HelloW
 
     transformed := data + "\nHelloWorldGoTransformAction did a great job"
 
-    if _, err := df.SaveStringContent(transformed, "transform-named-me", "text/plain"); err != nil {
+    if _, err := df.SaveStringContent("transform-named-me", "text/plain", transformed); err != nil {
         return df.Errorf("Failed to save content").SetErrorContext(err.Error())
     }
 
@@ -229,8 +267,17 @@ func (a *HelloWorldGoTransform) Transform(df *actionkit.Deltafile, params HelloW
     df.AddAnnotation("transformAnnotation", "value")
     return df
 }
+```
 
-type HelloWorldGoTransformParams struct{}
+`actions/hello_world_go_transform_action_params.go`:
+
+```go
+package actions
+
+// HelloWorldGoTransformParams defines the action's configurable parameters.
+type HelloWorldGoTransformParams struct {
+    // Add fields with json + description/default tags to expose them in the UI.
+}
 ```
 
 ## C++

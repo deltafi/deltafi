@@ -23,10 +23,12 @@ package actionkit
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"strings"
 	"testing"
 	"time"
 )
@@ -52,7 +54,7 @@ func TestLookupClient_Lookup(t *testing.T) {
 		}
 
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(map[string]any{
+		_ = json.NewEncoder(w).Encode(map[string]any{
 			"data": map[string]any{
 				"lookup": map[string]any{
 					"totalCount": 2,
@@ -86,11 +88,13 @@ func TestLookupClient_Lookup(t *testing.T) {
 	if len(results.Rows) != 2 {
 		t.Fatalf("Rows length = %d, want 2", len(results.Rows))
 	}
-	if results.Rows[0]["color"] != "red" {
-		t.Errorf("Rows[0][color] = %q, want %q", results.Rows[0]["color"], "red")
+	color, _ := results.Rows[0].Get("color")
+	if color != "red" {
+		t.Errorf("Rows[0][color] = %q, want %q", color, "red")
 	}
-	if results.Rows[1]["score"] != "20" {
-		t.Errorf("Rows[1][score] = %q, want %q", results.Rows[1]["score"], "20")
+	score, _ := results.Rows[1].Get("score")
+	if score != "20" {
+		t.Errorf("Rows[1][score] = %q, want %q", score, "20")
 	}
 }
 
@@ -98,7 +102,10 @@ func TestLookupClient_Lookup_NilOptions(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		body, _ := io.ReadAll(r.Body)
 		var req graphqlRequest
-		json.Unmarshal(body, &req)
+		if err := json.Unmarshal(body, &req); err != nil {
+			t.Errorf("unmarshal request: %v", err)
+			return
+		}
 
 		// Should only have lookupTableName variable
 		if _, ok := req.Variables["matchingColumnValues"]; ok {
@@ -106,7 +113,7 @@ func TestLookupClient_Lookup_NilOptions(t *testing.T) {
 		}
 
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(map[string]any{
+		_ = json.NewEncoder(w).Encode(map[string]any{
 			"data": map[string]any{
 				"lookup": map[string]any{
 					"totalCount": 0,
@@ -132,7 +139,7 @@ func TestLookupClient_Lookup_Cached(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		callCount++
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(map[string]any{
+		_ = json.NewEncoder(w).Encode(map[string]any{
 			"data": map[string]any{
 				"lookup": map[string]any{
 					"totalCount": callCount,
@@ -181,7 +188,7 @@ func TestLookupClient_Lookup_CacheDisabled(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		callCount++
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(map[string]any{
+		_ = json.NewEncoder(w).Encode(map[string]any{
 			"data": map[string]any{
 				"lookup": map[string]any{"totalCount": 0, "rows": []any{}},
 			},
@@ -192,8 +199,12 @@ func TestLookupClient_Lookup_CacheDisabled(t *testing.T) {
 	client := newLookupClient(server.URL)
 	client.SetCacheTTL(0)
 
-	client.Lookup(context.Background(), "t", nil)
-	client.Lookup(context.Background(), "t", nil)
+	if _, err := client.Lookup(context.Background(), "t", nil); err != nil {
+		t.Fatalf("Lookup: %v", err)
+	}
+	if _, err := client.Lookup(context.Background(), "t", nil); err != nil {
+		t.Fatalf("Lookup: %v", err)
+	}
 
 	if callCount != 2 {
 		t.Errorf("with TTL=0, expected 2 server calls, got %d", callCount)
@@ -205,7 +216,7 @@ func TestLookupClient_ClearCache(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		callCount++
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(map[string]any{
+		_ = json.NewEncoder(w).Encode(map[string]any{
 			"data": map[string]any{
 				"lookup": map[string]any{"totalCount": callCount, "rows": []any{}},
 			},
@@ -216,7 +227,9 @@ func TestLookupClient_ClearCache(t *testing.T) {
 	client := newLookupClient(server.URL)
 	client.SetCacheTTL(1 * time.Minute)
 
-	client.Lookup(context.Background(), "t", nil)
+	if _, err := client.Lookup(context.Background(), "t", nil); err != nil {
+		t.Fatalf("Lookup: %v", err)
+	}
 	if callCount != 1 {
 		t.Fatalf("expected 1 call, got %d", callCount)
 	}
@@ -237,7 +250,7 @@ func TestLookupClient_Lookup_FailureCached(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		callCount++
 		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte("server error"))
+		_, _ = w.Write([]byte("server error"))
 	}))
 	defer server.Close()
 
@@ -278,11 +291,11 @@ func TestLookupClient_Lookup_FailureRecovery(t *testing.T) {
 		callCount++
 		if callCount == 1 {
 			w.WriteHeader(http.StatusInternalServerError)
-			w.Write([]byte("server error"))
+			_, _ = w.Write([]byte("server error"))
 			return
 		}
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(map[string]any{
+		_ = json.NewEncoder(w).Encode(map[string]any{
 			"data": map[string]any{
 				"lookup": map[string]any{"totalCount": 5, "rows": []any{}},
 			},
@@ -384,7 +397,7 @@ func TestLookupClient_FailureCacheTTL_Default(t *testing.T) {
 func TestLookupClient_Lookup_GraphQLError(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(map[string]any{
+		_ = json.NewEncoder(w).Encode(map[string]any{
 			"errors": []map[string]string{
 				{"message": "table not found"},
 			},
@@ -405,7 +418,7 @@ func TestLookupClient_Lookup_GraphQLError(t *testing.T) {
 func TestLookupClient_Lookup_HTTPError(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte("internal error"))
+		_, _ = w.Write([]byte("internal error"))
 	}))
 	defer server.Close()
 
@@ -422,11 +435,14 @@ func TestLookupClient_Lookup_WithAllOptions(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		body, _ := io.ReadAll(r.Body)
 		var req graphqlRequest
-		json.Unmarshal(body, &req)
+		if err := json.Unmarshal(body, &req); err != nil {
+			t.Errorf("unmarshal request: %v", err)
+			return
+		}
 		capturedVars = req.Variables
 
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(map[string]any{
+		_ = json.NewEncoder(w).Encode(map[string]any{
 			"data": map[string]any{
 				"lookup": map[string]any{"totalCount": 0, "rows": []any{}},
 			},
@@ -435,11 +451,13 @@ func TestLookupClient_Lookup_WithAllOptions(t *testing.T) {
 	defer server.Close()
 
 	client := newLookupClient(server.URL)
-	client.Lookup(context.Background(), "t",
+	if _, err := client.Lookup(context.Background(), "t",
 		WithSort("name", SortDESC),
 		WithOffset(5),
 		WithLimit(10),
-	)
+	); err != nil {
+		t.Fatalf("Lookup: %v", err)
+	}
 
 	if capturedVars["sortColumn"] != "name" {
 		t.Errorf("sortColumn = %v, want %q", capturedVars["sortColumn"], "name")
@@ -494,7 +512,7 @@ func TestLookupClient_UploadTable(t *testing.T) {
 func TestLookupClient_UploadTable_Error(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte("bad request"))
+		_, _ = w.Write([]byte("bad request"))
 	}))
 	defer server.Close()
 
@@ -551,8 +569,9 @@ func TestParseLookupResults_WithTimestamps(t *testing.T) {
 	if results.Created == nil {
 		t.Fatal("Created should not be nil")
 	}
-	if results.Rows[0]["a"] != "1" {
-		t.Errorf("Rows[0][a] = %q, want %q", results.Rows[0]["a"], "1")
+	a, _ := results.Rows[0].Get("a")
+	if a != "1" {
+		t.Errorf("Rows[0][a] = %q, want %q", a, "1")
 	}
 }
 
@@ -603,8 +622,33 @@ func (s *testLookupTableSupplier) Table() LookupTableDefinition {
 	return s.table
 }
 
-func (s *testLookupTableSupplier) GetRows(_ context.Context, _ map[string]string, _ map[string][]string, _ []string) ([]map[string]string, error) {
-	return s.rows, nil
+func (s *testLookupTableSupplier) GetRows(_ context.Context, _ map[string]string, _ map[string][]string, _ []string) ([]Row, error) {
+	rows := make([]Row, len(s.rows))
+	for i, m := range s.rows {
+		rows[i] = NewRow(m)
+	}
+	return rows, nil
+}
+
+type panicLookupTableSupplier struct {
+	testLookupTableSupplier
+}
+
+func (s *panicLookupTableSupplier) GetRows(_ context.Context, _ map[string]string, _ map[string][]string, _ []string) ([]Row, error) {
+	panic("supplier boom")
+}
+
+func TestSafeSupplierRows_PanicBecomesError(t *testing.T) {
+	rows, err := safeSupplierRows(context.Background(), "colors", &panicLookupTableSupplier{}, nil, nil, nil)
+	if err == nil {
+		t.Fatal("expected panic to become an error")
+	}
+	if rows != nil {
+		t.Fatalf("rows = %v, want nil on panic", rows)
+	}
+	if !strings.Contains(err.Error(), "supplier boom") {
+		t.Fatalf("error = %v, want panic value", err)
+	}
 }
 
 func TestLookupTableDefinition_JSON(t *testing.T) {
@@ -643,9 +687,7 @@ func TestLookupTableEventResult_JSON(t *testing.T) {
 	result := lookupTableEventResult{
 		LookupTableEventID: "lookup-table-event-abc-0",
 		LookupTableName:    "test_table",
-		Rows: []map[string]string{
-			{"a": "1", "b": "2"},
-		},
+		Rows:               []Row{NewRow(map[string]string{"a": "1", "b": "2"})},
 	}
 
 	data, err := json.Marshal(result)
@@ -653,7 +695,13 @@ func TestLookupTableEventResult_JSON(t *testing.T) {
 		t.Fatalf("Marshal failed: %v", err)
 	}
 
-	var parsed lookupTableEventResult
+	// Unmarshal into a generic struct to verify the wire format without
+	// requiring Row to implement json.Unmarshaler (it's write-only on the wire).
+	var parsed struct {
+		LookupTableEventID string              `json:"lookupTableEventId"`
+		LookupTableName    string              `json:"lookupTableName"`
+		Rows               []map[string]string `json:"rows"`
+	}
 	if err := json.Unmarshal(data, &parsed); err != nil {
 		t.Fatalf("Unmarshal failed: %v", err)
 	}
@@ -666,5 +714,64 @@ func TestLookupTableEventResult_JSON(t *testing.T) {
 	}
 	if parsed.Rows[0]["a"] != "1" {
 		t.Errorf("Rows[0][a] = %q, want %q", parsed.Rows[0]["a"], "1")
+	}
+}
+
+func TestPublishWithRetry_RetriesThenSucceeds(t *testing.T) {
+	old := supplierPutRetryBackoff
+	supplierPutRetryBackoff = time.Millisecond
+	t.Cleanup(func() { supplierPutRetryBackoff = old })
+
+	calls := 0
+	err := publishWithRetry(context.Background(), func(context.Context) error {
+		calls++
+		if calls < 3 {
+			return fmt.Errorf("valkey blip")
+		}
+		return nil
+	})
+	if err != nil {
+		t.Fatalf("expected success after retries, got %v", err)
+	}
+	if calls != 3 {
+		t.Fatalf("calls = %d, want 3", calls)
+	}
+}
+
+func TestPublishWithRetry_ReturnsErrorAfterMaxAttempts(t *testing.T) {
+	old := supplierPutRetryBackoff
+	supplierPutRetryBackoff = time.Millisecond
+	t.Cleanup(func() { supplierPutRetryBackoff = old })
+
+	calls := 0
+	err := publishWithRetry(context.Background(), func(context.Context) error {
+		calls++
+		return fmt.Errorf("always down")
+	})
+	if err == nil {
+		t.Fatal("expected error after exhausting attempts")
+	}
+	if calls != supplierPutMaxAttempts {
+		t.Fatalf("calls = %d, want %d", calls, supplierPutMaxAttempts)
+	}
+}
+
+func TestPublishWithRetry_StopsOnContextCancel(t *testing.T) {
+	old := supplierPutRetryBackoff
+	supplierPutRetryBackoff = time.Hour // ensure the cancel path, not the timer, ends it
+	t.Cleanup(func() { supplierPutRetryBackoff = old })
+
+	ctx, cancel := context.WithCancel(context.Background())
+	calls := 0
+	err := publishWithRetry(ctx, func(context.Context) error {
+		calls++
+		cancel()
+		return fmt.Errorf("fail")
+	})
+	if err == nil {
+		t.Fatal("expected context error")
+	}
+	if calls != 1 {
+		t.Fatalf("calls = %d, want 1 (should stop on cancel before retrying)", calls)
 	}
 }

@@ -29,6 +29,7 @@ import (
 	"net/url"
 	"os"
 	"sync"
+	"time"
 )
 
 // Default cert paths matching the Java SslAutoConfiguration.
@@ -36,6 +37,11 @@ var (
 	defaultKeyPath     = envOrDefault("KEY_PATH", "/certs/tls.key")
 	defaultCertPath    = envOrDefault("CERT_PATH", "/certs/tls.crt")
 	defaultCAChainPath = envOrDefault("CA_CHAIN_PATH", "/certs/ca.crt")
+)
+
+const (
+	platformResponseHeaderTimeout = 60 * time.Second
+	platformMaxIdleConnsPerHost   = 100
 )
 
 // platformClient is the shared HTTP client configured at startup with
@@ -48,6 +54,7 @@ var platformClient *http.Client
 var platformTransport *http.Transport
 
 func init() {
+	configureStructuredLogging()
 	transport, err := buildPlatformTransport()
 	if err != nil {
 		log.Fatalf("Failed to configure platform TLS: %v", err)
@@ -60,6 +67,10 @@ func init() {
 // cert files mounted at the default paths. If no cert files are found,
 // returns a default transport.
 func buildPlatformTransport() (*http.Transport, error) {
+	transport := http.DefaultTransport.(*http.Transport).Clone()
+	transport.ResponseHeaderTimeout = platformResponseHeaderTimeout
+	transport.MaxIdleConnsPerHost = platformMaxIdleConnsPerHost
+
 	keyExists := fileExists(defaultKeyPath)
 	certExists := fileExists(defaultCertPath)
 
@@ -70,7 +81,7 @@ func buildPlatformTransport() (*http.Transport, error) {
 
 	if !keyExists {
 		log.Printf("Skipping SSL setup - key and cert files were not found at %s and %s", defaultKeyPath, defaultCertPath)
-		return &http.Transport{}, nil
+		return transport, nil
 	}
 
 	log.Printf("Configuring TLS from key=%s cert=%s", defaultKeyPath, defaultCertPath)
@@ -92,11 +103,12 @@ func buildPlatformTransport() (*http.Transport, error) {
 		caCertPool := x509.NewCertPool()
 		if !caCertPool.AppendCertsFromPEM(caCert) {
 			return nil, fmt.Errorf("no valid CA certificates found in %s", defaultCAChainPath)
-  		}
+		}
 		tlsConfig.RootCAs = caCertPool
 	}
 
-	return &http.Transport{TLSClientConfig: tlsConfig}, nil
+	transport.TLSClientConfig = tlsConfig
+	return transport, nil
 }
 
 func fileExists(path string) bool {

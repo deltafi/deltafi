@@ -22,8 +22,10 @@ package actionkit
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
+	"maps"
 )
 
 // Deltafile is the primary object passed to action methods. It carries input
@@ -56,6 +58,9 @@ type Deltafile struct {
 	// Log messages
 	messages []LogMessage
 
+	// Custom metrics emitted by the action
+	metrics []Metric
+
 	// Child DeltaFiles for split transforms
 	children []*Deltafile
 
@@ -63,6 +68,7 @@ type Deltafile struct {
 	errCause      string
 	errContext    string
 	filterMessage string
+	filterContext string
 	hasError      bool
 	hasFilter     bool
 
@@ -158,8 +164,8 @@ func (df *Deltafile) ContentNamed(name string) (*ActionContent, error) {
 	return nil, fmt.Errorf("no content named %q", name)
 }
 
-// GetContentSlice returns the input content slice.
-func (df *Deltafile) GetContentSlice() []ActionContent {
+// GetContentList returns the input content collection.
+func (df *Deltafile) GetContentList() []ActionContent {
 	return df.content
 }
 
@@ -167,14 +173,14 @@ func (df *Deltafile) GetContentSlice() []ActionContent {
 
 // SaveStringContent saves a string as content, adds it to the output content
 // list, and returns the resulting ActionContent.
-func (df *Deltafile) SaveStringContent(data, name, mediaType string) (*ActionContent, error) {
-	return df.SaveBytesContent([]byte(data), name, mediaType)
+func (df *Deltafile) SaveStringContent(name, mediaType, data string) (*ActionContent, error) {
+	return df.SaveBytesContent(name, mediaType, []byte(data))
 }
 
 // SaveBytesContent saves bytes as content, adds it to the output content list,
 // and returns the resulting ActionContent.
-func (df *Deltafile) SaveBytesContent(data []byte, name, mediaType string) (*ActionContent, error) {
-	saved, err := df.actx.Save(df.actx.ctx, data, name, mediaType)
+func (df *Deltafile) SaveBytesContent(name, mediaType string, data []byte) (*ActionContent, error) {
+	saved, err := df.actx.Save(df.actx.ctx, name, mediaType, data)
 	if err != nil {
 		return nil, err
 	}
@@ -182,16 +188,63 @@ func (df *Deltafile) SaveBytesContent(data []byte, name, mediaType string) (*Act
 	return &df.newContent[len(df.newContent)-1], nil
 }
 
-// SaveReaderContent saves data from an io.Reader as content, adds it to the
-// output content list, and returns the resulting ActionContent. Use size = -1
-// if the size is not known in advance.
-func (df *Deltafile) SaveReaderContent(r io.Reader, size int64, name, mediaType string) (*ActionContent, error) {
-	saved, err := df.actx.SaveFromReader(df.actx.ctx, r, size, name, mediaType)
+// SaveReaderContent streams data from an io.Reader as content, adds it to the
+// output content list, and returns the resulting ActionContent. The content
+// streams to storage and is never fully buffered in memory; the resulting size
+// reflects the bytes actually streamed.
+func (df *Deltafile) SaveReaderContent(name, mediaType string, r io.Reader) (*ActionContent, error) {
+	saved, err := df.actx.SaveFromReader(df.actx.ctx, name, mediaType, r)
 	if err != nil {
 		return nil, err
 	}
 	df.newContent = append(df.newContent, *saved)
 	return &df.newContent[len(df.newContent)-1], nil
+}
+
+// SaveWriterContent streams content produced by fn as output content, appends it
+// to the output content list, and returns the resulting ActionContent. The content
+// streams to storage and is never fully buffered in memory.
+func (df *Deltafile) SaveWriterContent(name, mediaType string, fn func(io.Writer) error) (*ActionContent, error) {
+	saved, err := df.actx.SaveFromWriter(df.actx.ctx, name, mediaType, fn)
+	if err != nil {
+		return nil, err
+	}
+	df.newContent = append(df.newContent, *saved)
+	return &df.newContent[len(df.newContent)-1], nil
+}
+
+// SaveContentBatch saves each item, appends successes to the output content list,
+// and returns the saved contents alongside a joined error of any per-item failures.
+// Partially-saved-but-unreferenced segments are reclaimed by the worker's orphan
+// cleanup if the action ultimately returns an error instead of the content.
+func (df *Deltafile) SaveContentBatch(items []ContentItem) ([]ActionContent, error) {
+	saved := make([]ActionContent, 0, len(items))
+	var errs []error
+	for _, item := range items {
+		c, err := df.SaveBytesContent(item.Name, item.MediaType, item.Data)
+		if err != nil {
+			errs = append(errs, fmt.Errorf("save %q: %w", item.Name, err))
+			continue
+		}
+		saved = append(saved, *c)
+	}
+	return saved, errors.Join(errs...)
+}
+
+// SaveWriterContentBatch streams each write, appends successes to the output content
+// list, and returns the saved contents alongside a joined error of any failures.
+func (df *Deltafile) SaveWriterContentBatch(writes []ContentWrite) ([]ActionContent, error) {
+	saved := make([]ActionContent, 0, len(writes))
+	var errs []error
+	for _, cw := range writes {
+		c, err := df.SaveWriterContent(cw.Name, cw.MediaType, cw.Write)
+		if err != nil {
+			errs = append(errs, fmt.Errorf("save %q: %w", cw.Name, err))
+			continue
+		}
+		saved = append(saved, *c)
+	}
+	return saved, errors.Join(errs...)
 }
 
 // AddContent appends a single content item to the output content list.
@@ -200,14 +253,14 @@ func (df *Deltafile) AddContent(c ActionContent) *Deltafile {
 	return df
 }
 
-// AddContentSlice appends multiple content items to the output content list.
-func (df *Deltafile) AddContentSlice(contents []ActionContent) *Deltafile {
+// AddContentList appends multiple content items to the output content list.
+func (df *Deltafile) AddContentList(contents []ActionContent) *Deltafile {
 	df.newContent = append(df.newContent, contents...)
 	return df
 }
 
-// GetNewContentSlice returns the output content slice.
-func (df *Deltafile) GetNewContentSlice() []ActionContent {
+// GetNewContentList returns the output content collection.
+func (df *Deltafile) GetNewContentList() []ActionContent {
 	return df.newContent
 }
 
@@ -269,9 +322,7 @@ func (df *Deltafile) GetMetadataMap() map[string]string {
 			merged[k] = v
 		}
 	}
-	for k, v := range df.addedMetadata {
-		merged[k] = v
-	}
+	maps.Copy(merged, df.addedMetadata)
 	return merged
 }
 
@@ -301,6 +352,12 @@ func (df *Deltafile) AddAnnotation(key, value string) *Deltafile {
 	return df
 }
 
+// AddMetric emits a custom metric with optional tags.
+func (df *Deltafile) AddMetric(name string, value float64, tags map[string]string) *Deltafile {
+	df.metrics = append(df.metrics, Metric{Name: name, Value: value, Tags: tags})
+	return df
+}
+
 // --- Error / Filter ---
 
 // Errorf sets an error state on the Deltafile and returns it for chaining.
@@ -313,6 +370,18 @@ func (df *Deltafile) Errorf(format string, args ...any) *Deltafile {
 	return df
 }
 
+// Fail marks the Deltafile as errored using err's message as the cause and
+// returns it for chaining. Equivalent to Errorf("%s", err.Error()).
+func (df *Deltafile) Fail(err error) *Deltafile {
+	return df.Errorf("%s", failCause(err))
+}
+
+// Failf marks the Deltafile as errored with a formatted cause and returns it
+// for chaining.
+func (df *Deltafile) Failf(format string, args ...any) *Deltafile {
+	return df.Errorf(format, args...)
+}
+
 // Filterf sets a filter state on the Deltafile and returns it for chaining.
 // When a Deltafile with a filter state is returned from an action, the kit
 // converts it to a filter result.
@@ -320,6 +389,13 @@ func (df *Deltafile) Filterf(format string, args ...any) *Deltafile {
 	df.hasFilter = true
 	df.hasError = false
 	df.filterMessage = fmt.Sprintf(format, args...)
+	return df
+}
+
+// SetFilterContext sets additional context for a filter result and returns the
+// Deltafile for chaining. Only meaningful after calling Filterf.
+func (df *Deltafile) SetFilterContext(ctx string) *Deltafile {
+	df.filterContext = ctx
 	return df
 }
 
@@ -360,16 +436,16 @@ func (df *Deltafile) appendLog(severity LogSeverity, format string, args ...any)
 	df.messages = append(df.messages, newLogMessage(severity, df.ActionName, msg))
 }
 
-// NewChild creates a new empty Deltafile with a unique DID for use as a child
+// AddChild creates a new empty Deltafile with a unique DID for use as a child
 // in a split transform. The child is automatically tracked on the parent; the
 // dispatcher produces a multi-child transform event when children are present.
-func (df *Deltafile) NewChild(name string) *Deltafile {
+func (df *Deltafile) AddChild(name string) *Deltafile {
 	child := newEmptyDeltafile(name, df.actx)
 	df.children = append(df.children, child)
 	return child
 }
 
-// GetChildren returns the child Deltafiles created via NewChild.
+// GetChildren returns the child Deltafiles created via AddChild.
 func (df *Deltafile) GetChildren() []*Deltafile {
 	return df.children
 }
@@ -399,133 +475,3 @@ func (df *Deltafile) toTransformEvent() TransformEvent {
 		Messages:           df.messages,
 	}
 }
-
-// collectNewSegments returns all segments from the output content.
-func (df *Deltafile) collectNewSegments() []Segment {
-	var segs []Segment
-	for _, c := range df.newContent {
-		segs = append(segs, c.Segments...)
-	}
-	return segs
-}
-
-// --- IngressInput ---
-
-// IngressInput holds context for timed ingress actions.
-type IngressInput struct {
-	Memo       string
-	FlowName   string
-	ActionName string
-	actx       *ActionContext
-}
-
-// Context returns the action's context.Context, which is cancelled on plugin
-// shutdown. Use this when making external calls (HTTP, database, etc.) so they
-// respect graceful shutdown.
-func (input *IngressInput) Context() context.Context {
-	if input.actx != nil && input.actx.ctx != nil {
-		return input.actx.ctx
-	}
-	return context.Background()
-}
-
-// NewDeltafile creates an empty Deltafile with a unique DID for use as an
-// ingress item. The returned Deltafile can save content via its Save methods.
-func (input *IngressInput) NewDeltafile(name string) *Deltafile {
-	return newEmptyDeltafile(name, input.actx)
-}
-
-// --- IngressResult ---
-
-// IngressResult holds the output of a timed ingress action.
-type IngressResult struct {
-	items            []*Deltafile
-	memo             string
-	status           string
-	statusMessage    string
-	executeImmediate bool
-	messages         []LogMessage
-	hasError         bool
-	errCause         string
-	errContext        string
-}
-
-// NewIngressResult creates an IngressResult with healthy status.
-func NewIngressResult() *IngressResult {
-	return &IngressResult{
-		status: "HEALTHY",
-	}
-}
-
-// AddItem appends a Deltafile as an ingress item and returns the result for chaining.
-func (r *IngressResult) AddItem(df *Deltafile) *IngressResult {
-	r.items = append(r.items, df)
-	return r
-}
-
-// SetMemo sets the memo string and returns the result for chaining.
-func (r *IngressResult) SetMemo(m string) *IngressResult {
-	r.memo = m
-	return r
-}
-
-// SetStatus sets the ingress health status and returns the result for chaining.
-func (r *IngressResult) SetStatus(s string) *IngressResult {
-	r.status = s
-	return r
-}
-
-// SetStatusMessage sets a human-readable status message and returns the result for chaining.
-func (r *IngressResult) SetStatusMessage(m string) *IngressResult {
-	r.statusMessage = m
-	return r
-}
-
-// SetExecuteImmediate requests that the next ingress invocation run immediately.
-func (r *IngressResult) SetExecuteImmediate(b bool) *IngressResult {
-	r.executeImmediate = b
-	return r
-}
-
-// Errorf sets an error state on the IngressResult. When the result has an
-// error, the kit converts it to an error event instead of an ingress event.
-func (r *IngressResult) Errorf(format string, args ...any) *IngressResult {
-	r.hasError = true
-	r.errCause = fmt.Sprintf(format, args...)
-	return r
-}
-
-// SetErrorContext sets additional context for an error.
-func (r *IngressResult) SetErrorContext(ctx string) *IngressResult {
-	r.errContext = ctx
-	return r
-}
-
-// LogInfo adds an INFO-level log message.
-func (r *IngressResult) LogInfo(format string, args ...any) *IngressResult {
-	r.appendLog(SeverityInfo, format, args...)
-	return r
-}
-
-// LogWarn adds a WARNING-level log message.
-func (r *IngressResult) LogWarn(format string, args ...any) *IngressResult {
-	r.appendLog(SeverityWarning, format, args...)
-	return r
-}
-
-// LogError adds an ERROR-level log message.
-func (r *IngressResult) LogError(format string, args ...any) *IngressResult {
-	r.appendLog(SeverityError, format, args...)
-	return r
-}
-
-func (r *IngressResult) appendLog(severity LogSeverity, format string, args ...any) {
-	var msg string
-	if len(args) == 0 {
-		msg = format
-	} else {
-		msg = fmt.Sprintf(format, args...)
-	}
-	r.messages = append(r.messages, newLogMessage(severity, "ingress", msg))
-}
-

@@ -20,7 +20,26 @@
 
 package actionkit
 
-import "time"
+import (
+	"log"
+	"log/slog"
+	"os"
+	"sync"
+	"time"
+)
+
+var configureStructuredLoggingOnce sync.Once
+
+func configureStructuredLogging() {
+	configureStructuredLoggingOnce.Do(func() {
+		handler := slog.NewJSONHandler(os.Stderr, &slog.HandlerOptions{AddSource: true})
+		logger := slog.New(handler).With("logger", "deltafi-go-action-kit")
+		slog.SetDefault(logger)
+		log.SetFlags(0)
+		log.SetPrefix("")
+		log.SetOutput(slog.NewLogLogger(logger.Handler(), slog.LevelInfo).Writer())
+	})
+}
 
 // LogSeverity represents the severity level of a log message.
 type LogSeverity string

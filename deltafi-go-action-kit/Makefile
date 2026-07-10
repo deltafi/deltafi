@@ -38,6 +38,7 @@ ifneq ($(NATIVE_OS),darwin)
 endif
 
 HAS_DOCKER := $(shell command -v docker 2> /dev/null)
+HAS_GOTESTSUM := $(shell command -v gotestsum 2> /dev/null)
 MIN_GO_VERSION := 1.26
 GO_VERSION_CHECK := $(shell go version 2>/dev/null | grep -q "go$(MIN_GO_VERSION)" && echo 1 || echo 0)
 
@@ -108,10 +109,26 @@ GOTIDY    = $(GOCMD) mod tidy -modcacherw
 GOLINT    = $(CMD_PREFIX) $(GOBINPATH)/golangci-lint
 GOINSTALL = $(GOCMD) install -modcacherw
 
+# Use gotestsum for nicer test output when available (native builds only)
+ifeq ($(USE_DOCKER),false)
+  ifneq ($(HAS_GOTESTSUM),)
+    GOTEST_RUN = gotestsum --format short-verbose -- -modcacherw ./...
+  endif
+endif
+GOTEST_RUN ?= $(GOTEST) -v ./...
+
+# Race-instrumented run (requires CGO + a C toolchain).
+ifeq ($(USE_DOCKER),false)
+  ifneq ($(HAS_GOTESTSUM),)
+    GOTEST_RACE_RUN = CGO_ENABLED=1 gotestsum --format short-verbose -- -modcacherw -race ./...
+  endif
+endif
+GOTEST_RACE_RUN ?= CGO_ENABLED=1 $(GOTEST) -v -race ./...
+
 # Extra modules
 LINT_MODULE = github.com/golangci/golangci-lint/cmd/golangci-lint@latest
 
-.PHONY: all build clean test lint fmt fix vet deps tidy very-clean help check-env
+.PHONY: all build clean test acceptance-test lint fmt fix vet deps tidy very-clean help check-env
 
 all: check-env fix vet fmt build test
 
@@ -139,6 +156,7 @@ help:
 	@echo "  clean            - Remove build artifacts"
 	@echo "  very-clean       - Remove build artifacts and cached modules"
 	@echo "  test             - Run tests"
+	@echo "  acceptance-test  - Run tests with the race detector"
 	@echo "  lint             - Run linter and vet"
 	@echo "  fmt              - Format code"
 	@echo "  tidy             - Format code and tidy modules"
@@ -153,7 +171,11 @@ build: check-env fmt fix
 
 test: check-env
 	@echo "Running all tests"
-	@$(GOTEST) -v ./...
+	@$(GOTEST_RUN)
+
+acceptance-test: check-env
+	@echo "Running all tests with the race detector"
+	@$(GOTEST_RACE_RUN)
 
 clean:
 	$(GOCLEAN)

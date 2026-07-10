@@ -45,6 +45,10 @@ ARG TARGETOS
 ARG TARGETARCH
 ARG VERSION=0.0.0-dev
 ARG ACTIONKIT_VERSION=latest
+ARG PLUGIN_GROUP_ID=""
+ARG PLUGIN_ARTIFACT_ID=""
+ARG PLUGIN_DOMAIN=""
+ARG PLUGIN_DESCRIPTION=""
 RUN if [ -d /action-kit ]; then \
         cp go.mod.new go.mod; \
         go mod tidy; \
@@ -53,7 +57,11 @@ RUN if [ -d /action-kit ]; then \
         ACTIONKIT_VERSION=$(go list -m -f '{{"{{"}}.Version{{"}}"}}' gitlab.com/deltafi/deltafi/deltafi-go-action-kit/v2); \
     fi && \
     CGO_ENABLED=0 GOOS=${TARGETOS} GOARCH=${TARGETARCH} go build -ldflags "\
-      -X main.version=${VERSION} \
+      -X gitlab.com/deltafi/deltafi/deltafi-go-action-kit/v2.PluginVersion=${VERSION} \
+      -X gitlab.com/deltafi/deltafi/deltafi-go-action-kit/v2.PluginGroupID=${PLUGIN_GROUP_ID} \
+      -X gitlab.com/deltafi/deltafi/deltafi-go-action-kit/v2.PluginArtifactID=${PLUGIN_ARTIFACT_ID} \
+      -X 'gitlab.com/deltafi/deltafi/deltafi-go-action-kit/v2.PluginDomain=${PLUGIN_DOMAIN}' \
+      -X 'gitlab.com/deltafi/deltafi/deltafi-go-action-kit/v2.PluginDescription=${PLUGIN_DESCRIPTION}' \
       -X gitlab.com/deltafi/deltafi/deltafi-go-action-kit/v2.Version=${ACTIONKIT_VERSION}" \
       -o {{.PluginName}} .
 

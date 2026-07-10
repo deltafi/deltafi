@@ -22,6 +22,7 @@ package actionkit
 
 import (
 	"fmt"
+	"maps"
 	"reflect"
 	"time"
 )
@@ -45,7 +46,7 @@ type actionDispatcher struct {
 
 	transformFn func(*Deltafile, any) *Deltafile
 	egressFn    func(*Deltafile, any) *Deltafile
-	ingressFn   func(*IngressInput, any) *IngressResult
+	ingressFn   func(*TimedIngressDeltafile, any) *TimedIngressDeltafile
 	joinFn      func([]*Deltafile, *Deltafile, any) *Deltafile
 }
 
@@ -78,7 +79,11 @@ func (d *actionDispatcher) parseAndSetDefaults(defaults any, rawParams map[strin
 	if defaults != nil {
 		defaultVal := reflect.ValueOf(defaults)
 		if defaultVal.Kind() == reflect.Pointer {
-			defaultVal = defaultVal.Elem()
+			if defaultVal.IsNil() {
+				defaultVal = reflect.Zero(pt)
+			} else {
+				defaultVal = defaultVal.Elem()
+			}
 		}
 		if defaultVal.Type() == pt {
 			paramVal.Elem().Set(defaultVal)
@@ -123,8 +128,17 @@ func (d *actionDispatcher) invokeTransform(actx *ActionContext, event *queueEven
 	}
 
 	df := buildDeltafileFromEvent(actx, event)
-	d.transformFn(df, params)
+	df = d.transformFn(df, params)
+	if df == nil {
+		return errorEvent(actx, startTime, "action returned nil Deltafile")
+	}
 
+	if df.hasError {
+		return deltafileToErrorEvent(df, actx, startTime)
+	}
+	if df.hasFilter {
+		return deltafileToFilterEvent(df, actx, startTime)
+	}
 	if len(df.children) > 0 {
 		return splitToTransformEvent(df.children, df, actx, startTime)
 	}
@@ -138,7 +152,10 @@ func (d *actionDispatcher) invokeJoinThenTransform(actx *ActionContext, event *q
 	}
 
 	joined := newDeltafile(actx, nil, nil)
-	d.joinFn(inputs, joined, params)
+	joined = d.joinFn(inputs, joined, params)
+	if joined == nil {
+		return errorEvent(actx, startTime, "join returned nil Deltafile")
+	}
 
 	if joined.hasError {
 		return deltafileToErrorEvent(joined, actx, startTime)
@@ -147,6 +164,8 @@ func (d *actionDispatcher) invokeJoinThenTransform(actx *ActionContext, event *q
 		return deltafileToFilterEvent(joined, actx, startTime)
 	}
 
+	// Carry the join phase's accumulated annotations, log messages, and metrics
+	// into the transform phase so output produced during the join is not lost.
 	transformDf := &Deltafile{
 		Did:                 actx.DID,
 		Name:                actx.DeltaFileName,
@@ -159,30 +178,45 @@ func (d *actionDispatcher) invokeJoinThenTransform(actx *ActionContext, event *q
 		metadata:            joined.GetMetadataMap(),
 		addedMetadata:       make(map[string]string),
 		deletedMetadataKeys: make(map[string]bool),
-		annotations:         make(map[string]string),
+		annotations:         maps.Clone(joined.annotations),
+		messages:            joined.messages,
+		metrics:             joined.metrics,
 		actx:                actx,
 	}
 	bindContents(actx, transformDf.content)
 
-	d.transformFn(transformDf, params)
+	transformDf = d.transformFn(transformDf, params)
+	if transformDf == nil {
+		return errorEvent(actx, startTime, "action returned nil Deltafile")
+	}
+	if transformDf.hasError {
+		return deltafileToErrorEvent(transformDf, actx, startTime)
+	}
+	if transformDf.hasFilter {
+		return deltafileToFilterEvent(transformDf, actx, startTime)
+	}
+	if len(transformDf.children) > 0 {
+		return splitToTransformEvent(transformDf.children, transformDf, actx, startTime)
+	}
 	return deltafileToTransformEvent(transformDf, actx, startTime)
 }
 
 func (d *actionDispatcher) invokeEgress(actx *ActionContext, event *queueEvent, params any, startTime time.Time) *ActionEvent {
 	df := buildDeltafileFromEvent(actx, event)
-	d.egressFn(df, params)
+	df = d.egressFn(df, params)
+	if df == nil {
+		return errorEvent(actx, startTime, "action returned nil Deltafile")
+	}
 	return deltafileToEgressEvent(df, actx, startTime)
 }
 
 func (d *actionDispatcher) invokeIngress(actx *ActionContext, event *queueEvent, params any, startTime time.Time) *ActionEvent {
-	input := &IngressInput{
-		Memo:       actx.Memo,
-		FlowName:   actx.FlowName,
-		ActionName: actx.ActionName,
-		actx:       actx,
+	deltafile := newTimedIngressDeltafile(actx)
+	deltafile = d.ingressFn(deltafile, params)
+	if deltafile == nil {
+		return errorEvent(actx, startTime, "action returned nil TimedIngressDeltafile")
 	}
-	ir := d.ingressFn(input, params)
-	return ingressResultToEvent(ir, actx, startTime)
+	return timedIngressToEvent(deltafile, actx, startTime)
 }
 
 // --- Event builders ---
@@ -206,6 +240,7 @@ func deltafileToTransformEvent(df *Deltafile, actx *ActionContext, startTime tim
 		return deltafileToFilterEvent(df, actx, startTime)
 	}
 	event := newBaseEvent(actx, startTime, "TRANSFORM", df.messages)
+	event.Metrics = df.metrics
 	te := df.toTransformEvent()
 	event.Transform = []TransformEvent{te}
 	return event
@@ -213,11 +248,13 @@ func deltafileToTransformEvent(df *Deltafile, actx *ActionContext, startTime tim
 
 func splitToTransformEvent(children []*Deltafile, parent *Deltafile, actx *ActionContext, startTime time.Time) *ActionEvent {
 	event := newBaseEvent(actx, startTime, "TRANSFORM", parent.messages)
+	event.Metrics = parent.metrics
 	transforms := make([]TransformEvent, len(children))
 	for i, child := range children {
 		te := child.toTransformEvent()
 		te.Name = child.Name
 		transforms[i] = te
+		event.Metrics = append(event.Metrics, child.metrics...)
 	}
 	event.Transform = transforms
 	return event
@@ -230,11 +267,14 @@ func deltafileToEgressEvent(df *Deltafile, actx *ActionContext, startTime time.T
 	if df.hasFilter {
 		return deltafileToFilterEvent(df, actx, startTime)
 	}
-	return newBaseEvent(actx, startTime, "EGRESS", df.messages)
+	event := newBaseEvent(actx, startTime, "EGRESS", df.messages)
+	event.Metrics = df.metrics
+	return event
 }
 
 func deltafileToErrorEvent(df *Deltafile, actx *ActionContext, startTime time.Time) *ActionEvent {
 	event := newBaseEvent(actx, startTime, "ERROR", df.messages)
+	event.Metrics = df.metrics
 	event.Error = &ErrorEvent{
 		Cause:       df.errCause,
 		Context:     df.errContext,
@@ -245,22 +285,32 @@ func deltafileToErrorEvent(df *Deltafile, actx *ActionContext, startTime time.Ti
 
 func deltafileToFilterEvent(df *Deltafile, actx *ActionContext, startTime time.Time) *ActionEvent {
 	event := newBaseEvent(actx, startTime, "FILTER", df.messages)
+	event.Metrics = df.metrics
 	event.Filter = &FilterEvent{
 		Message:     df.filterMessage,
+		Context:     df.filterContext,
 		Annotations: df.annotations,
 	}
 	return event
 }
 
-func ingressResultToEvent(ir *IngressResult, actx *ActionContext, startTime time.Time) *ActionEvent {
-	if ir.hasError {
-		event := newBaseEvent(actx, startTime, "ERROR", ir.messages)
-		event.Error = &ErrorEvent{Cause: ir.errCause, Context: ir.errContext}
+func timedIngressToEvent(t *TimedIngressDeltafile, actx *ActionContext, startTime time.Time) *ActionEvent {
+	if t.hasError {
+		event := newBaseEvent(actx, startTime, "ERROR", t.messages)
+		event.Metrics = t.metrics
+		event.Error = &ErrorEvent{Cause: t.errCause, Context: t.errContext}
 		return event
 	}
-	event := newBaseEvent(actx, startTime, "INGRESS", ir.messages)
-	items := make([]IngressEventItem, len(ir.items))
-	for i, df := range ir.items {
+	if t.hasFilter {
+		event := newBaseEvent(actx, startTime, "FILTER", t.messages)
+		event.Metrics = t.metrics
+		event.Filter = &FilterEvent{Message: t.filterMessage, Context: t.filterContext}
+		return event
+	}
+	event := newBaseEvent(actx, startTime, "INGRESS", t.messages)
+	event.Metrics = t.metrics
+	items := make([]IngressEventItem, len(t.items))
+	for i, df := range t.items {
 		items[i] = IngressEventItem{
 			DID:           df.Did,
 			DeltaFileName: df.Name,
@@ -270,10 +320,10 @@ func ingressResultToEvent(ir *IngressResult, actx *ActionContext, startTime time
 		}
 	}
 	event.Ingress = &IngressEvent{
-		Memo:             ir.memo,
-		ExecuteImmediate: ir.executeImmediate,
-		Status:           ir.status,
-		StatusMessage:    ir.statusMessage,
+		Memo:             t.nextMemo,
+		ExecuteImmediate: t.executeImmediate,
+		Status:           string(t.status),
+		StatusMessage:    t.statusMessage,
 		IngressItems:     items,
 	}
 	return event

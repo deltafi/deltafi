@@ -21,6 +21,10 @@
 package actionkit
 
 import (
+	"bytes"
+	"io"
+	"log"
+	"strings"
 	"testing"
 )
 
@@ -547,5 +551,36 @@ func TestCoerceDefault_InvalidParse(t *testing.T) {
 	result = coerceDefault("abc", map[string]any{"type": "integer"})
 	if result != "abc" {
 		t.Errorf("coerceDefault(\"abc\", integer) = %v, want \"abc\"", result)
+	}
+}
+
+func TestJSONToMap_LogsAndFailsOnUnmarshalableValue(t *testing.T) {
+	var buf bytes.Buffer
+	old := log.Writer()
+	log.SetOutput(&buf)
+	t.Cleanup(func() { log.SetOutput(old) })
+
+	// A channel cannot be JSON-marshaled, forcing the error path.
+	m, ok := jsonToMap(map[string]any{"ch": make(chan int)})
+	if ok {
+		t.Fatal("jsonToMap should report failure on an unmarshalable value")
+	}
+	if m != nil {
+		t.Errorf("expected nil map on failure, got %v", m)
+	}
+	if !strings.Contains(buf.String(), "schema generation") {
+		t.Fatalf("expected a warning to be logged, got %q", buf.String())
+	}
+}
+
+func TestDeepCopyMap_ReturnsOriginalOnFailure(t *testing.T) {
+	old := log.Writer()
+	log.SetOutput(io.Discard)
+	t.Cleanup(func() { log.SetOutput(old) })
+
+	bad := map[string]any{"ch": make(chan int)}
+	got := deepCopyMap(bad)
+	if got == nil {
+		t.Fatal("deepCopyMap should return the original map when copying fails")
 	}
 }

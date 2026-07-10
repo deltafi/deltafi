@@ -23,6 +23,7 @@ package actionkit
 import (
 	"encoding/json"
 	"fmt"
+	"math"
 	"strconv"
 	"strings"
 
@@ -102,6 +103,10 @@ func ParseDataSize(s string) (DataSize, error) {
 		multiplier = Terabyte
 	default:
 		return 0, fmt.Errorf("invalid data size unit %q: must be B, KB, MB, GB, or TB", unit)
+	}
+
+	if multiplier != 0 && n > math.MaxInt64/int64(multiplier) {
+		return 0, fmt.Errorf("data size %q overflows int64", s)
 	}
 
 	return DataSize(n) * multiplier, nil

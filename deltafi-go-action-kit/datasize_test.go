@@ -295,3 +295,17 @@ func TestEnvVar_ParseParameters_InvalidName(t *testing.T) {
 		t.Error("expected error for invalid EnvVar name in parseRawParams")
 	}
 }
+
+func TestParseDataSize_OverflowReturnsError(t *testing.T) {
+	// 10000000 TB overflows int64 when multiplied by the TB multiplier.
+	if got, err := ParseDataSize("10000000TB"); err == nil {
+		t.Fatalf("expected overflow error, got %d", int64(got))
+	}
+}
+
+func TestParseDataSize_MaxNonOverflow(t *testing.T) {
+	// A value that fits should still parse.
+	if _, err := ParseDataSize("8000000GB"); err != nil {
+		t.Fatalf("8000000GB should parse without overflow: %v", err)
+	}
+}

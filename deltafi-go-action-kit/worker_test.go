@@ -21,9 +21,165 @@
 package actionkit
 
 import (
+	"context"
 	"encoding/json"
+	"errors"
+	"sync/atomic"
 	"testing"
+	"time"
 )
+
+// takerResponse is a pre-canned Take result used in sequenced fake pollers.
+type takerResponse struct {
+	data []byte
+	err  error
+}
+
+// erroringTaker is a queuePoller that returns pre-canned responses in sequence,
+// then blocks on ctx.Done(). When responses is nil it always errors immediately.
+// It records call counts and signals the first call so tests can observe poll
+// behavior deterministically.
+type erroringTaker struct {
+	calls     atomic.Int32
+	called    chan struct{}
+	responses []takerResponse // nil = always error; non-nil = sequence then block
+	idx       int
+}
+
+func (e *erroringTaker) Take(ctx context.Context, queueName string) ([]byte, error) {
+	e.calls.Add(1)
+	select {
+	case e.called <- struct{}{}:
+	default:
+	}
+	if e.responses == nil {
+		return nil, errors.New("connection refused")
+	}
+	if e.idx < len(e.responses) {
+		r := e.responses[e.idx]
+		e.idx++
+		return r.data, r.err
+	}
+	<-ctx.Done()
+	return nil, ctx.Err()
+}
+
+func TestWaitBackoff_CancelledContextReturnsFalse(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+	if waitBackoff(ctx) {
+		t.Fatal("waitBackoff should return false when ctx is already cancelled")
+	}
+}
+
+func TestWaitBackoff_ElapsesThenReturnsTrue(t *testing.T) {
+	old := pollErrorBackoff
+	pollErrorBackoff = 10 * time.Millisecond
+	defer func() { pollErrorBackoff = old }()
+
+	start := time.Now()
+	if !waitBackoff(context.Background()) {
+		t.Fatal("waitBackoff should return true after the backoff elapses")
+	}
+	if elapsed := time.Since(start); elapsed < 10*time.Millisecond {
+		t.Fatalf("waitBackoff returned after %v, want at least the backoff duration", elapsed)
+	}
+}
+
+func TestPollQueue_BacksOffInsteadOfSpinningOnError(t *testing.T) {
+	old := pollErrorBackoff
+	// Long enough that a second Take cannot occur within the test window if
+	// the poller correctly backs off after the first error.
+	pollErrorBackoff = time.Hour
+	defer func() { pollErrorBackoff = old }()
+
+	ft := &erroringTaker{called: make(chan struct{}, 1)}
+	ctx, cancel := context.WithCancel(context.Background())
+	ch := make(chan []byte)
+	done := make(chan struct{})
+	go func() {
+		pollQueue(ctx, "A", ft, ch)
+		close(done)
+	}()
+
+	<-ft.called // first Take ran and errored; poller is now in backoff
+	cancel()    // cancelling unblocks the backoff and stops the poller
+	<-done
+
+	if got := ft.calls.Load(); got != 1 {
+		t.Fatalf("Take called %d times; want 1 (poller spun instead of backing off)", got)
+	}
+}
+
+func TestPollQueue_BacksOffThenRecovers(t *testing.T) {
+	old := pollErrorBackoff
+	pollErrorBackoff = time.Millisecond
+	t.Cleanup(func() { pollErrorBackoff = old })
+
+	connErr := errors.New("connection refused")
+	raw := []byte(`{"deltaFileMessages":[],"actionContext":{"did":"d1","actionName":"A"},"actionParams":{},"queueName":"A"}`)
+	ft := &erroringTaker{
+		called: make(chan struct{}, 1),
+		responses: []takerResponse{
+			{nil, connErr},
+			{nil, connErr},
+			{raw, nil},
+		},
+	}
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	ch := make(chan []byte, 1)
+	done := make(chan struct{})
+	go func() {
+		pollQueue(ctx, "A", ft, ch)
+		close(done)
+	}()
+
+	select {
+	case got := <-ch:
+		if string(got) != string(raw) {
+			t.Errorf("got payload %q, want %q", got, raw)
+		}
+	case <-time.After(5 * time.Second):
+		t.Fatal("timed out waiting for event to reach channel")
+	}
+
+	cancel()
+	<-done
+
+	if got := ft.calls.Load(); got < 3 {
+		t.Fatalf("Take called %d times, want at least 3 (2 errors + 1 success)", got)
+	}
+}
+
+func TestPollQueue_StopsOnContextCancel(t *testing.T) {
+	ft := &erroringTaker{
+		called:    make(chan struct{}, 1),
+		responses: []takerResponse{}, // non-nil empty: blocks immediately on ctx.Done()
+	}
+
+	ctx, cancel := context.WithCancel(context.Background())
+	ch := make(chan []byte, 1)
+	done := make(chan struct{})
+	go func() {
+		pollQueue(ctx, "A", ft, ch)
+		close(done)
+	}()
+
+	<-ft.called // Take is now blocking on ctx.Done()
+	cancel()
+
+	select {
+	case <-done:
+	case <-time.After(5 * time.Second):
+		t.Fatal("pollQueue did not return after context cancel")
+	}
+
+	if _, ok := <-ch; ok {
+		t.Error("ch should be closed after pollQueue returned")
+	}
+}
 
 func TestDeserializeQueueEvent_FullEvent(t *testing.T) {
 	raw := `{
@@ -154,7 +310,7 @@ func TestBuildDeltafileFromEvent(t *testing.T) {
 	if !df.HasContent() {
 		t.Error("expected content")
 	}
-	content := df.GetContentSlice()
+	content := df.GetContentList()
 	if len(content) != 1 || content[0].Name != "file.txt" {
 		t.Errorf("Content = %v", content)
 	}

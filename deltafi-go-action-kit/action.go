@@ -36,11 +36,11 @@ type ArtifactAware interface {
 
 // registeredAction pairs an action with its name, detected type, and metadata.
 type registeredAction struct {
-	name        string
-	action      any
-	actionType  string
-	description string
-	paramType   any
-	options     *ActionOptions
-	dispatcher  *actionDispatcher
+	name          string
+	action        any
+	actionType    string
+	description   string
+	paramDefaults any
+	options       *ActionOptions
+	dispatcher    *actionDispatcher
 }

@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>DeltaFi Action Kit: Java vs Go Comparative Analysis</title>
+<style>
+  @page { size: letter; margin: 0.75in; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 11px; line-height: 1.5; color: #1a1a1a; max-width: 10in; margin: 0 auto; }
+  h1 { font-size: 22px; border-bottom: 3px solid #2563eb; padding-bottom: 8px; margin-top: 0; }
+  h2 { font-size: 16px; color: #2563eb; border-bottom: 1px solid #ddd; padding-bottom: 4px; margin-top: 28px; page-break-after: avoid; }
+  h3 { font-size: 13px; color: #444; margin-top: 16px; margin-bottom: 4px; page-break-after: avoid; }
+  .comparison { display: flex; gap: 12px; margin: 8px 0; page-break-inside: avoid; }
+  .comparison > div { flex: 1; min-width: 0; }
+  .lang-label { font-weight: 700; font-size: 11px; color: #fff; padding: 3px 8px; border-radius: 4px 4px 0 0; margin: 0; }
+  .java-label { background: #b07219; }
+  .go-label { background: #00add8; }
+  pre { background: #f6f8fa; border: 1px solid #d0d7de; border-radius: 0 4px 4px 4px; padding: 8px; margin: 0; overflow-x: auto; font-size: 10px; line-height: 1.4; white-space: pre-wrap; word-wrap: break-word; }
+  .java-code pre { border-top-color: #b07219; }
+  .go-code pre { border-top-color: #00add8; }
+  table { width: 100%; border-collapse: collapse; margin: 8px 0; font-size: 10.5px; }
+  th { background: #f0f4f8; text-align: left; padding: 6px 8px; border: 1px solid #d0d7de; }
+  td { padding: 6px 8px; border: 1px solid #d0d7de; vertical-align: top; }
+  .summary { background: #f0f7ff; border: 1px solid #b3d4fc; border-radius: 6px; padding: 12px; margin: 12px 0; }
+  .note { background: #fffbe6; border: 1px solid #ffe58f; border-radius: 4px; padding: 8px; margin: 8px 0; font-size: 10.5px; }
+  .pagebreak { page-break-before: always; }
+</style>
+</head>
+<body>
+
+<h1>DeltaFi Action Kit: Java vs Go Comparative Analysis</h1>
+<p style="color:#666; margin-top:-4px;">Based on deltafi-java-hello-world and deltafi-go-hello-world reference plugins</p>
+
+<div class="summary">
+<strong>Overview:</strong> Both action kits provide the same capabilities &mdash; transform, split, join, egress, and timed ingress actions with support for content manipulation, metadata, annotations, lookup tables, and artifact management. The Java kit uses Spring Boot with annotation-based registration and class inheritance. The Go kit uses typed generic registration functions with a Deltafile-centric API.
+</div>
+
+<h2>1. Plugin Bootstrap</h2>
+
+<div class="comparison">
+<div class="java-code">
+<p class="lang-label java-label">Java</p>
+<pre>@SpringBootApplication
+public class HelloWorld {
+    public static void main(String[] args) {
+        SpringApplication.run(HelloWorld.class, args);
+    }
+}</pre>
+</div>
+<div class="go-code">
+<p class="lang-label go-label">Go</p>
+<pre>// plugin.yaml provides groupId, artifactId, domain, description.
+// The Makefile extracts those fields and stamps them into the binary
+// via -ldflags at docker build time.
+func main() {
+    actionkit.RunPlugin()
+}</pre>
+</div>
+</div>
+
+<div class="note">
+<strong>Key difference:</strong> Java uses Spring Boot auto-configuration and classpath scanning. Go plugins keep <code>main</code> trivial: a single <code>RunPlugin()</code> call. Plugin identity lives in <code>plugin.yaml</code> at the source root; the Makefile reads it at build time and stamps the values into kit-exported globals via <code>-ldflags -X</code>. Actions self-register via <code>init()</code> functions in Go, vs <code>@Component</code> annotation in Java.
+</div>
+
+<h2>2. Action Registration</h2>
+
+<div class="comparison">
+<div class="java-code">
+<p class="lang-label java-label">Java</p>
+<pre>@Component
+public class HelloWorldJavaTransformAction
+    extends TransformAction&lt;HelloWorldJavaTransformParameters&gt; {
+
+    public HelloWorldJavaTransformAction(...) {
+        super("Add some content noting that we did a really good job");
+    }
+}</pre>
+</div>
+<div class="go-code">
+<p class="lang-label go-label">Go</p>
+<pre>//go:embed transform_action.yaml
+var transformActionOptions string
+
+func init() {
+    actionkit.RegisterTransform(
+        "HelloWorldGoTransformAction",
+        &HelloWorldGoTransformAction{}).
+        WithParams(HelloWorldGoTransformParams{}).
+        WithOptionsYAML(transformActionOptions)
+}</pre>
+</div>
+</div>
+
+<div class="note">
+<strong>Key difference:</strong> Java uses class inheritance (<code>extends TransformAction&lt;P&gt;</code>) to declare the action type and bind the params type. Go uses typed generic registration functions (<code>RegisterTransform</code>, <code>RegisterEgress</code>, <code>RegisterIngress</code>, <code>RegisterJoinTransform</code>) &mdash; the compiler enforces the method signature via interface constraints and infers the params type. Action options are declared in an embedded YAML file in Go.
+</div>
+
+<h2>3. Parameter Declaration</h2>
+
+<div class="comparison">
+<div class="java-code">
+<p class="lang-label java-label">Java</p>
+<pre>@Data
+@EqualsAndHashCode(callSuper = true)
+public class HelloWorldJavaTransformParameters
+    extends ActionParameters {
+
+    @JsonProperty(defaultValue = "false")
+    @JsonPropertyDescription("If TRUE, convert to uppercase")
+    private boolean convertToUpper = false;
+
+    @JsonProperty(defaultValue = "44")
+    @JsonPropertyDescription("DID prefix for errors")
+    private String didErrorPrefix = "44";
+}</pre>
+</div>
+<div class="go-code">
+<p class="lang-label go-label">Go</p>
+<pre>type HelloWorldGoTransformParams struct {
+    ConvertToUpper bool   `json:"convertToUpper"
+                           description:"If true, convert to uppercase"
+                           default:"false"`
+    DidErrorPrefix string `json:"didErrorPrefix"
+                           description:"DID prefix for errors"
+                           default:"44"`
+}</pre>
+</div>
+</div>
+
+<div class="note">
+<strong>Key difference:</strong> Java uses Lombok <code>@Data</code> for getters/setters and Jackson annotations for schema metadata. Go uses struct tags (<code>description</code>, <code>default</code>) &mdash; no code generation or annotation processing needed.
+</div>
+
+<h2 class="pagebreak">4. Transform Action</h2>
+
+<div class="comparison">
+<div class="java-code">
+<p class="lang-label java-label">Java</p>
+<pre>@Override
+public TransformResultType transform(
+    @NotNull ActionContext context,
+    @NotNull HelloWorldJavaTransformParameters params,
+    @NotNull TransformInput input) {
+
+  // Filter
+  if (context.getDid().toString()
+      .startsWith(params.getDidFilterPrefix())) {
+    return new FilterResult(context,
+        "Filter due to did_filter_prefix match");
+  }
+
+  // Error
+  if (context.getDid().toString()
+      .startsWith(params.getDidErrorPrefix())) {
+    return new ErrorResult(context,
+        "Error due to did_error_prefix match",
+        params.getDidErrorPrefix() + " detected");
+  }
+
+  // Load content
+  String data = input.getContent().getFirst()
+      .loadString();
+
+  // Save new content
+  TransformResult result = new TransformResult(context);
+  ActionContent content = result.saveContent(
+      data.getBytes(), "name", MediaType.TEXT_PLAIN);
+  content.addTag("hello-file");
+
+  // Metadata &amp; annotations
+  result.addMetadata("key", "value");
+  result.addAnnotation("language", "English");
+
+  return result;
+}</pre>
+</div>
+<div class="go-code">
+<p class="lang-label go-label">Go</p>
+<pre>func (a *HelloWorldGoTransformAction) Transform(
+    df *actionkit.Deltafile,
+    params HelloWorldGoTransformParams,
+) *actionkit.Deltafile {
+
+  // Filter
+  if strings.HasPrefix(df.Did,
+      params.DidFilterPrefix) {
+    return df.Filterf(
+        "Filter due to did_filter_prefix match")
+  }
+
+  // Error
+  if strings.HasPrefix(df.Did,
+      params.DidErrorPrefix) {
+    return df.Errorf(
+        "Error due to did_error_prefix match").
+        SetErrorContext(
+            params.DidErrorPrefix + " detected")
+  }
+
+  // Load content
+  content, _ := df.ContentAt(0)
+  data, _ := content.LoadString()
+
+  // Save new content
+  newContent, _ := df.SaveStringContent(
+      data, "name", "text/plain")
+  newContent.AddTag("hello-file")
+
+  // Metadata &amp; annotations
+  return df.
+      AddMetadata("key", "value").
+      AddAnnotation("language", "English")
+}</pre>
+</div>
+</div>
+
+<div class="note">
+<strong>Key differences:</strong><br>
+&bull; Java: Separate result types (<code>TransformResult</code>, <code>ErrorResult</code>, <code>FilterResult</code>) returned via a <code>TransformResultType</code> union. <code>ActionContext</code> passed explicitly.<br>
+&bull; Go: The Deltafile IS the result &mdash; error/filter state is set on it via <code>Errorf()</code>/<code>Filterf()</code>. All methods are chainable. No separate context object; context fields live on the Deltafile (<code>df.Did</code>, <code>df.Name</code>, etc.). Params are typed and passed directly.
+</div>
+
+<h2>5. Split / Multi-Child Transform</h2>
+
+<div class="comparison">
+<div class="java-code">
+<p class="lang-label java-label">Java</p>
+<pre>@Override
+public TransformResultType transform(
+    @NotNull ActionContext context,
+    @NotNull Params params,
+    @NotNull TransformInput input) {
+
+  TransformResults manyResults =
+      new TransformResults(context);
+
+  String data = input.getContent()
+      .getFirst().loadString();
+  ActionContent content =
+      ActionContent.saveContent(context,
+          data.getBytes(), "content", "text/plain");
+
+  for (int n = 0; n &lt; params.getNumberOfChildren(); n++) {
+    String name = context.getDeltaFileName() + "-" + n;
+    ChildTransformResult child =
+        new ChildTransformResult(context, name);
+    child.addContent(content);
+    child.addMetadata("key", "value");
+    child.addAnnotation("childIndex", "" + n);
+    manyResults.add(child);
+  }
+
+  return manyResults;
+}</pre>
+</div>
+<div class="go-code">
+<p class="lang-label go-label">Go</p>
+<pre>func (a *HelloWorldGoSplitTransformAction) Transform(
+    df *actionkit.Deltafile,
+    params HelloWorldGoSplitTransformParams,
+) *actionkit.Deltafile {
+
+  content, err := df.ContentAt(0)
+  if err != nil {
+    return df.Errorf("No content")
+  }
+  data, _ := content.LoadString()
+
+  for n := range params.NumberOfChildren {
+    name := fmt.Sprintf("%s-%d", df.Name, n)
+    child := df.AddChild(name)
+    child.SaveStringContent(
+        data, "content", "text/plain")
+    child.AddMetadata("key", "value").
+        AddAnnotation("childIndex", strconv.Itoa(n))
+  }
+
+  return df
+}</pre>
+</div>
+</div>
+
+<div class="note">
+<strong>Key difference:</strong> Both kits use the same <code>Transform</code> method for splits. Java returns a <code>TransformResults</code> container. Go calls <code>df.AddChild(name)</code> to create children &mdash; the kit detects children and produces a multi-child transform event automatically. An action can decide at runtime whether to split or not based on the input.
+</div>
+
+<h2 class="pagebreak">6. Join Action</h2>
+
+<div class="comparison">
+<div class="java-code">
+<p class="lang-label java-label">Java</p>
+<pre>// Implements Join interface
+@Override
+public TransformInput join(
+    List&lt;TransformInput&gt; inputs) {
+
+  List&lt;ActionContent&gt; content = new ArrayList&lt;&gt;();
+  Map&lt;String, String&gt; metadata = new HashMap&lt;&gt;();
+  for (TransformInput input : inputs) {
+    content.addAll(input.getContent());
+    metadata.putAll(input.getMetadata());
+  }
+  return TransformInput.builder()
+      .content(content)
+      .metadata(metadata)
+      .build();
+}
+
+@Override
+public TransformResultType transform(
+    ActionContext context, Params params,
+    TransformInput input) {
+  // Process joined input...
+}</pre>
+</div>
+<div class="go-code">
+<p class="lang-label go-label">Go</p>
+<pre>func (a *HelloWorldGoJoiningTransformAction) Join(
+    inputs []*actionkit.Deltafile,
+    joined *actionkit.Deltafile,
+    params HelloWorldGoJoiningTransformParams,
+) *actionkit.Deltafile {
+
+  for _, input := range inputs {
+    joined.AddContentList(input.GetContentList())
+    joined.AddMetadataMap(input.GetMetadataMap())
+  }
+  return joined
+}
+
+func (a *HelloWorldGoJoiningTransformAction) Transform(
+    df *actionkit.Deltafile,
+    params HelloWorldGoJoiningTransformParams,
+) *actionkit.Deltafile {
+  // Process joined input...
+}</pre>
+</div>
+</div>
+
+<h2>7. Egress Action</h2>
+
+<div class="comparison">
+<div class="java-code">
+<p class="lang-label java-label">Java</p>
+<pre>@Override
+public EgressResultType egress(
+    @NotNull ActionContext context,
+    @NotNull ActionParameters params,
+    @NotNull EgressInput input) {
+
+  String data = new String(
+      input.getContent().loadBytes(),
+      StandardCharsets.UTF_8);
+
+  if (data.contains("error")) {
+    return new ErrorResult(context,
+        "Failed to egress",
+        new Exception("error in content"));
+  }
+
+  return new EgressResult(context);
+}</pre>
+</div>
+<div class="go-code">
+<p class="lang-label go-label">Go</p>
+<pre>func (a *HelloWorldGoEgressAction) Egress(
+    df *actionkit.EgressDeltafile,
+    params struct{},
+) *actionkit.EgressDeltafile {
+
+  content, _ := df.FirstContent()
+  data, _ := content.LoadString()
+
+  if strings.Contains(data, "error") {
+    return df.Errorf("Failed to egress").
+        SetErrorContext("error in content")
+  }
+
+  return df
+}</pre>
+<p><strong>Egress restriction:</strong> Egress actions receive an <code>*EgressDeltafile</code> &mdash; a constrained view of the Deltafile that exposes content/metadata reads, logging, annotations, and error/filter signaling, but not output-content or metadata mutations. The EGRESS event format does not carry those, so the protection is enforced at compile time rather than as a silent drop.
+</div>
+</div>
+
+<h2>8. Timed Ingress Action</h2>
+
+<div class="comparison">
+<div class="java-code">
+<p class="lang-label java-label">Java</p>
+<pre>@Override
+public IngressResultType ingress(
+    @NotNull ActionContext context,
+    @NotNull ActionParameters params) {
+
+  int index = 0;
+  if (context.getMemo() != null) {
+    index = 1 + Integer.parseInt(
+        context.getMemo());
+  }
+
+  String filename = context.getFlowName()
+      + "-" + index;
+  IngressResultItem item =
+      new IngressResultItem(context, filename);
+  item.saveContent("Content " + index,
+      filename, "text/plain");
+  item.addMetadata("index",
+      String.valueOf(index));
+
+  IngressResult result =
+      new IngressResult(context);
+  result.addItem(item);
+  result.setMemo(String.valueOf(index));
+  return result;
+}</pre>
+</div>
+<div class="go-code">
+<p class="lang-label go-label">Go</p>
+<pre>func (a *HelloWorldGoTimedIngressAction) Ingress(
+    deltafile *actionkit.TimedIngressDeltafile,
+    params struct{},
+) *actionkit.TimedIngressDeltafile {
+
+  index := 0
+  if deltafile.Memo != "" {
+    if parsed, err := strconv.Atoi(
+        deltafile.Memo); err == nil {
+      index = parsed + 1
+    }
+  }
+
+  filename := fmt.Sprintf("%s-%d",
+      deltafile.FlowName, index)
+  item := deltafile.NewItem(filename)
+  item.SaveStringContent(
+      fmt.Sprintf("Content %d", index),
+      filename, "text/plain")
+  item.AddMetadata("index",
+      strconv.Itoa(index))
+
+  return deltafile.SetMemo(strconv.Itoa(index))
+}</pre>
+<p><strong>Timed ingress restriction:</strong> The action receives a single <code>*TimedIngressDeltafile</code> that replaces the previous <code>IngressInput</code>/<code>IngressResult</code> pair. <code>NewItem(name)</code> returns an <code>*IngressDeltafile</code> &mdash; a write-only Deltafile view that exposes only the content/metadata/annotation writes that the ingress wire event carries. Reads, child creation, and per-item error/log are intentionally excluded.
+</div>
+</div>
+
+<h2 class="pagebreak">9. Lookup Table Queries</h2>
+
+<div class="comparison">
+<div class="java-code">
+<p class="lang-label java-label">Java</p>
+<pre>// Injected via constructor
+private final LookupTableClient lookupTableClient;
+
+LookupResults colors = lookupTableClient.lookup(
+    "java_scheduled_lookup_table",
+    LookupOptions.builder()
+        .matchingColumnValues(
+            Map.of("color", Set.of("red", "green")))
+        .resultColumns(Set.of("column_a"))
+        .build());
+
+for (Map&lt;String, String&gt; row : colors.results()) {
+    String value = row.get("column_a");
+}</pre>
+</div>
+<div class="go-code">
+<p class="lang-label go-label">Go</p>
+<pre>// Package-level function, no injection needed
+results, err := actionkit.Lookup(
+    "go_scheduled_lookup_table",
+    actionkit.LookupQuery().
+        WithMatch("color", "red", "green").
+        WithResultColumns("column_a"))
+
+for _, row := range results.Rows {
+    value := row["column_a"]
+}</pre>
+</div>
+</div>
+
+<h2>10. Artifact Management</h2>
+
+<div class="comparison">
+<div class="java-code">
+<p class="lang-label java-label">Java</p>
+<pre>// Injection + annotation
+public HelloWorldJavaTransformAction(
+    @PluginArtifact(
+        artifactName = "metadata.json",
+        defaultResource = "metadata.json")
+    ArtifactHandle metadataResource) {
+
+    metadataResource.onUpdate(this::handleUpdate);
+}
+
+// In-action artifact access
+ArtifactHandle handle =
+    artifactRegistryService.getArtifact("hello.txt");
+byte[] data = handle.getBytes();</pre>
+</div>
+<div class="go-code">
+<p class="lang-label go-label">Go</p>
+<pre>// ConfigureArtifacts method (detected via interface)
+func (a *MyAction) ConfigureArtifacts(
+    client *actionkit.ArtifactClient) {
+
+    client.OnUpdateFetchWithDefault(
+        "metadata.json", "", defaults, callback)
+}
+
+// In-action artifact access (package-level)
+fetched, err := actionkit.GetArtifact(
+    "hello.txt", "")
+data := fetched.Data</pre>
+</div>
+</div>
+
+<h2>11. Comparative Summary</h2>
+
+<table>
+<tr><th>Aspect</th><th>Java</th><th>Go</th></tr>
+<tr><td>Framework</td><td>Spring Boot (DI, annotations, classpath scan)</td><td>Standalone (init() self-registration, generic interface constraints)</td></tr>
+<tr><td>Action typing</td><td>Class inheritance (<code>extends TransformAction&lt;P&gt;</code>)</td><td>Generic registration (<code>RegisterTransform</code>, <code>RegisterEgress</code>, etc.)</td></tr>
+<tr><td>Params binding</td><td>Generic type parameter on base class</td><td>Inferred from method signature via generics</td></tr>
+<tr><td>Params metadata</td><td><code>@JsonProperty</code> + <code>@JsonPropertyDescription</code></td><td>Struct tags: <code>description:</code>, <code>default:</code></td></tr>
+<tr><td>Result model</td><td>Separate result types (TransformResult, ErrorResult, etc.)</td><td>Single Deltafile with error/filter state</td></tr>
+<tr><td>Context access</td><td><code>ActionContext</code> parameter</td><td>Fields on Deltafile (<code>df.Did</code>)</td></tr>
+<tr><td>Content ops</td><td><code>input.getContent().loadString()</code></td><td><code>content.LoadString()</code> (context-free)</td></tr>
+<tr><td>Lookup queries</td><td>Injected <code>LookupTableClient</code></td><td>Package-level <code>actionkit.Lookup()</code></td></tr>
+<tr><td>Artifacts</td><td><code>@PluginArtifact</code> annotation + DI</td><td><code>ConfigureArtifacts</code> method + package-level functions</td></tr>
+<tr><td>Action options</td><td>Spring annotations / programmatic</td><td>Embedded YAML file via <code>//go:embed</code></td></tr>
+<tr><td>Split actions</td><td>Same <code>transform()</code>, returns <code>TransformResults</code></td><td>Same <code>Transform()</code>, calls <code>df.AddChild()</code></td></tr>
+<tr><td>Dispatch</td><td>Virtual method dispatch (interface call)</td><td>Typed closures via generics (zero reflection at invocation)</td></tr>
+<tr><td>Compile-time safety</td><td>Generics + annotations enforce signatures</td><td>Generic interface constraints enforce signatures</td></tr>
+<tr><td>Method chaining</td><td>On result objects only</td><td>All Deltafile methods are chainable</td></tr>
+<tr><td>Binary size</td><td>~150MB+ (JVM + Spring + dependencies)</td><td>~15MB (single static binary)</td></tr>
+<tr><td>Startup time</td><td>Several seconds (Spring context init)</td><td>Milliseconds</td></tr>
+</table>
+
+</body>
+</html>

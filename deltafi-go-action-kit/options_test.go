@@ -186,7 +186,9 @@ func TestActionOptions_WithConditions(t *testing.T) {
 	}
 
 	var parsed map[string]any
-	json.Unmarshal(data, &parsed)
+	if err := json.Unmarshal(data, &parsed); err != nil {
+		t.Fatalf("unmarshal: %v", err)
+	}
 
 	if parsed["description"] != "Content too large" {
 		t.Errorf("description = %v", parsed["description"])
@@ -206,7 +208,9 @@ func TestDescriptionWithConditions_OmitsNilConditions(t *testing.T) {
 	}
 
 	var parsed map[string]any
-	json.Unmarshal(data, &parsed)
+	if err := json.Unmarshal(data, &parsed); err != nil {
+		t.Fatalf("unmarshal: %v", err)
+	}
 
 	if _, exists := parsed["conditions"]; exists {
 		t.Error("conditions should be omitted when nil")

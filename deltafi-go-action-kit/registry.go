@@ -29,12 +29,12 @@ import (
 // Registration pairs an action with its name and optional metadata.
 // Use the builder methods to set description and parameter defaults.
 type Registration struct {
-	Name        string
-	Action      any
-	description string
-	paramType   any
-	options     *ActionOptions
-	dispatcher  *actionDispatcher
+	Name          string
+	Action        any
+	description   string
+	paramDefaults any
+	options       *ActionOptions
+	dispatcher    *actionDispatcher
 }
 
 // Describe sets the human-readable description for this action.
@@ -47,7 +47,7 @@ func (r *Registration) Describe(desc string) *Registration {
 // the provided instance are used as defaults when the flow does not specify a
 // value. The type must match the generic parameter P used at registration.
 func (r *Registration) WithParams(defaults any) *Registration {
-	r.paramType = defaults
+	r.paramDefaults = defaults
 	return r
 }
 
@@ -91,10 +91,9 @@ func All() []*Registration {
 func RegisterTransform[P any](name string, action interface {
 	Transform(*Deltafile, P) *Deltafile
 }) *Registration {
-	var zero P
 	disp := &actionDispatcher{
 		method:    methodTransform,
-		paramType: reflect.TypeOf(zero),
+		paramType: reflect.TypeFor[P](),
 		transformFn: func(df *Deltafile, params any) *Deltafile {
 			return action.Transform(df, params.(P))
 		},
@@ -115,10 +114,9 @@ func RegisterJoinTransform[P any](name string, action interface {
 	Transform(*Deltafile, P) *Deltafile
 	Join([]*Deltafile, *Deltafile, P) *Deltafile
 }) *Registration {
-	var zero P
 	disp := &actionDispatcher{
 		method:    methodTransform,
-		paramType: reflect.TypeOf(zero),
+		paramType: reflect.TypeFor[P](),
 		hasJoin:   true,
 		transformFn: func(df *Deltafile, params any) *Deltafile {
 			return action.Transform(df, params.(P))
@@ -138,14 +136,16 @@ func RegisterJoinTransform[P any](name string, action interface {
 
 // RegisterEgress registers an egress action that sends content externally.
 func RegisterEgress[P any](name string, action interface {
-	Egress(*Deltafile, P) *Deltafile
+	Egress(*EgressDeltafile, P) *EgressDeltafile
 }) *Registration {
-	var zero P
 	disp := &actionDispatcher{
 		method:    methodEgress,
-		paramType: reflect.TypeOf(zero),
+		paramType: reflect.TypeFor[P](),
 		egressFn: func(df *Deltafile, params any) *Deltafile {
-			return action.Egress(df, params.(P))
+			if action.Egress(newEgressDeltafile(df), params.(P)) == nil {
+				return nil
+			}
+			return df
 		},
 	}
 	reg := &Registration{
@@ -159,14 +159,13 @@ func RegisterEgress[P any](name string, action interface {
 
 // RegisterIngress registers a timed ingress action that produces new DeltaFiles.
 func RegisterIngress[P any](name string, action interface {
-	Ingress(*IngressInput, P) *IngressResult
+	Ingress(*TimedIngressDeltafile, P) *TimedIngressDeltafile
 }) *Registration {
-	var zero P
 	disp := &actionDispatcher{
 		method:    methodIngress,
-		paramType: reflect.TypeOf(zero),
-		ingressFn: func(input *IngressInput, params any) *IngressResult {
-			return action.Ingress(input, params.(P))
+		paramType: reflect.TypeFor[P](),
+		ingressFn: func(deltafile *TimedIngressDeltafile, params any) *TimedIngressDeltafile {
+			return action.Ingress(deltafile, params.(P))
 		},
 	}
 	reg := &Registration{

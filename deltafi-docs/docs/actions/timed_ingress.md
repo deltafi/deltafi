@@ -136,27 +136,25 @@ The Go action kit is currently in beta. Interfaces may change in future releases
 ### Interface
 
 A TimedIngressAction must implement the `Ingress` method which receives:
-* `*IngressInput` providing the memo, flow name, and action name
+* `*TimedIngressDeltafile` providing per-cycle context (memo, flow name, action name), item construction (`NewItem`), event-level state setters (`SetMemo`, `SetStatus`, `SetStatusMessage`, `SetExecuteImmediate`), error signaling (`Errorf`, `SetErrorContext`), and logging (`LogInfo`/`LogWarn`/`LogError`)
 * A typed params struct containing flow parameters specified for the action
 
-### Ingress Input
-
-```go
-type IngressInput struct {
-    Memo       string
-    FlowName   string
-    ActionName string
-}
-```
-
-The `IngressInput` provides a `NewDeltafile(name)` method to create new Deltafiles for ingestion.
+The action returns the same `*TimedIngressDeltafile`. Each call to `NewItem(name)` returns an `*IngressDeltafile` — a write-only view of a Deltafile that exposes only content saves (`SaveStringContent`/`SaveBytesContent`/`SaveReaderContent`/`AddContent`/`AddContentList`), metadata writes (`AddMetadata`/`AddMetadataMap`), and annotations (`AddAnnotation`). Reads, child creation, error/filter signaling, and logging are intentionally not exposed on `IngressDeltafile` — those concerns belong on the surrounding `TimedIngressDeltafile`.
 
 ### Return Types
 
-The `Ingress` method returns an `*IngressResult`. The result contains ingressed Deltafile items, a memo string,
-executeImmediate flag, and health status fields.
+The kit inspects the returned `*TimedIngressDeltafile` to determine the outcome:
+
+* **Ingress result** — when no error has been signaled; contains each item produced via `NewItem`, plus memo/status/executeImmediate state
+* **Error result** — when `Errorf` has been called on the `*TimedIngressDeltafile`
+
+### File layout
+
+Each Go action lives in two files inside the plugin's `actions/` directory: `<name>_action.go` holds the action struct, `init()` registration, and the action method; `<name>_action_params.go` holds the typed `*Params` struct only. See the [transform action docs](./transform.md) for the full description of supported parameter tag types and the `make jsonFromParams` / `make paramsFromJson` round-trip tooling — the same conventions apply to every Go action type.
 
 ### Example
+
+`actions/hello_world_go_timed_ingress_action.go`:
 
 ```go
 package actions
@@ -169,39 +167,41 @@ import (
 )
 
 func init() {
-    actionkit.RegisterIngress("HelloWorldGoTimedIngressAction", &HelloWorldGoTimedIngress{}).
+    actionkit.RegisterIngress("HelloWorldGoTimedIngressAction", &HelloWorldGoTimedIngressAction{}).
+        WithParams(HelloWorldGoTimedIngressActionParams{}).
         Describe("Create some DeltaFiles for hello-world consumption")
 }
 
-type HelloWorldGoTimedIngressParams struct{}
+type HelloWorldGoTimedIngressAction struct{}
 
-type HelloWorldGoTimedIngress struct{}
-
-func (a *HelloWorldGoTimedIngress) Ingress(input *actionkit.IngressInput, params HelloWorldGoTimedIngressParams) *actionkit.IngressResult {
+func (a *HelloWorldGoTimedIngressAction) Ingress(deltafile *actionkit.TimedIngressDeltafile, params HelloWorldGoTimedIngressActionParams) *actionkit.TimedIngressDeltafile {
     index := 0
-    if input.Memo != "" {
-        if parsed, err := strconv.Atoi(input.Memo); err == nil {
+    if deltafile.Memo != "" {
+        if parsed, err := strconv.Atoi(deltafile.Memo); err == nil {
             index = parsed + 1
         }
     }
 
-    filename := fmt.Sprintf("%s-%d", input.FlowName, index)
+    filename := fmt.Sprintf("%s-%d", deltafile.FlowName, index)
 
-    item := input.NewDeltafile(filename)
+    item := deltafile.NewItem(filename)
     item.AddMetadata("index", strconv.Itoa(index))
 
     contentData := fmt.Sprintf("Some content, part %d", index)
-    if _, err := item.SaveBytesContent([]byte(contentData), filename, "text/plain"); err != nil {
-        return actionkit.NewIngressResult().
-            SetStatus("UNHEALTHY").
-            SetStatusMessage("Failed to save content: " + err.Error())
+    if _, err := item.SaveBytesContent(filename, "text/plain", []byte(contentData)); err != nil {
+        return deltafile.Errorf("Failed to save content: %v", err)
     }
 
-    result := actionkit.NewIngressResult()
-    result.AddItem(item)
-    result.SetMemo(strconv.Itoa(index))
-    return result
+    return deltafile.SetMemo(strconv.Itoa(index))
 }
+```
+
+`actions/hello_world_go_timed_ingress_action_params.go`:
+
+```go
+package actions
+
+type HelloWorldGoTimedIngressActionParams struct{}
 ```
 
 ## C++

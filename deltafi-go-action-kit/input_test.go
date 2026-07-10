@@ -330,17 +330,32 @@ func TestCoerceParams_NestedMap(t *testing.T) {
 		},
 	}
 
-	// Without type info, best-effort coercion is applied
+	// Without type info, strings remain strings to avoid silent value loss.
 	coerced := coerceParams(raw, nil)
 	inner := coerced["outer"].(map[string]any)
-	if inner["innerNum"] != int64(99) {
+	if inner["innerNum"] != "99" {
 		t.Errorf("innerNum = %v (%T)", inner["innerNum"], inner["innerNum"])
 	}
-	if inner["innerBool"] != true {
+	if inner["innerBool"] != "true" {
 		t.Errorf("innerBool = %v", inner["innerBool"])
 	}
 	if inner["innerStr"] != "hello" {
 		t.Errorf("innerStr = %v", inner["innerStr"])
+	}
+}
+
+func TestCoerceParams_UnknownTypedStringsRemainStrings(t *testing.T) {
+	raw := map[string]any{
+		"id":      "01234",
+		"enabled": "true",
+		"big":     "90071992547409931234",
+	}
+
+	coerced := coerceParams(raw, nil)
+	for key, want := range raw {
+		if coerced[key] != want {
+			t.Errorf("%s = %v (%T), want %q string", key, coerced[key], coerced[key], want)
+		}
 	}
 }
 
@@ -496,6 +511,32 @@ func TestParseRawParams_SliceStringCoercion(t *testing.T) {
 	}
 }
 
+func TestParseRawParams_EmbeddedStructFieldCoercion(t *testing.T) {
+	type embedded struct {
+		Counts []int `json:"counts"`
+	}
+	type params struct {
+		embedded
+		Name string `json:"name"`
+	}
+
+	raw := map[string]any{
+		"counts": []any{"1", "2", "3"},
+		"name":   "embedded",
+	}
+
+	var p params
+	if err := parseRawParams(raw, &p); err != nil {
+		t.Fatalf("parseRawParams: %v", err)
+	}
+	if len(p.Counts) != 3 || p.Counts[0] != 1 || p.Counts[1] != 2 || p.Counts[2] != 3 {
+		t.Errorf("Counts = %v, want [1 2 3]", p.Counts)
+	}
+	if p.Name != "embedded" {
+		t.Errorf("Name = %q, want embedded", p.Name)
+	}
+}
+
 func TestParseRawParams_SliceFloatToString(t *testing.T) {
 	type params struct {
 		Labels []string `json:"labels"`
@@ -511,5 +552,35 @@ func TestParseRawParams_SliceFloatToString(t *testing.T) {
 	}
 	if len(p.Labels) != 2 || p.Labels[0] != "1.5" || p.Labels[1] != "2" {
 		t.Errorf("Labels = %v, want [1.5 2]", p.Labels)
+	}
+}
+
+func TestParseRawParams_MapStringValuesRemainStrings(t *testing.T) {
+	type params struct {
+		Labels map[string]string `json:"labels"`
+	}
+
+	raw := map[string]any{
+		"labels": map[string]any{
+			"prefix":  "44",
+			"enabled": "true",
+			"ratio":   "1.5",
+		},
+	}
+
+	var p params
+	if err := parseRawParams(raw, &p); err != nil {
+		t.Fatalf("parseRawParams: %v", err)
+	}
+
+	want := map[string]string{
+		"prefix":  "44",
+		"enabled": "true",
+		"ratio":   "1.5",
+	}
+	for k, v := range want {
+		if p.Labels[k] != v {
+			t.Errorf("Labels[%q] = %q, want %q", k, p.Labels[k], v)
+		}
 	}
 }

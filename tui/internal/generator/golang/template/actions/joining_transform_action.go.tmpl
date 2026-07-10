@@ -23,12 +23,6 @@ func init() {
 	// 	WithOptionsYAML({{.ActionFileName}}Options)
 }
 
-// {{.ActionClassName}}Params defines the action's configurable parameters.
-type {{.ActionClassName}}Params struct {
-	// Example parameter:
-	// MaxItems int `json:"maxItems" description:"Maximum items to join" default:"10"`
-}
-
 // {{.ActionClassName}} implements the joining transform action.
 type {{.ActionClassName}} struct{}
 
@@ -41,7 +35,7 @@ func (a *{{.ActionClassName}}) Join(inputs []*actionkit.Deltafile, joined *actio
 
 	// TODO: Implement your join aggregation logic here
 	for _, input := range inputs {
-		joined.AddContentSlice(input.GetContentSlice())
+		joined.AddContentList(input.GetContentList())
 		joined.AddMetadataMap(input.GetMetadataMap())
 	}
 
@@ -57,7 +51,7 @@ func (a *{{.ActionClassName}}) Transform(deltafile *actionkit.Deltafile, params 
 
 	// TODO: Implement your transform logic on the joined input
 	var contentBuilder strings.Builder
-	for i := range deltafile.GetContentSlice() {
+	for i := range deltafile.GetContentList() {
 		content, err := deltafile.ContentAt(i)
 		if err != nil {
 			return deltafile.Errorf("Failed to get content at index %d: %v", i, err)
@@ -70,12 +64,12 @@ func (a *{{.ActionClassName}}) Transform(deltafile *actionkit.Deltafile, params 
 		contentBuilder.WriteString("\n")
 	}
 
-	_, err := deltafile.SaveStringContent(contentBuilder.String(), "merged", "text/plain")
+	_, err := deltafile.SaveStringContent("merged", "text/plain", contentBuilder.String())
 	if err != nil {
 		return deltafile.Errorf("Failed to save merged content: %v", err)
 	}
 
 	return deltafile.
 		AddMetadataMap(deltafile.GetMetadataMap()).
-		LogInfo("Joined %d content items", len(deltafile.GetContentSlice()))
+		LogInfo("Joined %d content items", len(deltafile.GetContentList()))
 }

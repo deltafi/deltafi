@@ -383,7 +383,7 @@ func TestDeltafile_SaveAndLoad(t *testing.T) {
 	tc := NewTestContext("did-1")
 	df := tc.NewDeltafile()
 
-	saved, err := df.SaveStringContent("hello world", "out.txt", "text/plain")
+	saved, err := df.SaveStringContent("out.txt", "text/plain", "hello world")
 	if err != nil {
 		t.Fatalf("SaveStringContent: %v", err)
 	}
@@ -410,7 +410,7 @@ func TestDeltafile_SaveBytesAndLoadBytes(t *testing.T) {
 	df := tc.NewDeltafile()
 	payload := []byte{0x00, 0x01, 0x02, 0x03}
 
-	saved, err := df.SaveBytesContent(payload, "out.bin", "application/octet-stream")
+	saved, err := df.SaveBytesContent("out.bin", "application/octet-stream", payload)
 	if err != nil {
 		t.Fatalf("SaveBytesContent: %v", err)
 	}

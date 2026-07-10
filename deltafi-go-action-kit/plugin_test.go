@@ -26,6 +26,31 @@ import (
 	"testing"
 )
 
+func TestParsePluginYAML(t *testing.T) {
+	meta, err := parsePluginYAML([]byte("groupId: org.example\nartifactId: my-plugin\ndomain: org.example.my-plugin\ndescription: A plugin\n"))
+	if err != nil {
+		t.Fatalf("parsePluginYAML: %v", err)
+	}
+	if meta.GroupID != "org.example" || meta.ArtifactID != "my-plugin" {
+		t.Errorf("meta = %+v", meta)
+	}
+	if meta.Domain != "org.example.my-plugin" || meta.Description != "A plugin" {
+		t.Errorf("meta = %+v", meta)
+	}
+}
+
+func TestParsePluginYAML_Errors(t *testing.T) {
+	if _, err := parsePluginYAML([]byte("artifactId: a\n")); err == nil {
+		t.Error("expected error when groupId is missing")
+	}
+	if _, err := parsePluginYAML([]byte("groupId: g\n")); err == nil {
+		t.Error("expected error when artifactId is missing")
+	}
+	if _, err := parsePluginYAML([]byte("groupId: [unterminated\n")); err == nil {
+		t.Error("expected error for invalid YAML")
+	}
+}
+
 func TestNewPlugin_Defaults(t *testing.T) {
 	// Clear env vars that would affect defaults
 	for _, key := range []string{"CORE_URL", "VALKEY_URL", "MINIO_URL", "PROJECT_GROUP", "PROJECT_NAME", "PROJECT_VERSION"} {
@@ -97,7 +122,7 @@ func TestNewPlugin_EnvOverrides(t *testing.T) {
 func TestNewPlugin_ConfigOverrides(t *testing.T) {
 	os.Unsetenv("CORE_URL")
 
-	p, err := newPlugin(&PluginConfig{
+	p, err := newPlugin(&pluginConfig{
 		CoreURL:     "http://override-core",
 		MinioBucket: "custom-bucket",
 		Coordinates: &PluginCoordinates{
@@ -172,7 +197,7 @@ func TestPlugin_RegisterAction_NoDomain(t *testing.T) {
 
 	p := &plugin{}
 	reg := RegisterTransform("MyTransform", &testTransformAction{})
-	p.RegisterAction(reg)
+	registerAction(t, p, reg)
 
 	if p.actions[0].name != "MyTransform" {
 		t.Errorf("name = %q, want %q", p.actions[0].name, "MyTransform")
@@ -186,10 +211,7 @@ func TestPlugin_RegisterAction_Egress(t *testing.T) {
 
 	p := &plugin{}
 	reg := RegisterEgress("MyEgress", &testEgressAction{})
-	err := p.RegisterAction(reg)
-	if err != nil {
-		t.Fatalf("RegisterAction: %v", err)
-	}
+	registerAction(t, p, reg)
 
 	if p.actions[0].actionType != ActionTypeEgress {
 		t.Errorf("actionType = %q", p.actions[0].actionType)
@@ -203,10 +225,7 @@ func TestPlugin_RegisterAction_TimedIngress(t *testing.T) {
 
 	p := &plugin{}
 	reg := RegisterIngress("MyIngress", &testTimedIngressAction{})
-	err := p.RegisterAction(reg)
-	if err != nil {
-		t.Fatalf("RegisterAction: %v", err)
-	}
+	registerAction(t, p, reg)
 
 	if p.actions[0].actionType != ActionTypeTimedIngress {
 		t.Errorf("actionType = %q", p.actions[0].actionType)
@@ -219,9 +238,13 @@ func TestPlugin_RegisterAction_Multiple(t *testing.T) {
 	defer func() { registered = old }()
 
 	p := &plugin{}
-	p.RegisterAction(RegisterTransform("A1", &testTransformAction{}))
-	p.RegisterAction(RegisterEgress("A2", &testEgressAction{}))
-	p.RegisterAction(RegisterIngress("A3", &testTimedIngressAction{}))
+	for _, reg := range []*Registration{
+		RegisterTransform("A1", &testTransformAction{}),
+		RegisterEgress("A2", &testEgressAction{}),
+		RegisterIngress("A3", &testTimedIngressAction{}),
+	} {
+		registerAction(t, p, reg)
+	}
 
 	if len(p.actions) != 3 {
 		t.Fatalf("actions count = %d, want 3", len(p.actions))
@@ -340,8 +363,8 @@ func TestPlugin_SetWorkerCount(t *testing.T) {
 	defer func() { registered = old }()
 
 	p := &plugin{}
-	p.RegisterAction(RegisterTransform("ActionA", &testTransformAction{}))
-	p.RegisterAction(RegisterEgress("ActionB", &testEgressAction{}))
+	registerAction(t, p, RegisterTransform("ActionA", &testTransformAction{}))
+	registerAction(t, p, RegisterEgress("ActionB", &testEgressAction{}))
 
 	p.SetWorkerCount("ActionA", 3)
 
@@ -518,4 +541,3 @@ func TestPlugin_RegisterMultipleFlowsAndVariables(t *testing.T) {
 		t.Errorf("variables count = %d, want 3", len(p.variables))
 	}
 }
-

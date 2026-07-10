@@ -21,6 +21,7 @@
 package actionkit
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -308,6 +309,30 @@ func TestActionContent_Subcontent_ZeroSize(t *testing.T) {
 	}
 }
 
+func TestActionContent_Subcontent_OutOfBoundsPanics(t *testing.T) {
+	ac := ActionContent{
+		Segments: []Segment{{UUID: "u1", Offset: 0, Size: 100, DID: "d1"}},
+	}
+
+	assertPanicContains(t, "offset must be non-negative", func() { ac.Subcontent(-1, 1) })
+	assertPanicContains(t, "size must be non-negative", func() { ac.Subcontent(1, -1) })
+	assertPanicContains(t, "exceeds total content size", func() { ac.Subcontent(50, 51) })
+}
+
+func assertPanicContains(t *testing.T, want string, fn func()) {
+	t.Helper()
+	defer func() {
+		r := recover()
+		if r == nil {
+			t.Fatalf("expected panic containing %q", want)
+		}
+		if !strings.Contains(fmt.Sprint(r), want) {
+			t.Fatalf("panic = %v, want it to contain %q", r, want)
+		}
+	}()
+	fn()
+}
+
 func TestActionContent_SubcontentNamed(t *testing.T) {
 	ac := ActionContent{
 		Name:      "original.txt",
@@ -508,95 +533,6 @@ func TestActionContentJSON(t *testing.T) {
 	}
 }
 
-// --- multiCloser ---
-
-func TestMultiCloser_ReadsFromMultipleReaders(t *testing.T) {
-	r1 := strings.NewReader("hello ")
-	r2 := strings.NewReader("world")
-
-	mc := &multiCloser{
-		Reader:  io.MultiReader(r1, r2),
-		closers: nil,
-	}
-
-	data, err := io.ReadAll(mc)
-	if err != nil {
-		t.Fatalf("ReadAll: %v", err)
-	}
-	if string(data) != "hello world" {
-		t.Errorf("got %q, want %q", string(data), "hello world")
-	}
-}
-
-func TestMultiCloser_ClosesAllUnderlyingClosers(t *testing.T) {
-	var closed []string
-	c1 := &trackCloser{name: "c1", closed: &closed}
-	c2 := &trackCloser{name: "c2", closed: &closed}
-
-	mc := &multiCloser{
-		Reader:  strings.NewReader("data"),
-		closers: []io.Closer{c1, c2},
-	}
-
-	if err := mc.Close(); err != nil {
-		t.Fatalf("Close: %v", err)
-	}
-	if len(closed) != 2 || closed[0] != "c1" || closed[1] != "c2" {
-		t.Errorf("closed = %v, want [c1, c2]", closed)
-	}
-}
-
-func TestMultiCloser_ReturnsFirstCloseError(t *testing.T) {
-	var closed []string
-	c1 := &trackCloser{name: "c1", closed: &closed, err: fmt.Errorf("c1 error")}
-	c2 := &trackCloser{name: "c2", closed: &closed}
-	c3 := &trackCloser{name: "c3", closed: &closed, err: fmt.Errorf("c3 error")}
-
-	mc := &multiCloser{
-		Reader:  strings.NewReader(""),
-		closers: []io.Closer{c1, c2, c3},
-	}
-
-	err := mc.Close()
-	if err == nil || err.Error() != "c1 error" {
-		t.Errorf("Close error = %v, want 'c1 error'", err)
-	}
-	// All closers should still be called even after an error
-	if len(closed) != 3 {
-		t.Errorf("expected all 3 closers called, got %v", closed)
-	}
-}
-
-func TestMultiCloser_EmptyClosers(t *testing.T) {
-	mc := &multiCloser{
-		Reader:  strings.NewReader("data"),
-		closers: nil,
-	}
-
-	data, err := io.ReadAll(mc)
-	if err != nil {
-		t.Fatalf("ReadAll: %v", err)
-	}
-	if string(data) != "data" {
-		t.Errorf("got %q", string(data))
-	}
-	if err := mc.Close(); err != nil {
-		t.Errorf("Close: %v", err)
-	}
-}
-
-// trackCloser records when Close is called for testing.
-type trackCloser struct {
-	name   string
-	closed *[]string
-	err    error
-}
-
-func (tc *trackCloser) Close() error {
-	*tc.closed = append(*tc.closed, tc.name)
-	return tc.err
-}
-
 func TestActionContentJSON_OmitsEmptyTags(t *testing.T) {
 	ac := ActionContent{
 		Name:      "file.txt",
@@ -616,5 +552,131 @@ func TestActionContentJSON_OmitsEmptyTags(t *testing.T) {
 
 	if _, ok := parsed["tags"]; ok {
 		t.Error("tags should be omitted when nil")
+	}
+}
+
+// closeErrReadCloser wraps a Reader with a configurable Close error.
+type closeErrReadCloser struct {
+	io.Reader
+	closeErr error
+}
+
+func (c closeErrReadCloser) Close() error { return c.closeErr }
+
+// errReader fails on Read.
+type errReader struct{ err error }
+
+func (e errReader) Read([]byte) (int, error) { return 0, e.err }
+
+func TestReadAllAndClose_SurfacesCloseError(t *testing.T) {
+	rc := closeErrReadCloser{Reader: strings.NewReader("hello"), closeErr: fmt.Errorf("close boom")}
+	if _, err := readAllAndClose(rc); err == nil || !strings.Contains(err.Error(), "close boom") {
+		t.Fatalf("err = %v, want close error surfaced", err)
+	}
+}
+
+func TestReadAllAndClose_ReadErrorTakesPriority(t *testing.T) {
+	rc := closeErrReadCloser{Reader: errReader{err: fmt.Errorf("read boom")}, closeErr: fmt.Errorf("close boom")}
+	if _, err := readAllAndClose(rc); err == nil || !strings.Contains(err.Error(), "read boom") {
+		t.Fatalf("err = %v, want read error to take priority", err)
+	}
+}
+
+func TestReadAllAndClose_Success(t *testing.T) {
+	rc := closeErrReadCloser{Reader: strings.NewReader("hi")}
+	data, err := readAllAndClose(rc)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if string(data) != "hi" {
+		t.Fatalf("data = %q, want %q", data, "hi")
+	}
+}
+
+// --- Batch saves ---
+
+func TestSaveContentBatch_SavesAllAndAppends(t *testing.T) {
+	df, _ := newTestDeltafile(t)
+	saved, err := df.SaveContentBatch([]ContentItem{
+		{Name: "a.txt", MediaType: "text/plain", Data: []byte("aaa")},
+		{Name: "b.txt", MediaType: "text/plain", Data: []byte("bbb")},
+	})
+	if err != nil {
+		t.Fatalf("SaveContentBatch: %v", err)
+	}
+	if len(saved) != 2 || len(df.GetNewContentList()) != 2 {
+		t.Fatalf("expected 2 saved + appended, got saved=%d list=%d", len(saved), len(df.GetNewContentList()))
+	}
+}
+
+func TestSaveWriterContentBatch_StreamsEach(t *testing.T) {
+	df, _ := newTestDeltafile(t)
+	saved, err := df.SaveWriterContentBatch([]ContentWrite{
+		{Name: "a.txt", MediaType: "text/plain", Write: func(w io.Writer) error { _, e := io.WriteString(w, "A"); return e }},
+		{Name: "b.txt", MediaType: "text/plain", Write: func(w io.Writer) error { _, e := io.WriteString(w, "B"); return e }},
+	})
+	if err != nil {
+		t.Fatalf("SaveWriterContentBatch: %v", err)
+	}
+	if len(saved) != 2 {
+		t.Fatalf("got %d", len(saved))
+	}
+}
+
+func TestSaveContentBatch_AggregatesPerItemErrors(t *testing.T) {
+	df, tc := newTestDeltafile(t)
+	tc.Store.FailAfterNthSave(1)
+	saved, err := df.SaveContentBatch([]ContentItem{
+		{Name: "a.txt", MediaType: "text/plain", Data: []byte("aaa")},
+		{Name: "b.txt", MediaType: "text/plain", Data: []byte("bbb")},
+	})
+	if err == nil {
+		t.Fatalf("expected aggregated error")
+	}
+	if len(saved) != 1 {
+		t.Fatalf("expected the one success to be returned, got %d", len(saved))
+	}
+	if len(df.GetNewContentList()) != 1 {
+		t.Fatalf("expected 1 item in output content list, got %d", len(df.GetNewContentList()))
+	}
+}
+
+type eofWithDataReader struct {
+	data []byte
+	done bool
+}
+
+func (r *eofWithDataReader) Read(p []byte) (int, error) {
+	if r.done {
+		return 0, io.EOF
+	}
+	r.done = true
+	return copy(p, r.data), io.EOF
+}
+
+func TestSegmentReader_SurfacesCloseErrorAfterFinalBytes(t *testing.T) {
+	closeErr := fmt.Errorf("close boom")
+	sr := &segmentReader{
+		ctx:      context.Background(),
+		segments: []Segment{{Size: 5}},
+		opener: func(context.Context, Segment) (io.ReadCloser, error) {
+			return closeErrReadCloser{
+				Reader:   &eofWithDataReader{data: []byte("hello")},
+				closeErr: closeErr,
+			}, nil
+		},
+	}
+
+	buf := make([]byte, 10)
+	n, err := sr.Read(buf)
+	if err != nil {
+		t.Fatalf("first Read error = %v, want nil with final bytes", err)
+	}
+	if string(buf[:n]) != "hello" {
+		t.Fatalf("first Read = %q, want hello", string(buf[:n]))
+	}
+
+	if _, err := sr.Read(buf); err == nil || !strings.Contains(err.Error(), "close boom") {
+		t.Fatalf("second Read error = %v, want deferred close error", err)
 	}
 }

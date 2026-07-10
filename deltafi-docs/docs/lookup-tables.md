@@ -122,12 +122,12 @@ func (s *MyLookupTableSupplier) Table() actionkit.LookupTableDefinition {
 }
 
 func (s *MyLookupTableSupplier) GetRows(ctx context.Context, variables map[string]string,
-    matchingColumns map[string][]string, resultColumns []string) ([]map[string]string, error) {
+    matchingColumns map[string][]string, resultColumns []string) ([]actionkit.Row, error) {
     log.Println("Getting rows for my_lookup_table")
-    return []map[string]string{
-        {"column_a": "A1", "column_b": "B1", "color": colors[rand.IntN(len(colors))]},
-        {"column_a": "A2", "column_b": "B2", "color": colors[rand.IntN(len(colors))]},
-        {"column_a": "A3", "column_b": "B3", "color": colors[rand.IntN(len(colors))]},
+    return []actionkit.Row{
+        actionkit.NewRow(map[string]string{"column_a": "A1", "column_b": "B1", "color": colors[rand.IntN(len(colors))]}),
+        actionkit.NewRow(map[string]string{"column_a": "A2", "column_b": "B2", "color": colors[rand.IntN(len(colors))]}),
+        actionkit.NewRow(map[string]string{"column_a": "A3", "column_b": "B3", "color": colors[rand.IntN(len(colors))]}),
     }, nil
 }
 ```
@@ -214,7 +214,12 @@ func (a *MyAction) Transform(df *actionkit.Deltafile, params MyParams) *actionki
 
     df.PassthroughContent()
     df.AddMetadata("totalRows", fmt.Sprintf("%d", lookupResults.TotalCount))
-    // ... use lookupResults.Rows
+    // lookupResults.Rows is []actionkit.Row; access values with Row.Get(column)
+    for _, row := range lookupResults.Rows {
+        if value, ok := row.Get("column_a"); ok {
+            df.LogInfo("column_a: %s", value)
+        }
+    }
     return df
 }
 ```

@@ -60,7 +60,7 @@ func TestInMemoryContentStore_SaveFromReader(t *testing.T) {
 	ctx := context.Background()
 
 	reader := strings.NewReader("streamed data")
-	seg, err := store.SaveFromReader(ctx, "did-1", reader, 13)
+	seg, err := store.SaveFromReader(ctx, "did-1", reader)
 	if err != nil {
 		t.Fatalf("SaveFromReader error: %v", err)
 	}
@@ -82,7 +82,7 @@ func TestInMemoryContentStore_SaveFromReader_UnknownSize(t *testing.T) {
 	ctx := context.Background()
 
 	reader := strings.NewReader("auto size")
-	seg, err := store.SaveFromReader(ctx, "did-1", reader, -1)
+	seg, err := store.SaveFromReader(ctx, "did-1", reader)
 	if err != nil {
 		t.Fatalf("SaveFromReader error: %v", err)
 	}
@@ -131,6 +131,23 @@ func TestInMemoryContentStore_LoadMissingSegment(t *testing.T) {
 	_, err := store.Load(ctx, []Segment{{UUID: "nonexistent", Size: 5}})
 	if err == nil {
 		t.Error("expected error for missing segment")
+	}
+}
+
+func TestInMemoryContentStore_LoadInvalidRange(t *testing.T) {
+	store := NewInMemoryContentStore()
+	ctx := context.Background()
+
+	seg, _ := store.Save(ctx, "did-1", []byte("hello"))
+	seg.Offset = 4
+	seg.Size = 2
+
+	_, err := store.Load(ctx, []Segment{seg})
+	if err == nil {
+		t.Fatal("expected error for invalid segment range")
+	}
+	if !strings.Contains(err.Error(), "exceeds stored size") {
+		t.Fatalf("error = %v, want range error", err)
 	}
 }
 
@@ -194,9 +211,9 @@ func TestMockLookupClient_Lookup(t *testing.T) {
 		Results: map[string]*LookupResults{
 			"colors": {
 				TotalCount: 2,
-				Rows: []map[string]string{
-					{"name": "red"},
-					{"name": "blue"},
+				Rows: []Row{
+					NewRow(map[string]string{"name": "red"}),
+					NewRow(map[string]string{"name": "blue"}),
 				},
 			},
 		},
@@ -392,7 +409,7 @@ func TestTestContext_NewDeltafile(t *testing.T) {
 	if !df.HasContent() {
 		t.Error("expected content")
 	}
-	content := df.GetContentSlice()
+	content := df.GetContentList()
 	if len(content) != 2 {
 		t.Errorf("Content len = %d, want 2", len(content))
 	}
@@ -407,8 +424,8 @@ func TestTestContext_NewDeltafile_WithChild(t *testing.T) {
 		t.Error("expected content")
 	}
 
-	// NewChild should create a child with a different DID
-	child := df.NewChild("child.txt")
+	// AddChild should create a child with a different DID
+	child := df.AddChild("child.txt")
 	if child.Did == df.Did {
 		t.Error("child DID should differ from parent")
 	}
@@ -417,22 +434,21 @@ func TestTestContext_NewDeltafile_WithChild(t *testing.T) {
 	}
 }
 
-func TestTestContext_NewIngressInput(t *testing.T) {
+func TestTestContext_NewTimedIngressDeltafile(t *testing.T) {
 	tc := NewTestContext("did")
-	input := tc.NewIngressInput()
-	if input.FlowName != tc.ActionContext.FlowName {
-		t.Errorf("FlowName = %q", input.FlowName)
+	deltafile := tc.NewTimedIngressDeltafile()
+	if deltafile.FlowName != tc.ActionContext.FlowName {
+		t.Errorf("FlowName = %q", deltafile.FlowName)
 	}
-	if input.ActionName != tc.ActionContext.ActionName {
-		t.Errorf("ActionName = %q", input.ActionName)
+	if deltafile.ActionName != tc.ActionContext.ActionName {
+		t.Errorf("ActionName = %q", deltafile.ActionName)
 	}
 
-	// NewDeltafile from IngressInput
-	df := input.NewDeltafile("ingress-file.txt")
-	if df.Name != "ingress-file.txt" {
-		t.Errorf("Name = %q", df.Name)
+	item := deltafile.NewItem("ingress-file.txt")
+	if item.Name != "ingress-file.txt" {
+		t.Errorf("Name = %q", item.Name)
 	}
-	if df.Did == "" {
+	if item.Did == "" {
 		t.Error("DID should be auto-generated")
 	}
 }
@@ -518,7 +534,7 @@ func TestRunTransform_Filter(t *testing.T) {
 
 type testRunEgressAction struct{}
 
-func (a *testRunEgressAction) Egress(df *Deltafile, params noParams) *Deltafile {
+func (a *testRunEgressAction) Egress(df *EgressDeltafile, params noParams) *EgressDeltafile {
 	df.LogInfo("egressed")
 	return df
 }
@@ -538,21 +554,18 @@ func TestRunEgress(t *testing.T) {
 
 type testRunIngressAction struct{}
 
-func (a *testRunIngressAction) Ingress(input *IngressInput, params noParams) *IngressResult {
-	r := NewIngressResult()
-	item := input.NewDeltafile("ingressed-file")
-	item.AddContent(ActionContent{Name: "data.txt"})
-	item.AddMetadata("key", "val")
-	r.AddItem(item)
-	r.SetMemo("42")
-	return r
+func (a *testRunIngressAction) Ingress(deltafile *TimedIngressDeltafile, params noParams) *TimedIngressDeltafile {
+	deltafile.NewItem("ingressed-file").
+		AddContent(ActionContent{Name: "data.txt"}).
+		AddMetadata("key", "val")
+	return deltafile.SetMemo("42")
 }
 
 func TestRunIngress(t *testing.T) {
 	tc := NewTestContext("test-did")
-	input := tc.NewIngressInput()
+	deltafile := tc.NewTimedIngressDeltafile()
 
-	event := RunIngress(t, &testRunIngressAction{}, input, noParams{})
+	event := RunIngress(t, &testRunIngressAction{}, deltafile, noParams{})
 	if event.Type != "INGRESS" {
 		t.Errorf("Type = %q, want INGRESS", event.Type)
 	}
@@ -570,7 +583,7 @@ func TestRunIngress(t *testing.T) {
 type testRunSplitAction struct{}
 
 func (a *testRunSplitAction) Transform(df *Deltafile, params noParams) *Deltafile {
-	child := df.NewChild("child-1")
+	child := df.AddChild("child-1")
 	child.AddContent(ActionContent{Name: "child-content"})
 	child.AddMetadata("ck", "cv")
 	return df
@@ -627,7 +640,8 @@ func TestMockLookupClient_TablesFilter(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Lookup err: %v", err)
 	}
-	if red.TotalCount != 1 || red.Rows[0]["hex"] != "#FF0000" {
+	hex, _ := red.Rows[0].Get("hex")
+	if red.TotalCount != 1 || hex != "#FF0000" {
 		t.Errorf("red lookup: %+v", red.Rows)
 	}
 
@@ -688,13 +702,15 @@ func TestMockLookupClient_TablesProjection(t *testing.T) {
 		t.Fatalf("Rows len = %d, want 2", len(r.Rows))
 	}
 	for _, row := range r.Rows {
-		if _, ok := row["secret"]; ok {
+		if row.Has("secret") {
 			t.Errorf("projected row should not contain secret column: %v", row)
 		}
-		if _, ok := row["email"]; ok {
+		if row.Has("email") {
 			t.Errorf("projected row should not contain email column: %v", row)
 		}
-		if row["id"] == "" || row["name"] == "" {
+		id, _ := row.Get("id")
+		name, _ := row.Get("name")
+		if id == "" || name == "" {
 			t.Errorf("projected row missing required columns: %v", row)
 		}
 	}
@@ -724,7 +740,9 @@ func TestMockLookupClient_TablesSortAndPaginate(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Lookup err: %v", err)
 	}
-	if asc.TotalCount != 2 || asc.Rows[0]["name"] != "apple" || asc.Rows[1]["name"] != "banana" {
+	asc0, _ := asc.Rows[0].Get("name")
+	asc1, _ := asc.Rows[1].Get("name")
+	if asc.TotalCount != 2 || asc0 != "apple" || asc1 != "banana" {
 		t.Errorf("asc rows = %v", asc.Rows)
 	}
 
@@ -737,7 +755,9 @@ func TestMockLookupClient_TablesSortAndPaginate(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Lookup err: %v", err)
 	}
-	if desc.TotalCount != 2 || desc.Rows[0]["name"] != "date" || desc.Rows[1]["name"] != "cherry" {
+	desc0, _ := desc.Rows[0].Get("name")
+	desc1, _ := desc.Rows[1].Get("name")
+	if desc.TotalCount != 2 || desc0 != "date" || desc1 != "cherry" {
 		t.Errorf("desc rows = %v", desc.Rows)
 	}
 }
@@ -750,12 +770,13 @@ func TestMockLookupClient_TablesFallback(t *testing.T) {
 			{Name: "primary", Rows: []LookupRow{{"k": "v"}}},
 		},
 		Results: map[string]*LookupResults{
-			"backup": {TotalCount: 99, Rows: []LookupRow{{"src": "results"}}},
+			"backup": {TotalCount: 99, Rows: []Row{NewRow(map[string]string{"src": "results"})}},
 		},
 	}
 
 	pri, _ := mock.Lookup(context.Background(), "primary")
-	if pri.TotalCount != 1 || pri.Rows[0]["k"] != "v" {
+	k, _ := pri.Rows[0].Get("k")
+	if pri.TotalCount != 1 || k != "v" {
 		t.Errorf("primary fell through Tables: %+v", pri)
 	}
 

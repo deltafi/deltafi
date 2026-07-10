@@ -30,7 +30,29 @@ import (
 
 	"github.com/deltafi/tui/internal/app"
 	"github.com/deltafi/tui/internal/generator"
+	"gopkg.in/yaml.v3"
 )
+
+// pluginYAML mirrors the plugin.yaml schema enforced by the action kit.
+type pluginYAML struct {
+	GroupID     string `yaml:"groupId"`
+	ArtifactID  string `yaml:"artifactId"`
+	Domain      string `yaml:"domain"`
+	Description string `yaml:"description"`
+}
+
+// readPluginYAML loads plugin.yaml from the plugin directory.
+func readPluginYAML(pluginDir string) (*pluginYAML, error) {
+	data, err := os.ReadFile(filepath.Join(pluginDir, "plugin.yaml"))
+	if err != nil {
+		return nil, err
+	}
+	var meta pluginYAML
+	if err := yaml.Unmarshal(data, &meta); err != nil {
+		return nil, fmt.Errorf("parse plugin.yaml: %w", err)
+	}
+	return &meta, nil
+}
 
 // GoGenerator implements the Generator interface for Go plugins
 type GoGenerator struct{}
@@ -44,6 +66,7 @@ func NewGoGenerator() generator.Generator {
 func getTemplateFiles() map[string]string {
 	return map[string]string{
 		"main.go.tmpl":                "main.go",
+		"plugin.yaml.tmpl":            "plugin.yaml",
 		"go.mod.tmpl":                 "go.mod",
 		"Makefile.tmpl":               "Makefile",
 		"Dockerfile.tmpl":             "Dockerfile",
@@ -169,11 +192,10 @@ func (g *GoGenerator) GenerateAction(pluginName string, actionName string, actio
 		return fmt.Errorf("failed to read module path from go.mod: %w", err)
 	}
 
-	// Read domain from main.go for flow type references
-	domain, err := readDomainFromMain(filepath.Join(pluginDir, "main.go"))
-	if err != nil {
-		// Fall back to default domain
-		domain = "org.deltafi." + pluginName
+	// Read domain from plugin.yaml for flow type references
+	domain := "org.deltafi." + pluginName
+	if meta, err := readPluginYAML(pluginDir); err == nil && meta.Domain != "" {
+		domain = meta.Domain
 	}
 
 	// Strip "-action" suffix if present to avoid duplication
@@ -221,6 +243,8 @@ func (g *GoGenerator) GenerateAction(pluginName string, actionName string, actio
 		return fmt.Errorf("failed to create actions directory: %w", err)
 	}
 
+	paramsPath := filepath.Join(pluginDir, "actions", actionFileName+"_action_params.go")
+
 	if !actionExists {
 		actionContent, err := RenderTemplate(actionTemplate, data)
 		if err != nil {
@@ -230,6 +254,18 @@ func (g *GoGenerator) GenerateAction(pluginName string, actionName string, actio
 			return fmt.Errorf("failed to write action file: %w", err)
 		}
 		fmt.Printf("Wrote %s\n", actionPath)
+
+		// Generate the matching params file beside the action.
+		if paramsTemplate := getActionParamsTemplate(actionType); paramsTemplate != "" && !fileExists(paramsPath) {
+			paramsContent, err := RenderTemplate(paramsTemplate, data)
+			if err != nil {
+				return fmt.Errorf("failed to render params template: %w", err)
+			}
+			if err := os.WriteFile(paramsPath, paramsContent, 0644); err != nil {
+				return fmt.Errorf("failed to write params file: %w", err)
+			}
+			fmt.Printf("Wrote %s\n", paramsPath)
+		}
 
 		// Generate the options YAML file alongside the action
 		optionsTemplate := getOptionsTemplate(actionType)
@@ -400,15 +436,19 @@ func (g *GoGenerator) UpdatePlugin(pluginName string, options *generator.UpdateO
 		return fmt.Errorf("failed to read module path: %w", err)
 	}
 
-	groupID, domain, err := readPluginCoordinates(filepath.Join(pluginDir, "main.go"))
-	if err != nil {
-		groupID = "org.deltafi"
-		domain = groupID + "." + pluginName
-	}
-
+	groupID := "org.deltafi"
+	domain := groupID + "." + pluginName
 	description := fmt.Sprintf("Go plugin for DeltaFi: %s", pluginName)
-	if desc, err := readDescription(filepath.Join(pluginDir, "main.go")); err == nil && desc != "" {
-		description = desc
+	if meta, err := readPluginYAML(pluginDir); err == nil {
+		if meta.GroupID != "" {
+			groupID = meta.GroupID
+		}
+		if meta.Domain != "" {
+			domain = meta.Domain
+		}
+		if meta.Description != "" {
+			description = meta.Description
+		}
 	}
 
 	deltaFiVersion := generator.AdjustVersionForSnapshot(app.GetVersion())
@@ -444,7 +484,7 @@ func (g *GoGenerator) UpdatePlugin(pluginName string, options *generator.UpdateO
 		// User-owned source files are skipped by default to keep update safe
 		// to run after the user has customized them. Pass --include-source to
 		// re-render them from the templates.
-		if !includeSource && outputPath == "main.go" {
+		if !includeSource && (outputPath == "main.go" || outputPath == "plugin.yaml") {
 			continue
 		}
 
@@ -667,58 +707,6 @@ func readModulePath(goModPath string) (string, error) {
 	return "", fmt.Errorf("module path not found in go.mod")
 }
 
-// readDomainFromMain reads the Domain field from main.go
-func readDomainFromMain(mainPath string) (string, error) {
-	content, err := os.ReadFile(mainPath)
-	if err != nil {
-		return "", err
-	}
-
-	re := regexp.MustCompile(`Domain:\s*"([^"]+)"`)
-	matches := re.FindSubmatch(content)
-	if len(matches) > 1 {
-		return string(matches[1]), nil
-	}
-
-	return "", fmt.Errorf("domain not found in main.go")
-}
-
-// readPluginCoordinates reads GroupID and Domain from main.go
-func readPluginCoordinates(mainPath string) (string, string, error) {
-	content, err := os.ReadFile(mainPath)
-	if err != nil {
-		return "", "", err
-	}
-
-	groupRe := regexp.MustCompile(`GroupID:\s*"([^"]+)"`)
-	groupMatches := groupRe.FindSubmatch(content)
-
-	domainRe := regexp.MustCompile(`Domain:\s*"([^"]+)"`)
-	domainMatches := domainRe.FindSubmatch(content)
-
-	if len(groupMatches) <= 1 || len(domainMatches) <= 1 {
-		return "", "", fmt.Errorf("plugin coordinates not found in main.go")
-	}
-
-	return string(groupMatches[1]), string(domainMatches[1]), nil
-}
-
-// readDescription reads the description variable from main.go
-func readDescription(mainPath string) (string, error) {
-	content, err := os.ReadFile(mainPath)
-	if err != nil {
-		return "", err
-	}
-
-	re := regexp.MustCompile(`description\s*=\s*"([^"]+)"`)
-	matches := re.FindSubmatch(content)
-	if len(matches) > 1 {
-		return string(matches[1]), nil
-	}
-
-	return "", fmt.Errorf("description not found in main.go")
-}
-
 // ensureBlankImport adds a blank import to main.go if it doesn't already exist
 func ensureBlankImport(mainPath string, importPath string) error {
 	content, err := os.ReadFile(mainPath)
@@ -873,6 +861,25 @@ func getActionTemplate(actionType string) string {
 		return "actions/joining_transform_action.go.tmpl"
 	case "transformmanyaction", "transformmany", "split":
 		return "actions/split_transform_action.go.tmpl"
+	default:
+		return ""
+	}
+}
+
+// getActionParamsTemplate returns the template path for the action's
+// params-only companion file (foo_action_params.go).
+func getActionParamsTemplate(actionType string) string {
+	switch strings.ToLower(actionType) {
+	case "transformaction", "transform":
+		return "actions/transform_action_params.go.tmpl"
+	case "egressaction", "egress":
+		return "actions/egress_action_params.go.tmpl"
+	case "ingressaction", "ingress", "timedingressaction", "timedingress":
+		return "actions/timed_ingress_action_params.go.tmpl"
+	case "joiningtransformaction", "joiningtransform":
+		return "actions/joining_transform_action_params.go.tmpl"
+	case "transformmanyaction", "transformmany", "split":
+		return "actions/split_transform_action_params.go.tmpl"
 	default:
 		return ""
 	}

@@ -34,10 +34,10 @@ func (s *{{.SupplierClassName}}) Table() actionkit.LookupTableDefinition {
 	// }
 }
 
-func (s *{{.SupplierClassName}}) GetRows(_ context.Context, _ map[string]string, _ map[string][]string, _ []string) ([]map[string]string, error) {
+func (s *{{.SupplierClassName}}) GetRows(_ context.Context, _ map[string]string, _ map[string][]string, _ []string) ([]actionkit.Row, error) {
 	// TODO: Return data rows for the lookup table.
 	// Parameters: ctx, variables, matchingColumnValues, resultColumns
-	return []map[string]string{
-		{"key": "example", "value": "data"},
+	return []actionkit.Row{
+		actionkit.NewRow(map[string]string{"key": "example", "value": "data"}),
 	}, nil
 }

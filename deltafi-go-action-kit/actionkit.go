@@ -24,6 +24,7 @@ import (
 	"context"
 	"encoding/json"
 	"io"
+	"maps"
 	"os"
 	"sync"
 	"time"
@@ -62,6 +63,7 @@ type ActionContext struct {
 	JoinedDIDs     []string
 	savedSegments  []Segment
 	ctx            context.Context
+	parent         *ActionContext
 }
 
 // joinConfiguration holds join parameters from the flow definition.
@@ -92,23 +94,34 @@ func (actx *ActionContext) ChildContext() *ActionContext {
 		LookupClient:   actx.LookupClient,
 		ArtifactClient: actx.ArtifactClient,
 		ctx:            actx.ctx,
+		parent:         actx,
 	}
 }
 
 // trackSegment records a segment saved during action execution for orphan cleanup.
 func (actx *ActionContext) trackSegment(seg Segment) {
+	if actx.parent != nil {
+		actx.parent.trackSegment(seg)
+		return
+	}
 	actx.savedSegments = append(actx.savedSegments, seg)
 }
 
 // Save stores data in the configured content service and returns an ActionContent.
-func (actx *ActionContext) Save(ctx context.Context, data []byte, name, mediaType string) (*ActionContent, error) {
-	return SaveContent(ctx, actx.ContentService, actx, data, name, mediaType)
+func (actx *ActionContext) Save(ctx context.Context, name, mediaType string, data []byte) (*ActionContent, error) {
+	return SaveContent(ctx, actx.ContentService, actx, name, mediaType, data)
 }
 
-// SaveFromReader stores data from an io.Reader and returns an ActionContent.
-// Use size = -1 if the size is not known in advance.
-func (actx *ActionContext) SaveFromReader(ctx context.Context, reader io.Reader, size int64, name, mediaType string) (*ActionContent, error) {
-	return SaveContentFromReader(ctx, actx.ContentService, actx, reader, size, name, mediaType)
+// SaveFromReader streams data from an io.Reader and returns an ActionContent
+// whose size reflects the bytes actually streamed.
+func (actx *ActionContext) SaveFromReader(ctx context.Context, name, mediaType string, reader io.Reader) (*ActionContent, error) {
+	return SaveContentFromReader(ctx, actx.ContentService, actx, name, mediaType, reader)
+}
+
+// SaveFromWriter streams content produced by fn and returns an ActionContent
+// whose size reflects the bytes actually streamed.
+func (actx *ActionContext) SaveFromWriter(ctx context.Context, name, mediaType string, fn func(io.Writer) error) (*ActionContent, error) {
+	return SaveContentFromWriter(ctx, actx.ContentService, actx, name, mediaType, fn)
 }
 
 // Variable defines a plugin variable for flow parameterization.
@@ -163,9 +176,7 @@ type SafeStringMap struct {
 // Store atomically replaces all entries with a copy of data. Pass nil to clear.
 func (sm *SafeStringMap) Store(data map[string]string) {
 	cp := make(map[string]string, len(data))
-	for k, v := range data {
-		cp[k] = v
-	}
+	maps.Copy(cp, data)
 	sm.mu.Lock()
 	sm.m = cp
 	sm.mu.Unlock()

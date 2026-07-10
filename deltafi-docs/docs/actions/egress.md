@@ -116,20 +116,28 @@ The Go action kit is currently in beta. Interfaces may change in future releases
 ### Interface
 
 An EgressAction must implement the `Egress` method which receives:
-* `*Deltafile` providing the content, metadata, and context fields
+* `*EgressDeltafile` providing the content, metadata, and context fields
 * A typed params struct containing flow parameters specified for the action
 
-The action returns the same `*Deltafile`. A successful egress simply returns the Deltafile unchanged.
+The action returns the same `*EgressDeltafile`. A successful egress simply returns it unchanged.
+
+`EgressDeltafile` is a constrained view of a Deltafile. It exposes content and metadata reads, logging, annotations, and error/filter signaling, but does not expose output-content or metadata mutations (`SaveStringContent`, `AddContent`, `PassthroughContent`, `AddChild`, `AddMetadata`, etc.). The EGRESS event format does not carry those mutations, so the restriction is enforced at compile time rather than as a silent drop.
 
 ### Return Types
 
-The `Egress` method returns a `*Deltafile`. The kit inspects the Deltafile's state:
+The `Egress` method returns an `*EgressDeltafile`. The kit inspects the underlying state:
 
-* **Egress result** — when the Deltafile is returned without error or filter state (successful egress)
-* **Error result** — when `Errorf` has been called on the Deltafile
-* **Filter result** — when `Filterf` has been called on the Deltafile
+* **Egress result** — when the EgressDeltafile is returned without error or filter state (successful egress)
+* **Error result** — when `Errorf` has been called on the EgressDeltafile
+* **Filter result** — when `Filterf` has been called on the EgressDeltafile
+
+### File layout
+
+Each Go action lives in two files inside the plugin's `actions/` directory: `<name>_action.go` holds the action struct, `init()` registration, and the action method; `<name>_action_params.go` holds the typed `*Params` struct only. See the [transform action docs](./transform.md) for the full description of supported parameter tag types and the `make jsonFromParams` / `make paramsFromJson` round-trip tooling — the same conventions apply to every Go action type.
 
 ### Example
+
+`actions/hello_world_go_egress_action.go`:
 
 ```go
 package actions
@@ -141,15 +149,14 @@ import (
 )
 
 func init() {
-    actionkit.RegisterEgress("HelloWorldGoEgressAction", &HelloWorldGoEgress{}).
+    actionkit.RegisterEgress("HelloWorldGoEgressAction", &HelloWorldGoEgressAction{}).
+        WithParams(HelloWorldGoEgressActionParams{}).
         Describe("Hello pretends to egress")
 }
 
-type HelloWorldGoEgressParams struct{}
+type HelloWorldGoEgressAction struct{}
 
-type HelloWorldGoEgress struct{}
-
-func (a *HelloWorldGoEgress) Egress(df *actionkit.Deltafile, params HelloWorldGoEgressParams) *actionkit.Deltafile {
+func (a *HelloWorldGoEgressAction) Egress(df *actionkit.EgressDeltafile, params HelloWorldGoEgressActionParams) *actionkit.EgressDeltafile {
     content, err := df.FirstContent()
     if err != nil {
         return df.Errorf("Failed to load content").SetErrorContext(err.Error())
@@ -166,6 +173,14 @@ func (a *HelloWorldGoEgress) Egress(df *actionkit.Deltafile, params HelloWorldGo
 
     return df
 }
+```
+
+`actions/hello_world_go_egress_action_params.go`:
+
+```go
+package actions
+
+type HelloWorldGoEgressActionParams struct{}
 ```
 
 ## C++

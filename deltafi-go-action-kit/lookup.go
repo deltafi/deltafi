@@ -29,6 +29,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"runtime/debug"
 	"sort"
 	"strconv"
 	"strings"
@@ -139,7 +140,7 @@ type LookupResults struct {
 	TotalCount int
 	Created    *time.Time
 	Modified   *time.Time
-	Rows       []map[string]string
+	Rows       []Row
 }
 
 // LookupTableDefinition describes a lookup table for plugin registration.
@@ -160,8 +161,9 @@ type LookupTableSupplier interface {
 	// Table returns the lookup table definition for registration.
 	Table() LookupTableDefinition
 
-	// GetRows returns rows matching the given criteria.
-	GetRows(ctx context.Context, variables map[string]string, matchingColumnValues map[string][]string, resultColumns []string) ([]map[string]string, error)
+	// GetRows returns rows matching the given criteria. Returned rows are
+	// read-only by construction; the backing data is never copied.
+	GetRows(ctx context.Context, variables map[string]string, matchingColumnValues map[string][]string, resultColumns []string) ([]Row, error)
 }
 
 // LookupClientBase is the interface for lookup table queries from actions.
@@ -434,7 +436,7 @@ func (lc *lookupClient) fetchLookup(ctx context.Context, tableName string, query
 	if err != nil {
 		return nil, fmt.Errorf("graphql request failed: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
@@ -473,7 +475,7 @@ func (lc *lookupClient) UploadTable(ctx context.Context, tableName string, conte
 	if err != nil {
 		return fmt.Errorf("upload request failed: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
 		body, _ := io.ReadAll(resp.Body)
@@ -530,7 +532,7 @@ const lookupQuery = `query($lookupTableName: String!, $matchingColumnValues: [Ma
 func parseLookupResults(gql *graphqlLookupResults) (*LookupResults, error) {
 	results := &LookupResults{
 		TotalCount: gql.TotalCount,
-		Rows:       make([]map[string]string, len(gql.Rows)),
+		Rows:       make([]Row, len(gql.Rows)),
 	}
 
 	if gql.Created != nil {
@@ -551,7 +553,7 @@ func parseLookupResults(gql *graphqlLookupResults) (*LookupResults, error) {
 		for _, cv := range row {
 			m[cv.Column] = cv.Value
 		}
-		results.Rows[i] = m
+		results.Rows[i] = NewRow(m)
 	}
 
 	return results, nil
@@ -568,9 +570,9 @@ type lookupTableEvent struct {
 
 // lookupTableEventResult is the response sent back to core with the supplier's data.
 type lookupTableEventResult struct {
-	LookupTableEventID string              `json:"lookupTableEventId"`
-	LookupTableName    string              `json:"lookupTableName"`
-	Rows               []map[string]string `json:"rows"`
+	LookupTableEventID string `json:"lookupTableEventId"`
+	LookupTableName    string `json:"lookupTableName"`
+	Rows               []Row  `json:"rows"`
 }
 
 const lookupTableEventPrefix = "lookup-table-event"
@@ -583,7 +585,7 @@ func lookupTableEventKey(tableName string) string {
 // Called once after registration so tables start with data.
 func uploadSupplierData(ctx context.Context, client *lookupClient, suppliers map[string]LookupTableSupplier) {
 	for name, supplier := range suppliers {
-		rows, err := supplier.GetRows(ctx, nil, nil, nil)
+		rows, err := safeSupplierRows(ctx, name, supplier, nil, nil, nil)
 		if err != nil {
 			log.Printf("[lookup-supplier] failed to get initial rows for %q: %v", name, err)
 			continue
@@ -608,6 +610,38 @@ func uploadSupplierData(ctx context.Context, client *lookupClient, suppliers map
 	}
 }
 
+// supplierPutMaxAttempts and supplierPutRetryBackoff bound how hard the supplier
+// runner retries publishing a result, so a brief Valkey blip does not drop a
+// supplier's reply to core (which would otherwise time out core's lookup event).
+var (
+	supplierPutMaxAttempts  = 3
+	supplierPutRetryBackoff = 500 * time.Millisecond
+)
+
+// publishWithRetry calls put, retrying transient failures up to
+// supplierPutMaxAttempts with a fixed backoff. It stops early if ctx is cancelled.
+func publishWithRetry(ctx context.Context, put func(context.Context) error) error {
+	var lastErr error
+	for attempt := range supplierPutMaxAttempts {
+		if attempt > 0 {
+			select {
+			case <-time.After(supplierPutRetryBackoff):
+			case <-ctx.Done():
+				return ctx.Err()
+			}
+		}
+		if err := put(ctx); err != nil {
+			lastErr = err
+			if ctx.Err() != nil {
+				return ctx.Err()
+			}
+			continue
+		}
+		return nil
+	}
+	return lastErr
+}
+
 // startLookupTableSupplierRunner launches a goroutine that listens for lookup table
 // events and dispatches them to the appropriate supplier.
 func startLookupTableSupplierRunner(ctx context.Context, wg *sync.WaitGroup, queue *actionEventQueue, suppliers map[string]LookupTableSupplier) {
@@ -628,6 +662,9 @@ func startLookupTableSupplierRunner(ctx context.Context, wg *sync.WaitGroup, que
 					return
 				}
 				log.Printf("[lookup-supplier] poll error: %v", err)
+				if !waitBackoff(ctx) {
+					return
+				}
 				continue
 			}
 			if raw == nil {
@@ -646,10 +683,10 @@ func startLookupTableSupplierRunner(ctx context.Context, wg *sync.WaitGroup, que
 				continue
 			}
 
-			rows, err := supplier.GetRows(ctx, event.Variables, event.MatchingColumnValues, event.ResultColumns)
+			rows, err := safeSupplierRows(ctx, event.LookupTableName, supplier, event.Variables, event.MatchingColumnValues, event.ResultColumns)
 			if err != nil {
 				log.Printf("[lookup-supplier] error getting rows for %q: %v", event.LookupTableName, err)
-				rows = []map[string]string{}
+				rows = []Row{}
 			}
 
 			result := lookupTableEventResult{
@@ -664,9 +701,23 @@ func startLookupTableSupplierRunner(ctx context.Context, wg *sync.WaitGroup, que
 				continue
 			}
 
-			if err := queue.Put(ctx, event.ID, resultJSON); err != nil {
-				log.Printf("[lookup-supplier] failed to publish result: %v", err)
+			if err := publishWithRetry(ctx, func(c context.Context) error {
+				return queue.Put(c, event.ID, resultJSON)
+			}); err != nil {
+				log.Printf("[lookup-supplier] failed to publish result after retries: %v", err)
 			}
 		}
 	})
+}
+
+func safeSupplierRows(ctx context.Context, tableName string, supplier LookupTableSupplier, variables map[string]string, matchingColumnValues map[string][]string, resultColumns []string) (rows []Row, err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			stack := string(debug.Stack())
+			log.Printf("[lookup-supplier] supplier for %q panicked: %v\n%s", tableName, r, stack)
+			rows = nil
+			err = fmt.Errorf("supplier panicked: %v", r)
+		}
+	}()
+	return supplier.GetRows(ctx, variables, matchingColumnValues, resultColumns)
 }

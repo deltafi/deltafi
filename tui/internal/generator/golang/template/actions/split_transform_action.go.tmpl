@@ -18,15 +18,12 @@ func init() {
 		WithOptionsYAML({{.ActionFileName}}Options)
 }
 
-// {{.ActionClassName}}Params defines the action's configurable parameters.
-type {{.ActionClassName}}Params struct{}
-
 // {{.ActionClassName}} splits input into multiple child DeltaFiles.
 type {{.ActionClassName}} struct{}
 
 func (a *{{.ActionClassName}}) Transform(df *actionkit.Deltafile, params {{.ActionClassName}}Params) *actionkit.Deltafile {
-	for _, content := range df.GetContentSlice() {
-		child := df.NewChild(content.Name)
+	for _, content := range df.GetContentList() {
+		child := df.AddChild(content.Name)
 		child.AddContent(content)
 		child.AddMetadataMap(df.GetMetadataMap())
 	}

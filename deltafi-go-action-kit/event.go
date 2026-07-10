@@ -60,6 +60,7 @@ type ErrorEvent struct {
 // FilterEvent describes a filter decision made by an action.
 type FilterEvent struct {
 	Message     string            `json:"message"`
+	Context     string            `json:"context,omitempty"`
 	Annotations map[string]string `json:"annotations,omitempty"`
 }
 

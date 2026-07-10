@@ -115,11 +115,11 @@ func (q *LookupQueryBuilder) applyExclusions(results *LookupResults) *LookupResu
 	if q == nil || len(q.excludingColumns) == 0 || results == nil {
 		return results
 	}
-	filtered := make([]map[string]string, 0, len(results.Rows))
+	filtered := make([]Row, 0, len(results.Rows))
 	for _, row := range results.Rows {
 		excluded := false
 		for col, vals := range q.excludingColumns {
-			if slices.Contains(vals, row[col]) {
+			if v, ok := row.Get(col); ok && slices.Contains(vals, v) {
 				excluded = true
 				break
 			}

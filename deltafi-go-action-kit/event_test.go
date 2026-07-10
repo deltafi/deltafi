@@ -158,7 +158,9 @@ func TestActionEventJSON_Filter(t *testing.T) {
 	}
 
 	var parsed map[string]any
-	json.Unmarshal(data, &parsed)
+	if err := json.Unmarshal(data, &parsed); err != nil {
+		t.Fatalf("unmarshal: %v", err)
+	}
 
 	filterObj := parsed["filter"].(map[string]any)
 	if filterObj["message"] != "filtered because" {
@@ -199,7 +201,9 @@ func TestActionEventJSON_Ingress(t *testing.T) {
 	}
 
 	var parsed map[string]any
-	json.Unmarshal(data, &parsed)
+	if err := json.Unmarshal(data, &parsed); err != nil {
+		t.Fatalf("unmarshal: %v", err)
+	}
 
 	ingressObj := parsed["ingress"].(map[string]any)
 	if ingressObj["memo"] != "memo-state" {
@@ -241,7 +245,9 @@ func TestActionEventJSON_Egress(t *testing.T) {
 	}
 
 	var parsed map[string]any
-	json.Unmarshal(data, &parsed)
+	if err := json.Unmarshal(data, &parsed); err != nil {
+		t.Fatalf("unmarshal: %v", err)
+	}
 
 	if parsed["type"] != "EGRESS" {
 		t.Errorf("type = %v", parsed["type"])

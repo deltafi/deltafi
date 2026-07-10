@@ -36,14 +36,14 @@ func (a *testTransformAction) Transform(df *Deltafile, params noParams) *Deltafi
 
 type testEgressAction struct{}
 
-func (a *testEgressAction) Egress(df *Deltafile, params noParams) *Deltafile {
+func (a *testEgressAction) Egress(df *EgressDeltafile, params noParams) *EgressDeltafile {
 	return df
 }
 
 type testTimedIngressAction struct{}
 
-func (a *testTimedIngressAction) Ingress(input *IngressInput, params noParams) *IngressResult {
-	return NewIngressResult()
+func (a *testTimedIngressAction) Ingress(deltafile *TimedIngressDeltafile, params noParams) *TimedIngressDeltafile {
+	return deltafile
 }
 
 func TestRegistration_Builder(t *testing.T) {
@@ -58,8 +58,8 @@ func TestRegistration_Builder(t *testing.T) {
 	if reg.description != "test description" {
 		t.Errorf("description = %q, want %q", reg.description, "test description")
 	}
-	if reg.paramType == nil {
-		t.Error("paramType should not be nil")
+	if reg.paramDefaults == nil {
+		t.Error("paramDefaults should not be nil")
 	}
 }
 
@@ -131,7 +131,7 @@ func (a *testJoinAction) Transform(df *Deltafile, params noParams) *Deltafile {
 func (a *testJoinAction) Join(inputs []*Deltafile, joined *Deltafile, params noParams) *Deltafile {
 	// Merge content from all inputs
 	for _, input := range inputs {
-		joined.AddContentSlice(input.GetContentSlice())
+		joined.AddContentList(input.GetContentList())
 		joined.AddMetadataMap(input.GetMetadataMap())
 	}
 	return joined
@@ -157,7 +157,7 @@ func TestJoinAction_MergesContentAndMetadata(t *testing.T) {
 	result := action.Join([]*Deltafile{input0, input1}, joined, noParams{})
 
 	// Content from all inputs should be in joined output
-	newContent := result.GetNewContentSlice()
+	newContent := result.GetNewContentList()
 	if len(newContent) != 3 {
 		t.Fatalf("expected 3 content items, got %d", len(newContent))
 	}
@@ -194,7 +194,7 @@ func TestJoinAction_SingleInput(t *testing.T) {
 	action := &testJoinAction{}
 	result := action.Join([]*Deltafile{input}, joined, noParams{})
 
-	newContent := result.GetNewContentSlice()
+	newContent := result.GetNewContentList()
 	if len(newContent) != 1 || newContent[0].Name != "only.txt" {
 		t.Errorf("content = %v", newContent)
 	}

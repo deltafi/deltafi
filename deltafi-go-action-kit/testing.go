@@ -39,15 +39,26 @@ import (
 // InMemoryContentStore implements ContentServiceBase with an in-memory map.
 // Safe for concurrent use.
 type InMemoryContentStore struct {
-	mu   sync.RWMutex
-	data map[string][]byte // keyed by segment UUID
+	mu         sync.RWMutex
+	data       map[string][]byte // keyed by segment UUID
+	saveCount  int               // incremented on each Save call
+	failAfterN int               // if >= 0, Save returns an error once saveCount exceeds this value; -1 means disabled
 }
 
 // NewInMemoryContentStore creates an empty in-memory content store.
 func NewInMemoryContentStore() *InMemoryContentStore {
 	return &InMemoryContentStore{
-		data: make(map[string][]byte),
+		data:       make(map[string][]byte),
+		failAfterN: -1,
 	}
+}
+
+// FailAfterNthSave makes Save and SaveFromReader return an error on calls after the first n.
+// Test-only hook for batch error aggregation tests.
+func (m *InMemoryContentStore) FailAfterNthSave(n int) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	m.failAfterN = n
 }
 
 func (m *InMemoryContentStore) Save(ctx context.Context, did string, data []byte) (Segment, error) {
@@ -62,27 +73,25 @@ func (m *InMemoryContentStore) Save(ctx context.Context, did string, data []byte
 	copy(stored, data)
 
 	m.mu.Lock()
+	m.saveCount++
+	if m.failAfterN >= 0 && m.saveCount > m.failAfterN {
+		m.mu.Unlock()
+		return Segment{}, fmt.Errorf("save %d exceeded limit of %d (set by FailAfterNthSave)", m.saveCount, m.failAfterN)
+	}
 	m.data[segUUID] = stored
 	m.mu.Unlock()
 
 	return seg, nil
 }
 
-func (m *InMemoryContentStore) SaveFromReader(ctx context.Context, did string, reader io.Reader, size int64) (Segment, error) {
+func (m *InMemoryContentStore) SaveFromReader(ctx context.Context, did string, reader io.Reader) (Segment, error) {
 	data, err := io.ReadAll(reader)
 	if err != nil {
 		return Segment{}, fmt.Errorf("failed to read: %w", err)
 	}
-	seg, err := m.Save(ctx, did, data)
-	if err != nil {
-		return Segment{}, err
-	}
-	if size >= 0 {
-		seg.Size = size
-	} else {
-		seg.Size = int64(len(data))
-	}
-	return seg, nil
+	// Record the bytes actually read, never the declared size, matching the
+	// production store. Save already sets the segment size to len(data).
+	return m.Save(ctx, did, data)
 }
 
 func (m *InMemoryContentStore) Load(ctx context.Context, segments []Segment) ([]byte, error) {
@@ -94,6 +103,9 @@ func (m *InMemoryContentStore) Load(ctx context.Context, segments []Segment) ([]
 		data, ok := m.data[seg.UUID]
 		if !ok {
 			return nil, fmt.Errorf("segment %s not found", seg.UUID)
+		}
+		if seg.Offset < 0 || seg.Size < 0 || seg.Offset > int64(len(data)) || seg.Size > int64(len(data))-seg.Offset {
+			return nil, fmt.Errorf("segment %s range offset=%d size=%d exceeds stored size %d", seg.UUID, seg.Offset, seg.Size, len(data))
 		}
 		end := min(seg.Offset+seg.Size, int64(len(data)))
 		buf.Write(data[seg.Offset:end])
@@ -241,10 +253,10 @@ func lookupValueIn(value string, set []string) bool {
 
 // MockLookupClient implements LookupClientBase with configurable canned responses.
 type MockLookupClient struct {
-	Results    map[string]*LookupResults
-	Tables     []LookupTable
-	LookupFunc func(ctx context.Context, tableName string, query lookupQueryParams) (*LookupResults, error)
-	Err        error
+	Results     map[string]*LookupResults
+	Tables      []LookupTable
+	LookupFunc  func(ctx context.Context, tableName string, query lookupQueryParams) (*LookupResults, error)
+	Err         error
 	LookupCalls []MockLookupCall
 }
 
@@ -265,7 +277,11 @@ func (m *MockLookupClient) Lookup(ctx context.Context, tableName string, opts ..
 	}
 	for _, t := range m.Tables {
 		if t.Name == tableName {
-			rows := t.applyQuery(query)
+			rawRows := t.applyQuery(query)
+			rows := make([]Row, len(rawRows))
+			for i, r := range rawRows {
+				rows[i] = NewRow(r)
+			}
 			return &LookupResults{
 				TotalCount: len(rows),
 				Created:    t.Created,
@@ -393,14 +409,10 @@ func (tc *TestContext) NewDeltafile(contents ...ActionContent) *Deltafile {
 	return newDeltafile(tc.ActionContext, contents, nil)
 }
 
-// NewIngressInput creates an IngressInput wired to this TestContext.
-func (tc *TestContext) NewIngressInput() *IngressInput {
-	return &IngressInput{
-		Memo:       tc.ActionContext.Memo,
-		FlowName:   tc.ActionContext.FlowName,
-		ActionName: tc.ActionContext.ActionName,
-		actx:       tc.ActionContext,
-	}
+// NewTimedIngressDeltafile creates a TimedIngressDeltafile wired to this
+// TestContext, for use by RunIngress in unit tests.
+func (tc *TestContext) NewTimedIngressDeltafile() *TimedIngressDeltafile {
+	return newTimedIngressDeltafile(tc.ActionContext)
 }
 
 // NewTestContext creates a TestContext wired to an InMemoryContentStore.
@@ -462,38 +474,50 @@ func (tc *TestContext) SetArtifactClient(t *testing.T, client ArtifactClientBase
 // --- Result Inspection ---
 
 // RunTransform executes a transform action and returns the ActionEvent.
-// If the action creates children via df.NewChild, the result is a multi-child
+// If the action creates children via df.AddChild, the result is a multi-child
 // transform event (split). Otherwise it's a single transform event.
 func RunTransform[P any](t *testing.T, action interface {
 	Transform(*Deltafile, P) *Deltafile
 }, df *Deltafile, params P) *ActionEvent {
 	t.Helper()
 	startTime := time.Now()
-	action.Transform(df, params)
+	actx := df.actx
+	df = action.Transform(df, params)
+	if df == nil {
+		return errorEvent(actx, startTime, "action returned nil Deltafile")
+	}
 	if len(df.children) > 0 {
 		return splitToTransformEvent(df.children, df, df.actx, startTime)
 	}
 	return deltafileToTransformEvent(df, df.actx, startTime)
 }
 
-// RunEgress executes an egress action and returns the ActionEvent.
+// RunEgress executes an egress action and returns the ActionEvent. The
+// Deltafile is wrapped in an EgressDeltafile before being passed to the action,
+// so the harness exercises the same protected surface as production.
 func RunEgress[P any](t *testing.T, action interface {
-	Egress(*Deltafile, P) *Deltafile
+	Egress(*EgressDeltafile, P) *EgressDeltafile
 }, df *Deltafile, params P) *ActionEvent {
 	t.Helper()
 	startTime := time.Now()
-	action.Egress(df, params)
+	if action.Egress(newEgressDeltafile(df), params) == nil {
+		return errorEvent(df.actx, startTime, "action returned nil Deltafile")
+	}
 	return deltafileToEgressEvent(df, df.actx, startTime)
 }
 
 // RunIngress executes a timed ingress action and returns the ActionEvent.
 func RunIngress[P any](t *testing.T, action interface {
-	Ingress(*IngressInput, P) *IngressResult
-}, input *IngressInput, params P) *ActionEvent {
+	Ingress(*TimedIngressDeltafile, P) *TimedIngressDeltafile
+}, deltafile *TimedIngressDeltafile, params P) *ActionEvent {
 	t.Helper()
 	startTime := time.Now()
-	ir := action.Ingress(input, params)
-	return ingressResultToEvent(ir, input.actx, startTime)
+	actx := deltafile.actx
+	deltafile = action.Ingress(deltafile, params)
+	if deltafile == nil {
+		return errorEvent(actx, startTime, "action returned nil TimedIngressDeltafile")
+	}
+	return timedIngressToEvent(deltafile, deltafile.actx, startTime)
 }
 
 // RunJoin executes a join action and returns the joined Deltafile.
@@ -501,8 +525,7 @@ func RunJoin[P any](t *testing.T, action interface {
 	Join([]*Deltafile, *Deltafile, P) *Deltafile
 }, inputs []*Deltafile, joined *Deltafile, params P) *Deltafile {
 	t.Helper()
-	action.Join(inputs, joined, params)
-	return joined
+	return action.Join(inputs, joined, params)
 }
 
 // --- Result Assertions ---
@@ -533,6 +556,9 @@ func (e *ActionEvent) RequireError(t *testing.T, cause string) *ErrorEvent {
 	if e.Type != "ERROR" {
 		t.Fatalf("Type = %q, want ERROR", e.Type)
 	}
+	if e.Error == nil {
+		t.Fatal("Error event payload is nil")
+	}
 	if e.Error.Cause != cause {
 		t.Fatalf("Cause = %q, want %q", e.Error.Cause, cause)
 	}
@@ -544,6 +570,9 @@ func (e *ActionEvent) RequireFilter(t *testing.T, message string) *FilterEvent {
 	t.Helper()
 	if e.Type != "FILTER" {
 		t.Fatalf("Type = %q, want FILTER", e.Type)
+	}
+	if e.Filter == nil {
+		t.Fatal("Filter event payload is nil")
 	}
 	if e.Filter.Message != message {
 		t.Fatalf("Message = %q, want %q", e.Filter.Message, message)
@@ -564,6 +593,9 @@ func (e *ActionEvent) RequireIngress(t *testing.T) *IngressEvent {
 	t.Helper()
 	if e.Type != "INGRESS" {
 		t.Fatalf("Type = %q, want INGRESS", e.Type)
+	}
+	if e.Ingress == nil {
+		t.Fatal("Ingress event payload is nil")
 	}
 	return e.Ingress
 }

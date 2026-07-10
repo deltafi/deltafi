@@ -277,15 +277,27 @@ myplugin/
 ├── go.mod
 ├── go.sum
 ├── main.go
+├── plugin.yaml
 ├── Makefile
 ├── Dockerfile
 ├── actions/
-│   └── transform.go
+│   ├── my_transform_action.go
+│   ├── my_transform_action_params.go
+│   ├── my_transform_action_params.json   (optional, see "Schema round-trip")
+│   ├── my_transform_action.yaml
+│   └── my_transform_action_test.go
 ├── flows/
 │   └── my-transform.json
 └── integration/
     └── basic-test.json
 ```
+
+Each action ships in two Go files:
+
+* `<name>_action.go` — the action struct, `init()` registration, and the action method
+* `<name>_action_params.go` — the typed `*Params` struct only
+
+Splitting the params struct into a sibling file keeps the action focused on logic and gives the schema round-trip tooling (described below) a deterministic location to read from and write to.
 
 ### Go Module
 
@@ -311,23 +323,47 @@ import (
     _ "gitlab.com/deltafi/deltafi/my-plugin/actions"
 )
 
-var (
-    version     = "0.0.0-dev"
-    description = "My DeltaFi plugin"
-)
-
 func main() {
-    actionkit.RunPlugin(&actionkit.PluginConfig{
-        Coordinates: &actionkit.PluginCoordinates{
-            GroupID:    "org.myorg",
-            ArtifactID: "my-plugin",
-            Version:    version,
-        },
-        Domain:      "org.myorg.my-plugin",
-        Description: description,
-    })
+    actionkit.RunPlugin()
 }
 ```
+
+Plugin identity lives in `plugin.yaml` at the repo root:
+
+```yaml
+groupId: org.myorg
+artifactId: my-plugin
+domain: org.myorg.my-plugin
+description: My DeltaFi plugin
+```
+
+The Makefile extracts these fields from `plugin.yaml` and passes them to the Docker build, which stamps them into the binary via `-ldflags -X` so production binaries are self-contained. When running locally via `go run .`, the kit falls back to reading `./plugin.yaml` directly. Version is supplied at link time via `-X gitlab.com/deltafi/deltafi/deltafi-go-action-kit/v2.PluginVersion=<version>` and defaults to `0.0.0-dev`.
+
+### Parameters and schema round-trip
+
+The kit reads the following struct tags on parameter fields when it generates the JSON Schema that core uses to render the DeltaFi UI:
+
+| Tag | Effect |
+|---|---|
+| `json:"name"` | parameter name in the UI |
+| `description:"..."` | human-readable description |
+| `default:"..."` | default value (string form; coerced to the field type) |
+| `enum:"a,b,c"` | allowed values (renders as a dropdown) |
+| `required:"true"` | marks the parameter as required |
+| `minimum:"0"` / `maximum:"100"` | numeric bounds |
+
+Supported field types: Go primitives (`bool`, `int`, `string`, `float64`), slices, string-keyed maps, pointers to named structs declared in the same params file, and the kit's `actionkit.DataSize` and `actionkit.EnvVar` helpers.
+
+Two Make targets convert between the Go source and a standalone JSON Schema file:
+
+```sh
+make jsonFromParams   # writes actions/<name>_action_params.json from each _params.go
+make paramsFromJson   # writes actions/<name>_action_params.go   from each _params.json
+```
+
+Both targets invoke `gitlab.com/deltafi/deltafi/deltafi-go-action-kit/v2/cmd/actionkit-schemagen`, a pure file-by-file AST tool — no plugin compilation required. `jsonFromParams` produces schemas that are byte-for-byte identical to what the kit sends to core during plugin registration (the AST tool reuses the kit's `actionkit.GenerateSchema` logic). `paramsFromJson` regenerates the Go source from a schema; the output is canonical (fields alphabetize, comments drop, slice-of-struct fields come back as slice-of-pointer-to-struct) but functionally equivalent.
+
+Either direction is the source of truth; pick the workflow that fits the team. Round-tripping is idempotent from the first JSON onward.
 
 ### Dockerfile
 

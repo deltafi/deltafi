@@ -35,11 +35,8 @@ func TestMissingMetadataError(t *testing.T) {
 		t.Errorf("Error() = %q", err.Error())
 	}
 
-	// Verify it implements error interface
-	var e error = err
-	if e == nil {
-		t.Error("should implement error")
-	}
+	// Compile-time check that the type satisfies the error interface.
+	var _ error = err
 }
 
 func TestExpectedContentError(t *testing.T) {
@@ -52,10 +49,8 @@ func TestExpectedContentError(t *testing.T) {
 		t.Errorf("Error() = %q", err.Error())
 	}
 
-	var e error = err
-	if e == nil {
-		t.Error("should implement error")
-	}
+	// Compile-time check that the type satisfies the error interface.
+	var _ error = err
 }
 
 func TestMissingMetadataError_Is(t *testing.T) {

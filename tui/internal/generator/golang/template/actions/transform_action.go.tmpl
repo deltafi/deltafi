@@ -22,13 +22,6 @@ func init() {
 	// 	WithOptionsYAML({{.ActionFileName}}Options)
 }
 
-// {{.ActionClassName}}Params defines the action's configurable parameters.
-// Add fields with json and description/default tags to expose them in the DeltaFi UI.
-type {{.ActionClassName}}Params struct {
-	// Example parameter:
-	// ConvertToUpper bool `json:"convertToUpper" description:"Convert content to uppercase" default:"false"`
-}
-
 // {{.ActionClassName}} implements the transform action.
 type {{.ActionClassName}} struct{}
 
@@ -47,7 +40,7 @@ func (a *{{.ActionClassName}}) Transform(deltafile *actionkit.Deltafile, params 
 	// TODO: Implement your transformation logic here
 	transformed := data
 
-	_, err = deltafile.SaveStringContent(transformed, content.Name+"-transformed", content.MediaType)
+	_, err = deltafile.SaveStringContent(content.Name+"-transformed", content.MediaType, transformed)
 	if err != nil {
 		return deltafile.Errorf("Failed to save content: %v", err)
 	}

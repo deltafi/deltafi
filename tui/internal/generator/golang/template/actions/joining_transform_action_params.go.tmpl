@@ -1,0 +1,40 @@
+// ABOUTME: Configurable parameters for {{.ActionClassName}}.
+
+package actions
+
+// {{.ActionClassName}}Params defines the action's configurable parameters.
+//
+// Supported struct tags (all optional):
+//
+//	json:"name"        - parameter name displayed in the DeltaFi UI
+//	description:"..."  - human-readable description
+//	default:"..."      - default value (string form; coerced to the field type)
+//	enum:"a,b,c"       - allowed values (renders as a dropdown)
+//	required:"true"    - marks the parameter as required
+//	minimum:"0"        - numeric lower bound
+//	maximum:"100"      - numeric upper bound
+//
+// Supported field types include the Go primitives (bool, int, string, float64),
+// slices, string-keyed maps, pointers to other structs defined in this file,
+// and the kit's actionkit.DataSize and actionkit.EnvVar helpers. Uncomment
+// any of the examples below to expose a parameter; remove the ones you don't
+// need and add the appropriate import for actionkit.DataSize/EnvVar.
+type {{.ActionClassName}}Params struct {
+	// Name      string             `json:"name" description:"A required name" required:"true"`
+	// Count     int                `json:"count" description:"How many items" default:"10" minimum:"0" maximum:"100"`
+	// Mode      string             `json:"mode" description:"Processing mode" enum:"fast,slow,auto" default:"auto"`
+	// Enabled   bool               `json:"enabled" description:"Whether to enable feature X" default:"true"`
+	// Threshold float64            `json:"threshold" description:"Numeric threshold" default:"0.75"`
+	// Tags      []string           `json:"tags" description:"List of tags"`
+	// Labels    map[string]string  `json:"labels" description:"Key/value labels"`
+	// MaxSize   actionkit.DataSize `json:"maxSize" description:"Maximum size" default:"10MB"`
+	// APIKey    actionkit.EnvVar   `json:"apiKey" description:"Env var name holding the API key"`
+	// Nested    *NestedConfig      `json:"nested" description:"Nested configuration"`
+}
+
+// NestedConfig demonstrates a nested parameter type. Uncomment to use.
+//
+//	type NestedConfig struct {
+//	    Foo string `json:"foo" description:"Foo value"`
+//	    Bar int    `json:"bar" description:"Bar value" default:"42"`
+//	}

@@ -51,7 +51,7 @@ func newActionEventQueue(url, password string) (*actionEventQueue, error) {
 	defer cancel()
 
 	if err := client.Ping(ctx).Err(); err != nil {
-		client.Close()
+		_ = client.Close()
 		return nil, fmt.Errorf("failed to connect to redis at %s: %w", url, err)
 	}
 

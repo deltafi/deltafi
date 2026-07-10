@@ -30,7 +30,7 @@ import (
 func TestInFlightTracker_StartAndStop(t *testing.T) {
 	tracker := newInFlightTracker()
 
-	tracker.start("did-1", "Action1", "app-1")
+	tracker.start("did-1", "Action1", "Action1", 0, "app-1")
 
 	snap := tracker.snapshot()
 	if len(snap) != 1 {
@@ -46,7 +46,7 @@ func TestInFlightTracker_StartAndStop(t *testing.T) {
 		t.Errorf("AppName = %q", snap[0].AppName)
 	}
 
-	tracker.stop("did-1", "Action1")
+	tracker.stop("did-1", "Action1", "Action1", 0)
 
 	snap = tracker.snapshot()
 	if len(snap) != 0 {
@@ -57,9 +57,9 @@ func TestInFlightTracker_StartAndStop(t *testing.T) {
 func TestInFlightTracker_MultipleTasks(t *testing.T) {
 	tracker := newInFlightTracker()
 
-	tracker.start("did-1", "Action1", "app")
-	tracker.start("did-2", "Action2", "app")
-	tracker.start("did-3", "Action1", "app")
+	tracker.start("did-1", "Action1", "Action1", 0, "app")
+	tracker.start("did-2", "Action2", "Action2", 0, "app")
+	tracker.start("did-3", "Action1", "Action1", 1, "app")
 
 	snap := tracker.snapshot()
 	if len(snap) != 3 {
@@ -67,7 +67,7 @@ func TestInFlightTracker_MultipleTasks(t *testing.T) {
 	}
 
 	// Stop one
-	tracker.stop("did-2", "Action2")
+	tracker.stop("did-2", "Action2", "Action2", 0)
 
 	snap = tracker.snapshot()
 	if len(snap) != 2 {
@@ -79,7 +79,7 @@ func TestInFlightTracker_StopNonexistent(t *testing.T) {
 	tracker := newInFlightTracker()
 
 	// Should not panic
-	tracker.stop("nonexistent", "Action")
+	tracker.stop("nonexistent", "Action", "Action", 0)
 
 	snap := tracker.snapshot()
 	if len(snap) != 0 {
@@ -89,7 +89,7 @@ func TestInFlightTracker_StopNonexistent(t *testing.T) {
 
 func TestInFlightTracker_SnapshotUpdatesHeartbeatTime(t *testing.T) {
 	tracker := newInFlightTracker()
-	tracker.start("did-1", "Action1", "app")
+	tracker.start("did-1", "Action1", "Action1", 0, "app")
 
 	// Wait a tiny bit so heartbeat time differs
 	time.Sleep(1 * time.Millisecond)
@@ -111,7 +111,7 @@ func TestInFlightTracker_SnapshotUpdatesHeartbeatTime(t *testing.T) {
 
 func TestInFlightTracker_SnapshotIsCopy(t *testing.T) {
 	tracker := newInFlightTracker()
-	tracker.start("did-1", "Action1", "app")
+	tracker.start("did-1", "Action1", "Action1", 0, "app")
 
 	snap := tracker.snapshot()
 
@@ -133,7 +133,7 @@ func TestInFlightTracker_ConcurrentAccess(t *testing.T) {
 		did := "did-" + string(rune('A'+i%26))
 		go func() {
 			defer wg.Done()
-			tracker.start(did, "Act", "app")
+			tracker.start(did, "Act", "Act", i, "app")
 		}()
 		go func() {
 			defer wg.Done()
@@ -141,7 +141,7 @@ func TestInFlightTracker_ConcurrentAccess(t *testing.T) {
 		}()
 		go func() {
 			defer wg.Done()
-			tracker.stop(did, "Act")
+			tracker.stop(did, "Act", "Act", i)
 		}()
 	}
 	wg.Wait()
@@ -149,41 +149,41 @@ func TestInFlightTracker_ConcurrentAccess(t *testing.T) {
 	// Should not panic or deadlock
 }
 
-func TestActionExecutionJSON(t *testing.T) {
+func TestActionExecutionLongRunningTaskRecord(t *testing.T) {
 	exec := actionExecution{
 		DID:           "did-1",
+		Clazz:         "Clazz",
 		ActionName:    "Act",
+		ThreadNum:     3,
 		StartTime:     "2025-01-01T00:00:01Z",
 		HeartbeatTime: "2025-01-01T00:00:11Z",
 		AppName:       "app-1",
 	}
 
-	// Verify all fields are JSON-tagged
-	data, err := json.Marshal(exec)
+	key, data, err := longRunningTaskRecord(&exec)
 	if err != nil {
-		t.Fatalf("marshal: %v", err)
+		t.Fatalf("longRunningTaskRecord: %v", err)
+	}
+	if key != "Clazz:Act#3:did-1" {
+		t.Fatalf("key = %q, want core-compatible key", key)
 	}
 
-	var parsed map[string]string
-	if err := json.Unmarshal(data, &parsed); err != nil {
+	var parsed []string
+	if err := json.Unmarshal([]byte(data), &parsed); err != nil {
 		t.Fatalf("unmarshal: %v", err)
 	}
 
-	expected := map[string]string{
-		"did":           "did-1",
-		"actionName":    "Act",
-		"startTime":     "2025-01-01T00:00:01Z",
-		"heartbeatTime": "2025-01-01T00:00:11Z",
-		"appName":       "app-1",
+	expected := []string{
+		"2025-01-01T00:00:01Z",
+		"2025-01-01T00:00:11Z",
+		"app-1",
 	}
-	for k, want := range expected {
-		if parsed[k] != want {
-			t.Errorf("%s = %q, want %q", k, parsed[k], want)
+	if len(parsed) != len(expected) {
+		t.Fatalf("value length = %d, want %d", len(parsed), len(expected))
+	}
+	for i, want := range expected {
+		if parsed[i] != want {
+			t.Errorf("value[%d] = %q, want %q", i, parsed[i], want)
 		}
-	}
-
-	// Verify actionCreated is NOT present
-	if _, ok := parsed["actionCreated"]; ok {
-		t.Error("actionCreated should not be in JSON output")
 	}
 }

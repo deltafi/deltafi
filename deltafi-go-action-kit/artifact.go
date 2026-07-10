@@ -24,6 +24,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"log"
@@ -50,6 +51,10 @@ const (
 	defaultArtifactCacheTTL        = 10 * time.Second
 	defaultArtifactFailureCacheTTL = 1 * time.Second
 )
+
+// ErrArtifactNotFound identifies artifact registry misses. Callers can use
+// errors.Is to distinguish a genuine 404 from transient registry failures.
+var ErrArtifactNotFound = errors.New("artifact not found")
 
 // VersionChangedEvent describes an artifact version change received via Valkey pub/sub.
 type VersionChangedEvent struct {
@@ -120,6 +125,23 @@ type artifactCacheEntry struct {
 	expiresAt time.Time
 }
 
+// artifactResponseHeaderTimeout bounds the time from sending an artifact
+// request to receiving the response headers. It guards against a hung core
+// without limiting how long a (potentially large) artifact body may take to
+// stream — body transfer is governed by the caller's context instead.
+var artifactResponseHeaderTimeout = 60 * time.Second
+
+// newArtifactHTTPClient builds the HTTP client used for artifact operations.
+// It deliberately sets no whole-response Timeout: artifact downloads and
+// uploads may stream large payloads, and a client Timeout would abort an
+// in-progress body transfer. Hang protection comes from the transport's
+// ResponseHeaderTimeout and the caller's request context.
+func newArtifactHTTPClient() *http.Client {
+	transport := platformTransport.Clone()
+	transport.ResponseHeaderTimeout = artifactResponseHeaderTimeout
+	return &http.Client{Transport: transport}
+}
+
 // newArtifactClient creates a client for artifact registry operations.
 // Owner is the plugin identifier (typically "groupId.artifactId").
 // Cache TTL defaults to 10s, overridable via ARTIFACT_CACHE_TTL env var.
@@ -128,7 +150,7 @@ func newArtifactClient(coreURL string, owner string) *ArtifactClient {
 	c := &ArtifactClient{
 		coreURL:    coreURL,
 		owner:      owner,
-		httpClient: &http.Client{Transport: platformTransport.Clone(), Timeout: 5 * time.Minute},
+		httpClient: newArtifactHTTPClient(),
 		cache:      make(map[string]*artifactCacheEntry),
 	}
 	c.cacheTTL.Store(int64(parseCacheTTL(os.Getenv("ARTIFACT_CACHE_TTL"), defaultArtifactCacheTTL)))
@@ -258,54 +280,26 @@ func (ac *ArtifactClient) StreamSharedArtifact(ctx context.Context, name string,
 }
 
 func (ac *ArtifactClient) publish(ctx context.Context, owner, name string, data io.Reader, contentType string, opts *PublishOptions) (*PublishResponse, error) {
-	var body bytes.Buffer
-	writer := multipart.NewWriter(&body)
-
-	// Add the file part
-	part, err := writer.CreateFormFile("file", name)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create multipart file: %w", err)
-	}
-	if _, err := io.Copy(part, data); err != nil {
-		return nil, fmt.Errorf("failed to write artifact data: %w", err)
-	}
-
-	// Add optional fields
-	if opts != nil {
-		if opts.Version != "" {
-			writer.WriteField("version", opts.Version)
-		}
-		if opts.Description != "" {
-			writer.WriteField("description", opts.Description)
-		}
-		if opts.MakeActive != nil {
-			writer.WriteField("makeActive", fmt.Sprintf("%t", *opts.MakeActive))
-		}
-		if opts.Alias != "" {
-			writer.WriteField("alias", opts.Alias)
-		}
-		for k, v := range opts.Labels {
-			writer.WriteField(k, v)
-		}
-	}
-
-	if err := writer.Close(); err != nil {
-		return nil, fmt.Errorf("failed to close multipart writer: %w", err)
-	}
+	body, formContentType, writeErrs := streamMultipartArtifact(name, data, opts)
 
 	url := fmt.Sprintf("%s%s/%s/%s", ac.coreURL, artifactsPath, owner, name)
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, url, &body)
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, url, body)
 	if err != nil {
+		_ = body.Close()
 		return nil, fmt.Errorf("failed to create request: %w", err)
 	}
-	req.Header.Set("Content-Type", writer.FormDataContentType())
+	req.Header.Set("Content-Type", formContentType)
 	setArtifactAuthHeaders(req)
 
 	resp, err := ac.httpClient.Do(req)
 	if err != nil {
+		_ = body.Close()
+		if writeErr := <-writeErrs; writeErr != nil {
+			return nil, fmt.Errorf("failed to stream artifact data: %w", writeErr)
+		}
 		return nil, fmt.Errorf("publish request failed: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	respBody, err := io.ReadAll(resp.Body)
 	if err != nil {
@@ -324,6 +318,68 @@ func (ac *ArtifactClient) publish(ctx context.Context, owner, name string, data 
 	ac.invalidateCache(owner, name)
 
 	return &result, nil
+}
+
+func streamMultipartArtifact(name string, data io.Reader, opts *PublishOptions) (io.ReadCloser, string, <-chan error) {
+	pr, pw := io.Pipe()
+	writer := multipart.NewWriter(pw)
+	errs := make(chan error, 1)
+	contentType := writer.FormDataContentType()
+
+	go func() {
+		err := writeMultipartArtifact(writer, name, data, opts)
+		if err == nil {
+			err = writer.Close()
+		}
+		if err != nil {
+			_ = pw.CloseWithError(err)
+			errs <- err
+			return
+		}
+		errs <- pw.Close()
+	}()
+
+	return pr, contentType, errs
+}
+
+func writeMultipartArtifact(writer *multipart.Writer, name string, data io.Reader, opts *PublishOptions) error {
+	part, err := writer.CreateFormFile("file", name)
+	if err != nil {
+		return fmt.Errorf("failed to create multipart file: %w", err)
+	}
+	if _, err := io.Copy(part, data); err != nil {
+		return fmt.Errorf("failed to write artifact data: %w", err)
+	}
+
+	if opts == nil {
+		return nil
+	}
+	if opts.Version != "" {
+		if err := writer.WriteField("version", opts.Version); err != nil {
+			return fmt.Errorf("failed to write form field version: %w", err)
+		}
+	}
+	if opts.Description != "" {
+		if err := writer.WriteField("description", opts.Description); err != nil {
+			return fmt.Errorf("failed to write form field description: %w", err)
+		}
+	}
+	if opts.MakeActive != nil {
+		if err := writer.WriteField("makeActive", fmt.Sprintf("%t", *opts.MakeActive)); err != nil {
+			return fmt.Errorf("failed to write form field makeActive: %w", err)
+		}
+	}
+	if opts.Alias != "" {
+		if err := writer.WriteField("alias", opts.Alias); err != nil {
+			return fmt.Errorf("failed to write form field alias: %w", err)
+		}
+	}
+	for k, v := range opts.Labels {
+		if err := writer.WriteField(k, v); err != nil {
+			return fmt.Errorf("failed to write form field %s: %w", k, err)
+		}
+	}
+	return nil
 }
 
 func (ac *ArtifactClient) get(ctx context.Context, owner, name, alias string) (*FetchedArtifact, error) {
@@ -388,7 +444,7 @@ func (ac *ArtifactClient) fetch(ctx context.Context, owner, name, alias string) 
 	if err != nil {
 		return nil, err
 	}
-	defer stream.Reader.Close()
+	defer func() { _ = stream.Reader.Close() }()
 
 	data, err := io.ReadAll(stream.Reader)
 	if err != nil {
@@ -435,12 +491,12 @@ func (ac *ArtifactClient) stream(ctx context.Context, owner, name, alias string)
 	}
 
 	if resp.StatusCode == http.StatusNotFound {
-		resp.Body.Close()
-		return nil, fmt.Errorf("artifact not found: %s/%s (alias %q)", owner, name, alias)
+		_ = resp.Body.Close()
+		return nil, fmt.Errorf("%w: %s/%s (alias %q)", ErrArtifactNotFound, owner, name, alias)
 	}
 	if resp.StatusCode != http.StatusOK {
 		body, _ := io.ReadAll(resp.Body)
-		resp.Body.Close()
+		_ = resp.Body.Close()
 		return nil, fmt.Errorf("download returned HTTP %d: %s", resp.StatusCode, string(body))
 	}
 
@@ -515,7 +571,7 @@ func (ac *ArtifactClient) onUpdateFetch(owner, artifactName, alias string, defau
 	fetchHandler := func(event VersionChangedEvent) {
 		ctx := context.Background()
 		fetched, err := ac.get(ctx, owner, artifactName, fetchAlias)
-		if err != nil && defaultArtifact != nil {
+		if err != nil && defaultArtifact != nil && errors.Is(err, ErrArtifactNotFound) {
 			log.Printf("Artifact %s/%s not found, publishing default", owner, artifactName)
 			makeActive := true
 			_, pubErr := ac.publish(ctx, owner, artifactName,
@@ -654,15 +710,19 @@ func (ac *ArtifactClient) StartArtifactListener(ctx context.Context, wg *sync.Wa
 
 func (ac *ArtifactClient) runArtifactListener(ctx context.Context, queue *actionEventQueue) {
 	pubsub := queue.Subscribe(ctx, versionChangedChannel)
-	defer pubsub.Close()
+	defer func() { _ = pubsub.Close() }()
 
 	ch := pubsub.Channel()
+	log.Printf("Subscribed to artifact version change channel %q", versionChangedChannel)
 	for {
 		select {
 		case <-ctx.Done():
 			return
 		case msg, ok := <-ch:
 			if !ok {
+				if ctx.Err() == nil {
+					log.Printf("Artifact version change channel %q closed; listener will reconnect", versionChangedChannel)
+				}
 				return
 			}
 			ac.handleVersionChanged(msg.Payload)

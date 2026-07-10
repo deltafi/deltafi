@@ -54,18 +54,19 @@ func coerceParams(m map[string]any, structType reflect.Type) map[string]any {
 	out := make(map[string]any, len(m))
 	for k, v := range m {
 		ft := fields[k]
+		fk := typeKind(ft)
 		switch val := v.(type) {
 		case string:
-			out[k] = coerceStringForKind(val, ft)
+			out[k] = coerceStringForKind(val, fk)
 		case float64:
-			if ft == reflect.String {
+			if fk == reflect.String {
 				out[k] = strconv.FormatFloat(val, 'f', -1, 64)
 			} else {
 				out[k] = v
 			}
 		case []any:
-			if ft == reflect.Slice {
-				elemKind := sliceElemKind(structType, k)
+			if fk == reflect.Slice {
+				elemKind := typeKind(sliceElemType(ft))
 				coerced := make([]any, len(val))
 				for i, item := range val {
 					switch elem := item.(type) {
@@ -86,9 +87,10 @@ func coerceParams(m map[string]any, structType reflect.Type) map[string]any {
 				out[k] = v
 			}
 		case map[string]any:
-			if ft == reflect.Struct || ft == reflect.Pointer {
-				nested := structFieldType(structType, k)
-				out[k] = coerceParams(val, nested)
+			if fk == reflect.Struct || fk == reflect.Pointer {
+				out[k] = coerceParams(val, derefType(ft))
+			} else if fk == reflect.Map {
+				out[k] = coerceMapForType(val, ft)
 			} else {
 				out[k] = coerceParams(val, nil)
 			}
@@ -102,19 +104,23 @@ func coerceParams(m map[string]any, structType reflect.Type) map[string]any {
 // jsonFieldMapCache memoizes jsonFieldMap results by struct type so the
 // reflect walk happens once per type instead of once per parameter parse.
 // Populated lazily on first lookup; entries live for the process lifetime.
-var jsonFieldMapCache sync.Map // reflect.Type -> map[string]reflect.Kind
+var jsonFieldMapCache sync.Map // reflect.Type -> map[string]reflect.Type
 
-// jsonFieldMap returns a map from JSON field name to reflect.Kind for a struct type.
+// jsonFieldMap returns a map from JSON field name to reflect.Type for a struct type.
 // Results are cached by reflect.Type for the process lifetime.
-func jsonFieldMap(t reflect.Type) map[string]reflect.Kind {
+func jsonFieldMap(t reflect.Type) map[string]reflect.Type {
 	if t == nil || t.Kind() != reflect.Struct {
 		return nil
 	}
 	if cached, ok := jsonFieldMapCache.Load(t); ok {
-		return cached.(map[string]reflect.Kind)
+		return cached.(map[string]reflect.Type)
 	}
-	m := make(map[string]reflect.Kind, t.NumField())
-	for f := range t.Fields() {
+	fields := reflect.VisibleFields(t)
+	m := make(map[string]reflect.Type, len(fields))
+	for _, f := range fields {
+		if !f.IsExported() || f.Anonymous {
+			continue
+		}
 		name := f.Tag.Get("json")
 		if idx := strings.IndexByte(name, ','); idx >= 0 {
 			name = name[:idx]
@@ -122,63 +128,71 @@ func jsonFieldMap(t reflect.Type) map[string]reflect.Kind {
 		if name == "" || name == "-" {
 			name = f.Name
 		}
-		kind := f.Type.Kind()
-		if kind == reflect.Pointer {
-			kind = f.Type.Elem().Kind()
-		}
-		m[name] = kind
+		m[name] = f.Type
 	}
 	// Use LoadOrStore so concurrent first-callers share the same map.
 	actual, _ := jsonFieldMapCache.LoadOrStore(t, m)
-	return actual.(map[string]reflect.Kind)
+	return actual.(map[string]reflect.Type)
 }
 
-// structFieldType returns the struct type for a named JSON field, dereferencing pointers.
-func structFieldType(parent reflect.Type, jsonName string) reflect.Type {
-	if parent == nil || parent.Kind() != reflect.Struct {
-		return nil
+func derefType(t reflect.Type) reflect.Type {
+	for t != nil && t.Kind() == reflect.Pointer {
+		t = t.Elem()
 	}
-	for f := range parent.Fields() {
-		name := f.Tag.Get("json")
-		if idx := strings.IndexByte(name, ','); idx >= 0 {
-			name = name[:idx]
-		}
-		if name == "" || name == "-" {
-			name = f.Name
-		}
-		if name == jsonName {
-			t := f.Type
-			for t.Kind() == reflect.Pointer {
-				t = t.Elem()
-			}
-			return t
-		}
-	}
-	return nil
+	return t
 }
 
-// sliceElemKind returns the reflect.Kind of the element type for a slice field.
-func sliceElemKind(parent reflect.Type, jsonName string) reflect.Kind {
-	if parent == nil || parent.Kind() != reflect.Struct {
+func typeKind(t reflect.Type) reflect.Kind {
+	t = derefType(t)
+	if t == nil {
 		return reflect.Invalid
 	}
-	for f := range parent.Fields() {
-		name := f.Tag.Get("json")
-		if idx := strings.IndexByte(name, ','); idx >= 0 {
-			name = name[:idx]
-		}
-		if name == "" || name == "-" {
-			name = f.Name
-		}
-		if name == jsonName && f.Type.Kind() == reflect.Slice {
-			kind := f.Type.Elem().Kind()
-			if kind == reflect.Pointer {
-				kind = f.Type.Elem().Elem().Kind()
+	return t.Kind()
+}
+
+func sliceElemType(t reflect.Type) reflect.Type {
+	t = derefType(t)
+	if t == nil || t.Kind() != reflect.Slice {
+		return nil
+	}
+	return t.Elem()
+}
+
+func mapElemType(t reflect.Type) reflect.Type {
+	t = derefType(t)
+	if t == nil || t.Kind() != reflect.Map {
+		return nil
+	}
+	return t.Elem()
+}
+
+func coerceMapForType(m map[string]any, mapType reflect.Type) map[string]any {
+	elemType := mapElemType(mapType)
+	elemKind := typeKind(elemType)
+	out := make(map[string]any, len(m))
+	for k, v := range m {
+		switch val := v.(type) {
+		case string:
+			out[k] = coerceStringForKind(val, elemKind)
+		case float64:
+			if elemKind == reflect.String {
+				out[k] = strconv.FormatFloat(val, 'f', -1, 64)
+			} else {
+				out[k] = v
 			}
-			return kind
+		case map[string]any:
+			if elemKind == reflect.Struct || elemKind == reflect.Pointer {
+				out[k] = coerceParams(val, derefType(elemType))
+			} else if elemKind == reflect.Map {
+				out[k] = coerceMapForType(val, elemType)
+			} else {
+				out[k] = coerceParams(val, nil)
+			}
+		default:
+			out[k] = v
 		}
 	}
-	return reflect.Invalid
+	return out
 }
 
 // coerceStringForKind converts a string value to the appropriate Go type
@@ -207,25 +221,7 @@ func coerceStringForKind(s string, targetKind reflect.Kind) any {
 	case reflect.String:
 		return s
 	case reflect.Invalid:
-		// Target type unknown — apply best-effort coercion
-		return coerceStringBestEffort(s)
-	}
-	return s
-}
-
-// coerceStringBestEffort converts a string value when the target type is unknown.
-func coerceStringBestEffort(s string) any {
-	if s == "true" {
-		return true
-	}
-	if s == "false" {
-		return false
-	}
-	if i, err := strconv.ParseInt(s, 10, 64); err == nil {
-		return i
-	}
-	if f, err := strconv.ParseFloat(s, 64); err == nil {
-		return f
+		return s
 	}
 	return s
 }

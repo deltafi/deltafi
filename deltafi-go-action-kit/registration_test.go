@@ -26,8 +26,16 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
+	"time"
 )
+
+type roundTripFunc func(*http.Request) (*http.Response, error)
+
+func (f roundTripFunc) RoundTrip(req *http.Request) (*http.Response, error) {
+	return f(req)
+}
 
 type regTestTransformAction struct{}
 
@@ -37,7 +45,7 @@ func (a *regTestTransformAction) Transform(df *Deltafile, params noParams) *Delt
 
 type regTestEgressAction struct{}
 
-func (a *regTestEgressAction) Egress(df *Deltafile, params noParams) *Deltafile {
+func (a *regTestEgressAction) Egress(df *EgressDeltafile, params noParams) *EgressDeltafile {
 	return df
 }
 
@@ -59,7 +67,7 @@ func TestBuildRegistration(t *testing.T) {
 	egressReg := RegisterEgress("Egress1", &regTestEgressAction{})
 
 	p := &plugin{
-		config: PluginConfig{
+		config: pluginConfig{
 			Image:       "my-image:latest",
 			DisplayName: "Test Plugin",
 			Description: "A test",
@@ -227,7 +235,7 @@ func (a *regTestJoinTransformAction) Transform(df *Deltafile, params noParams) *
 
 func (a *regTestJoinTransformAction) Join(inputs []*Deltafile, joined *Deltafile, params noParams) *Deltafile {
 	for _, input := range inputs {
-		joined.AddContentSlice(input.GetContentSlice())
+		joined.AddContentList(input.GetContentList())
 		joined.AddMetadataMap(input.GetMetadataMap())
 	}
 	return joined
@@ -295,7 +303,9 @@ func TestBuildRegistration_WithActionOptions(t *testing.T) {
 		t.Fatalf("marshal: %v", err)
 	}
 	var parsed map[string]any
-	json.Unmarshal(data, &parsed)
+	if err := json.Unmarshal(data, &parsed); err != nil {
+		t.Fatalf("unmarshal: %v", err)
+	}
 	actions := parsed["actions"].([]any)
 	act0 := actions[0].(map[string]any)
 	if act0["actionOptions"] == nil {
@@ -342,7 +352,7 @@ func TestPostRegistration_Success(t *testing.T) {
 		receivedContentType = r.Header.Get("Content-Type")
 		receivedBody, _ = io.ReadAll(r.Body)
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte(`{"status":"ok"}`))
+		_, _ = w.Write([]byte(`{"status":"ok"}`))
 	}))
 	defer server.Close()
 
@@ -380,7 +390,7 @@ func TestPostRegistration_ServerError_Retries(t *testing.T) {
 		attempts++
 		if attempts < 3 {
 			w.WriteHeader(http.StatusInternalServerError)
-			w.Write([]byte(`{"error":"not ready"}`))
+			_, _ = w.Write([]byte(`{"error":"not ready"}`))
 			return
 		}
 		w.WriteHeader(http.StatusOK)
@@ -403,10 +413,69 @@ func TestPostRegistration_ServerError_Retries(t *testing.T) {
 	}
 }
 
-func TestPostRegistration_AllRetriesFail(t *testing.T) {
+func TestPostRegistration_AttemptTimeoutRetries(t *testing.T) {
+	oldTimeout := registrationAttemptTimeout
+	oldInitial := registrationInitialBackoff
+	oldElapsed := registrationMaxElapsed
+	oldClient := platformClient
+	registrationAttemptTimeout = 50 * time.Millisecond
+	registrationInitialBackoff = 10 * time.Millisecond
+	registrationMaxElapsed = 5 * time.Second
+	t.Cleanup(func() {
+		registrationAttemptTimeout = oldTimeout
+		registrationInitialBackoff = oldInitial
+		registrationMaxElapsed = oldElapsed
+		platformClient = oldClient
+	})
+
+	attempts := 0
+	platformClient = &http.Client{Transport: roundTripFunc(func(req *http.Request) (*http.Response, error) {
+		attempts++
+		if attempts == 1 {
+			<-req.Context().Done()
+			return nil, req.Context().Err()
+		}
+		return &http.Response{
+			StatusCode: http.StatusOK,
+			Body:       io.NopCloser(strings.NewReader("")),
+			Header:     make(http.Header),
+			Request:    req,
+		}, nil
+	})}
+
+	reg := pluginRegistration{
+		Actions:      []actionDescriptor{},
+		Dependencies: []PluginCoordinates{},
+		FlowPlans:    []json.RawMessage{},
+	}
+
+	err := postRegistration(context.Background(), "http://core.example", reg)
+	if err != nil {
+		t.Fatalf("postRegistration should retry after timeout: %v", err)
+	}
+	if attempts != 2 {
+		t.Fatalf("attempts = %d, want 2", attempts)
+	}
+}
+
+func TestPostRegistration_RetryBudgetExhausted(t *testing.T) {
+	oldInitial := registrationInitialBackoff
+	oldMax := registrationMaxBackoff
+	oldElapsed := registrationMaxElapsed
+	registrationInitialBackoff = 5 * time.Millisecond
+	registrationMaxBackoff = 5 * time.Millisecond
+	registrationMaxElapsed = 25 * time.Millisecond
+	t.Cleanup(func() {
+		registrationInitialBackoff = oldInitial
+		registrationMaxBackoff = oldMax
+		registrationMaxElapsed = oldElapsed
+	})
+
+	attempts := 0
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		attempts++
 		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte(`{"error":"permanently broken"}`))
+		_, _ = w.Write([]byte(`{"error":"not ready"}`))
 	}))
 	defer server.Close()
 
@@ -418,7 +487,35 @@ func TestPostRegistration_AllRetriesFail(t *testing.T) {
 
 	err := postRegistration(context.Background(), server.URL, reg)
 	if err == nil {
-		t.Fatal("expected error when all retries fail")
+		t.Fatal("expected error when the retry budget is exhausted")
+	}
+	if attempts < 2 {
+		t.Errorf("expected the 5xx to be retried at least once, attempts = %d", attempts)
+	}
+}
+
+// 4xx is a permanent client error (bad payload); it must not be retried.
+func TestPostRegistration_ClientErrorNotRetried(t *testing.T) {
+	attempts := 0
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		attempts++
+		w.WriteHeader(http.StatusBadRequest)
+		_, _ = w.Write([]byte(`{"error":"bad registration"}`))
+	}))
+	defer server.Close()
+
+	reg := pluginRegistration{
+		Actions:      []actionDescriptor{},
+		Dependencies: []PluginCoordinates{},
+		FlowPlans:    []json.RawMessage{},
+	}
+
+	err := postRegistration(context.Background(), server.URL, reg)
+	if err == nil {
+		t.Fatal("expected error on 4xx")
+	}
+	if attempts != 1 {
+		t.Fatalf("4xx must not be retried, attempts = %d", attempts)
 	}
 }
 
@@ -456,7 +553,9 @@ func TestBuildRegistration_WithLookupTables(t *testing.T) {
 		t.Fatalf("Marshal failed: %v", err)
 	}
 	var parsed map[string]any
-	json.Unmarshal(data, &parsed)
+	if err := json.Unmarshal(data, &parsed); err != nil {
+		t.Fatalf("unmarshal: %v", err)
+	}
 	tables := parsed["lookupTables"].([]any)
 	if len(tables) != 1 {
 		t.Fatalf("JSON lookupTables count = %d, want 1", len(tables))
