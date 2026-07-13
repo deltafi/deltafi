@@ -544,4 +544,26 @@ watch(testData, () => {
   padding: 0.25rem 0.5rem;
   border-radius: 3px;
 }
+
+html.dark-mode .test-result.success {
+  background: rgba(34, 197, 94, 0.12);
+  border-color: rgba(34, 197, 94, 0.4);
+}
+
+html.dark-mode .test-result.error {
+  background: rgba(239, 68, 68, 0.12);
+  border-color: rgba(239, 68, 68, 0.4);
+}
+
+html.dark-mode .test-result.success .result-header {
+  color: var(--green-400);
+}
+
+html.dark-mode .test-result.error .result-header {
+  color: var(--red-400);
+}
+
+html.dark-mode .result-value code {
+  color: var(--text-color);
+}
 </style>
