@@ -22,8 +22,8 @@ package tools
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
+	"strings"
 
 	"github.com/mark3labs/mcp-go/mcp"
 
@@ -31,20 +31,28 @@ import (
 	"github.com/deltafi/tui/internal/mcp/registry"
 )
 
+// Seams over the generated GraphQL functions so handlers can be tested without
+// a live server.
+var (
+	lookupQuery           = graphql.Lookup
+	createLookupTableCall = graphql.CreateLookupTable
+	upsertLookupRows      = graphql.UpsertLookupTableRows
+)
+
 func init() {
 	reg := registry.Get()
 
 	reg.Register(registry.Tool{
-		Definition: mcp.NewTool("list_lookup_tables",
-			mcp.WithDescription("List all lookup tables with their metadata (columns, key columns, row count, service-backed status)"),
+		Definition: registry.ReadOnlyTool("list_lookup_tables",
+			"List all lookup tables with their metadata (columns, key columns, row count, service-backed status)",
 		),
 		Handler: listLookupTables,
 		Tags:    []string{"admin"},
 	})
 
 	reg.Register(registry.Tool{
-		Definition: mcp.NewTool("get_lookup_table",
-			mcp.WithDescription("Get details for a specific lookup table including columns, key columns, and metadata"),
+		Definition: registry.ReadOnlyTool("get_lookup_table",
+			"Get details for a specific lookup table including columns, key columns, and metadata",
 			mcp.WithString("name", mcp.Required(), mcp.Description("Lookup table name")),
 		),
 		Handler: getLookupTable,
@@ -52,34 +60,34 @@ func init() {
 	})
 
 	reg.Register(registry.Tool{
-		Definition: mcp.NewTool("query_lookup_table",
-			mcp.WithDescription("Query rows from a lookup table with optional filters, column selection, sorting, and pagination"),
+		Definition: registry.ReadOnlyTool("query_lookup_table",
+			"Query rows from a lookup table with optional filters, column selection, sorting, and pagination",
 			mcp.WithString("name", mcp.Required(), mcp.Description("Lookup table name")),
-			mcp.WithObject("matching_columns", mcp.Description("Filter rows where column matches any of the given values. JSON object: {\"column_name\": [\"value1\", \"value2\"]}")),
-			mcp.WithArray("result_columns", mcp.Description("Columns to return (default: all columns). Array of column name strings.")),
+			mcp.WithObject("matching_columns", mcp.AdditionalProperties(map[string]any{"type": "array", "items": map[string]any{"type": "string"}}), mcp.Description("Filter rows where a column matches any supplied value")),
+			mcp.WithArray("result_columns", mcp.WithStringItems(), mcp.Description("Columns to return (default: all columns)")),
 			mcp.WithString("sort_column", mcp.Description("Column to sort by")),
 			mcp.WithString("sort_direction", mcp.Description("Sort direction: ASC or DESC (default: ASC)")),
-			mcp.WithNumber("offset", mcp.Description("Number of rows to skip (default: 0)")),
-			mcp.WithNumber("limit", mcp.Description("Maximum rows to return (default: 100)")),
+			mcp.WithInteger("offset", mcp.Min(0), mcp.Description("Number of rows to skip (default: 0)")),
+			mcp.WithInteger("limit", mcp.Min(0), mcp.Description("Maximum rows to return (default: 100)")),
 		),
 		Handler: queryLookupTable,
 		Tags:    []string{"admin"},
 	})
 
 	reg.Register(registry.Tool{
-		Definition: mcp.NewTool("create_lookup_table",
-			mcp.WithDescription("Create a new lookup table"),
+		Definition: registry.SafeWriteTool("create_lookup_table",
+			"Create a new lookup table",
 			mcp.WithString("name", mcp.Required(), mcp.Description("Table name")),
-			mcp.WithArray("columns", mcp.Required(), mcp.Description("Column names (array of strings)")),
-			mcp.WithArray("key_columns", mcp.Required(), mcp.Description("Key column names for upsert matching (array of strings)")),
+			mcp.WithArray("columns", mcp.Required(), mcp.WithStringItems(mcp.MinLength(1)), mcp.MinItems(1), mcp.Description("Column names")),
+			mcp.WithArray("key_columns", mcp.Required(), mcp.WithStringItems(mcp.MinLength(1)), mcp.MinItems(1), mcp.Description("Key column names for upsert matching")),
 		),
 		Handler: createLookupTable,
 		Tags:    []string{"admin"},
 	})
 
 	reg.Register(registry.Tool{
-		Definition: mcp.NewTool("delete_lookup_table",
-			mcp.WithDescription("Delete a lookup table and all its data"),
+		Definition: registry.DestructiveTool("delete_lookup_table",
+			"Delete a lookup table and all its data",
 			mcp.WithString("name", mcp.Required(), mcp.Description("Table name to delete")),
 		),
 		Handler: deleteLookupTable,
@@ -87,10 +95,15 @@ func init() {
 	})
 
 	reg.Register(registry.Tool{
-		Definition: mcp.NewTool("upsert_lookup_table_rows",
-			mcp.WithDescription("Insert or update rows in a lookup table. Rows are matched by key columns for upsert."),
+		Definition: registry.DestructiveTool("upsert_lookup_table_rows",
+			"Insert or update rows in a lookup table. Rows are matched by key columns for upsert.",
 			mcp.WithString("name", mcp.Required(), mcp.Description("Table name")),
-			mcp.WithArray("rows", mcp.Required(), mcp.Description("Array of rows. Each row is an array of {\"column\": \"col_name\", \"value\": \"val\"} objects.")),
+			mcp.WithArray("rows", mcp.Required(), mcp.MinItems(1), mcp.Items(map[string]any{
+				"type": "array", "minItems": 1, "items": closedObjectSchema(map[string]any{
+					"column": map[string]any{"type": "string", "minLength": 1},
+					"value":  map[string]any{"type": "string"},
+				}, "column", "value"),
+			}), mcp.Description("Rows represented as column/value pairs")),
 		),
 		Handler: upsertLookupTableRows,
 		Tags:    []string{"admin"},
@@ -107,9 +120,9 @@ func listLookupTables(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallTo
 }
 
 func getLookupTable(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-	name, err := req.RequireString("name")
-	if err != nil {
-		return registry.ErrorResult("name parameter is required"), nil
+	name, errResult := requireNonEmptyString(req, "name")
+	if errResult != nil {
+		return errResult, nil
 	}
 
 	resp, err := graphql.GetLookupTable(name)
@@ -121,25 +134,33 @@ func getLookupTable(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallTool
 }
 
 func queryLookupTable(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-	name, err := req.RequireString("name")
-	if err != nil {
-		return registry.ErrorResult("name parameter is required"), nil
+	name, errResult := requireNonEmptyString(req, "name")
+	if errResult != nil {
+		return errResult, nil
 	}
 
 	args := req.GetArguments()
 
 	// Parse matching columns filter
 	var matchingCols []graphql.MatchingColumnValueInput
-	if mc, ok := args["matching_columns"].(map[string]any); ok {
+	if mcRaw, present := args["matching_columns"]; present {
+		mc, ok := mcRaw.(map[string]any)
+		if !ok {
+			return registry.ErrorResult("matching_columns must be a JSON object"), nil
+		}
 		for col, vals := range mc {
 			var values []string
 			switch v := vals.(type) {
 			case []any:
-				for _, item := range v {
-					values = append(values, fmt.Sprintf("%v", item))
+				vs, err := toStringSlice(v)
+				if err != nil {
+					return registry.ErrorResult(fmt.Sprintf("matching_columns[%q]: %v", col, err)), nil
 				}
+				values = vs
 			case string:
 				values = []string{v}
+			default:
+				return registry.ErrorResult(fmt.Sprintf("matching_columns[%q] must be a string or array of strings", col)), nil
 			}
 			matchingCols = append(matchingCols, graphql.MatchingColumnValueInput{
 				Column: col,
@@ -149,13 +170,9 @@ func queryLookupTable(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallTo
 	}
 
 	// Parse result columns
-	var resultColumns []string
-	if rc, ok := args["result_columns"].([]any); ok {
-		for _, c := range rc {
-			if s, ok := c.(string); ok {
-				resultColumns = append(resultColumns, s)
-			}
-		}
+	resultColumns, errResult := stringArrayArg(args, "result_columns")
+	if errResult != nil {
+		return errResult, nil
 	}
 
 	// Sort
@@ -165,24 +182,27 @@ func queryLookupTable(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallTo
 		sortColumn = &sc
 	}
 	if sd, err := req.RequireString("sort_direction"); err == nil && sd != "" {
-		dir := graphql.SortDirection(sd)
+		dir := graphql.SortDirection(strings.ToUpper(sd))
+		if dir != graphql.SortDirectionAsc && dir != graphql.SortDirectionDesc {
+			return registry.ErrorResult("sort_direction must be ASC or DESC"), nil
+		}
 		sortDirection = &dir
 	}
 
 	// Pagination
-	var offset, limit *int
-	if o, err := req.RequireFloat("offset"); err == nil {
-		oi := int(o)
-		offset = &oi
+	offset, err := optionalNonNegativeInt(req, "offset")
+	if err != nil {
+		return registry.ErrorResult(err.Error()), nil
 	}
 	defaultLimit := 100
-	limit = &defaultLimit
-	if l, err := req.RequireFloat("limit"); err == nil {
-		li := int(l)
-		limit = &li
+	limit := &defaultLimit
+	if l, err := optionalNonNegativeInt(req, "limit"); err != nil {
+		return registry.ErrorResult(err.Error()), nil
+	} else if l != nil {
+		limit = l
 	}
 
-	resp, err := graphql.Lookup(name, matchingCols, resultColumns, sortColumn, sortDirection, offset, limit)
+	resp, err := lookupQuery(name, matchingCols, resultColumns, sortColumn, sortDirection, offset, limit)
 	if err != nil {
 		return registry.ErrorResultFromErr(err), nil
 	}
@@ -191,32 +211,24 @@ func queryLookupTable(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallTo
 }
 
 func createLookupTable(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-	name, err := req.RequireString("name")
-	if err != nil {
-		return registry.ErrorResult("name parameter is required"), nil
+	name, errResult := requireNonEmptyString(req, "name")
+	if errResult != nil {
+		return errResult, nil
 	}
 
 	args := req.GetArguments()
 
-	var columns []string
-	if cols, ok := args["columns"].([]any); ok {
-		for _, c := range cols {
-			if s, ok := c.(string); ok {
-				columns = append(columns, s)
-			}
-		}
+	columns, errResult := stringArrayArg(args, "columns")
+	if errResult != nil {
+		return errResult, nil
 	}
 	if len(columns) == 0 {
 		return registry.ErrorResult("columns parameter is required and must not be empty"), nil
 	}
 
-	var keyColumns []string
-	if kc, ok := args["key_columns"].([]any); ok {
-		for _, c := range kc {
-			if s, ok := c.(string); ok {
-				keyColumns = append(keyColumns, s)
-			}
-		}
+	keyColumns, errResult := stringArrayArg(args, "key_columns")
+	if errResult != nil {
+		return errResult, nil
 	}
 	if len(keyColumns) == 0 {
 		return registry.ErrorResult("key_columns parameter is required and must not be empty"), nil
@@ -228,7 +240,7 @@ func createLookupTable(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallT
 		KeyColumns: keyColumns,
 	}
 
-	resp, err := graphql.CreateLookupTable(input)
+	resp, err := createLookupTableCall(input)
 	if err != nil {
 		return registry.ErrorResultFromErr(err), nil
 	}
@@ -237,9 +249,9 @@ func createLookupTable(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallT
 }
 
 func deleteLookupTable(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-	name, err := req.RequireString("name")
-	if err != nil {
-		return registry.ErrorResult("name parameter is required"), nil
+	name, errResult := requireNonEmptyString(req, "name")
+	if errResult != nil {
+		return errResult, nil
 	}
 
 	resp, err := graphql.DeleteLookupTable(name)
@@ -251,9 +263,9 @@ func deleteLookupTable(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallT
 }
 
 func upsertLookupTableRows(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-	name, err := req.RequireString("name")
-	if err != nil {
-		return registry.ErrorResult("name parameter is required"), nil
+	name, errResult := requireNonEmptyString(req, "name")
+	if errResult != nil {
+		return errResult, nil
 	}
 
 	args := req.GetArguments()
@@ -271,20 +283,29 @@ func upsertLookupTableRows(ctx context.Context, req mcp.CallToolRequest) (*mcp.C
 
 		var row []graphql.ColumnValueInput
 		for _, cellRaw := range rowArray {
-			cellBytes, err := json.Marshal(cellRaw)
-			if err != nil {
-				return registry.ErrorResult("invalid cell format"), nil
+			cellMap, ok := cellRaw.(map[string]any)
+			if !ok {
+				return registry.ErrorResult("each cell must be a {\"column\": \"name\", \"value\": \"val\"} object"), nil
+			}
+			if _, ok := cellMap["column"]; !ok {
+				return registry.ErrorResult("each cell must include a column"), nil
+			}
+			if _, ok := cellMap["value"]; !ok {
+				return registry.ErrorResult("each cell must include a value"), nil
 			}
 			var cell graphql.ColumnValueInput
-			if err := json.Unmarshal(cellBytes, &cell); err != nil {
+			if err := decodeJSON(cellRaw, &cell); err != nil {
 				return registry.ErrorResult("each cell must be {\"column\": \"name\", \"value\": \"val\"}"), nil
+			}
+			if cell.Column == "" {
+				return registry.ErrorResult("each cell must include a non-empty column"), nil
 			}
 			row = append(row, cell)
 		}
 		rows = append(rows, row)
 	}
 
-	resp, err := graphql.UpsertLookupTableRows(name, rows)
+	resp, err := upsertLookupRows(name, rows)
 	if err != nil {
 		return registry.ErrorResultFromErr(err), nil
 	}

@@ -2306,7 +2306,7 @@ deltafi mcp --tags debug,flows
 ```
 
 **Flags:**
-- `--tags`: Tool tags to enable (debug, operations, flows, ingest, plugins, admin, metrics, generate, all). Default: all
+- `--tags`: Tool tags to enable (debug, operations, flows, ingest, ingress, plugins, admin, metrics, testing, auto_resume, delete_policies, events, annotations, generate, all). Default: all
 
 ## Common Flags
 

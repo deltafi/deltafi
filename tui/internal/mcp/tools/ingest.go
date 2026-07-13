@@ -35,8 +35,8 @@ func init() {
 
 	// list_data_sources - List all data sources
 	reg.Register(registry.Tool{
-		Definition: mcp.NewTool("list_data_sources",
-			mcp.WithDescription("List all data sources (REST, timed, and on-error) with their status"),
+		Definition: registry.ReadOnlyTool("list_data_sources",
+			"List all data sources (REST, timed, and on-error) with their status",
 		),
 		Handler: listDataSources,
 		Tags:    []string{"ingest"},
@@ -44,8 +44,8 @@ func init() {
 
 	// get_data_source - Get data source details
 	reg.Register(registry.Tool{
-		Definition: mcp.NewTool("get_data_source",
-			mcp.WithDescription("Get detailed information about a specific data source"),
+		Definition: registry.ReadOnlyTool("get_data_source",
+			"Get detailed information about a specific data source",
 			mcp.WithString("name", mcp.Required(), mcp.Description("Data source name")),
 			mcp.WithString("type", mcp.Required(), mcp.Description("Data source type: rest, timed, on-error")),
 		),
@@ -55,8 +55,8 @@ func init() {
 
 	// get_timed_source_status - Get timed source schedule and status
 	reg.Register(registry.Tool{
-		Definition: mcp.NewTool("get_timed_source_status",
-			mcp.WithDescription("Get schedule, last/next run, and ingress status for a timed data source"),
+		Definition: registry.ReadOnlyTool("get_timed_source_status",
+			"Get schedule, last/next run, and ingress status for a timed data source",
 			mcp.WithString("name", mcp.Required(), mcp.Description("Timed data source name")),
 		),
 		Handler: getTimedSourceStatus,
@@ -65,8 +65,8 @@ func init() {
 
 	// delete_data_source - Delete a data source
 	reg.Register(registry.Tool{
-		Definition: mcp.NewTool("delete_data_source",
-			mcp.WithDescription("Delete a data source by name and type"),
+		Definition: registry.DestructiveTool("delete_data_source",
+			"Delete a data source by name and type",
 			mcp.WithString("name", mcp.Required(), mcp.Description("Data source name")),
 			mcp.WithString("type", mcp.Required(), mcp.Description("Data source type: rest, timed, on-error")),
 		),
@@ -76,8 +76,8 @@ func init() {
 
 	// set_timed_source_schedule - Update cron schedule for a timed data source
 	reg.Register(registry.Tool{
-		Definition: mcp.NewTool("set_timed_source_schedule",
-			mcp.WithDescription("Update the cron schedule for a timed data source"),
+		Definition: registry.DestructiveTool("set_timed_source_schedule",
+			"Update the cron schedule for a timed data source",
 			mcp.WithString("name", mcp.Required(), mcp.Description("Timed data source name")),
 			mcp.WithString("cron_schedule", mcp.Required(), mcp.Description("Cron expression (e.g., '0 */5 * * * *' for every 5 minutes)")),
 		),
@@ -140,14 +140,14 @@ func listDataSources(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToo
 }
 
 func getDataSource(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-	name, err := req.RequireString("name")
-	if err != nil {
-		return registry.ErrorResult("name parameter is required"), nil
+	name, errResult := requireNonEmptyString(req, "name")
+	if errResult != nil {
+		return errResult, nil
 	}
 
-	dsType, err := req.RequireString("type")
-	if err != nil {
-		return registry.ErrorResult("type parameter is required"), nil
+	dsType, errResult := requireNonEmptyString(req, "type")
+	if errResult != nil {
+		return errResult, nil
 	}
 
 	switch dsType {
@@ -178,9 +178,9 @@ func getDataSource(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolR
 }
 
 func getTimedSourceStatus(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-	name, err := req.RequireString("name")
-	if err != nil {
-		return registry.ErrorResult("name parameter is required"), nil
+	name, errResult := requireNonEmptyString(req, "name")
+	if errResult != nil {
+		return errResult, nil
 	}
 
 	resp, err := graphql.GetTimedDataSource(name)
@@ -230,14 +230,14 @@ func getTimedSourceStatus(ctx context.Context, req mcp.CallToolRequest) (*mcp.Ca
 }
 
 func deleteDataSource(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-	name, err := req.RequireString("name")
-	if err != nil {
-		return registry.ErrorResult("name parameter is required"), nil
+	name, errResult := requireNonEmptyString(req, "name")
+	if errResult != nil {
+		return errResult, nil
 	}
 
-	dsType, err := req.RequireString("type")
-	if err != nil {
-		return registry.ErrorResult("type parameter is required"), nil
+	dsType, errResult := requireNonEmptyString(req, "type")
+	if errResult != nil {
+		return errResult, nil
 	}
 
 	switch dsType {
@@ -277,14 +277,14 @@ func deleteDataSource(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallTo
 }
 
 func setTimedSourceSchedule(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-	name, err := req.RequireString("name")
-	if err != nil {
-		return registry.ErrorResult("name parameter is required"), nil
+	name, errResult := requireNonEmptyString(req, "name")
+	if errResult != nil {
+		return errResult, nil
 	}
 
-	cronSchedule, err := req.RequireString("cron_schedule")
-	if err != nil {
-		return registry.ErrorResult("cron_schedule parameter is required"), nil
+	cronSchedule, errResult := requireNonEmptyString(req, "cron_schedule")
+	if errResult != nil {
+		return errResult, nil
 	}
 
 	// Fetch the existing plan

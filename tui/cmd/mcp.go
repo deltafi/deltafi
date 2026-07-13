@@ -40,15 +40,21 @@ The MCP server communicates over stdio and allows AI agents to:
 - Configure system settings
 
 Tools are organized into tag groups that can be selectively enabled:
-- debug:      DeltaFile queries, tracing, content inspection
-- operations: Resume, acknowledge, cancel, replay
-- flows:      Flow CRUD, state control, topics
-- generate:   Generate plugins and actions
-- ingest:     Data source management
-- plugins:    Plugin lifecycle
-- admin:      Config, snapshots, policies
-- metrics:    Stats, queue depths, system health
-- all:        Enable all tools (default)
+- debug:           DeltaFile queries, tracing, content inspection
+- operations:      Resume, acknowledge, cancel, replay
+- flows:           Flow CRUD, state control, topics, bulk plan import
+- ingest:          Data source management
+- ingress:         Upload files or inline content into a data source
+- plugins:         Plugin lifecycle
+- admin:           Config, snapshots, properties, status report
+- metrics:         Stats, queue depths, system health
+- testing:         Integration test management and results
+- auto_resume:     Resume policy CRUD, toggle, apply, dry-run
+- delete_policies: Timed delete policy management
+- events:          Event log read/write (list, create, acknowledge, delete)
+- annotations:     Add annotations to a DeltaFile
+- generate:        Plugin scaffolding (create, add action/supplier, update)
+- all:             Enable all tools (default)
 
 Examples:
   deltafi mcp                           # Start with all tools
@@ -77,5 +83,5 @@ For Claude Desktop, add to your MCP config:
 func init() {
 	rootCmd.AddCommand(mcpCmd)
 	mcpCmd.Flags().StringSlice("tags", []string{"all"},
-		"Tool tags to enable (debug,operations,flows,ingest,plugins,admin,metrics,all)")
+		"Tool tags to enable (debug,operations,flows,ingest,ingress,plugins,admin,metrics,testing,auto_resume,delete_policies,events,annotations,generate,all)")
 }

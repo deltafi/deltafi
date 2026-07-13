@@ -35,14 +35,14 @@ func init() {
 
 	// list_errors - List errored DeltaFiles
 	reg.Register(registry.Tool{
-		Definition: mcp.NewTool("list_errors",
-			mcp.WithDescription("List DeltaFiles in ERROR state. Use get_deltafile for full details on specific errors."),
+		Definition: registry.ReadOnlyTool("list_errors",
+			"List DeltaFiles in ERROR state. Use get_deltafile for full details on specific errors.",
 			mcp.WithString("acknowledged", mcp.Description("Filter: 'yes' for acknowledged, 'no' for unacknowledged, omit for all")),
 			mcp.WithString("transform", mcp.Description("Filter by transform flow name")),
 			mcp.WithString("data_sink", mcp.Description("Filter by data sink flow name")),
 			mcp.WithString("data_source", mcp.Description("Filter by data source name")),
 			mcp.WithString("error_cause", mcp.Description("Filter by error message pattern")),
-			mcp.WithNumber("limit", mcp.Description("Maximum results (default 50, max 500)")),
+			mcp.WithInteger("limit", mcp.Min(0), mcp.Max(500), mcp.Description("Maximum results (default 50, max 500)")),
 		),
 		Handler: listErrors,
 		Tags:    []string{"operations"},
@@ -50,10 +50,10 @@ func init() {
 
 	// search_errored_deltafiles - Search for errored DeltaFiles
 	reg.Register(registry.Tool{
-		Definition: mcp.NewTool("search_errored_deltafiles",
-			mcp.WithDescription("Search for errored DeltaFiles with various filters"),
+		Definition: registry.ReadOnlyTool("search_errored_deltafiles",
+			"Search for errored DeltaFiles with various filters",
 			mcp.WithString("modified_after", mcp.Description("Filter by modified time (ISO8601 or relative like '1h', '24h', '7d')")),
-			mcp.WithNumber("limit", mcp.Description("Maximum results (default 50, max 500)")),
+			mcp.WithInteger("limit", mcp.Min(0), mcp.Max(500), mcp.Description("Maximum results (default 50, max 500)")),
 		),
 		Handler: searchErroredDeltaFiles,
 		Tags:    []string{"operations"},
@@ -100,8 +100,10 @@ func listErrors(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResu
 
 	// Limit
 	limit := 50
-	if l, err := req.RequireFloat("limit"); err == nil {
-		limit = min(int(l), 500)
+	if l, err := optionalNonNegativeInt(req, "limit"); err != nil {
+		return registry.ErrorResult(err.Error()), nil
+	} else if l != nil {
+		limit = min(*l, 500)
 	}
 	offset := 0
 
@@ -172,8 +174,10 @@ func searchErroredDeltaFiles(ctx context.Context, req mcp.CallToolRequest) (*mcp
 
 	// Limit
 	limit := 50
-	if l, err := req.RequireFloat("limit"); err == nil {
-		limit = min(int(l), 500)
+	if l, err := optionalNonNegativeInt(req, "limit"); err != nil {
+		return registry.ErrorResult(err.Error()), nil
+	} else if l != nil {
+		limit = min(*l, 500)
 	}
 	offset := 0
 

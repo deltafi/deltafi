@@ -31,8 +31,9 @@ import (
 	_ "github.com/deltafi/tui/internal/mcp/tools"
 )
 
-// Serve starts the MCP server with the specified tool tags
-func Serve(tags []string) error {
+// newServer builds the MCP server for the given tool tags, registering every
+// matching tool. It is shared by Serve and by tests that dispatch in-process.
+func newServer(tags []string) (*server.MCPServer, error) {
 	// Get version from app
 	version := app.GetVersion()
 
@@ -42,6 +43,10 @@ func Serve(tags []string) error {
 		version,
 		server.WithToolCapabilities(false),
 		server.WithRecovery(),
+		// Reject arguments that don't match each tool's declared input schema,
+		// and reject unknown top-level arguments, before the handler runs.
+		server.WithInputSchemaValidation(),
+		server.WithStrictInputSchemaDefault(),
 	)
 
 	// Get tools matching the requested tags
@@ -49,12 +54,22 @@ func Serve(tags []string) error {
 	tools := reg.GetByTags(tags)
 
 	if len(tools) == 0 {
-		return fmt.Errorf("no tools found for tags: %v (available tags: %v)", tags, reg.GetAllTags())
+		return nil, fmt.Errorf("no tools found for tags: %v (available tags: %v)", tags, reg.GetAllTags())
 	}
 
 	// Register each tool with the server
 	for _, tool := range tools {
 		s.AddTool(tool.Definition, tool.Handler)
+	}
+
+	return s, nil
+}
+
+// Serve starts the MCP server with the specified tool tags
+func Serve(tags []string) error {
+	s, err := newServer(tags)
+	if err != nil {
+		return err
 	}
 
 	// Start the stdio server (blocks until connection closes)

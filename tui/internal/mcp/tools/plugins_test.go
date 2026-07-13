@@ -30,6 +30,7 @@ import (
 	"github.com/mark3labs/mcp-go/mcp"
 
 	"github.com/deltafi/tui/graphql"
+	"github.com/deltafi/tui/internal/types"
 )
 
 func resultText(t *testing.T, result *mcp.CallToolResult) string {
@@ -75,6 +76,37 @@ func TestPollPluginInstall_ImmediateSuccess(t *testing.T) {
 	text := resultText(t, result)
 	if !strings.Contains(text, "installed successfully") {
 		t.Errorf("expected success message, got: %s", text)
+	}
+}
+
+func TestPollPluginInstall_UntaggedImageMatchesInstalledTag(t *testing.T) {
+	fetch := func() (*graphql.GetPluginsResponse, error) {
+		return makePluginResponse("my-plugin", "latest", graphql.PluginStateInstalled, nil), nil
+	}
+
+	result, err := pollPluginInstall(context.Background(), "my-plugin", 5*time.Second, time.Millisecond, fetch)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if result.IsError {
+		t.Fatalf("expected untagged image to match installed plugin: %s", resultText(t, result))
+	}
+}
+
+func TestParsePluginImageRef(t *testing.T) {
+	tests := []struct {
+		image, name, tag string
+	}{
+		{"plugin", "plugin", ""},
+		{"plugin:latest", "plugin", "latest"},
+		{"registry.example:5000/plugin", "registry.example:5000/plugin", ""},
+		{"registry.example:5000/plugin:1.2", "registry.example:5000/plugin", "1.2"},
+	}
+	for _, tc := range tests {
+		name, tag := types.ParseImageReference(tc.image)
+		if name != tc.name || tag != tc.tag {
+			t.Errorf("ParseImageReference(%q) = (%q, %q), want (%q, %q)", tc.image, name, tag, tc.name, tc.tag)
+		}
 	}
 }
 

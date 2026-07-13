@@ -36,30 +36,30 @@ func init() {
 	reg := registry.Get()
 
 	reg.Register(registry.Tool{
-		Definition: mcp.NewTool("list_available_metrics",
-			mcp.WithDescription("List all predefined metric keys that can be used with query_metrics"),
+		Definition: registry.ReadOnlyTool("list_available_metrics",
+			"List all predefined metric keys that can be used with query_metrics",
 		),
 		Handler: listAvailableMetrics,
 		Tags:    []string{"metrics"},
 	})
 
 	reg.Register(registry.Tool{
-		Definition: mcp.NewTool("query_metrics",
-			mcp.WithDescription("Query time-series metrics data. Use list_available_metrics to see available predefined metric keys."),
+		Definition: registry.ReadOnlyTool("query_metrics",
+			"Query time-series metrics data. Use list_available_metrics to see available predefined metric keys.",
 			mcp.WithString("metric_key", mcp.Required(), mcp.Description("Predefined metric key (e.g., 'bytes', 'files', 'node-cpu', 'queue-depth'). Use list_available_metrics to see all options.")),
 			mcp.WithString("from", mcp.Description("How far back to query (e.g., '1h', '6h', '24h', '7d'). Default: '1h'")),
-			mcp.WithNumber("max_data_points", mcp.Description("Maximum data points to return (default: 100)")),
+			mcp.WithInteger("max_data_points", mcp.Min(0), mcp.Description("Maximum data points to return (default: 100)")),
 		),
 		Handler: queryMetrics,
 		Tags:    []string{"metrics"},
 	})
 
 	reg.Register(registry.Tool{
-		Definition: mcp.NewTool("query_custom_metrics",
-			mcp.WithDescription("Execute a custom MetricsQL/PromQL query against VictoriaMetrics"),
+		Definition: registry.ReadOnlyTool("query_custom_metrics",
+			"Execute a custom MetricsQL/PromQL query against VictoriaMetrics",
 			mcp.WithString("query", mcp.Required(), mcp.Description("MetricsQL query expression")),
 			mcp.WithString("from", mcp.Description("How far back to query (e.g., '1h', '6h', '24h', '7d'). Default: '1h'")),
-			mcp.WithNumber("max_data_points", mcp.Description("Maximum data points to return (default: 100)")),
+			mcp.WithInteger("max_data_points", mcp.Min(0), mcp.Description("Maximum data points to return (default: 100)")),
 		),
 		Handler: queryCustomMetrics,
 		Tags:    []string{"metrics"},
@@ -86,9 +86,9 @@ func listAvailableMetrics(ctx context.Context, req mcp.CallToolRequest) (*mcp.Ca
 }
 
 func queryMetrics(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-	metricKey, err := req.RequireString("metric_key")
-	if err != nil {
-		return registry.ErrorResult("metric_key parameter is required"), nil
+	metricKey, errResult := requireNonEmptyString(req, "metric_key")
+	if errResult != nil {
+		return errResult, nil
 	}
 
 	metric, ok := api.GetMetricByKey(metricKey)
@@ -98,8 +98,10 @@ func queryMetrics(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolRe
 
 	from := parseDurationOrDefault(req, "from", time.Hour)
 	maxDataPoints := 100
-	if mdp, err := req.RequireFloat("max_data_points"); err == nil {
-		maxDataPoints = int(mdp)
+	if mdp, err := optionalNonNegativeInt(req, "max_data_points"); err != nil {
+		return registry.ErrorResult(err.Error()), nil
+	} else if mdp != nil {
+		maxDataPoints = *mdp
 	}
 
 	client, err := app.GetInstance().GetAPIClient()
@@ -117,15 +119,17 @@ func queryMetrics(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolRe
 }
 
 func queryCustomMetrics(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-	query, err := req.RequireString("query")
-	if err != nil {
-		return registry.ErrorResult("query parameter is required"), nil
+	query, errResult := requireNonEmptyString(req, "query")
+	if errResult != nil {
+		return errResult, nil
 	}
 
 	from := parseDurationOrDefault(req, "from", time.Hour)
 	maxDataPoints := 100
-	if mdp, err := req.RequireFloat("max_data_points"); err == nil {
-		maxDataPoints = int(mdp)
+	if mdp, err := optionalNonNegativeInt(req, "max_data_points"); err != nil {
+		return registry.ErrorResult(err.Error()), nil
+	} else if mdp != nil {
+		maxDataPoints = *mdp
 	}
 
 	client, err := app.GetInstance().GetAPIClient()

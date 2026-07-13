@@ -17,6 +17,11 @@
  */
 package generator
 
+import (
+	"io"
+	"os"
+)
+
 // Generator defines the interface for plugin generators
 type Generator interface {
 	// GeneratePlugin generates a new plugin project
@@ -36,6 +41,8 @@ type Generator interface {
 
 // UpdateOptions contains options for plugin updates
 type UpdateOptions struct {
+	// Output receives progress and interactive prompt text. Defaults to os.Stdout.
+	Output io.Writer
 	// Interactive mode for handling conflicts
 	Interactive bool
 	// Force overwrite all files without prompting
@@ -55,6 +62,8 @@ type UpdateOptions struct {
 
 // GenerateActionOptions contains options for action generation.
 type GenerateActionOptions struct {
+	// Output receives progress text. Defaults to os.Stdout.
+	Output io.Writer
 	// PluginDir, if set, points at the plugin directory directly and bypasses
 	// resolution via repoPath/pluginName.
 	PluginDir string
@@ -62,6 +71,8 @@ type GenerateActionOptions struct {
 
 // GenerateSupplierOptions contains options for supplier generation.
 type GenerateSupplierOptions struct {
+	// Output receives progress text. Defaults to os.Stdout.
+	Output io.Writer
 	// PluginDir, if set, points at the plugin directory directly and bypasses
 	// resolution via repoPath/pluginName.
 	PluginDir string
@@ -118,4 +129,15 @@ type PluginOptions struct {
 	GroupID     string
 	Description string
 	ModulePath  string // Go module path (used only by Go generator)
+	// Output receives progress text. Defaults to os.Stdout.
+	Output io.Writer
+}
+
+// OutputWriter returns the configured output writer, defaulting to stdout for
+// existing CLI callers.
+func OutputWriter(configured io.Writer) io.Writer {
+	if configured != nil {
+		return configured
+	}
+	return os.Stdout
 }

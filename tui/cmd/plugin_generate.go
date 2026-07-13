@@ -21,15 +21,16 @@
 package cmd
 
 import (
+	"errors"
 	"fmt"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"sort"
 	"strings"
 
 	"github.com/deltafi/tui/internal/app"
 	"github.com/deltafi/tui/internal/generator"
+	"github.com/deltafi/tui/internal/generator/gitsetup"
 	goGen "github.com/deltafi/tui/internal/generator/golang"
 	"github.com/deltafi/tui/internal/generator/java"
 	"github.com/deltafi/tui/internal/generator/python"
@@ -445,41 +446,35 @@ func runPluginGeneratePython(cmd *cobra.Command, args []string) error {
 // pluginDir is not already inside a git working tree. Failures are reported as
 // warnings and never block plugin generation/update.
 func initGitRepoIfNeeded(pluginDir string) {
-	gitPath, err := exec.LookPath("git")
-	if err != nil {
-		return
-	}
-
-	check := exec.Command(gitPath, "rev-parse", "--is-inside-work-tree")
-	check.Dir = pluginDir
-	if err := check.Run(); err == nil {
-		return
-	}
-
-	init := exec.Command(gitPath, "init", "--quiet")
-	init.Dir = pluginDir
-	if out, err := init.CombinedOutput(); err != nil {
-		fmt.Printf("warning: git init failed in %s: %v\n%s", pluginDir, err, string(out))
-		return
-	}
-	fmt.Printf("Initialized git repository in %s\n", pluginDir)
+	initialized, err := gitsetup.EnsureRepo(pluginDir)
+	reportGitSetup(pluginDir, initialized, err)
 }
 
-// initAndStageGitRepo initializes a git repo in pluginDir if needed and then
-// stages every file under pluginDir. Used by `plugin generate` so the new
+// initAndStageGitRepo initializes pluginDir as its own git repository if needed
+// and stages every file under it. Used by `plugin generate` so the new
 // scaffolding shows up as a single staged changeset.
 func initAndStageGitRepo(pluginDir string) {
-	gitPath, err := exec.LookPath("git")
+	initialized, err := gitsetup.EnsureRepoRoot(pluginDir)
+	reportGitSetup(pluginDir, initialized, err)
 	if err != nil {
 		return
 	}
+	if err := gitsetup.Stage(pluginDir); err != nil {
+		fmt.Printf("warning: %v\n", err)
+	}
+}
 
-	initGitRepoIfNeeded(pluginDir)
-
-	add := exec.Command(gitPath, "add", ".")
-	add.Dir = pluginDir
-	if out, err := add.CombinedOutput(); err != nil {
-		fmt.Printf("warning: git add failed in %s: %v\n%s", pluginDir, err, string(out))
+// reportGitSetup prints progress and warnings for Git setup. A missing git
+// executable is silently ignored because Git setup is optional.
+func reportGitSetup(pluginDir string, initialized bool, err error) {
+	if err != nil {
+		if !errors.Is(err, gitsetup.ErrGitNotFound) {
+			fmt.Printf("warning: %v\n", err)
+		}
+		return
+	}
+	if initialized {
+		fmt.Printf("Initialized git repository in %s\n", pluginDir)
 	}
 }
 

@@ -34,8 +34,8 @@ func init() {
 	reg := registry.Get()
 
 	reg.Register(registry.Tool{
-		Definition: mcp.NewTool("resume_errored_deltafiles",
-			mcp.WithDescription("Resume errored DeltaFiles matching a filter. Retries the failed action."),
+		Definition: registry.DestructiveTool("resume_errored_deltafiles",
+			"Resume errored DeltaFiles matching a filter. Retries the failed action.",
 			mcp.WithString("data_source", mcp.Description("Filter by data source name")),
 			mcp.WithString("transform", mcp.Description("Filter by transform flow name")),
 			mcp.WithString("data_sink", mcp.Description("Filter by data sink flow name")),
@@ -47,8 +47,8 @@ func init() {
 	})
 
 	reg.Register(registry.Tool{
-		Definition: mcp.NewTool("acknowledge_errored_deltafiles",
-			mcp.WithDescription("Acknowledge errored DeltaFiles matching a filter. Acknowledged errors are hidden from default error views."),
+		Definition: registry.DestructiveTool("acknowledge_errored_deltafiles",
+			"Acknowledge errored DeltaFiles matching a filter. Acknowledged errors are hidden from default error views.",
 			mcp.WithString("reason", mcp.Required(), mcp.Description("Reason for acknowledging the errors")),
 			mcp.WithString("data_source", mcp.Description("Filter by data source name")),
 			mcp.WithString("transform", mcp.Description("Filter by transform flow name")),
@@ -61,8 +61,8 @@ func init() {
 	})
 
 	reg.Register(registry.Tool{
-		Definition: mcp.NewTool("replay_errored_deltafiles",
-			mcp.WithDescription("Replay errored DeltaFiles matching a filter. Creates new DeltaFiles that re-ingest the original data."),
+		Definition: registry.DestructiveTool("replay_errored_deltafiles",
+			"Replay errored DeltaFiles matching a filter. Creates new DeltaFiles that re-ingest the original data.",
 			mcp.WithString("data_source", mcp.Description("Filter by data source name")),
 			mcp.WithString("transform", mcp.Description("Filter by transform flow name")),
 			mcp.WithString("data_sink", mcp.Description("Filter by data sink flow name")),
@@ -74,8 +74,8 @@ func init() {
 	})
 
 	reg.Register(registry.Tool{
-		Definition: mcp.NewTool("replay_and_acknowledge_errored_deltafiles",
-			mcp.WithDescription("Replay errored DeltaFiles and acknowledge the originals in one operation."),
+		Definition: registry.DestructiveTool("replay_and_acknowledge_errored_deltafiles",
+			"Replay errored DeltaFiles and acknowledge the originals in one operation.",
 			mcp.WithString("reason", mcp.Required(), mcp.Description("Reason for acknowledging the original errors")),
 			mcp.WithString("data_source", mcp.Description("Filter by data source name")),
 			mcp.WithString("transform", mcp.Description("Filter by transform flow name")),
@@ -153,9 +153,9 @@ func resumeErroredDeltaFiles(ctx context.Context, req mcp.CallToolRequest) (*mcp
 }
 
 func acknowledgeErroredDeltaFiles(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-	reason, err := req.RequireString("reason")
-	if err != nil {
-		return registry.ErrorResult("reason parameter is required"), nil
+	reason, errResult := requireNonEmptyString(req, "reason")
+	if errResult != nil {
+		return errResult, nil
 	}
 
 	filter, err := buildErrorFilter(req)
@@ -214,9 +214,9 @@ func replayErroredDeltaFiles(ctx context.Context, req mcp.CallToolRequest) (*mcp
 }
 
 func replayAndAcknowledgeErroredDeltaFiles(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-	reason, err := req.RequireString("reason")
-	if err != nil {
-		return registry.ErrorResult("reason parameter is required"), nil
+	reason, errResult := requireNonEmptyString(req, "reason")
+	if errResult != nil {
+		return errResult, nil
 	}
 
 	filter, err := buildErrorFilter(req)

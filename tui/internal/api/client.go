@@ -200,7 +200,7 @@ func (c *Client) DoWithBody(method string, path string, requestBody any, result 
 	defer func(Body io.ReadCloser) {
 		err := Body.Close()
 		if err != nil {
-			fmt.Printf("failed to close responsebody %s", err)
+			fmt.Fprintf(os.Stderr, "failed to close response body: %s\n", err)
 		}
 	}(resp.Body)
 

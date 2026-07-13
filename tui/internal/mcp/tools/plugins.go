@@ -30,6 +30,7 @@ import (
 
 	"github.com/deltafi/tui/graphql"
 	"github.com/deltafi/tui/internal/mcp/registry"
+	"github.com/deltafi/tui/internal/types"
 )
 
 func init() {
@@ -37,8 +38,8 @@ func init() {
 
 	// list_plugins - List installed plugins
 	reg.Register(registry.Tool{
-		Definition: mcp.NewTool("list_plugins",
-			mcp.WithDescription("List all installed plugins with their status, version, and image"),
+		Definition: registry.ReadOnlyTool("list_plugins",
+			"List all installed plugins with their status, version, and image",
 		),
 		Handler: listPlugins,
 		Tags:    []string{"plugins"},
@@ -46,8 +47,8 @@ func init() {
 
 	// get_plugin_details - Get plugin actions and variables
 	reg.Register(registry.Tool{
-		Definition: mcp.NewTool("get_plugin_details",
-			mcp.WithDescription("Get detailed information about a plugin including its actions and variables"),
+		Definition: registry.ReadOnlyTool("get_plugin_details",
+			"Get detailed information about a plugin including its actions and variables",
 			mcp.WithString("name", mcp.Required(), mcp.Description("Plugin display name")),
 		),
 		Handler: getPluginDetails,
@@ -56,8 +57,8 @@ func init() {
 
 	// install_plugin - Install plugin from image
 	reg.Register(registry.Tool{
-		Definition: mcp.NewTool("install_plugin",
-			mcp.WithDescription("Install or upgrade a plugin from a container image. Optionally wait for installation to complete."),
+		Definition: registry.DestructiveTool("install_plugin",
+			"Install or upgrade a plugin from a container image. Optionally wait for installation to complete.",
 			mcp.WithString("image", mcp.Required(), mcp.Description("Container image (e.g., my-plugin:latest)")),
 			mcp.WithString("secret", mcp.Description("Image pull secret for private registries (optional)")),
 			mcp.WithBoolean("wait", mcp.Description("Wait for installation to complete (default: false). Times out after 5 minutes.")),
@@ -68,8 +69,8 @@ func init() {
 
 	// uninstall_plugin - Remove a plugin
 	reg.Register(registry.Tool{
-		Definition: mcp.NewTool("uninstall_plugin",
-			mcp.WithDescription("Uninstall a plugin from the system"),
+		Definition: registry.DestructiveTool("uninstall_plugin",
+			"Uninstall a plugin from the system",
 			mcp.WithString("name", mcp.Required(), mcp.Description("Plugin display name")),
 		),
 		Handler: uninstallPlugin,
@@ -78,8 +79,8 @@ func init() {
 
 	// enable_plugin - Enable a disabled plugin
 	reg.Register(registry.Tool{
-		Definition: mcp.NewTool("enable_plugin",
-			mcp.WithDescription("Enable a previously disabled plugin"),
+		Definition: registry.DestructiveTool("enable_plugin",
+			"Enable a previously disabled plugin",
 			mcp.WithString("name", mcp.Required(), mcp.Description("Plugin display name")),
 		),
 		Handler: enablePlugin,
@@ -88,8 +89,8 @@ func init() {
 
 	// disable_plugin - Disable a plugin
 	reg.Register(registry.Tool{
-		Definition: mcp.NewTool("disable_plugin",
-			mcp.WithDescription("Disable a plugin without removing it"),
+		Definition: registry.DestructiveTool("disable_plugin",
+			"Disable a plugin without removing it",
 			mcp.WithString("name", mcp.Required(), mcp.Description("Plugin display name")),
 		),
 		Handler: disablePlugin,
@@ -98,8 +99,8 @@ func init() {
 
 	// retry_plugin_install - Retry failed installation
 	reg.Register(registry.Tool{
-		Definition: mcp.NewTool("retry_plugin_install",
-			mcp.WithDescription("Retry a failed plugin installation"),
+		Definition: registry.DestructiveTool("retry_plugin_install",
+			"Retry a failed plugin installation",
 			mcp.WithString("name", mcp.Required(), mcp.Description("Plugin display name")),
 		),
 		Handler: retryPluginInstall,
@@ -108,8 +109,8 @@ func init() {
 
 	// rollback_plugin - Rollback to previous version
 	reg.Register(registry.Tool{
-		Definition: mcp.NewTool("rollback_plugin",
-			mcp.WithDescription("Rollback a failed plugin upgrade to the previous working version"),
+		Definition: registry.DestructiveTool("rollback_plugin",
+			"Rollback a failed plugin upgrade to the previous working version",
 			mcp.WithString("name", mcp.Required(), mcp.Description("Plugin display name")),
 		),
 		Handler: rollbackPlugin,
@@ -159,9 +160,9 @@ func listPlugins(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolRes
 }
 
 func getPluginDetails(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-	name, err := req.RequireString("name")
-	if err != nil {
-		return registry.ErrorResult("name parameter is required"), nil
+	name, errResult := requireNonEmptyString(req, "name")
+	if errResult != nil {
+		return errResult, nil
 	}
 
 	resp, err := graphql.GetPluginDetails()
@@ -179,9 +180,9 @@ func getPluginDetails(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallTo
 }
 
 func installPlugin(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-	image, err := req.RequireString("image")
-	if err != nil {
-		return registry.ErrorResult("image parameter is required"), nil
+	image, errResult := requireNonEmptyString(req, "image")
+	if errResult != nil {
+		return errResult, nil
 	}
 
 	secret := ""
@@ -214,9 +215,9 @@ func installPlugin(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolR
 }
 
 func uninstallPlugin(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-	name, err := req.RequireString("name")
-	if err != nil {
-		return registry.ErrorResult("name parameter is required"), nil
+	name, errResult := requireNonEmptyString(req, "name")
+	if errResult != nil {
+		return errResult, nil
 	}
 
 	plugin, err := findPluginByName(name)
@@ -247,9 +248,9 @@ func uninstallPlugin(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToo
 }
 
 func enablePlugin(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-	name, err := req.RequireString("name")
-	if err != nil {
-		return registry.ErrorResult("name parameter is required"), nil
+	name, errResult := requireNonEmptyString(req, "name")
+	if errResult != nil {
+		return errResult, nil
 	}
 
 	plugin, err := findPluginByName(name)
@@ -270,9 +271,9 @@ func enablePlugin(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolRe
 }
 
 func disablePlugin(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-	name, err := req.RequireString("name")
-	if err != nil {
-		return registry.ErrorResult("name parameter is required"), nil
+	name, errResult := requireNonEmptyString(req, "name")
+	if errResult != nil {
+		return errResult, nil
 	}
 
 	plugin, err := findPluginByName(name)
@@ -293,9 +294,9 @@ func disablePlugin(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolR
 }
 
 func retryPluginInstall(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-	name, err := req.RequireString("name")
-	if err != nil {
-		return registry.ErrorResult("name parameter is required"), nil
+	name, errResult := requireNonEmptyString(req, "name")
+	if errResult != nil {
+		return errResult, nil
 	}
 
 	plugin, err := findPluginByName(name)
@@ -316,9 +317,9 @@ func retryPluginInstall(ctx context.Context, req mcp.CallToolRequest) (*mcp.Call
 }
 
 func rollbackPlugin(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-	name, err := req.RequireString("name")
-	if err != nil {
-		return registry.ErrorResult("name parameter is required"), nil
+	name, errResult := requireNonEmptyString(req, "name")
+	if errResult != nil {
+		return errResult, nil
 	}
 
 	plugin, err := findPluginByName(name)
@@ -346,6 +347,7 @@ func waitForPluginInstall(ctx context.Context, image string) (*mcp.CallToolResul
 }
 
 func pollPluginInstall(ctx context.Context, image string, timeout, poll time.Duration, fetch pluginFetcher) (*mcp.CallToolResult, error) {
+	imageName, imageTag := types.ParseImageReference(image)
 	deadline := time.Now().Add(timeout)
 	consecutiveErrors := 0
 	const maxConsecutiveErrors = 3
@@ -368,14 +370,10 @@ func pollPluginInstall(ctx context.Context, image string, timeout, poll time.Dur
 		consecutiveErrors = 0
 
 		for _, p := range resp.Plugins {
-			pluginImage := ""
-			if p.ImageName != nil {
-				pluginImage = *p.ImageName
-				if p.ImageTag != nil {
-					pluginImage += ":" + *p.ImageTag
-				}
+			if p.ImageName == nil || *p.ImageName != imageName {
+				continue
 			}
-			if pluginImage != image {
+			if imageTag != "" && (p.ImageTag == nil || *p.ImageTag != imageTag) {
 				continue
 			}
 

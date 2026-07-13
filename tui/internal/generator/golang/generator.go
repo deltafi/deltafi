@@ -23,6 +23,7 @@ package golang
 import (
 	"bufio"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -168,6 +169,11 @@ func (g *GoGenerator) GeneratePlugin(pluginName string, options *generator.Plugi
 
 // GenerateAction generates a new action in an existing Go plugin
 func (g *GoGenerator) GenerateAction(pluginName string, actionName string, actionType string, options *generator.GenerateActionOptions) error {
+	var configuredOutput io.Writer
+	if options != nil {
+		configuredOutput = options.Output
+	}
+	output := generator.OutputWriter(configuredOutput)
 	if err := ValidateActionName(actionName); err != nil {
 		return err
 	}
@@ -253,7 +259,7 @@ func (g *GoGenerator) GenerateAction(pluginName string, actionName string, actio
 		if err := os.WriteFile(actionPath, actionContent, 0644); err != nil {
 			return fmt.Errorf("failed to write action file: %w", err)
 		}
-		fmt.Printf("Wrote %s\n", actionPath)
+		fmt.Fprintf(output, "Wrote %s\n", actionPath)
 
 		// Generate the matching params file beside the action.
 		if paramsTemplate := getActionParamsTemplate(actionType); paramsTemplate != "" && !fileExists(paramsPath) {
@@ -278,10 +284,10 @@ func (g *GoGenerator) GenerateAction(pluginName string, actionName string, actio
 			if err := os.WriteFile(optionsPath, optionsContent, 0644); err != nil {
 				return fmt.Errorf("failed to write options file: %w", err)
 			}
-			fmt.Printf("Wrote %s\n", optionsPath)
+			fmt.Fprintf(output, "Wrote %s\n", optionsPath)
 		}
 	} else {
-		fmt.Printf("Action %s already exists; generating test only.\n", actionPath)
+		fmt.Fprintf(output, "Action %s already exists; generating test only.\n", actionPath)
 	}
 
 	if !testExists {
@@ -292,7 +298,7 @@ func (g *GoGenerator) GenerateAction(pluginName string, actionName string, actio
 		if err := os.WriteFile(testPath, testContent, 0644); err != nil {
 			return fmt.Errorf("failed to write test file: %w", err)
 		}
-		fmt.Printf("Wrote %s\n", testPath)
+		fmt.Fprintf(output, "Wrote %s\n", testPath)
 	}
 
 	// Generate flow JSON file
@@ -410,6 +416,11 @@ func fileExists(path string) bool {
 
 // UpdatePlugin updates an existing Go plugin with the latest templates
 func (g *GoGenerator) UpdatePlugin(pluginName string, options *generator.UpdateOptions) error {
+	var configuredOutput io.Writer
+	if options != nil {
+		configuredOutput = options.Output
+	}
+	output := generator.OutputWriter(configuredOutput)
 	var pluginDir string
 	if options != nil && options.PluginDir != "" {
 		pluginDir = options.PluginDir
@@ -537,41 +548,41 @@ func (g *GoGenerator) UpdatePlugin(pluginName string, options *generator.UpdateO
 	}
 
 	if options != nil && options.DryRun {
-		fmt.Println("Dry run - files that would be updated:")
+		fmt.Fprintln(output, "Dry run - files that would be updated:")
 		for _, path := range filesToUpdate {
-			fmt.Printf("  - %s\n", path)
+			fmt.Fprintf(output, "  - %s\n", path)
 		}
 		return nil
 	}
 
 	if len(filesToUpdate) == 0 {
-		fmt.Println("Plugin is up to date - no changes needed")
+		fmt.Fprintln(output, "Plugin is up to date - no changes needed")
 		return nil
 	}
 
 	if options != nil && options.Interactive {
-		return g.handleInteractiveUpdate(pluginDir, diffs, filesToUpdate)
+		return g.handleInteractiveUpdate(pluginDir, diffs, filesToUpdate, output)
 	}
 
 	if options != nil && options.Force {
-		return g.applyUpdates(pluginDir, diffs)
+		return g.applyUpdates(pluginDir, diffs, output)
 	}
 
-	return g.handleDefaultUpdate(pluginDir, diffs, filesToUpdate)
+	return g.handleDefaultUpdate(pluginDir, diffs, filesToUpdate, output)
 }
 
 // handleInteractiveUpdate handles interactive file updates with merge prompts
-func (g *GoGenerator) handleInteractiveUpdate(pluginDir string, diffs []*generator.FileDiff, filesToUpdate []string) error {
-	fmt.Println("The following files have changes:")
+func (g *GoGenerator) handleInteractiveUpdate(pluginDir string, diffs []*generator.FileDiff, filesToUpdate []string, output io.Writer) error {
+	fmt.Fprintln(output, "The following files have changes:")
 	for _, path := range filesToUpdate {
-		fmt.Printf("  - %s\n", path)
+		fmt.Fprintf(output, "  - %s\n", path)
 	}
-	fmt.Println("\nFor each file, you can:")
-	fmt.Println("  (y)es - Accept the new template version")
-	fmt.Println("  (n)o - Keep the existing file")
-	fmt.Println("  (d)iff - Show the diff")
-	fmt.Println("  (a)ll - Accept all remaining changes")
-	fmt.Println("  (q)uit - Cancel update")
+	fmt.Fprintln(output, "\nFor each file, you can:")
+	fmt.Fprintln(output, "  (y)es - Accept the new template version")
+	fmt.Fprintln(output, "  (n)o - Keep the existing file")
+	fmt.Fprintln(output, "  (d)iff - Show the diff")
+	fmt.Fprintln(output, "  (a)ll - Accept all remaining changes")
+	fmt.Fprintln(output, "  (q)uit - Cancel update")
 
 	processed := make(map[string]bool)
 	for i, diff := range diffs {
@@ -579,15 +590,15 @@ func (g *GoGenerator) handleInteractiveUpdate(pluginDir string, diffs []*generat
 			continue
 		}
 
-		fmt.Printf("\n--- %s ---\n", diff.Path)
+		fmt.Fprintf(output, "\n--- %s ---\n", diff.Path)
 		if diff.IsNew {
-			fmt.Println("New file - will be created")
+			fmt.Fprintln(output, "New file - will be created")
 		} else {
-			fmt.Println("File has been modified")
+			fmt.Fprintln(output, "File has been modified")
 		}
 
 		var action string
-		fmt.Print("Update this file? [y/n/d/a/q]: ")
+		fmt.Fprint(output, "Update this file? [y/n/d/a/q]: ")
 		fmt.Scanln(&action)
 
 		switch strings.ToLower(action) {
@@ -595,20 +606,20 @@ func (g *GoGenerator) handleInteractiveUpdate(pluginDir string, diffs []*generat
 			if err := g.writeFile(pluginDir, diff.Path, diff.NewContent); err != nil {
 				return fmt.Errorf("failed to update %s: %w", diff.Path, err)
 			}
-			fmt.Printf("Updated %s\n", diff.Path)
+			fmt.Fprintf(output, "Updated %s\n", diff.Path)
 		case "n", "no":
-			fmt.Printf("Skipped %s\n", diff.Path)
+			fmt.Fprintf(output, "Skipped %s\n", diff.Path)
 		case "d", "diff":
-			fmt.Println(diff.GenerateSideBySideDiff())
-			fmt.Print("Update this file? [y/n]: ")
+			fmt.Fprintln(output, diff.GenerateSideBySideDiff())
+			fmt.Fprint(output, "Update this file? [y/n]: ")
 			fmt.Scanln(&action)
 			if strings.ToLower(action) == "y" || strings.ToLower(action) == "yes" {
 				if err := g.writeFile(pluginDir, diff.Path, diff.NewContent); err != nil {
 					return fmt.Errorf("failed to update %s: %w", diff.Path, err)
 				}
-				fmt.Printf("Updated %s\n", diff.Path)
+				fmt.Fprintf(output, "Updated %s\n", diff.Path)
 			} else {
-				fmt.Printf("Skipped %s\n", diff.Path)
+				fmt.Fprintf(output, "Skipped %s\n", diff.Path)
 			}
 		case "a", "all":
 			applied := 0
@@ -620,19 +631,19 @@ func (g *GoGenerator) handleInteractiveUpdate(pluginDir string, diffs []*generat
 				if err := g.writeFile(pluginDir, remainingDiff.Path, remainingDiff.NewContent); err != nil {
 					return fmt.Errorf("failed to update %s: %w", remainingDiff.Path, err)
 				}
-				fmt.Printf("Updated %s\n", remainingDiff.Path)
+				fmt.Fprintf(output, "Updated %s\n", remainingDiff.Path)
 				processed[remainingDiff.Path] = true
 				applied++
 			}
 			if applied > 0 {
-				fmt.Printf("\nSuccessfully updated %d file(s)\n", applied)
+				fmt.Fprintf(output, "\nSuccessfully updated %d file(s)\n", applied)
 			}
 			return nil
 		case "q", "quit":
-			fmt.Println("Update cancelled")
+			fmt.Fprintln(output, "Update cancelled")
 			return nil
 		default:
-			fmt.Println("Invalid option, skipping")
+			fmt.Fprintln(output, "Invalid option, skipping")
 		}
 		processed[diff.Path] = true
 	}
@@ -641,26 +652,26 @@ func (g *GoGenerator) handleInteractiveUpdate(pluginDir string, diffs []*generat
 }
 
 // handleDefaultUpdate shows summary and asks for confirmation
-func (g *GoGenerator) handleDefaultUpdate(pluginDir string, diffs []*generator.FileDiff, filesToUpdate []string) error {
-	fmt.Printf("The following %d file(s) will be updated:\n", len(filesToUpdate))
+func (g *GoGenerator) handleDefaultUpdate(pluginDir string, diffs []*generator.FileDiff, filesToUpdate []string, output io.Writer) error {
+	fmt.Fprintf(output, "The following %d file(s) will be updated:\n", len(filesToUpdate))
 	for _, path := range filesToUpdate {
-		fmt.Printf("  - %s\n", path)
+		fmt.Fprintf(output, "  - %s\n", path)
 	}
 
-	fmt.Print("\nProceed with update? [y/N]: ")
+	fmt.Fprint(output, "\nProceed with update? [y/N]: ")
 	var response string
 	fmt.Scanln(&response)
 
 	if strings.ToLower(response) != "y" && strings.ToLower(response) != "yes" {
-		fmt.Println("Update cancelled")
+		fmt.Fprintln(output, "Update cancelled")
 		return nil
 	}
 
-	return g.applyUpdates(pluginDir, diffs)
+	return g.applyUpdates(pluginDir, diffs, output)
 }
 
 // applyUpdates applies all updates to files
-func (g *GoGenerator) applyUpdates(pluginDir string, diffs []*generator.FileDiff) error {
+func (g *GoGenerator) applyUpdates(pluginDir string, diffs []*generator.FileDiff, output io.Writer) error {
 	applied := 0
 	for _, diff := range diffs {
 		if diff.IsIdentical || diff.IsDeleted {
@@ -674,7 +685,7 @@ func (g *GoGenerator) applyUpdates(pluginDir string, diffs []*generator.FileDiff
 	}
 
 	if applied > 0 {
-		fmt.Printf("Successfully updated %d file(s)\n", applied)
+		fmt.Fprintf(output, "Successfully updated %d file(s)\n", applied)
 	}
 	return nil
 }

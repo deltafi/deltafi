@@ -62,7 +62,8 @@ deltafi mcp
 # Enable specific tool groups
 deltafi mcp --tags debug,flows
 
-# Available tags: debug, operations, flows, ingest, plugins, admin, metrics, generate
+# Available tags: debug, operations, flows, ingest, ingress, plugins, admin, metrics,
+# testing, auto_resume, delete_policies, events, annotations, generate
 ```
 
 ### Debug Tools
@@ -102,7 +103,8 @@ Manage flows, topics, and flow configurations.
 | Tool | Description |
 |------|-------------|
 | `list_flows` | List all flows with status |
-| `get_flow` | Get detailed flow configuration |
+| `get_flow` | Get detailed flow configuration (runtime state) |
+| `get_flow_plan` | Get a flow's plan (the load_flow input, placeholders intact, no runtime state) |
 | `start_flow` | Start a stopped or paused flow |
 | `stop_flow` | Stop a running flow |
 | `pause_flow` | Pause a flow (completes in-flight, stops accepting new data) |
@@ -114,6 +116,8 @@ Manage flows, topics, and flow configurations.
 | `load_flow` | Create or update a flow from JSON |
 | `validate_flow` | Validate flow configuration and action parameters |
 | `delete_flow` | Delete a system flow by name and type (stop it first; plugin flows are removed with their plugin) |
+| `export_system_plans` | Export all system flow plans as an `import_system_plans`-compatible payload |
+| `import_system_plans` | Bulk import a full set of flow plans (pair with `export_system_plans` for migration) |
 
 **Example:** "Show me why the s3-egress data sink is invalid"
 
@@ -150,17 +154,21 @@ Manage plugin installation and lifecycle.
 
 ### Admin Tools
 
-System administration, configuration, and lookup tables.
+System administration, configuration, snapshots, and lookup tables.
 
 | Tool | Description |
 |------|-------------|
 | `get_system_properties` | Get system configuration |
+| `update_system_properties` | Update one or more system properties (set a value to `null` to clear it) |
+| `get_status_report` | Aggregated health summary (status, error count, queue depths, CPU/memory/disk, version) |
 | `list_snapshots` | List system snapshots |
 | `get_snapshot` | Get snapshot details |
 | `create_snapshot` | Create a system snapshot |
+| `delete_snapshot` | Delete a snapshot by id |
+| `restore_snapshot` | Reset the system to the state captured in a snapshot (optional `hard_reset`) |
+| `import_snapshot` | Import a snapshot from JSON, optionally resetting the system after import |
 | `list_delete_policies` | List content deletion policies |
 | `get_ssl_info` | Get SSL/TLS configuration |
-| `list_integration_tests` | List integration tests |
 | `list_lookup_tables` | List all lookup tables |
 | `get_lookup_table` | Get lookup table schema and metadata |
 | `query_lookup_table` | Query rows from a lookup table with filters and pagination |
@@ -168,7 +176,7 @@ System administration, configuration, and lookup tables.
 | `delete_lookup_table` | Delete a lookup table |
 | `upsert_lookup_table_rows` | Insert or update rows in a lookup table |
 
-**Example:** "Create a snapshot before I make configuration changes"
+**Example:** "Create a snapshot, raise the requeue interval to 60 seconds, and report the new status"
 
 ### Metrics Tools
 
@@ -187,17 +195,112 @@ Monitor system health, performance, and time-series data.
 
 **Example:** "Show me the ingestion rate by data source over the last 6 hours"
 
-### Generate Tools
+### Ingress Tools
 
-Create new plugins and actions.
+Send data into DeltaFi from the MCP server.
 
 | Tool | Description |
 |------|-------------|
-| `generate_plugin` | Create a new Java, Python, or Go plugin (Go requires a `module` path) |
-| `generate_action` | Add an action to an existing plugin |
-| `list_generated_plugins` | List plugins in the development repo |
+| `ingress_file` | Ingress a file from the local filesystem. Absolute, relative, and `~`-prefixed paths are all accepted; the file is read by the host running the MCP server. |
+| `ingress_content` | Ingress inline content (text or base64-encoded bytes) into a named data source |
 
-**Example:** "Create a new Java plugin called json-normalizer with a transform action that converts JSON to YAML"
+**Example:** "Ingress ~/samples/order-42.json into the orders-rest data source with content type application/json"
+
+### Testing Tools
+
+Manage integration tests and inspect their results.
+
+| Tool | Description |
+|------|-------------|
+| `list_integration_tests` | List configured integration tests |
+| `get_integration_test` | Get a single integration test definition |
+| `load_integration_test` | Load (create or update) an integration test from inline `config_yaml` or a YAML file at `config_path` |
+| `start_integration_test` | Start an integration test by name and return the run id |
+| `remove_integration_test` | Delete an integration test definition |
+| `get_test_results` | List all integration test run results |
+| `get_test_result` | Get a single integration test result by id |
+| `remove_test_result` | Delete a recorded integration test result |
+
+**Example:** "Start the smoke-test integration test and tell me when it finishes"
+
+### Auto-Resume Tools
+
+Configure and exercise the automatic error-recovery system.
+
+| Tool | Description |
+|------|-------------|
+| `list_resume_policies` | List all resume policies |
+| `get_resume_policy` | Get a single resume policy by id |
+| `load_resume_policies` | Load a batch of resume policies (optional `replace_all` to swap the full set) |
+| `update_resume_policy` | Update an existing resume policy by id |
+| `remove_resume_policy` | Delete a resume policy by id |
+| `toggle_resume_policy` | Enable or disable a resume policy |
+| `apply_resume_policies` | Apply named policies to any matching errored DeltaFiles |
+| `resume_policy_dry_run` | Evaluate a policy against existing errors without applying it |
+
+Each policy expects `name`, `maxAttempts`, and a `backOff` object (`delay` required; `maxDelay`, `multiplier`, `random` optional). Optional scoping fields: `errorSubstring`, `dataSource`, `action`, `priority`, `enabled`.
+
+**Example:** "Dry-run a resume policy that retries 503 errors three times with a one-minute back-off"
+
+### Delete Policy Tools
+
+Manage timed delete policies for DeltaFile retention.
+
+| Tool | Description |
+|------|-------------|
+| `load_timed_delete_policy` | Create or update a single timed delete policy |
+| `import_delete_policies` | Bulk import (optional `replace_all` to swap the full set; an empty set clears all policies) |
+| `remove_delete_policy` | Delete a policy by id |
+| `toggle_delete_policy` | Enable or disable a policy |
+| `export_delete_policies` | Export all delete policies in a form suitable for re-import |
+
+Each policy requires `name`, `enabled`, `deleteMetadata`, and at least one of `afterCreate` or `afterComplete` (ISO-8601 duration strings such as `PT24H` or `P7D`). Optional `flow` and `minBytes` narrow the scope.
+
+**Example:** "Import a delete policy that purges files older than seven days in the bulk-ingest flow"
+
+### Events Tools
+
+Read and write the DeltaFi event log over the REST API.
+
+| Tool | Description |
+|------|-------------|
+| `list_events` | List events with optional filters and paging, ordered newest first |
+| `list_events_with_count` | Same as `list_events` but includes total-count metadata for paging UIs |
+| `get_event` | Get a single event by id |
+| `create_event` | Create an event (defaults: source `MCP`, severity `info`) |
+| `acknowledge_event` | Set or clear the acknowledged flag on an event |
+| `delete_event` | Delete an event from the event log |
+
+Supported `filters` keys: `id`, `severity`, `summary`, `content`, `source`, `acknowledged`, `notification`, `start`, and `end`.
+
+**Example:** "Record an info event summarizing the rollout, then list all unacknowledged warnings from the last six hours"
+
+### Annotations Tools
+
+Add or inspect DeltaFile annotations.
+
+| Tool | Description |
+|------|-------------|
+| `annotate_deltafile` | Add one or more key/value annotations to a DeltaFile. Set `allow_overwrites` to replace existing values. |
+
+Annotation values are coerced to strings; pass `null` to send an empty value. `get_annotation_keys` (in the `debug` group) lists every key already in use across the system.
+
+**Example:** "Annotate DeltaFile <did> with reviewed=true and tier=gold"
+
+### Plugin Generation Tools
+
+Scaffold new plugins, add actions and suppliers to existing ones, and refresh an existing plugin's scaffolding to the latest templates. These tools wrap the same generators used by `deltafi plugin generate` and write files into the configured `repoPath`.
+
+| Tool | Description |
+|------|-------------|
+| `generate_plugin` | Create a new Java, Python, or Go plugin in the repos directory. Go plugins require a `module` path. |
+| `generate_plugin_action` | Add a new action to an existing plugin. Language is auto-detected. Supported action types: `TransformAction` (default), `EgressAction`, `TimedIngressAction`, `JoiningTransformAction`. |
+| `generate_plugin_supplier` | Add a lookup table supplier to an existing Go plugin. |
+| `update_plugin_scaffolding` | Refresh an existing plugin's scaffolding (build files, Dockerfile, Makefile, flow files, README) to the current templates. Pass `dry_run=true` to preview; pass `include_source=true` to also refresh user-owned source files. |
+
+For `generate_plugin_action`, `generate_plugin_supplier`, and `update_plugin_scaffolding`, the `plugin` argument can be either a name (resolved against `repoPath` in the development config) or an absolute path to a plugin directory.
+
+**Example:** "Generate a new Go plugin called metrics-collector with module github.com/acme/metrics-collector, then add a TimedIngressAction called PollPrometheus."
 
 ## Use Cases
 
@@ -270,20 +373,7 @@ Example transform flow config:
 }
 ```
 
-Use `get_flow` to see examples of existing flow configurations.
-
-### Plugin Development
-
-Scaffold new plugins with AI assistance:
-
-```
-User: "Create a Python plugin with an egress action that sends data to Kafka"
-
-AI Assistant uses:
-1. generate_plugin - Create the plugin skeleton
-2. generate_action - Add the egress action
-3. Then reads/edits the generated files to implement the Kafka logic
-```
+Use `get_flow_plan` to see an example of an existing flow's configuration; its output decodes straight back into `load_flow`. (`get_flow` returns runtime state that `load_flow` rejects.)
 
 ### System Health Monitoring
 
@@ -305,7 +395,11 @@ The MCP server inherits authentication from the DeltaFi CLI configuration (`~/.d
 
 1. **Access Control**: Only authorized users should have CLI access to systems with sensitive data
 2. **Network Security**: The MCP server uses stdio transport (local only) by default
-3. **Audit Trail**: All operations are logged through standard DeltaFi audit mechanisms
+3. **Audit Trail**: DeltaFi API mutations are subject to the standard DeltaFi audit mechanisms. Local filesystem reads and writes, generated files, and Git operations performed by MCP tools are not recorded in the DeltaFi audit log.
+4. **Host File Access**: `ingress_file` and `load_integration_test` can read any file accessible to the user running the MCP server
+5. **Host File Changes**: Plugin generation tools create or modify local directories; action, supplier, and scaffolding tools accept absolute plugin paths
+
+Only connect trusted MCP clients and review filesystem-related tool calls before approval. Run the server as a user whose filesystem permissions are limited to the files and development repositories the client should access.
 
 ## Troubleshooting
 

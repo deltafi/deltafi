@@ -26,6 +26,8 @@ import (
 	"testing"
 
 	"github.com/mark3labs/mcp-go/mcp"
+
+	"github.com/deltafi/tui/graphql"
 )
 
 func callToolRequest(args map[string]any) mcp.CallToolRequest {
@@ -89,5 +91,59 @@ func TestDeleteFlowUnknownType(t *testing.T) {
 		if !strings.Contains(got, valid) {
 			t.Errorf("message should list valid type %q: got %q", valid, got)
 		}
+	}
+}
+
+func TestLoadFlowTransformSuccess(t *testing.T) {
+	var got graphql.TransformFlowPlanInput
+	original := saveTransformFlow
+	saveTransformFlow = func(input graphql.TransformFlowPlanInput) (*graphql.SaveTransformResponse, error) {
+		got = input
+		return &graphql.SaveTransformResponse{}, nil
+	}
+	t.Cleanup(func() { saveTransformFlow = original })
+
+	result, err := loadFlow(context.Background(), callToolRequest(map[string]any{
+		"config": map[string]any{
+			"type":        "TRANSFORM",
+			"name":        "my-transform",
+			"description": "does things",
+		},
+	}))
+	if err != nil || result.IsError {
+		t.Fatalf("unexpected result: result=%v err=%v", resultText(t, result), err)
+	}
+	if got.Name != "my-transform" || got.Type != "TRANSFORM" {
+		t.Fatalf("save called with unexpected input: %+v", got)
+	}
+}
+
+func TestLoadFlowRejectsUnknownField(t *testing.T) {
+	called := false
+	original := saveTransformFlow
+	saveTransformFlow = func(input graphql.TransformFlowPlanInput) (*graphql.SaveTransformResponse, error) {
+		called = true
+		return &graphql.SaveTransformResponse{}, nil
+	}
+	t.Cleanup(func() { saveTransformFlow = original })
+
+	result, err := loadFlow(context.Background(), callToolRequest(map[string]any{
+		"config": map[string]any{
+			"type":       "TRANSFORM",
+			"name":       "my-transform",
+			"subscribbe": []any{}, // typo of "subscribe" — would silently drop routing
+		},
+	}))
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if called {
+		t.Fatal("save mutation ran despite an unknown config field; typo'd fields are silently dropped")
+	}
+	if !result.IsError {
+		t.Fatal("expected an error result for unknown config field")
+	}
+	if msg := resultText(t, result); !strings.Contains(msg, "unknown") {
+		t.Fatalf("expected unknown-field error, got %q", msg)
 	}
 }

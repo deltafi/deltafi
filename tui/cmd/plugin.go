@@ -30,6 +30,7 @@ import (
 
 	"github.com/deltafi/tui/graphql"
 	"github.com/deltafi/tui/internal/api"
+	"github.com/deltafi/tui/internal/types"
 	"github.com/deltafi/tui/internal/ui/components"
 	"github.com/deltafi/tui/internal/ui/styles"
 )
@@ -215,7 +216,7 @@ Examples:
 }
 
 func waitForPluginInstall(image string) bool {
-	imageName, imageTag := parseImageRef(image)
+	imageName, imageTag := types.ParseImageReference(image)
 
 	for {
 		time.Sleep(1 * time.Second)
@@ -247,19 +248,6 @@ func waitForPluginInstall(image string) bool {
 			}
 		}
 	}
-}
-
-func parseImageRef(image string) (name string, tag string) {
-	lastColon := strings.LastIndex(image, ":")
-	if lastColon == -1 {
-		return image, ""
-	}
-	// Check if colon is part of a port (e.g., registry:5000/image)
-	afterColon := image[lastColon+1:]
-	if strings.Contains(afterColon, "/") {
-		return image, ""
-	}
-	return image[:lastColon], afterColon
 }
 
 var uninstallCmd = &cobra.Command{

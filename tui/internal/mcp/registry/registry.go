@@ -114,6 +114,43 @@ func (r *Registry) Count() int {
 	return len(r.tools)
 }
 
+// ReadOnlyTool defines a tool that only reads state. Clients can typically
+// invoke read-only tools without user confirmation.
+func ReadOnlyTool(name, description string, opts ...mcp.ToolOption) mcp.Tool {
+	hints := []mcp.ToolOption{
+		mcp.WithDescription(description),
+		mcp.WithReadOnlyHintAnnotation(true),
+	}
+	return mcp.NewTool(name, append(hints, opts...)...)
+}
+
+// SafeWriteTool defines a tool that writes state without altering live flows or
+// existing data — typically creating a new resource or capturing current state
+// (e.g. create a snapshot, create a lookup table). Clients may still prompt, but
+// should not treat these as dangerous.
+func SafeWriteTool(name, description string, opts ...mcp.ToolOption) mcp.Tool {
+	hints := []mcp.ToolOption{
+		mcp.WithDescription(description),
+		mcp.WithReadOnlyHintAnnotation(false),
+		mcp.WithDestructiveHintAnnotation(false),
+	}
+	return mcp.NewTool(name, append(hints, opts...)...)
+}
+
+// DestructiveTool defines a tool that alters live flows or existing data, or is
+// otherwise hard to reverse. This includes changes to running flows (start,
+// stop, pause, test mode), toggles and in-place updates of active
+// configuration, annotation of existing DeltaFiles, deletion, replay, uninstall,
+// and reset. Clients should require explicit confirmation before invoking.
+func DestructiveTool(name, description string, opts ...mcp.ToolOption) mcp.Tool {
+	hints := []mcp.ToolOption{
+		mcp.WithDescription(description),
+		mcp.WithReadOnlyHintAnnotation(false),
+		mcp.WithDestructiveHintAnnotation(true),
+	}
+	return mcp.NewTool(name, append(hints, opts...)...)
+}
+
 // Helper function to format any value as JSON for tool results
 func FormatJSON(v any) (string, error) {
 	data, err := json.MarshalIndent(v, "", "  ")

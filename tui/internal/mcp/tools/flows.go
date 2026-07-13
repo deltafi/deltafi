@@ -31,13 +31,24 @@ import (
 	"github.com/deltafi/tui/internal/mcp/registry"
 )
 
+// Seams over the generated GraphQL save functions so handlers can be tested
+// without a live server.
+var (
+	saveTransformFlow     = graphql.SaveTransform
+	saveRestDataSource    = graphql.SaveRestDataSource
+	saveTimedDataSource   = graphql.SaveTimedDataSource
+	saveOnErrorDataSource = graphql.SaveOnErrorDataSource
+	saveDataSink          = graphql.SaveDataSink
+	getSystemFlowPlans    = graphql.GetSystemFlowPlans
+)
+
 func init() {
 	reg := registry.Get()
 
 	// list_flows - List all flows
 	reg.Register(registry.Tool{
-		Definition: mcp.NewTool("list_flows",
-			mcp.WithDescription("List all flows (transforms, data sources, data sinks) with their status"),
+		Definition: registry.ReadOnlyTool("list_flows",
+			"List all flows (transforms, data sources, data sinks) with their status",
 		),
 		Handler: listFlows,
 		Tags:    []string{"flows"},
@@ -45,8 +56,8 @@ func init() {
 
 	// get_flow - Get flow details
 	reg.Register(registry.Tool{
-		Definition: mcp.NewTool("get_flow",
-			mcp.WithDescription("Get detailed information about a specific flow"),
+		Definition: registry.ReadOnlyTool("get_flow",
+			"Get detailed information about a specific flow",
 			mcp.WithString("name", mcp.Required(), mcp.Description("Flow name")),
 			mcp.WithString("type", mcp.Required(), mcp.Description("Flow type: transform, rest-data-source, timed-data-source, on-error-data-source, data-sink")),
 		),
@@ -54,10 +65,21 @@ func init() {
 		Tags:    []string{"flows"},
 	})
 
+	// get_flow_plan - Get a flow's plan (the input used to create it)
+	reg.Register(registry.Tool{
+		Definition: registry.ReadOnlyTool("get_flow_plan",
+			"Get the plan for a system flow: the original configuration with variable placeholders intact and no runtime state. Unlike get_flow, the result decodes directly back into load_flow. Only flows created via load_flow or the UI have plans; plugin-provided flows do not.",
+			mcp.WithString("name", mcp.Required(), mcp.Description("Flow name")),
+			mcp.WithString("type", mcp.Required(), mcp.Description("Flow type: transform, rest-data-source, timed-data-source, on-error-data-source, data-sink")),
+		),
+		Handler: getFlowPlan,
+		Tags:    []string{"flows"},
+	})
+
 	// start_flow - Start a flow
 	reg.Register(registry.Tool{
-		Definition: mcp.NewTool("start_flow",
-			mcp.WithDescription("Start a stopped or paused flow"),
+		Definition: registry.DestructiveTool("start_flow",
+			"Start a stopped or paused flow",
 			mcp.WithString("name", mcp.Required(), mcp.Description("Flow name")),
 			mcp.WithString("type", mcp.Required(), mcp.Description("Flow type: transform, rest-data-source, timed-data-source, on-error-data-source, data-sink")),
 		),
@@ -67,8 +89,8 @@ func init() {
 
 	// stop_flow - Stop a flow
 	reg.Register(registry.Tool{
-		Definition: mcp.NewTool("stop_flow",
-			mcp.WithDescription("Stop a running flow"),
+		Definition: registry.DestructiveTool("stop_flow",
+			"Stop a running flow",
 			mcp.WithString("name", mcp.Required(), mcp.Description("Flow name")),
 			mcp.WithString("type", mcp.Required(), mcp.Description("Flow type: transform, rest-data-source, timed-data-source, on-error-data-source, data-sink")),
 		),
@@ -78,8 +100,8 @@ func init() {
 
 	// pause_flow - Pause a flow
 	reg.Register(registry.Tool{
-		Definition: mcp.NewTool("pause_flow",
-			mcp.WithDescription("Pause a running flow (stops accepting new data but completes in-flight)"),
+		Definition: registry.DestructiveTool("pause_flow",
+			"Pause a running flow (stops accepting new data but completes in-flight)",
 			mcp.WithString("name", mcp.Required(), mcp.Description("Flow name")),
 			mcp.WithString("type", mcp.Required(), mcp.Description("Flow type: transform, rest-data-source, timed-data-source, on-error-data-source, data-sink")),
 		),
@@ -101,8 +123,8 @@ func init() {
 
 	// list_topics - List all pub/sub topics
 	reg.Register(registry.Tool{
-		Definition: mcp.NewTool("list_topics",
-			mcp.WithDescription("List all pub/sub topics and their publishers/subscribers"),
+		Definition: registry.ReadOnlyTool("list_topics",
+			"List all pub/sub topics and their publishers/subscribers",
 		),
 		Handler: listTopics,
 		Tags:    []string{"flows"},
@@ -110,8 +132,8 @@ func init() {
 
 	// get_action_descriptors - List available action types
 	reg.Register(registry.Tool{
-		Definition: mcp.NewTool("get_action_descriptors",
-			mcp.WithDescription("List all available action types from installed plugins. Use get_action_schema for parameter details."),
+		Definition: registry.ReadOnlyTool("get_action_descriptors",
+			"List all available action types from installed plugins. Use get_action_schema for parameter details.",
 		),
 		Handler: getActionDescriptors,
 		Tags:    []string{"flows"},
@@ -119,8 +141,8 @@ func init() {
 
 	// get_action_schema - Get parameter schema for a specific action
 	reg.Register(registry.Tool{
-		Definition: mcp.NewTool("get_action_schema",
-			mcp.WithDescription("Get the parameter schema and documentation for a specific action type"),
+		Definition: registry.ReadOnlyTool("get_action_schema",
+			"Get the parameter schema and documentation for a specific action type",
 			mcp.WithString("action", mcp.Required(), mcp.Description("Action name (e.g., org.deltafi.core.action.FilterAction)")),
 		),
 		Handler: getActionSchema,
@@ -129,8 +151,8 @@ func init() {
 
 	// enable_test_mode - Enable test mode on a flow
 	reg.Register(registry.Tool{
-		Definition: mcp.NewTool("enable_test_mode",
-			mcp.WithDescription("Enable test mode on a flow (data is processed but not persisted)"),
+		Definition: registry.DestructiveTool("enable_test_mode",
+			"Enable test mode on a flow (data is processed but not persisted)",
 			mcp.WithString("name", mcp.Required(), mcp.Description("Flow name")),
 			mcp.WithString("type", mcp.Required(), mcp.Description("Flow type: transform, rest-data-source, timed-data-source, on-error-data-source, data-sink")),
 		),
@@ -140,8 +162,8 @@ func init() {
 
 	// disable_test_mode - Disable test mode
 	reg.Register(registry.Tool{
-		Definition: mcp.NewTool("disable_test_mode",
-			mcp.WithDescription("Disable test mode on a flow"),
+		Definition: registry.DestructiveTool("disable_test_mode",
+			"Disable test mode on a flow",
 			mcp.WithString("name", mcp.Required(), mcp.Description("Flow name")),
 			mcp.WithString("type", mcp.Required(), mcp.Description("Flow type: transform, rest-data-source, timed-data-source, on-error-data-source, data-sink")),
 		),
@@ -151,8 +173,8 @@ func init() {
 
 	// load_flow - Create or update a flow from JSON configuration
 	reg.Register(registry.Tool{
-		Definition: mcp.NewTool("load_flow",
-			mcp.WithDescription("Create or update a flow from JSON configuration. If a flow with the same name exists, it will be replaced."),
+		Definition: registry.DestructiveTool("load_flow",
+			"Create or update a flow from JSON configuration. If a flow with the same name exists, it will be replaced.",
 			mcp.WithObject("config", mcp.Required(), mcp.Description(`Flow configuration object. Required fields:
 - name: Flow name (string)
 - type: Flow type (TRANSFORM, REST_DATA_SOURCE, TIMED_DATA_SOURCE, ON_ERROR_DATA_SOURCE, DATA_SINK)
@@ -162,7 +184,7 @@ For transforms, also include:
 - transformActions: Array of {name, type, parameters} objects
 - publish: Object with matchingPolicy, defaultRule, and rules array
 
-Use get_flow to see an example of a complete flow structure.`)),
+Use get_flow_plan to see an example of a complete flow structure that decodes back into this tool.`)),
 		),
 		Handler: loadFlow,
 		Tags:    []string{"flows"},
@@ -170,12 +192,36 @@ Use get_flow to see an example of a complete flow structure.`)),
 
 	// validate_flow - Validate a flow configuration
 	reg.Register(registry.Tool{
-		Definition: mcp.NewTool("validate_flow",
-			mcp.WithDescription("Validate a flow's configuration and return any errors including action parameter validation"),
+		Definition: registry.ReadOnlyTool("validate_flow",
+			"Validate a flow's configuration and return any errors including action parameter validation",
 			mcp.WithString("name", mcp.Required(), mcp.Description("Flow name")),
 			mcp.WithString("type", mcp.Required(), mcp.Description("Flow type: transform, rest-data-source, timed-data-source, on-error-data-source, data-sink")),
 		),
 		Handler: validateFlow,
+		Tags:    []string{"flows"},
+	})
+
+	// export_system_plans - Export the full set of flow plans
+	reg.Register(registry.Tool{
+		Definition: registry.ReadOnlyTool("export_system_plans",
+			"Export all system flow plans as a single payload. The result is the unwrapped set of plans (dataSinkPlans, restDataSources, timedDataSources, onErrorDataSources, transformPlans) that import_system_plans consumes directly, so the export/import pair round-trips.",
+		),
+		Handler: exportSystemPlans,
+		Tags:    []string{"flows"},
+	})
+
+	// import_system_plans - Bulk import the full set of flow plans
+	reg.Register(registry.Tool{
+		Definition: registry.DestructiveTool("import_system_plans",
+			"Bulk import a full set of flow plans. Useful for environment setup or migrating configuration between systems. Use export_system_plans to obtain a compatible payload.",
+			mcp.WithObject("plans", mcp.Required(), mcp.Description(`Object with optional arrays for each plan type:
+- dataSinkPlans: array of data sink plans
+- restDataSources: array of REST data source plans
+- timedDataSources: array of timed data source plans
+- onErrorDataSources: array of on-error data source plans
+- transformPlans: array of transform plans`)),
+		),
+		Handler: importSystemPlans,
 		Tags:    []string{"flows"},
 	})
 }
@@ -260,14 +306,14 @@ func listFlows(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResul
 }
 
 func getFlow(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-	name, err := req.RequireString("name")
-	if err != nil {
-		return registry.ErrorResult("name parameter is required"), nil
+	name, errResult := requireNonEmptyString(req, "name")
+	if errResult != nil {
+		return errResult, nil
 	}
 
-	flowType, err := req.RequireString("type")
-	if err != nil {
-		return registry.ErrorResult("type parameter is required"), nil
+	flowType, errResult := requireNonEmptyString(req, "type")
+	if errResult != nil {
+		return errResult, nil
 	}
 
 	switch flowType {
@@ -312,6 +358,74 @@ func getFlow(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult,
 	}
 }
 
+func getFlowPlan(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+	name, errResult := requireNonEmptyString(req, "name")
+	if errResult != nil {
+		return errResult, nil
+	}
+
+	flowType, errResult := requireNonEmptyString(req, "type")
+	if errResult != nil {
+		return errResult, nil
+	}
+
+	resp, err := getSystemFlowPlans()
+	if err != nil {
+		return registry.ErrorResultFromErr(err), nil
+	}
+	plans := resp.GetAllSystemFlowPlans
+
+	switch flowType {
+	case "transform":
+		for _, plan := range plans.TransformPlans {
+			if plan.Name == name {
+				return registry.ResultFromJSON(plan)
+			}
+		}
+
+	case "rest-data-source":
+		for _, plan := range plans.RestDataSources {
+			if plan.Name == name {
+				return registry.ResultFromJSON(plan)
+			}
+		}
+
+	case "timed-data-source":
+		for _, plan := range plans.TimedDataSources {
+			if plan.Name == name {
+				return registry.ResultFromJSON(plan)
+			}
+		}
+
+	case "on-error-data-source":
+		for _, plan := range plans.OnErrorDataSources {
+			if plan.Name == name {
+				return registry.ResultFromJSON(plan)
+			}
+		}
+
+	case "data-sink":
+		for _, plan := range plans.DataSinkPlans {
+			if plan.Name == name {
+				return registry.ResultFromJSON(plan)
+			}
+		}
+
+	default:
+		return registry.ErrorResult(fmt.Sprintf("unknown flow type: %s (valid: transform, rest-data-source, timed-data-source, on-error-data-source, data-sink)", flowType)), nil
+	}
+
+	return registry.ErrorResult(fmt.Sprintf("no system flow plan named %q of type %s (only flows created via load_flow or the UI have plans; plugin-provided flows do not)", name, flowType)), nil
+}
+
+func exportSystemPlans(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+	resp, err := getSystemFlowPlans()
+	if err != nil {
+		return registry.ErrorResultFromErr(err), nil
+	}
+	return registry.ResultFromJSON(resp.GetAllSystemFlowPlans)
+}
+
 func startFlow(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	return setFlowState(req, graphql.FlowStateRunning, "started")
 }
@@ -325,14 +439,14 @@ func pauseFlow(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResul
 }
 
 func deleteFlow(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-	name, err := req.RequireString("name")
-	if err != nil {
-		return registry.ErrorResult("name parameter is required"), nil
+	name, errResult := requireNonEmptyString(req, "name")
+	if errResult != nil {
+		return errResult, nil
 	}
 
-	flowTypeStr, err := req.RequireString("type")
-	if err != nil {
-		return registry.ErrorResult("type parameter is required"), nil
+	flowTypeStr, errResult := requireNonEmptyString(req, "type")
+	if errResult != nil {
+		return errResult, nil
 	}
 
 	var removed bool
@@ -384,14 +498,14 @@ func deleteFlow(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResu
 }
 
 func setFlowState(req mcp.CallToolRequest, state graphql.FlowState, action string) (*mcp.CallToolResult, error) {
-	name, err := req.RequireString("name")
-	if err != nil {
-		return registry.ErrorResult("name parameter is required"), nil
+	name, errResult := requireNonEmptyString(req, "name")
+	if errResult != nil {
+		return errResult, nil
 	}
 
-	flowTypeStr, err := req.RequireString("type")
-	if err != nil {
-		return registry.ErrorResult("type parameter is required"), nil
+	flowTypeStr, errResult := requireNonEmptyString(req, "type")
+	if errResult != nil {
+		return errResult, nil
 	}
 
 	flowType, err := parseFlowType(flowTypeStr)
@@ -468,9 +582,9 @@ func getActionDescriptors(ctx context.Context, req mcp.CallToolRequest) (*mcp.Ca
 }
 
 func getActionSchema(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-	actionName, err := req.RequireString("action")
-	if err != nil {
-		return registry.ErrorResult("action parameter is required"), nil
+	actionName, errResult := requireNonEmptyString(req, "action")
+	if errResult != nil {
+		return errResult, nil
 	}
 
 	resp, err := graphql.GetPluginDetails()
@@ -511,16 +625,17 @@ func getActionSchema(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToo
 }
 
 func enableTestMode(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-	name, err := req.RequireString("name")
-	if err != nil {
-		return registry.ErrorResult("name parameter is required"), nil
+	name, errResult := requireNonEmptyString(req, "name")
+	if errResult != nil {
+		return errResult, nil
 	}
 
-	flowTypeStr, err := req.RequireString("type")
-	if err != nil {
-		return registry.ErrorResult("type parameter is required"), nil
+	flowTypeStr, errResult := requireNonEmptyString(req, "type")
+	if errResult != nil {
+		return errResult, nil
 	}
 
+	var err error
 	switch flowTypeStr {
 	case "transform":
 		_, err = graphql.EnableTransformTestMode(name)
@@ -544,16 +659,17 @@ func enableTestMode(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallTool
 }
 
 func disableTestMode(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-	name, err := req.RequireString("name")
-	if err != nil {
-		return registry.ErrorResult("name parameter is required"), nil
+	name, errResult := requireNonEmptyString(req, "name")
+	if errResult != nil {
+		return errResult, nil
 	}
 
-	flowTypeStr, err := req.RequireString("type")
-	if err != nil {
-		return registry.ErrorResult("type parameter is required"), nil
+	flowTypeStr, errResult := requireNonEmptyString(req, "type")
+	if errResult != nil {
+		return errResult, nil
 	}
 
+	var err error
 	switch flowTypeStr {
 	case "transform":
 		_, err = graphql.DisableTransformTestMode(name)
@@ -603,10 +719,10 @@ func loadFlow(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult
 	switch typeExtractor.Type {
 	case "TRANSFORM":
 		var input graphql.TransformFlowPlanInput
-		if err := json.Unmarshal(configBytes, &input); err != nil {
+		if err := decodeJSON(configRaw, &input); err != nil {
 			return registry.ErrorResult(fmt.Sprintf("invalid transform config: %v", err)), nil
 		}
-		resp, err := graphql.SaveTransform(input)
+		resp, err := saveTransformFlow(input)
 		if err != nil {
 			return registry.ErrorResultFromErr(err), nil
 		}
@@ -614,10 +730,10 @@ func loadFlow(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult
 
 	case "REST_DATA_SOURCE":
 		var input graphql.RestDataSourcePlanInput
-		if err := json.Unmarshal(configBytes, &input); err != nil {
+		if err := decodeJSON(configRaw, &input); err != nil {
 			return registry.ErrorResult(fmt.Sprintf("invalid REST_DATA_SOURCE config: %v", err)), nil
 		}
-		resp, err := graphql.SaveRestDataSource(input)
+		resp, err := saveRestDataSource(input)
 		if err != nil {
 			return registry.ErrorResultFromErr(err), nil
 		}
@@ -625,10 +741,10 @@ func loadFlow(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult
 
 	case "TIMED_DATA_SOURCE":
 		var input graphql.TimedDataSourcePlanInput
-		if err := json.Unmarshal(configBytes, &input); err != nil {
+		if err := decodeJSON(configRaw, &input); err != nil {
 			return registry.ErrorResult(fmt.Sprintf("invalid TIMED_DATA_SOURCE config: %v", err)), nil
 		}
-		resp, err := graphql.SaveTimedDataSource(input)
+		resp, err := saveTimedDataSource(input)
 		if err != nil {
 			return registry.ErrorResultFromErr(err), nil
 		}
@@ -636,10 +752,10 @@ func loadFlow(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult
 
 	case "ON_ERROR_DATA_SOURCE":
 		var input graphql.OnErrorDataSourcePlanInput
-		if err := json.Unmarshal(configBytes, &input); err != nil {
+		if err := decodeJSON(configRaw, &input); err != nil {
 			return registry.ErrorResult(fmt.Sprintf("invalid ON_ERROR_DATA_SOURCE config: %v", err)), nil
 		}
-		resp, err := graphql.SaveOnErrorDataSource(input)
+		resp, err := saveOnErrorDataSource(input)
 		if err != nil {
 			return registry.ErrorResultFromErr(err), nil
 		}
@@ -647,10 +763,10 @@ func loadFlow(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult
 
 	case "DATA_SINK":
 		var input graphql.DataSinkPlanInput
-		if err := json.Unmarshal(configBytes, &input); err != nil {
+		if err := decodeJSON(configRaw, &input); err != nil {
 			return registry.ErrorResult(fmt.Sprintf("invalid DATA_SINK config: %v", err)), nil
 		}
-		resp, err := graphql.SaveDataSink(input)
+		resp, err := saveDataSink(input)
 		if err != nil {
 			return registry.ErrorResultFromErr(err), nil
 		}
@@ -662,14 +778,14 @@ func loadFlow(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult
 }
 
 func validateFlow(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-	name, err := req.RequireString("name")
-	if err != nil {
-		return registry.ErrorResult("name parameter is required"), nil
+	name, errResult := requireNonEmptyString(req, "name")
+	if errResult != nil {
+		return errResult, nil
 	}
 
-	flowType, err := req.RequireString("type")
-	if err != nil {
-		return registry.ErrorResult("type parameter is required"), nil
+	flowType, errResult := requireNonEmptyString(req, "type")
+	if errResult != nil {
+		return errResult, nil
 	}
 
 	switch flowType {
@@ -712,4 +828,34 @@ func validateFlow(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolRe
 	default:
 		return registry.ErrorResult(fmt.Sprintf("unknown flow type: %s (valid: transform, rest-data-source, timed-data-source, on-error-data-source, data-sink)", flowType)), nil
 	}
+}
+
+func importSystemPlans(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+	args := req.GetArguments()
+	raw, ok := args["plans"]
+	if !ok {
+		return registry.ErrorResult("plans parameter is required"), nil
+	}
+	if _, ok := raw.(map[string]any); !ok {
+		return registry.ErrorResult("plans must be a JSON object"), nil
+	}
+
+	var plans graphql.SystemFlowPlansInput
+	if err := decodeJSON(raw, &plans); err != nil {
+		return registry.ErrorResult(fmt.Sprintf("invalid plans payload: %v", err)), nil
+	}
+
+	total := len(plans.DataSinkPlans) + len(plans.RestDataSources) + len(plans.TimedDataSources) + len(plans.OnErrorDataSources) + len(plans.TransformPlans)
+	if total == 0 {
+		return registry.ErrorResult("plans must include at least one plan in dataSinkPlans, restDataSources, timedDataSources, onErrorDataSources, or transformPlans"), nil
+	}
+
+	resp, err := graphql.ImportSystemPlans(plans)
+	if err != nil {
+		return registry.ErrorResultFromErr(err), nil
+	}
+	if !resp.SaveSystemFlowPlans {
+		return registry.ErrorResult("import was rejected by the server"), nil
+	}
+	return mcp.NewToolResultText(fmt.Sprintf("imported %d flow plans", total)), nil
 }

@@ -36,8 +36,8 @@ func init() {
 
 	// get_system_status - Overall system health
 	reg.Register(registry.Tool{
-		Definition: mcp.NewTool("get_system_status",
-			mcp.WithDescription("Get overall system health status including service checks, version, and state"),
+		Definition: registry.ReadOnlyTool("get_system_status",
+			"Get overall system health status including service checks, version, and state",
 		),
 		Handler: getSystemStatus,
 		Tags:    []string{"metrics"},
@@ -45,8 +45,8 @@ func init() {
 
 	// get_version - DeltaFi version info
 	reg.Register(registry.Tool{
-		Definition: mcp.NewTool("get_version",
-			mcp.WithDescription("Get DeltaFi version information"),
+		Definition: registry.ReadOnlyTool("get_version",
+			"Get DeltaFi version information",
 		),
 		Handler: getVersion,
 		Tags:    []string{"metrics"},
@@ -54,8 +54,8 @@ func init() {
 
 	// get_deltafile_stats - Processing statistics
 	reg.Register(registry.Tool{
-		Definition: mcp.NewTool("get_deltafile_stats",
-			mcp.WithDescription("Get DeltaFile processing statistics including counts by state"),
+		Definition: registry.ReadOnlyTool("get_deltafile_stats",
+			"Get DeltaFile processing statistics including counts by state",
 		),
 		Handler: getDeltaFileStats,
 		Tags:    []string{"metrics"},
@@ -63,8 +63,8 @@ func init() {
 
 	// list_running_flows - Currently active flows
 	reg.Register(registry.Tool{
-		Definition: mcp.NewTool("list_running_flows",
-			mcp.WithDescription("List all currently running flows (transforms, data sources, data sinks)"),
+		Definition: registry.ReadOnlyTool("list_running_flows",
+			"List all currently running flows (transforms, data sources, data sinks)",
 		),
 		Handler: listRunningFlows,
 		Tags:    []string{"metrics"},
@@ -72,8 +72,8 @@ func init() {
 
 	// get_node_metrics - CPU/memory/disk per node
 	reg.Register(registry.Tool{
-		Definition: mcp.NewTool("get_node_metrics",
-			mcp.WithDescription("Get resource metrics (CPU, memory, disk) for system nodes"),
+		Definition: registry.ReadOnlyTool("get_node_metrics",
+			"Get resource metrics (CPU, memory, disk) for system nodes",
 		),
 		Handler: getNodeMetrics,
 		Tags:    []string{"metrics"},

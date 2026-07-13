@@ -25,7 +25,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/google/uuid"
 	"github.com/mark3labs/mcp-go/mcp"
 
 	"github.com/deltafi/tui/graphql"
@@ -37,8 +36,8 @@ func init() {
 
 	// get_deltafile - Get DeltaFile by ID
 	reg.Register(registry.Tool{
-		Definition: mcp.NewTool("get_deltafile",
-			mcp.WithDescription("Get detailed information about a DeltaFile by its DID (DeltaFile ID), including flows, actions, and full provenance"),
+		Definition: registry.ReadOnlyTool("get_deltafile",
+			"Get detailed information about a DeltaFile by its DID (DeltaFile ID), including flows, actions, and full provenance",
 			mcp.WithString("did", mcp.Required(), mcp.Description("DeltaFile ID (UUID)")),
 		),
 		Handler: getDeltaFile,
@@ -47,14 +46,14 @@ func init() {
 
 	// search_deltafiles - Search DeltaFiles with filters
 	reg.Register(registry.Tool{
-		Definition: mcp.NewTool("search_deltafiles",
-			mcp.WithDescription("Search for DeltaFiles with various filters. Returns summary info - use get_deltafile for full details."),
+		Definition: registry.ReadOnlyTool("search_deltafiles",
+			"Search for DeltaFiles with various filters. Returns summary info - use get_deltafile for full details.",
 			mcp.WithString("name", mcp.Description("Filter by filename pattern (case-insensitive)")),
 			mcp.WithString("data_source", mcp.Description("Filter by data source name")),
 			mcp.WithString("stage", mcp.Description("Filter by stage: IN_FLIGHT, COMPLETE, ERROR, CANCELLED")),
 			mcp.WithString("modified_after", mcp.Description("Filter by modified time (ISO8601 or relative like '1h', '24h', '7d')")),
 			mcp.WithString("modified_before", mcp.Description("Filter by modified time")),
-			mcp.WithNumber("limit", mcp.Description("Maximum results to return (default 50, max 500)")),
+			mcp.WithInteger("limit", mcp.Min(0), mcp.Max(500), mcp.Description("Maximum results to return (default 50, max 500)")),
 		),
 		Handler: searchDeltaFiles,
 		Tags:    []string{"debug"},
@@ -62,8 +61,8 @@ func init() {
 
 	// get_error_summary - Error summary by flow or message
 	reg.Register(registry.Tool{
-		Definition: mcp.NewTool("get_error_summary",
-			mcp.WithDescription("Get a summary of errors grouped by flow or error message"),
+		Definition: registry.ReadOnlyTool("get_error_summary",
+			"Get a summary of errors grouped by flow or error message",
 			mcp.WithString("group_by", mcp.Description("Group by: flow (default) or message")),
 			mcp.WithString("modified_after", mcp.Description("Filter by modified time (ISO8601 or relative like '1h', '24h', '7d')")),
 		),
@@ -73,8 +72,8 @@ func init() {
 
 	// count_errors - Count unacknowledged errors
 	reg.Register(registry.Tool{
-		Definition: mcp.NewTool("count_errors",
-			mcp.WithDescription("Count total unacknowledged errors in the system"),
+		Definition: registry.ReadOnlyTool("count_errors",
+			"Count total unacknowledged errors in the system",
 		),
 		Handler: countErrors,
 		Tags:    []string{"debug"},
@@ -82,8 +81,8 @@ func init() {
 
 	// get_annotation_keys - Available annotation keys
 	reg.Register(registry.Tool{
-		Definition: mcp.NewTool("get_annotation_keys",
-			mcp.WithDescription("List all annotation keys that have been used across DeltaFiles"),
+		Definition: registry.ReadOnlyTool("get_annotation_keys",
+			"List all annotation keys that have been used across DeltaFiles",
 		),
 		Handler: getAnnotationKeys,
 		Tags:    []string{"debug"},
@@ -91,8 +90,8 @@ func init() {
 
 	// export_config - Export system config as YAML
 	reg.Register(registry.Tool{
-		Definition: mcp.NewTool("export_config",
-			mcp.WithDescription("Export the current system configuration as YAML"),
+		Definition: registry.ReadOnlyTool("export_config",
+			"Export the current system configuration as YAML",
 		),
 		Handler: exportConfig,
 		Tags:    []string{"debug"},
@@ -100,14 +99,9 @@ func init() {
 }
 
 func getDeltaFile(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-	didStr, err := req.RequireString("did")
-	if err != nil {
-		return registry.ErrorResult("did parameter is required"), nil
-	}
-
-	did, err := uuid.Parse(didStr)
-	if err != nil {
-		return registry.ErrorResult(fmt.Sprintf("invalid DID format: %v", err)), nil
+	did, errResult := requireUUID(req, "did", "did")
+	if errResult != nil {
+		return errResult, nil
 	}
 
 	resp, err := graphql.DeltaFile(did)
@@ -165,8 +159,10 @@ func searchDeltaFiles(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallTo
 
 	// Limit
 	limit := 50
-	if l, err := req.RequireFloat("limit"); err == nil {
-		limit = min(int(l), 500)
+	if l, err := optionalNonNegativeInt(req, "limit"); err != nil {
+		return registry.ErrorResult(err.Error()), nil
+	} else if l != nil {
+		limit = min(*l, 500)
 	}
 	offset := 0
 
