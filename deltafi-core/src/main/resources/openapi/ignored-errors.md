@@ -1,0 +1,2 @@
+- GET /api/v2/config the `properties/allowedAnalyticsAnnotations` response's property `type` changed from `string` to `array<string>` for status `200`
+- GET /api/v2/config the `properties/provenanceAnnotationsAllowed` response's property `type` changed from `string` to `array<string>` for status `200`

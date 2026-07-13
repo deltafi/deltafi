@@ -78,7 +78,7 @@ public class AnalyticEventService {
         if (annotations == null || annotations.isEmpty()) {
             return Map.of();
         }
-        Set<String> allowed = deltaFiPropertiesService.getDeltaFiProperties().allowedAnalyticsAnnotations();
+        Set<String> allowed = deltaFiPropertiesService.getDeltaFiProperties().getAllowedAnalyticsAnnotations();
         String groupName = deltaFiPropertiesService.getDeltaFiProperties().getAnalyticsGroupName();
         Map<String, String> filtered = new HashMap<>();
         for (Map.Entry<String, String> entry : annotations.entrySet()) {
@@ -93,7 +93,7 @@ public class AnalyticEventService {
         if (annotations == null || annotations.isEmpty()) {
             return Map.of();
         }
-        Set<String> allowed = deltaFiPropertiesService.getDeltaFiProperties().allowedProvenanceAnnotations();
+        Set<String> allowed = deltaFiPropertiesService.getDeltaFiProperties().getProvenanceAnnotationsAllowed();
         if (allowed.isEmpty()) {
             return Map.of();
         }
@@ -595,7 +595,7 @@ public class AnalyticEventService {
      */
     private void insertAnnotationsBulk(List<QueuedAnnotationEvent> batch) {
         // Prepare bulk annotation inserts
-        Set<String> allowed = deltaFiPropertiesService.getDeltaFiProperties().allowedAnalyticsAnnotations();
+        Set<String> allowed = deltaFiPropertiesService.getDeltaFiProperties().getAllowedAnalyticsAnnotations();
         List<Object[]> batchParams = new ArrayList<>();
         for (QueuedAnnotationEvent event : batch) {
             Map<String, String> annotations = event.annotations();

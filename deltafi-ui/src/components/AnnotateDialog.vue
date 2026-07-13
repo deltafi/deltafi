@@ -45,7 +45,7 @@
 
 <script setup>
 import { ref, computed } from "vue";
-import MapEdit from "@/components/plugin/MapEdit.vue";
+import MapEdit from "@/components/editPanels/MapEdit.vue";
 import ProgressBar from "primevue/progressbar";
 import Dialog from "primevue/dialog";
 import Button from "primevue/button";

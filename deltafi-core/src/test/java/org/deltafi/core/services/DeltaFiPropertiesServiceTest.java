@@ -113,8 +113,8 @@ class DeltaFiPropertiesServiceTest {
         Boolean[] editable = captor.getValue();
         assertEquals(PROPERTY_COUNT, editable.length);
         int notEditable = 0;
-        for (int i = 0; i < editable.length; ++i) {
-            if (editable[i] == false) {
+        for (Boolean aBoolean : editable) {
+            if (aBoolean == false) {
                 ++notEditable;
             }
         }
@@ -140,8 +140,8 @@ class DeltaFiPropertiesServiceTest {
         Boolean[] editable = captor.getValue();
         assertEquals(PROPERTY_COUNT, editable.length);
         int notEditable = 0;
-        for (int i = 0; i < editable.length; ++i) {
-            if (editable[i] == false) {
+        for (Boolean aBoolean : editable) {
+            if (aBoolean == false) {
                 ++notEditable;
             }
         }
@@ -173,7 +173,7 @@ class DeltaFiPropertiesServiceTest {
         // A SET property with values in non-sorted order should be normalized in the snapshot
         Property setProperty = Property.builder()
                 .key("allowedAnalyticsAnnotations")
-                .customValue("c, a, b")
+                .customValue("[\"c\", \"b\", \"a\"]")
                 .defaultValue(null)
                 .dataType(VariableDataType.SET)
                 .build();
@@ -184,13 +184,13 @@ class DeltaFiPropertiesServiceTest {
 
         List<KeyValue> props = snapshot.getDeltaFiProperties();
         Assertions.assertThat(props).hasSize(1);
-        Assertions.assertThat(props.get(0).getValue()).isEqualTo("a, b, c");
+        Assertions.assertThat(props.getFirst().getValue()).isEqualTo("[\"a\",\"b\",\"c\"]");
     }
 
     @Test
     void testSortedSetValueDeduplicates() {
-        Assertions.assertThat(DeltaFiPropertiesService.sortedSetValue("a, b, a, c, b"))
-                .isEqualTo("a, b, c");
+        Assertions.assertThat(DeltaFiPropertiesService.sortedSetValue("[\"a\",\"b\",\"a\",\"c\",\"b\"]"))
+                .isEqualTo("[\"a\",\"b\",\"c\"]");
     }
 
     @Test
@@ -198,8 +198,8 @@ class DeltaFiPropertiesServiceTest {
         // Snapshot should contain the effective value even when the custom value matches the default.
         Property setProperty = Property.builder()
                 .key("allowedAnalyticsAnnotations")
-                .customValue("c, b, a")
-                .defaultValue("a, b, c")
+                .customValue("[\"c\",\"b\",\"a\"]")
+                .defaultValue("[\"a\",\"b\",\"c\"]")
                 .dataType(VariableDataType.SET)
                 .build();
         Mockito.when(deltaFiPropertiesRepo.findAll()).thenReturn(List.of(setProperty));
@@ -208,23 +208,51 @@ class DeltaFiPropertiesServiceTest {
         deltaFiPropertiesService.updateSnapshot(snapshot);
 
         Assertions.assertThat(snapshot.getDeltaFiProperties())
-                .containsExactly(new KeyValue("allowedAnalyticsAnnotations", "a, b, c"));
+                .containsExactly(new KeyValue("allowedAnalyticsAnnotations", "[\"a\",\"b\",\"c\"]"));
     }
 
     @Test
     void testResetFromSnapshotProperties() {
+        Mockito.when(deltaFiPropertiesRepo.findAll()).thenReturn(List.of(
+                Property.builder().key("cacheSyncDuration").dataType(VariableDataType.STRING).build(),
+                Property.builder().key("coreServiceThreads").dataType(VariableDataType.NUMBER).build(),
+                Property.builder().key("ageOffDays").dataType(VariableDataType.NUMBER).build(),
+                Property.builder().key("allowedAnalyticsAnnotations").dataType(VariableDataType.SET).build()));
+
+        deltaFiPropertiesService = new DeltaFiPropertiesService(deltaFiPropertiesRepo, eventPublisher,
+                localStorageProperties, true, false);
+
         KeyValue unrecognizedKey = new KeyValue("badKey", "1");
         // cannot be bound to a duration
         KeyValue invalidDataType = new KeyValue("cacheSyncDuration", "30_000");
         // ignored due to the min value check in the setter
         KeyValue valueOutOfRange = new KeyValue("coreServiceThreads", "0");
         KeyValue validValue = new KeyValue("ageOffDays", "1");
+        KeyValue validSet = new KeyValue("allowedAnalyticsAnnotations", "[\"abc\", \"def\", \"1,2,3\"]");
 
         Snapshot snapshot = new Snapshot();
-        snapshot.setDeltaFiProperties(List.of(unrecognizedKey, invalidDataType, valueOutOfRange, validValue));
+        snapshot.setDeltaFiProperties(List.of(unrecognizedKey, invalidDataType, valueOutOfRange, validValue, validSet));
 
         deltaFiPropertiesService.resetFromSnapshot(snapshot, true);
         Mockito.verify(deltaFiPropertiesRepo).updateProperty(validValue.getKey(), validValue.getValue());
+        Mockito.verify(deltaFiPropertiesRepo).updateProperty(validSet.getKey(),
+                DeltaFiPropertiesService.sortedSetValue(validSet.getValue()));
+    }
+
+    @Test
+    void testResetFromSnapshotLegacySetProperty() {
+        Mockito.when(deltaFiPropertiesRepo.findAll()).thenReturn(List.of(
+                Property.builder().key("allowedAnalyticsAnnotations").dataType(VariableDataType.SET).build()));
+
+        deltaFiPropertiesService = new DeltaFiPropertiesService(deltaFiPropertiesRepo, eventPublisher,
+                localStorageProperties, true, false);
+
+        Snapshot snapshot = new Snapshot();
+        snapshot.setDeltaFiProperties(List.of(new KeyValue("allowedAnalyticsAnnotations", "abc,def,1\\,2\\,3")));
+
+        deltaFiPropertiesService.resetFromSnapshot(snapshot, true);
+        Mockito.verify(deltaFiPropertiesRepo).updateProperty("allowedAnalyticsAnnotations",
+                "[\"1,2,3\",\"abc\",\"def\"]");
     }
 
     @Test
@@ -236,7 +264,6 @@ class DeltaFiPropertiesServiceTest {
                 .customValue("Custom System")
                 .defaultValue("DeltaFi")
                 .dataType(VariableDataType.STRING)
-                .editable(true)
                 .build();
         Mockito.when(deltaFiPropertiesRepo.findAll()).thenReturn(List.of(property));
 

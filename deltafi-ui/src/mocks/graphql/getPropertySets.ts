@@ -147,7 +147,7 @@ const generateData = () => {
         {
           // LIST -> rendered as chips
           key: "mock.ingress.allowed-sources",
-          value: "sourceA, sourceB, sourceC",
+          value: "[\"sourceA\", \"sourceB\", \"sourceC\"]",
           defaultValue: null,
           editable: true,
           refreshable: true,

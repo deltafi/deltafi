@@ -17,19 +17,16 @@
  */
 package org.deltafi.core.services;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.deltafi.common.types.KeyValue;
 import org.deltafi.common.types.VariableDataType;
-import org.deltafi.core.configuration.DeltaFiProperties;
-import org.deltafi.core.configuration.LocalStorageProperties;
-import org.deltafi.core.configuration.PropertyGroup;
-import org.deltafi.core.configuration.PropertyInfo;
+import org.deltafi.core.configuration.*;
 import org.deltafi.core.repo.DeltaFiPropertiesRepo;
-import org.deltafi.core.types.EgressDisabledEvent;
-import org.deltafi.core.types.Property;
-import org.deltafi.core.types.PropertySet;
-import org.deltafi.core.types.Result;
+import org.deltafi.core.types.*;
 import org.deltafi.core.types.snapshot.Snapshot;
 import org.deltafi.core.types.snapshot.SnapshotRestoreOrder;
 import org.springframework.boot.context.properties.bind.Binder;
@@ -49,28 +46,30 @@ public class DeltaFiPropertiesService implements Snapshotter {
             "Content stored outside of DeltaFi will not be removed by this setting.";
     private static final String DISABLED_DESCRIPTION = "Not applicable for this storage configuration.  ";
     private static final String ENV_DISABLED_DESCRIPTION = "Disabled by configuration.  ";
-    private static final Set<String> allowedProperties;
-    private static final List<Property> defaultProperties;
-    private static final Map<String, PropertyGroup> propertyToGroup;
-    private static final Map<String, VariableDataType> propertyToDataType;
+    private static final Set<String> allowedProperties = new HashSet<>();
+    private static final List<Property> defaultProperties = new ArrayList<>();
+    private static final Map<String, PropertyGroup> propertyToGroup = new HashMap<>();
+    private static final Map<String, VariableDataType> propertyToDataType = new HashMap<>();
 
     static {
-        allowedProperties = new HashSet<>();
-        defaultProperties = new ArrayList<>();
-        propertyToGroup = new HashMap<>();
-        propertyToDataType = new HashMap<>();
         for (Field field : DeltaFiProperties.class.getDeclaredFields()) {
             PropertyInfo propertyInfo = field.getAnnotation(PropertyInfo.class);
-            if (propertyInfo != null) {
-                allowedProperties.add(field.getName());
-                String value = !PropertyInfo.NULL.equals(propertyInfo.defaultValue()) ? propertyInfo.defaultValue() : null;
-                propertyToGroup.put(field.getName(), propertyInfo.group());
-                propertyToDataType.put(field.getName(), propertyInfo.dataType());
-
-                defaultProperties.add(Property.builder().key(field.getName()).defaultValue(value)
-                        .description(propertyInfo.description()).refreshable(propertyInfo.refreshable())
-                        .editable(true).dataType(propertyInfo.dataType()).build());
+            if (propertyInfo == null) {
+                continue;
             }
+
+            allowedProperties.add(field.getName());
+            String value = !PropertyInfo.NULL.equals(propertyInfo.defaultValue()) ? propertyInfo.defaultValue() : null;
+            propertyToGroup.put(field.getName(), propertyInfo.group());
+            propertyToDataType.put(field.getName(), propertyInfo.dataType());
+
+            defaultProperties.add(Property.builder()
+                    .key(field.getName())
+                    .defaultValue(value)
+                    .description(propertyInfo.description())
+                    .refreshable(propertyInfo.refreshable())
+                    .dataType(propertyInfo.dataType())
+                    .build());
         }
     }
 
@@ -174,9 +173,8 @@ public class DeltaFiPropertiesService implements Snapshotter {
             }
         }
 
-        deltaFiPropertiesRepo.batchUpsertAndDeleteProperties(
-                keys, defaultValues, descriptions, refreshables, editables, dataTypes, allowedProperties
-        );
+        deltaFiPropertiesRepo.batchUpsertAndDeleteProperties(keys, defaultValues, descriptions, refreshables, editables,
+                dataTypes, allowedProperties);
 
         forceDisabledPropertyValues();
         normalizeSetProperties();
@@ -197,7 +195,8 @@ public class DeltaFiPropertiesService implements Snapshotter {
      */
     private void normalizeSetProperties() {
         for (Property property : deltaFiPropertiesRepo.findAll()) {
-            if (property.getDataType() == VariableDataType.SET && property.hasValue()) {
+            if (property.getDataType() == VariableDataType.SET && property.hasValue() &&
+                    !property.getCustomValue().startsWith("[")) {
                 String normalized = sortedSetValue(property.getCustomValue());
                 if (!normalized.equals(property.getCustomValue())) {
                     deltaFiPropertiesRepo.updateProperty(property.getKey(), normalized);
@@ -257,7 +256,7 @@ public class DeltaFiPropertiesService implements Snapshotter {
             List<PropertySet> result = new ArrayList<>();
             for (PropertyGroup group : PropertyGroup.values()) {
                 PropertySet groupSet = groupPropertySet(group);
-                groupSet.setProperties(this.properties.stream()
+                groupSet.setProperties(properties.stream()
                         .filter(p -> propertyToGroup.get(p.getKey()).equals(group))
                         .toList());
                 result.add(groupSet);
@@ -265,7 +264,7 @@ public class DeltaFiPropertiesService implements Snapshotter {
             return result;
         }
         PropertySet common = commonPropertySet();
-        common.setProperties(this.properties);
+        common.setProperties(properties);
         return List.of(common);
     }
 
@@ -292,7 +291,9 @@ public class DeltaFiPropertiesService implements Snapshotter {
                 .toList();
         boolean changed = false;
         for (KeyValue keyValue : allowedUpdates) {
-            normalizeSetValue(keyValue);
+            if (keyValue.getValue() != null && propertyToDataType.get(keyValue.getKey()) == VariableDataType.SET) {
+                keyValue.setValue(sortedSetValue(keyValue.getValue()));
+            }
             boolean updated = deltaFiPropertiesRepo.updateProperty(keyValue.getKey(), keyValue.getValue()) > 0;
             if (updated && disabledEgress(keyValue)) {
                 eventPublisher.publishEvent(new EgressDisabledEvent(keyValue));
@@ -302,29 +303,18 @@ public class DeltaFiPropertiesService implements Snapshotter {
         return refresh(changed);
     }
 
-    private void normalizeSetValue(KeyValue keyValue) {
-        if (keyValue.getValue() != null && propertyToDataType.get(keyValue.getKey()) == VariableDataType.SET) {
-            keyValue.setValue(sortedSetValue(keyValue.getValue()));
-        }
-    }
-
-    // TODO: LIST, SET, and MAP values are stored as comma-separated strings with escape characters
-    //  for delimiters. This is fragile and prevents the UI from properly handling values containing
-    //  commas. These should be stored as proper JSON (arrays for LIST/SET, objects for MAP) with a
-    //  migration for existing values and backward-compatible snapshot import.
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
     /**
-     * Parse a comma-separated value as a set, sort the entries, and rejoin.
-     * Does not add brackets — the DB stores plain comma-separated strings.
-     * Re-escapes commas within entries so round-tripping is lossless.
+     * Parse a JSON array value as a set, sort the entries, and rejoin.
      */
     static String sortedSetValue(String value) {
-        List<String> items = new ArrayList<>(VariableDataType.readStringAsList(value));
-        Collections.sort(items);
-        return items.stream()
-                .distinct()
-                .map(item -> item.replace(",", "\\,"))
-                .collect(Collectors.joining(", "));
+        try {
+            List<String> items = OBJECT_MAPPER.readValue(value, new TypeReference<>() {});
+            return OBJECT_MAPPER.writeValueAsString(items.stream().distinct().sorted().toList());
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     private boolean disabledEgress(KeyValue keyValue) {
@@ -384,11 +374,7 @@ public class DeltaFiPropertiesService implements Snapshotter {
         }
         // For SET types, compare sorted entries to handle different ordering
         if (dataType == VariableDataType.SET) {
-            List<String> list1 = new ArrayList<>(VariableDataType.readStringAsList(value1));
-            List<String> list2 = new ArrayList<>(VariableDataType.readStringAsList(value2));
-            Collections.sort(list1);
-            Collections.sort(list2);
-            return list1.equals(list2);
+            return sortedSetValue(value1).equals(sortedSetValue(value2));
         }
         return false;
     }
@@ -410,18 +396,39 @@ public class DeltaFiPropertiesService implements Snapshotter {
     }
 
     private void applySnapshotProperties(List<KeyValue> snapshotProperties) {
-        Map<String, Property> existingProperties = this.properties.stream()
+        Map<String, Property> existingProperties = properties.stream()
                 .collect(Collectors.toMap(Property::getKey, property -> property));
         List<KeyValue> updates = new ArrayList<>();
         List<String> unsets = new ArrayList<>();
 
         for (KeyValue snapshotProperty : snapshotProperties) {
-            Property existingProperty = existingProperties.get(snapshotProperty.getKey());
-            if (existingProperty != null &&
-                    valuesEqual(snapshotProperty.getValue(), existingProperty.getDefaultValue(), existingProperty.getDataType())) {
-                unsets.add(snapshotProperty.getKey());
+            String propertyKey = snapshotProperty.getKey();
+
+            Property existingProperty = existingProperties.get(propertyKey);
+            if (existingProperty == null) {
+                log.warn("Skipping legacy property that no longer exists: {}", propertyKey);
+                continue;
+            }
+
+            String propertyValue;
+            if (((existingProperty.getDataType() == VariableDataType.LIST) ||
+                    (existingProperty.getDataType() == VariableDataType.SET)) &&
+                    !(snapshotProperty.getValue().startsWith("[") && snapshotProperty.getValue().endsWith("]"))) {
+                try {
+                    propertyValue = OBJECT_MAPPER.writeValueAsString(
+                            VariableDataType.readStringAsList(snapshotProperty.getValue()));
+                } catch (JsonProcessingException e) {
+                    throw new IllegalArgumentException(
+                            "Unable to update legacy %s: %s".formatted(snapshotProperty.getKey(), e.getMessage()));
+                }
             } else {
-                updates.add(snapshotProperty);
+                propertyValue = snapshotProperty.getValue();
+            }
+
+            if (valuesEqual(propertyValue, existingProperty.getDefaultValue(), existingProperty.getDataType())) {
+                unsets.add(propertyKey);
+            } else {
+                updates.add(new KeyValue(propertyKey, propertyValue));
             }
         }
 
@@ -434,7 +441,7 @@ public class DeltaFiPropertiesService implements Snapshotter {
     }
 
     public boolean isContentStorageUnmanaged() {
-        return !this.localStorageProperties.content() || this.inMemoryStorage;
+        return !localStorageProperties.content() || this.inMemoryStorage;
     }
 
     private boolean refresh(boolean changed) {

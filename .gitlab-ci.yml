@@ -33,6 +33,7 @@ stages:
   needs: []
   variables:
     OPENAPI_SPEC: deltafi-core/src/main/resources/openapi/openapi.yaml
+    OPENAPI_IGNORED_ERRORS: deltafi-core/src/main/resources/openapi/ignored-errors.md
     OPENAPI_BASE_REF: dev
   script:
     - sdk install gradle ${GRADLE_VERSION}
@@ -51,7 +52,7 @@ stages:
     - |
       if git cat-file -e "origin/${OPENAPI_BASE_REF}:${OPENAPI_SPEC}" 2>/dev/null; then
         git show "origin/${OPENAPI_BASE_REF}:${OPENAPI_SPEC}" > /tmp/base-openapi.yaml
-        oasdiff breaking /tmp/base-openapi.yaml "${OPENAPI_SPEC}" --fail-on ERR
+        oasdiff breaking /tmp/base-openapi.yaml "${OPENAPI_SPEC}" --fail-on ERR --err-ignore "${OPENAPI_IGNORED_ERRORS}"
       else
         echo "No base spec on origin/${OPENAPI_BASE_REF}; skipping breaking-change check (first run)."
       fi

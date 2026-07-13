@@ -31,7 +31,7 @@
         </div>
       </template>
       <div ref="inputContainer">
-        <ListEdit v-if="localProperty.dataType === 'LIST' || localProperty.dataType === 'SET'" v-model="localProperty.value" />
+        <ListEdit v-if="localProperty.dataType === 'LIST' || localProperty.dataType === 'SET'" v-model="localProperty.value" :json="isJson" />
         <MapEdit v-if="localProperty.dataType === 'MAP'" v-model="localProperty.value" />
         <span v-if="localProperty.dataType === 'STRING'">
           <Password v-if="localProperty.masked" v-model="localProperty.value" :feedback="false" toggle-mask input-style="width: 100%" style="width: 100%" placeholder="Enter a new value" />
@@ -59,8 +59,8 @@
 </template>
 
 <script setup>
-import ListEdit from "@/components/plugin/ListEdit.vue";
-import MapEdit from "@/components/plugin/MapEdit.vue";
+import ListEdit from "@/components/editPanels/ListEdit.vue";
+import MapEdit from "@/components/editPanels/MapEdit.vue";
 import useNotifications from "@/composables/useNotifications";
 import usePlugins from "@/composables/usePlugins";
 import usePropertySets from "@/composables/usePropertySets";
@@ -106,6 +106,7 @@ const saveBtnLabel = computed(() => (saving.value ? "Saving" : "Save"));
 const saveBtnIcon = computed(() => (saving.value ? "pi pi-spin pi-spinner" : "pi pi-check"));
 const overridden = computed(() => property.value.value !== null && property.value.value !== property.value.defaultValue);
 const revertTooltip = computed(() => `Revert to default value: ${property.value.defaultValue}`);
+const isJson = computed(() => pluginCoordinates.value ? false : true);
 
 watch(
   () => localProperty.value.value,
@@ -155,9 +156,9 @@ const updateValue = computed(() => {
 
 const normalizeSetValue = () => {
   if (localProperty.value.dataType === "SET" && localProperty.value.value) {
-    const items = splitEscaped(localProperty.value.value);
+    const items = isJson.value ? JSON.parse(localProperty.value.value) : splitEscaped(localProperty.value.value);
     const unique = [...new Set(items)].sort();
-    localProperty.value.value = unique.map(escapeCommas).join(", ");
+    localProperty.value.value = isJson.value ? JSON.stringify(unique) : unique.map(escapeCommas).join(", ");
   }
 };
 
@@ -172,6 +173,8 @@ const save = async (setNull = false) => {
   saving.value = true;
   let response = null;
   let updateSuccessful = false;
+
+  normalizeSetValue();
 
   if (pluginCoordinates.value) {
     response = await setPluginVariableValues({
@@ -200,13 +203,11 @@ const save = async (setNull = false) => {
       saving.value = false;
     } else {
       // No errors but updateSuccessful is false means no changes were made
-      normalizeSetValue();
       emit("saved", localProperty.value);
       saving.value = false;
       hide();
     }
   } else {
-    normalizeSetValue();
     emit("saved", localProperty.value);
     notify.success(`${pluginCoordinates.value ? "Plugin variable" : "System Property"} updated successfully.`, `${pluginCoordinates.value ? localProperty.value.name : localProperty.value.key}`);
     saving.value = false;

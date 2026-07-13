@@ -354,12 +354,12 @@ class LeaderConfigServiceTest {
         // so identical values in different order should produce matching snapshot values
         Snapshot leaderSnapshot = createSnapshot(
                 List.of(), List.of(), List.of(),
-                List.of(new KeyValue("allowedAnalyticsAnnotations", "a, b, c"))
+                List.of(new KeyValue("allowedAnalyticsAnnotations", "[\"a\", \"b\", \"c\"]"))
         );
 
         Snapshot memberSnapshot = createSnapshot(
                 List.of(), List.of(), List.of(),
-                List.of(new KeyValue("allowedAnalyticsAnnotations", "a, b, c"))
+                List.of(new KeyValue("allowedAnalyticsAnnotations", "[\"c\", \"b\", \"a\"]"))
         );
 
         ConfigDiff diff = leaderConfigService.computeDiffForTest(leaderSnapshot, memberSnapshot);

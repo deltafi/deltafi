@@ -25,7 +25,9 @@
           <i v-if="propertySet.description" v-tooltip.right="propertySet.description" class="ml-2 text-muted fas fa-info-circle fa-fw" />
         </span>
       </template>
-      <DataTable aria-label="System properties" sort-field="key" :sort-order="1" :value="visibleProperties" edit-mode="cell" class="p-datatable-sm p-datatable-gridlines property-set-table" :table-style="{ 'table-layout': 'fixed', width: '100%' }" striped-rows :row-hover="true" data-key="key">
+      <DataTable aria-label="System properties" sort-field="key" :sort-order="1" :value="visibleProperties"
+          edit-mode="cell" class="p-datatable-sm p-datatable-gridlines property-set-table" :table-style="{ 'table-layout': 'fixed', width: '100%' }" striped-rows
+          :row-hover="true" data-key="key">
         <template #empty> No properties in this property set. </template>
         <Column header="Key" field="key" :sortable="true" :style="{ width: '50%' }">
           <template #body="property">
@@ -33,7 +35,7 @@
             <i v-if="tooltipText(property.data)" v-tooltip.right="tooltipText(property.data)" class="ml-2 text-muted fas fa-info-circle fa-fw" />
           </template>
         </Column>
-        <Column header="Value" field="value" :sortable="true" class="value-column" :style="{ width: '50%' }">
+        <Column field="value" header="Value" class="value-column" :style="{ width: '50%' }">
           <template #body="{ data }">
             <template v-if="!$hasPermission('SystemPropertiesUpdate') || data.editable === false">
               <div class="value-disabled">
@@ -42,7 +44,7 @@
                 </span>
                 <span v-if="data.value == null || data.value === ''"></span>
                 <template v-else-if="COLLECTION_TYPES.includes(data.dataType)">
-                  <Chip v-for="item in viewList(data.value)" :key="item" v-tooltip.bottom="item.length > 20 ? item : undefined" :label="item" class="mr-1 mb-1 truncate-chip" />
+                  <Chip v-for="item in JSON.parse(data.value)" :key="item" v-tooltip.bottom="item.length > 20 ? item : undefined" :label="item" class="mr-1 mb-1 truncate-chip" />
                 </template>
                 <span v-else class="value-text">{{ data.value }}</span>
               </div>
@@ -60,8 +62,11 @@
                     <i v-tooltip.left="'Default value has been overridden'" class="fas fa fa-gavel mr-2 text-muted" />
                   </span>
                   <span v-if="data.value == null || data.value === ''"></span>
+                  <template v-else-if="data.dataType === 'MAP'">
+                    <Chip v-for="item in splitEscaped(data.value)" :key="item" v-tooltip.bottom="item.length > 20 ? item : undefined" :label="item" class="mr-1 mb-1 truncate-chip" />
+                  </template>
                   <template v-else-if="COLLECTION_TYPES.includes(data.dataType)">
-                    <Chip v-for="item in viewList(data.value)" :key="item" v-tooltip.bottom="item.length > 20 ? item : undefined" :label="item" class="mr-1 mb-1 truncate-chip" />
+                    <Chip v-for="item in JSON.parse(data.value)" :key="item" v-tooltip.bottom="item.length > 20 ? item : undefined" :label="item" class="mr-1 mb-1 truncate-chip" />
                   </template>
                   <span v-else class="value-text">{{ data.value }}</span>
                 </div>
@@ -109,8 +114,6 @@ const visibleProperties = computed(() => {
   }
   return filtered;
 });
-
-const viewList = splitEscaped;
 
 const tooltipText = (property) => {
   const parts = [];

@@ -17,18 +17,17 @@
  */
 package org.deltafi.core.configuration;
 
-import tools.jackson.databind.ObjectMapper;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
-import org.deltafi.common.types.LogSeverity;
 import org.apache.commons.lang3.StringUtils;
+import org.deltafi.common.types.LogSeverity;
 import org.deltafi.common.types.VariableDataType;
 import org.deltafi.core.types.leader.CredentialsConfig;
 import org.deltafi.core.types.leader.MemberConfig;
+import tools.jackson.databind.ObjectMapper;
 
 import java.time.Duration;
 import java.util.*;
-import java.util.stream.Collectors;
 
 /**
  * Holds the system properties. To add a new property that will be exposed
@@ -98,8 +97,8 @@ public class DeltaFiProperties {
     @PropertyInfo(group = PropertyGroup.JOIN_CONTROLS, description = "[Duration or ISO 8601] Maximum duration a database lock can be held on a join entry before it is automatically unlocked", defaultValue = "PT1M")
     private Duration joinMaxLockDuration = Duration.ofMinutes(1);
 
-    @PropertyInfo(group = PropertyGroup.METRICS_AND_ANALYTICS, description = "Comma-separated list of allowed analytics annotation keys to be promoted into metrics. Only these annotations will be used for grouping/filtering in analytics.", dataType = VariableDataType.SET)
-    private String allowedAnalyticsAnnotations;
+    @PropertyInfo(group = PropertyGroup.METRICS_AND_ANALYTICS, description = "Set of allowed analytics annotation keys to be promoted into metrics. Only these annotations will be used for grouping/filtering in analytics.", dataType = VariableDataType.SET)
+    private Set<String> allowedAnalyticsAnnotations = Set.of();
     @PropertyInfo(group = PropertyGroup.METRICS_AND_ANALYTICS, description = "Name of the analytics group used to aggregate metrics. This provides a level of grouping more specific than data source.")
     private String analyticsGroupName;
     @PropertyInfo(group = PropertyGroup.METRICS_AND_ANALYTICS, description = "Enable reporting of metrics to VictoriaMetrics", defaultValue = "true", refreshable = false, dataType = VariableDataType.BOOLEAN)
@@ -110,8 +109,8 @@ public class DeltaFiProperties {
     private boolean parquetAnalyticsEnabled = true;
     @PropertyInfo(group = PropertyGroup.METRICS_AND_ANALYTICS, description = "Number of days to retain provenance data before automatic deletion", defaultValue = "3", dataType = VariableDataType.NUMBER)
     private int provenanceAgeOffDays = 3;
-    @PropertyInfo(group = PropertyGroup.METRICS_AND_ANALYTICS, description = "Comma-separated list of annotation keys to include in provenance records", dataType = VariableDataType.SET)
-    private String provenanceAnnotationsAllowed;
+    @PropertyInfo(group = PropertyGroup.METRICS_AND_ANALYTICS, description = "Set of annotation keys to include in provenance records", dataType = VariableDataType.SET)
+    private Set<String> provenanceAnnotationsAllowed = Set.of();
     @PropertyInfo(group = PropertyGroup.METRICS_AND_ANALYTICS, description = "Enable provenance tracking for DeltaFile lineage export", defaultValue = "false", dataType = VariableDataType.BOOLEAN)
     private boolean provenanceEnabled = false;
     @PropertyInfo(group = PropertyGroup.METRICS_AND_ANALYTICS, description = "Enable analytics storage in TimescaleDB", defaultValue = "true", dataType = VariableDataType.BOOLEAN)
@@ -293,10 +292,6 @@ public class DeltaFiProperties {
      */
     public int getMemberPollingTimeout() {
         return (int) (memberPollingInterval * 0.8);
-    }
-
-    public int getMemberRequestTimeout() {
-        return memberRequestTimeout;
     }
 
     public void setMemberPollingInterval(int memberPollingInterval) {
@@ -491,30 +486,17 @@ public class DeltaFiProperties {
         this.checkDeleteLagErrorThreshold = checkDeleteLagErrorThreshold;
     }
 
-    /**
-     * Returns the allowed analytics annotations as a list of trimmed strings.
-     * If the property is null or empty, returns an empty list.
-     *
-     * @return a List of allowed analytics annotation keys
-     */
-    public Set<String> allowedAnalyticsAnnotations() {
-        if (allowedAnalyticsAnnotations == null || allowedAnalyticsAnnotations.isBlank()) {
-            return Set.of();
-        }
-        return Arrays.stream(allowedAnalyticsAnnotations.split(","))
-                .map(String::trim)
-                .filter(s -> !s.isEmpty())
-                .collect(Collectors.toSet());
+    public void setAllowedAnalyticsAnnotations(String json) {
+        this.allowedAnalyticsAnnotations = jsonToSortedStringSet(json);
     }
 
-    public Set<String> allowedProvenanceAnnotations() {
-        if (provenanceAnnotationsAllowed == null || provenanceAnnotationsAllowed.isBlank()) {
-            return Set.of();
-        }
-        return Arrays.stream(provenanceAnnotationsAllowed.split(","))
-                .map(String::trim)
-                .filter(s -> !s.isEmpty())
-                .collect(Collectors.toSet());
+    public void setProvenanceAnnotationsAllowed(String json) {
+        this.provenanceAnnotationsAllowed = jsonToSortedStringSet(json);
+    }
+
+    @SuppressWarnings("unchecked")
+    private Set<String> jsonToSortedStringSet(String json) {
+        return new TreeSet<>((Collection<String>) OBJECT_MAPPER.readValue(json, TreeSet.class));
     }
 
     private void minCheck(int value, int min, String name) {

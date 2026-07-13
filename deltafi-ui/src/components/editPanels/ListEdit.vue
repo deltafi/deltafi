@@ -40,6 +40,11 @@ const props = defineProps({
     required: false,
     default: "",
   },
+  json: {
+    type: Boolean,
+    required: false,
+    default: false,
+  },
 });
 
 const list = ref([]);
@@ -68,6 +73,8 @@ const loadListFromModelValue = async () => {
   if (props.modelValue !== null) {
     if (Array.isArray(props.modelValue)) {
       list.value = props.modelValue;
+    } else if (props.json) {
+      list.value = JSON.parse(props.modelValue);
     } else {
       list.value = splitEscaped(props.modelValue);
     }
@@ -88,6 +95,8 @@ const emitUpdate = () => {
   const filteredList = list.value.filter((item) => item !== null && item !== "");
   if (filteredList.length === 0) {
     emit("update:modelValue", null);
+  } else if (props.json) {
+    emit("update:modelValue", JSON.stringify(filteredList));
   } else {
     emit("update:modelValue", filteredList.map(escapeCommas).join(", "));
   }
