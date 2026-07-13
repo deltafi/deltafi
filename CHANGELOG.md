@@ -5,6 +5,101 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 All [Unreleased] changes can be viewed in GitLab.
 
+## [2.59.0] - 2026-07-13
+
+### Highlights
+- **Go action kit** API changes are complete.  In an upcoming release, the action kit will soon be declared stable for production.  There may be API breaking changes if issues are found, but there are no known quality issues at this point.
+
+### Added
+- Added a **Search DeltaFiles** button to the node details panel on both the System Map (Full) and System Map (Detail) pages. Selecting a data source, transform, data sink, or topic and clicking the button jumps straight to the DeltaFiles Search page pre-filtered to that flow or topic, so you no longer have to copy the name over and set up the filter by hand. Note that following one of these links replaces any filters currently set on the Search page with the filter for the selected node.
+- Added an option to configure the max upload size for artifacts in the `values.yaml` using the `deltafi.core.maxUploadSize` setting. The setting takes spring formated sizes and defaults to `5GB`
+- Documented result precedence, artifact watch-and-cache, streaming, and action concurrency contract in the Go action kit DESIGN
+- Added acceptance-test make target (go test -race) to the Go action kit and plugins, plus a concurrency contract test; race runs need build-base on alpine CI
+- Go action kit: Added streaming artifact upload support to the Go action kit so large artifacts no longer need to be fully buffered in memory before publishing.
+- Go action kit: Added SaveWriterContent / SaveFromWriter for bounded-memory writer-callback content saves
+- Go action kit: Added Fail/Failf convenience methods for converting errors to action error results
+- Go action kit: Added SaveContentBatch and SaveWriterContentBatch for multi-item content saves with per-item error aggregation
+- Go action kit: Added NewEmbeddedCSVSupplier/NewEmbeddedJSONSupplier for embedded lookup-table resources
+- Go action kit: Added worker tests for publish failure, queue backoff/recovery, and shutdown cancellation
+- Go action kit: Added custom metric emission support for transform, egress, and timed ingress actions.
+- Go action kit: Added Filterf and SetFilterContext to timed ingress actions so a timed ingress can return a FILTER result.
+- Go action kit: Added SetFilterContext to transform and egress actions and a context field to filter results.
+- Go action kit: Added IngressStatus constants (HEALTHY, DEGRADED, UNHEALTHY) for timed ingress status reporting.
+- Expanded MCP coverage for system properties, snapshots, status reporting, data ingress, integration tests, auto-resume policies, delete policies, events, DeltaFile annotations, and system plan import/export.
+- Added MCP tools to export system flow plans and retrieve an individual flow's plan, both producing payloads that feed straight back into the import and load tools.
+- Added MCP tools to generate plugin actions and suppliers and to preview or apply plugin scaffolding updates.
+- On the System Properties page, added support for editing masked (sensitive) values via a password field that stays blank on open so the stored secret is never overwritten
+- On the System Properties page, added a lock icon for masked variables and a red `*` indicator for required variables
+
+### Changed
+- Changed Go action kit content reads to open content segments lazily while streaming, reducing open storage connections for multi-segment content.
+- Reordered the Go action kit content-save API to a consistent name/mediaType-first, payload-last signature
+- Lookup table rows are now a compile-time read-only Row type (zero-copy, breaking API change)
+- Changed Go action kit application logs to structured JSON output.
+- Changed Go action kit plugin registration to retry transient failures (network errors and 5xx) with capped exponential backoff up to a configurable budget, while failing fast on 4xx client errors, so a slow-starting Core no longer crash-loops the plugin.
+- MCP tools now provide stricter input definitions and clearer validation errors for structured data, filters, and paging options.
+- Plugin generation now initializes new plugins as standalone Git repositories while preserving the repository structure of existing plugins.
+- The System Properties page now shows toggle switches for boolean plugin variables, making it consistent with system properties
+
+### Fixed
+- Calendar quick-pick ranges (e.g. "Last 3 Days") now stay relative when you leave and come back to the search pages, so the window moves with the current time and newly added DeltaFiles show up instead of being cut off.
+- The calendar now highlights the selected range in dark themes again.
+- C++ action kit now rebuilds its Redis/Valkey connection after a drop instead of spinning on a broken socket. The poller in `ActionWorker` and the `LookupTableSupplierRunner` poll loop reconnect via `connect_with_retry` on exception, and `ActionEventQueue` operations on the shared connection (`put`, `heartbeat`, long-running task tracking) lazily reconnect and retry once on failure.
+- Now properly creating the user roles for accessing the artifact registry: `ArtifactRegistryRead`, `ArtifactRegistryWrite`
+- Fixed docs generation when plugin contains bean overrides
+- Fixed docs generation when plugin uses the lookup table service or artifact registry
+- Fixed missing sections in generated docs
+- Fixed Go action kit action dispatch to honor returned DeltaFiles and convert nil action returns into error results.
+- Fixed Go action kit registration and dispatch for actions that use pointer parameter types or nil pointer defaults.
+- Fixed Go action kit public test runners to mirror production action return semantics.
+- Fixed Go action kit lookup table supplier panics so they are logged and surfaced as errors instead of crashing the runtime loop.
+- Fixed Go action kit content range validation for invalid subcontent and in-memory test content store reads.
+- Fixed Go action kit plugin registration so each HTTP attempt has a timeout and cannot hang startup indefinitely on a stalled Core connection.
+- Improved Go action kit artifact version listener logging when the subscription channel closes and reconnects.
+- Fixed Go action kit default artifact seeding, child/ingress orphan cleanup, and string-map parameter parsing edge cases.
+- Fixed Go action kit long-running task reporting so Core can identify in-flight Go actions and avoid duplicate requeue.
+- Fixed Go action kit graceful shutdown so in-flight actions can publish results during the worker drain window.
+- Fixed Go action kit platform HTTP clients to preserve default transport timeouts and proxy behavior.
+- Fixed Go action kit transform dispatch so error and filter results take precedence over split children.
+- Fixed Go action kit parameter coercion for embedded structs and unknown-typed string values.
+- Fixed Go action kit Fail(nil) on transform, egress, and timed ingress so a nil error no longer panics the worker.
+- Fixed Go action kit DataSize parsing to reject values that overflow int64 instead of silently wrapping to a negative size.
+- Fixed Go action kit schema generation to log when a JSON round-trip fails instead of silently registering an empty parameter schema.
+- Fixed Go action kit lookup table supplier result publishing to retry transient Valkey failures instead of dropping the reply to Core.
+- Fixed Go action kit join-then-transform actions to carry annotations, log messages, and metrics produced during the join phase into the result.
+- Fixed MCP data ingress for empty inline content and metadata values.
+- TUI: Fixed plugin installation tracking for images that omit an explicit tag.
+- TUI: Fixed policy replacement operations so an explicitly empty set can clear existing policies.
+- On the System Properties page, fixed long property values overflowing the value column by wrapping them
+- On the System Properties page, fixed LIST/SET/MAP value chips being invisible on striped rows in light mode by giving them a background and border
+- Provenance now records a `FILTERED` final state for DeltaFiles filtered by a data sink in test mode, instead of leaving them stuck at `IN_FLIGHT`.
+- Provenance now records a `COMPLETE` final state for DeltaFiles that egressed while awaiting expected annotations, instead of the internal `PENDING_ANNOTATIONS` value.
+
+### Removed
+- The names for the artifact registry read and write roles incorrectly had the same vlaue (`Artifacts`), which is now removed
+- Removed the unused multiCloser helper from the Go action kit.
+
+### Security
+- Force `org.bouncycastle:bcprov-jdk18on` to 1.84 (CVE-2026-0636), overriding the 1.81 pulled transitively by `io.minio:minio`
+
+### Tech-Debt/Refactor
+- Go action kit: Switched from minio client to AWS client for S3 access
+- Go action kit: Handled previously-unchecked Close and Remove error returns (errcheck cleanup).
+- Simplified the DeltaFi UI ingress to plain `pathType: Prefix` rules and removed the `nginx.ingress.kubernetes.io/rewrite-target` annotation. The regex capture-group paths (`/(.*)`, `/(visualization.*)`, ...) combined with an
+  identity rewrite (`/$1`) were a no-op, so routing is unchanged.
+
+### Upgrade and Migration
+- Upgraded Grafana to `deltafi/grafana:12.4.5-0`
+- Upgraded Dozzle to `deltafi/dozzle:v10.6.7-0`
+- Upgraded VictoriaMetrics to `deltafi/victoria-metrics:v1.146.0-0`
+- Upgraded Valkey to `deltafi/valkey:9.0.4-0`
+- Upgraded Nginx to `deltafi/nginx:1.31.2-alpine3.23-0`
+- Upgraded Logrotate to `deltafi/logrotate:1.0.0-7`
+- Upgraded S3Proxy to `deltafi/s3proxy:3.2.0-0`
+- Upgraded Vector to `deltafi/vector:0.56.0-alpine-0`
+- - Database migration V79 removes the user role `Artifacts`
+- Upgraded base Java JRE image to `deltafi/deltafi-java-jre:21.0.11-alpine-2`
+
 ## [2.58.1] - 2026-06-30
 
 ### Fixed
@@ -6502,7 +6597,8 @@ No changes.  UI update only
 ### Security
 - Forced all projects to log4j 2.17.0 to avoid CVEs
 
-[Unreleased]: https://gitlab.com/deltafi/deltafi/-/compare/2.58.1...main
+[Unreleased]: https://gitlab.com/deltafi/deltafi/-/compare/2.59.0...main
+[2.59.0]: https://gitlab.com/deltafi/deltafi/-/compare/2.58.1...2.59.0
 [2.58.1]: https://gitlab.com/deltafi/deltafi/-/compare/2.58.0...2.58.1
 [2.58.0]: https://gitlab.com/deltafi/deltafi/-/compare/2.56.0...2.58.0
 [2.56.0]: https://gitlab.com/deltafi/deltafi/-/compare/2.55.4...2.56.0
