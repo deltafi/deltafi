@@ -310,15 +310,13 @@ public class LookupTableClient {
      * @throws IOException if the table cannot be uploaded to DeltaFi Core
      */
     public void uploadTable(String lookupTableName, UploadFileType fileType, String fileContents) throws IOException {
-        HttpResponse<InputStream> response = httpService.post(lookupUrl + "/" + lookupTableName,
+        HttpResponse<byte[]> response = httpService.postForBytes(lookupUrl + "/" + lookupTableName,
                 Map.of("X-User-Permissions", "Admin", "X-User-Name", "deltafi-cli"),
                 new ByteArrayInputStream(fileContents.getBytes()), fileType.mediaType);
         Response.Status status = Response.Status.fromStatusCode(response.statusCode());
         if (Objects.isNull(status) || status.getFamily() != Response.Status.Family.SUCCESSFUL) {
-            try (InputStream body = response.body()) {
-                throw new IOException(String.format("Unable to upload table %s: Server returned status code %s: %s",
-                        lookupTableName, response.statusCode(), new String(body.readAllBytes())));
-            }
+            throw new IOException(String.format("Unable to upload table %s: Server returned status code %s: %s",
+                    lookupTableName, response.statusCode(), new String(response.body())));
         }
     }
 }

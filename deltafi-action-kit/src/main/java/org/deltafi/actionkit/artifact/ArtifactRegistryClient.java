@@ -394,19 +394,13 @@ class ArtifactRegistryClient {
         String url = coreUrl + basePath + "/" + artifactName + "/aliases/" + alias;
         String jsonBody = "{\"version\":\"" + version + "\"}";
         byte[] bodyBytes = jsonBody.getBytes(StandardCharsets.UTF_8);
-        HttpResponse<InputStream> response = httpService.put(url, DEFAULT_HEADERS,
+        HttpResponse<byte[]> response = httpService.putForBytes(url, DEFAULT_HEADERS,
                 new ByteArrayInputStream(bodyBytes), APPLICATION_JSON);
 
         int status = response.statusCode();
         if (status < 200 || status >= 300) {
-            try (InputStream body = response.body()) {
-                throw new IOException("Failed to set alias '" + alias + "' for artifact '" + artifactName +
-                        "': " + status + " - " + new String(body.readAllBytes(), StandardCharsets.UTF_8));
-            }
-        }
-
-        try (InputStream body = response.body()) {
-            body.transferTo(OutputStream.nullOutputStream());
+            throw new IOException("Failed to set alias '" + alias + "' for artifact '" + artifactName +
+                    "': " + status + " - " + new String(response.body(), StandardCharsets.UTF_8));
         }
     }
 

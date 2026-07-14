@@ -19,29 +19,30 @@ package org.deltafi.common.http;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import javax.net.ssl.SSLSession;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.URI;
 import java.net.http.HttpClient;
-import java.net.http.HttpHeaders;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
+import java.util.stream.Stream;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.fail;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.*;
 
 @ExtendWith(MockitoExtension.class)
+@SuppressWarnings({"unchecked", "rawtypes", "removal"}) // deprecation: these tests intentionally exercise the deprecated InputStream methods
 class HttpServiceTest {
     private static final String ALTERNATE_CONTENT_TYPE = "xml";
     private static final String MEDIA_TYPE = "application/text";
@@ -54,9 +55,8 @@ class HttpServiceTest {
     HttpService httpService;
 
     @Test
-    @SuppressWarnings("unchecked")
     void testPost() throws IOException, InterruptedException {
-        HttpResponse<InputStream> httpResponse = makeHttpResponse();
+        HttpResponse<InputStream> httpResponse = Mockito.mock(HttpResponse.class);
         Mockito.when(httpClient.send(Mockito.any(), Mockito.any(HttpResponse.BodyHandler.class))).thenReturn(httpResponse);
 
         InputStream targetStream = new ByteArrayInputStream("post body".getBytes());
@@ -65,9 +65,8 @@ class HttpServiceTest {
     }
 
     @Test
-    @SuppressWarnings("unchecked")
     void testPostOverrideContentType() throws IOException, InterruptedException {
-        HttpResponse<InputStream> httpResponse = makeHttpResponse();
+        HttpResponse<InputStream> httpResponse = Mockito.mock(HttpResponse.class);
         Mockito.when(httpClient.send(Mockito.any(), Mockito.any(HttpResponse.BodyHandler.class))).thenReturn(httpResponse);
 
         InputStream targetStream = new ByteArrayInputStream("post body".getBytes());
@@ -76,32 +75,22 @@ class HttpServiceTest {
     }
 
     @Test
-    @SuppressWarnings("unchecked")
-    public void testPostFailure() throws IOException, InterruptedException {
+    void testPostFailure() throws IOException, InterruptedException {
         Mockito.when(httpClient.send(Mockito.any(), Mockito.any(HttpResponse.BodyHandler.class)))
                 .thenThrow(new IOException("Test IOException"), new InterruptedException("Test InterruptedException"));
 
         InputStream targetStream = new ByteArrayInputStream("body".getBytes());
 
-        try {
-            HttpResponse<InputStream> test = httpService.post(URL, Map.of(), targetStream, MEDIA_TYPE);
-            fail("RuntimeException not thrown for IOException");
-        } catch (RuntimeException e) {
-            assertEquals("IOException/POST: Test IOException", e.getMessage());
-        }
+        assertThatThrownBy(() -> httpService.post(URL, Map.of(), targetStream, MEDIA_TYPE))
+                .hasMessage("IOException/POST: Test IOException");
 
-        try {
-            HttpResponse<InputStream> test = httpService.post(URL, Map.of(), targetStream, MEDIA_TYPE);
-            fail("RuntimeException not thrown for InterruptedException");
-        } catch (RuntimeException e) {
-            assertEquals("InterruptedException/POST: Test InterruptedException", e.getMessage());
-        }
+        assertThatThrownBy(() -> httpService.post(URL, Map.of(), targetStream, MEDIA_TYPE))
+                .hasMessage("InterruptedException/POST: Test InterruptedException");
     }
 
     @Test
-    @SuppressWarnings("unchecked")
     void testPut() throws IOException, InterruptedException {
-        HttpResponse<InputStream> httpResponse = makeHttpResponse();
+        HttpResponse<InputStream> httpResponse = Mockito.mock(HttpResponse.class);
         Mockito.when(httpClient.send(Mockito.any(), Mockito.any(HttpResponse.BodyHandler.class))).thenReturn(httpResponse);
 
         InputStream targetStream = new ByteArrayInputStream("post body".getBytes());
@@ -110,32 +99,22 @@ class HttpServiceTest {
     }
 
     @Test
-    @SuppressWarnings("unchecked")
-    public void testPutFailure() throws IOException, InterruptedException {
+    void testPutFailure() throws IOException, InterruptedException {
         Mockito.when(httpClient.send(Mockito.any(), Mockito.any(HttpResponse.BodyHandler.class)))
                 .thenThrow(new IOException("Test IOException"), new InterruptedException("Test InterruptedException"));
 
         InputStream targetStream = new ByteArrayInputStream("body".getBytes());
 
-        try {
-            HttpResponse<InputStream> test = httpService.put(URL, Map.of(), targetStream, MEDIA_TYPE);
-            fail("RuntimeException not thrown for IOException");
-        } catch (RuntimeException e) {
-            assertEquals("IOException/PUT: Test IOException", e.getMessage());
-        }
+        assertThatThrownBy(() -> httpService.put(URL, Map.of(), targetStream, MEDIA_TYPE))
+                .hasMessage("IOException/PUT: Test IOException");
 
-        try {
-            HttpResponse<InputStream> test = httpService.put(URL, Map.of(), targetStream, MEDIA_TYPE);
-            fail("RuntimeException not thrown for InterruptedException");
-        } catch (RuntimeException e) {
-            assertEquals("InterruptedException/PUT: Test InterruptedException", e.getMessage());
-        }
+        assertThatThrownBy(() -> httpService.put(URL, Map.of(), targetStream, MEDIA_TYPE))
+                .hasMessage("InterruptedException/PUT: Test InterruptedException");
     }
 
     @Test
-    @SuppressWarnings("unchecked")
     void testPatch() throws IOException, InterruptedException {
-        HttpResponse<InputStream> httpResponse = makeHttpResponse();
+        HttpResponse<InputStream> httpResponse = Mockito.mock(HttpResponse.class);
         Mockito.when(httpClient.send(Mockito.any(), Mockito.any(HttpResponse.BodyHandler.class))).thenReturn(httpResponse);
 
         InputStream targetStream = new ByteArrayInputStream("post body".getBytes());
@@ -144,32 +123,22 @@ class HttpServiceTest {
     }
 
     @Test
-    @SuppressWarnings("unchecked")
-    public void testPatchFailure() throws IOException, InterruptedException {
+    void testPatchFailure() throws IOException, InterruptedException {
         Mockito.when(httpClient.send(Mockito.any(), Mockito.any(HttpResponse.BodyHandler.class)))
                 .thenThrow(new IOException("Test IOException"), new InterruptedException("Test InterruptedException"));
 
         InputStream targetStream = new ByteArrayInputStream("body".getBytes());
 
-        try {
-            HttpResponse<InputStream> test = httpService.patch(URL, Map.of(), targetStream, MEDIA_TYPE);
-            fail("RuntimeException not thrown for IOException");
-        } catch (RuntimeException e) {
-            assertEquals("IOException/PATCH: Test IOException", e.getMessage());
-        }
+        assertThatThrownBy(() -> httpService.patch(URL, Map.of(), targetStream, MEDIA_TYPE))
+                .hasMessage("IOException/PATCH: Test IOException");
 
-        try {
-            HttpResponse<InputStream> test = httpService.patch(URL, Map.of(), targetStream, MEDIA_TYPE);
-            fail("RuntimeException not thrown for InterruptedException");
-        } catch (RuntimeException e) {
-            assertEquals("InterruptedException/PATCH: Test InterruptedException", e.getMessage());
-        }
+        assertThatThrownBy(() -> httpService.patch(URL, Map.of(), targetStream, MEDIA_TYPE))
+                .hasMessage("InterruptedException/PATCH: Test InterruptedException");
     }
 
     @Test
-    @SuppressWarnings("unchecked")
     void testDelete() throws IOException, InterruptedException {
-        HttpResponse<InputStream> httpResponse = makeHttpResponse();
+        HttpResponse<InputStream> httpResponse = Mockito.mock(HttpResponse.class);
         Mockito.when(httpClient.send(Mockito.any(), Mockito.any(HttpResponse.BodyHandler.class))).thenReturn(httpResponse);
 
         HttpResponse<InputStream> test = httpService.delete(URL, HEADERS, MEDIA_TYPE);
@@ -177,69 +146,132 @@ class HttpServiceTest {
     }
 
     @Test
-    @SuppressWarnings("unchecked")
-    public void testDeleteFailure() throws IOException, InterruptedException {
+    void testDeleteFailure() throws IOException, InterruptedException {
         Mockito.when(httpClient.send(Mockito.any(), Mockito.any(HttpResponse.BodyHandler.class)))
                 .thenThrow(new IOException("Test IOException"), new InterruptedException("Test InterruptedException"));
 
-        try {
-            HttpResponse<InputStream> test = httpService.delete(URL, Map.of(), MEDIA_TYPE);
-            fail("RuntimeException not thrown for IOException");
-        } catch (RuntimeException e) {
-            assertEquals("IOException/DELETE: Test IOException", e.getMessage());
-        }
+        assertThatThrownBy(() -> httpService.delete(URL, Map.of(), MEDIA_TYPE))
+                .hasMessage("IOException/DELETE: Test IOException");
 
-        try {
-            HttpResponse<InputStream> test = httpService.delete(URL, Map.of(), MEDIA_TYPE);
-            fail("RuntimeException not thrown for InterruptedException");
-        } catch (RuntimeException e) {
-            assertEquals("InterruptedException/DELETE: Test InterruptedException", e.getMessage());
-        }
+        assertThatThrownBy(() -> httpService.delete(URL, Map.of(), MEDIA_TYPE))
+                .hasMessage("InterruptedException/DELETE: Test InterruptedException");
     }
 
-    private HttpResponse<InputStream> makeHttpResponse() {
-        HttpResponse<InputStream> httpResponse = new HttpResponse<>() {
-            @Override
-            public int statusCode() {
-                return 0;
-            }
+    @Test
+    void testPostForStream() throws IOException, InterruptedException {
+        InputStream responseBody = Mockito.spy(new ByteArrayInputStream("response body".getBytes()));
+        HttpResponse<InputStream> httpResponse = Mockito.mock(HttpResponse.class);
+        Mockito.when(httpResponse.statusCode()).thenReturn(201);
+        Mockito.when(httpResponse.body()).thenReturn(responseBody);
+        Mockito.when(httpClient.send(Mockito.any(), Mockito.any(HttpResponse.BodyHandler.class))).thenReturn(httpResponse);
 
-            @Override
-            public HttpRequest request() {
-                return null;
-            }
+        InputStream targetStream = new ByteArrayInputStream("post body".getBytes());
+        try (HttpService.HttpInputStreamResponse response = httpService.postForStream(URL, HEADERS, targetStream, MEDIA_TYPE)) {
+            assertEquals(201, response.statusCode());
+            assertEquals("response body", new String(response.body().readAllBytes()));
+            Mockito.verify(responseBody, Mockito.never()).close();
+        }
+        Mockito.verify(responseBody).close();
 
-            @Override
-            public Optional<HttpResponse<InputStream>> previousResponse() {
-                return Optional.empty();
-            }
+        ArgumentCaptor<HttpRequest> captor = ArgumentCaptor.forClass(HttpRequest.class);
+        Mockito.verify(httpClient).send(captor.capture(), Mockito.<HttpResponse.BodyHandler<InputStream>>any());
+        assertEquals("POST", captor.getValue().method());
+    }
 
-            @Override
-            public HttpHeaders headers() {
-                return null;
-            }
+    @Test
+    void httpInputStreamResponseExposesLiveBodyThenClosesIt() throws IOException {
+        InputStream stream = Mockito.spy(new ByteArrayInputStream("hello".getBytes()));
+        HttpResponse<InputStream> httpResponse = Mockito.mock(HttpResponse.class);
+        Mockito.when(httpResponse.statusCode()).thenReturn(200);
+        Mockito.when(httpResponse.body()).thenReturn(stream);
 
-            @Override
-            public InputStream body() {
-                return null;
-            }
+        try (HttpService.HttpInputStreamResponse response = new HttpService.HttpInputStreamResponse(httpResponse)) {
+            assertEquals(200, response.statusCode());
+            assertEquals(httpResponse, response.response());
+            // body() returns the live, still-open stream (regression guard against closing it prematurely)
+            assertEquals("hello", new String(response.body().readAllBytes()));
+            Mockito.verify(stream, Mockito.never()).close();
+        }
+        // close() releases the underlying stream/connection
+        Mockito.verify(stream).close();
+    }
 
-            @Override
-            public Optional<SSLSession> sslSession() {
-                return Optional.empty();
-            }
+    /**
+     * Invokes one of the connection-releasing convenience methods so the whole family — {@code *ForBytes}
+     * (buffered {@code byte[]}) and {@code *DiscardingBody} (drained {@link Void}) — can be exercised by a
+     * single parameterized test. The return type is wildcarded so both variants share one signature.
+     */
+    @FunctionalInterface
+    private interface ReleasingCall {
+        HttpResponse<?> apply(HttpService httpService, InputStream body) throws HttpSendException;
+    }
 
-            @Override
-            public URI uri() {
-                return null;
-            }
+    private static Stream<Arguments> releasingCalls() {
+        return Stream.of(
+                Arguments.of("postForBytes", "POST", (ReleasingCall) (svc, body) -> svc.postForBytes(URL, HEADERS, body, MEDIA_TYPE)),
+                Arguments.of("putForBytes", "PUT", (ReleasingCall) (svc, body) -> svc.putForBytes(URL, HEADERS, body, MEDIA_TYPE)),
+                Arguments.of("patchForBytes", "PATCH", (ReleasingCall) (svc, body) -> svc.patchForBytes(URL, HEADERS, body, MEDIA_TYPE)),
+                Arguments.of("deleteForBytes", "DELETE", (ReleasingCall) (svc, body) -> svc.deleteForBytes(URL, HEADERS, MEDIA_TYPE)),
+                Arguments.of("postDiscardingBody", "POST", (ReleasingCall) (svc, body) -> svc.postDiscardingBody(URL, HEADERS, body, MEDIA_TYPE)),
+                Arguments.of("putDiscardingBody", "PUT", (ReleasingCall) (svc, body) -> svc.putDiscardingBody(URL, HEADERS, body, MEDIA_TYPE)),
+                Arguments.of("patchDiscardingBody", "PATCH", (ReleasingCall) (svc, body) -> svc.patchDiscardingBody(URL, HEADERS, body, MEDIA_TYPE)),
+                // DELETE has no request body; the supplied stream is ignored
+                Arguments.of("deleteDiscardingBody", "DELETE", (ReleasingCall) (svc, body) -> svc.deleteDiscardingBody(URL, HEADERS, MEDIA_TYPE)));
+    }
 
-            @Override
-            public HttpClient.Version version() {
-                return null;
-            }
-        };
-        return httpResponse;
+    /** The buffering subset — only the {@code *ForBytes} methods surface the response body as a {@code byte[]}. */
+    private static Stream<Arguments> forBytesCalls() {
+        return releasingCalls().filter(args -> ((String) args.get()[0]).endsWith("ForBytes"));
+    }
+
+    @ParameterizedTest(name = "{0}")
+    @MethodSource("releasingCalls")
+    void releasingVariantSendsExpectedRequestAndReturnsResponse(String label, String method, ReleasingCall call) throws IOException, InterruptedException {
+        HttpResponse httpResponse = Mockito.mock(HttpResponse.class);
+        Mockito.when(httpResponse.statusCode()).thenReturn(200);
+        Mockito.when(httpClient.send(Mockito.any(), Mockito.any(HttpResponse.BodyHandler.class))).thenReturn(httpResponse);
+
+        HttpResponse<?> test = call.apply(httpService, new ByteArrayInputStream("request body".getBytes()));
+
+        assertEquals(200, test.statusCode());
+
+        ArgumentCaptor<HttpRequest> captor = ArgumentCaptor.forClass(HttpRequest.class);
+        Mockito.verify(httpClient).send(captor.capture(), Mockito.any(HttpResponse.BodyHandler.class));
+        HttpRequest request = captor.getValue();
+        assertEquals(method, request.method());
+        assertEquals(URL, request.uri().toString());
+        Map<String, List<String>> headersMap = request.headers().map();
+        assertEquals(MEDIA_TYPE, headersMap.get("content-type").getFirst());
+        assertEquals("value1", headersMap.get("header1").getFirst());
+        assertEquals("value2", headersMap.get("header2").getFirst());
+    }
+
+    @ParameterizedTest(name = "{0}")
+    @MethodSource("releasingCalls")
+    void releasingVariantFailureThrows(String label, String method, ReleasingCall call) throws IOException, InterruptedException {
+        Mockito.when(httpClient.send(Mockito.any(), Mockito.any(HttpResponse.BodyHandler.class)))
+                .thenThrow(new IOException("Test IOException"), new InterruptedException("Test InterruptedException"));
+
+        InputStream body = new ByteArrayInputStream("body".getBytes());
+
+        assertThatThrownBy(() -> call.apply(httpService, body))
+                .hasMessage("IOException/" + method + ": Test IOException");
+
+        assertThatThrownBy(() -> call.apply(httpService, body))
+                .hasMessage("InterruptedException/" + method + ": Test InterruptedException");
+    }
+
+    @ParameterizedTest(name = "{0}")
+    @MethodSource("forBytesCalls")
+    void forBytesReturnsBufferedResponseBody(String label, String method, ReleasingCall call) throws IOException, InterruptedException {
+        byte[] responseBytes = "response body".getBytes();
+        HttpResponse httpResponse = Mockito.mock(HttpResponse.class);
+        Mockito.when(httpResponse.body()).thenReturn(responseBytes);
+        Mockito.when(httpClient.send(Mockito.any(), Mockito.any(HttpResponse.BodyHandler.class))).thenReturn(httpResponse);
+
+        HttpResponse<?> test = call.apply(httpService, new ByteArrayInputStream("request body".getBytes()));
+
+        assertArrayEquals(responseBytes, (byte[]) test.body());
     }
 
     private void verifyResponse(String method, HttpResponse<InputStream> httpResponse, HttpResponse<InputStream> testResponse) throws IOException, InterruptedException {
@@ -256,11 +288,11 @@ class HttpServiceTest {
         Map<String, List<String>> headersMap = httpRequest.headers().map();
         assertEquals(3, headersMap.size());
         assertEquals(1, headersMap.get("content-type").size());
-        assertEquals(contentType, headersMap.get("content-type").get(0));
+        assertEquals(contentType, headersMap.get("content-type").getFirst());
         assertEquals(1, headersMap.get("header1").size());
-        assertEquals("value1", headersMap.get("header1").get(0));
+        assertEquals("value1", headersMap.get("header1").getFirst());
         assertEquals(1, headersMap.get("header2").size());
-        assertEquals("value2", headersMap.get("header2").get(0));
+        assertEquals("value2", headersMap.get("header2").getFirst());
 
         assertEquals(httpResponse, testResponse);
 
