@@ -78,7 +78,13 @@ class DockerPlugin implements Plugin<Project> {
 
             exec.with {
                 workingDir dockerDir
-                commandLine 'docker', 'build', '-t', "${-> ext.name}", '.'
+                List<Object> buildCommand = ['docker', 'build', '-t', "${-> ext.name}"]
+                ext.labels.each { key, value ->
+                    buildCommand.add('--label')
+                    buildCommand.add("${key}=${value}")
+                }
+                buildCommand.add('.')
+                commandLine buildCommand
             }
 
             ext.namedTags.each { taskName, tagValue ->

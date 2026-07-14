@@ -21,13 +21,17 @@ package org.deltafi.gradle.docker
 import org.gradle.api.Project
 import org.gradle.api.file.CopySpec
 
+import java.util.regex.Pattern
+
 class DockerExtension {
     Project project
 
     private static final String DEFAULT_DOCKERFILE_PATH = 'Dockerfile'
+    private static final Pattern LABEL_KEY = ~/^[a-z0-9]([a-z0-9.-]*[a-z0-9])?$/
     private String name = null
     private File dockerfile = null
     private Map<String, String> namedTags = new HashMap<>()
+    private final Map<String, String> labels = new LinkedHashMap<>()
 
     private File resolvedDockerfile = null
 
@@ -63,6 +67,21 @@ class DockerExtension {
 
     void tag(String taskName, String tag) {
         namedTags.put(taskName, tag)
+    }
+
+    Map<String, String> getLabels() {
+        return Collections.unmodifiableMap(labels)
+    }
+
+    void label(String key, String value) {
+        if (!(key ==~ LABEL_KEY)) {
+            throw new IllegalArgumentException("Invalid docker label key '${key}'. Keys must match ${LABEL_KEY}.")
+        }
+        labels.put(key, value)
+    }
+
+    void labels(Map<String, String> labels) {
+        labels.each { key, value -> label(key, value) }
     }
 
     File getResolvedDockerfile() {

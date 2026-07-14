@@ -156,6 +156,7 @@ ext.dockerImageName = "deltafi/${project.name}"
 
 docker {
     name "${dockerImageName}:${dockerTag}"
+    label 'org.deltafi.version', project.version.toString()
     copySpec.from(bootJar.archiveFile).into("build/libs/")
     dockerfile file("${buildDir}/Dockerfile")
 }
