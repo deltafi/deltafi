@@ -202,6 +202,26 @@ const generateData = () => {
         testModeReason: null
       }
     ],
+    messages: [
+      {
+        severity: "INFO",
+        created: "2024-05-30T11:31:55.653Z",
+        source: "HelloWorldTimedIngressAction",
+        message: "Ingress completed successfully."
+      },
+      {
+        severity: "WARNING",
+        created: "2024-05-30T11:31:55.659Z",
+        source: "hello-world-java-data-route-or-filter",
+        message: "No matching subscribers were found."
+      },
+      {
+        severity: "ERROR",
+        created: "2024-05-30T11:32:10.001Z",
+        source: "HelloWorldTransformAction",
+        message: "Failed to process content: java.lang.RuntimeException: Unexpected token encountered while parsing the incoming payload at offset 4096. The document did not conform to the expected schema and could not be transformed. Full context: {\"error\":\"schema_validation_failed\",\"expectedType\":\"application/xml\",\"actualType\":\"application/octet-stream\",\"reason\":\"the byte stream contained a null character sequence that is not permitted in well-formed XML documents, and no fallback decoder was configured for this data source so the action was unable to recover and had to abort the entire transformation pipeline for this DeltaFile\"} — please verify the upstream data source is emitting valid XML before retrying this DeltaFile."
+      }
+    ],
     requeueCount: 0,
     referencedBytes: 24,
     stage: "COMPLETE",

@@ -182,6 +182,8 @@ const filterLogsBySeverity = (severity) => {
   }
   pre {
     margin: 0;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
   }
 }
 </style>
