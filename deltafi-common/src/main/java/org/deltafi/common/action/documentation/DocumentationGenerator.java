@@ -115,7 +115,9 @@ public class DocumentationGenerator {
         if (options.getNotes() != null && !options.getNotes().isEmpty()) {
             docs.append("## Notes\n\n");
             for (String note : options.getNotes()) {
-                docs.append("- ").append(note).append('\n');
+                if (note != null) {
+                    docs.append("- ").append(note).append('\n');
+                }
             }
             docs.append('\n');
         }
@@ -279,11 +281,17 @@ public class DocumentationGenerator {
 
     /** Escape literal pipes so type expressions like "string (A | B)" and free text don't break a Markdown table. */
     private static String escapePipes(String value) {
+        if (value == null) {
+            return "";
+        }
         return value.replace("|", "\\|");
     }
 
     /** Mirror GitHub/VitePress heading anchors: lowercase, runs of non-alphanumerics to a single hyphen. */
     private static String slug(String value) {
+        if (value == null) {
+            return "";
+        }
         StringBuilder builder = new StringBuilder();
         boolean previousHyphen = false;
         for (char c : value.toLowerCase(Locale.ROOT).toCharArray()) {
@@ -529,7 +537,7 @@ public class DocumentationGenerator {
                     rows.add(List.of(
                             Integer.toString(index++),
                             contentSpec.getName() != null ? escapePipes(contentSpec.getName()) : "",
-                            "`" + escapePipes(contentSpec.getMediaType()) + "`",
+                            contentSpec.getMediaType() != null ? "`" + escapePipes(contentSpec.getMediaType()) + "`" : "",
                             contentSpec.getDescription() != null ? escapePipes(singleLine(contentSpec.getDescription())) : ""));
                 }
                 appendTable(docs, CONTENT_SPEC_TABLE_COLUMNS, rows);
@@ -551,7 +559,7 @@ public class DocumentationGenerator {
         List<List<String>> rows = new ArrayList<>();
         for (ActionOptions.KeyedDescription keyedDescription : keyedDescriptions) {
             rows.add(List.of(
-                    "`" + escapePipes(keyedDescription.getKey()) + "`",
+                    keyedDescription.getKey() != null ? "`" + escapePipes(keyedDescription.getKey()) + "`" : "",
                     keyedDescription.getDescription() != null ? escapePipes(singleLine(keyedDescription.getDescription())) : ""));
         }
         appendTable(docs, KEYED_TABLE_COLUMNS, rows);
@@ -564,10 +572,12 @@ public class DocumentationGenerator {
         }
         docs.append("## ").append(label).append("\n\n");
         for (ActionOptions.DescriptionWithConditions condition : conditions) {
-            docs.append("- ").append(condition.getDescription()).append('\n');
+            docs.append("- ").append(condition.getDescription() != null ? condition.getDescription() : "unspecified").append('\n');
             if (condition.getConditions() != null) {
                 for (String nested : condition.getConditions()) {
-                    docs.append("    - ").append(nested).append('\n');
+                    if (nested != null) {
+                        docs.append("    - ").append(nested).append('\n');
+                    }
                 }
             }
         }

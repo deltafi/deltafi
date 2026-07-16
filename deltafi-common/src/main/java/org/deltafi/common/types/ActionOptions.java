@@ -20,8 +20,10 @@ package org.deltafi.common.types;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.*;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 
 @Data
 @NoArgsConstructor
@@ -117,6 +119,7 @@ public class ActionOptions {
 
         public ActionOptionsBuilder errors(String... errors) {
             return errors(Arrays.stream(errors)
+                    .filter(Objects::nonNull)
                     .map(description -> new DescriptionWithConditions(description, null)).toList());
         }
 
@@ -126,7 +129,13 @@ public class ActionOptions {
         }
 
         public ActionOptionsBuilder notes(String... notes) {
-            return notes(List.of(notes));
+            List<String> list = new ArrayList<>();
+            for (String n: notes) {
+                if (n != null) {
+                    list.add(n);
+                }
+            }
+            return notes(list);
         }
     }
 

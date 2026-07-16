@@ -21,15 +21,15 @@ The description
 
 | # | Name      | Media Type             | Description           |
 |---|-----------|------------------------|-----------------------|
-| 0 | Content 1 | `Content 1 media type` | Content 1 description |
-| 1 | Content 2 | `Content 2 media type` | Content 2 description |
+| 0 | Content 1 |                        | Content 1 description |
+| 1 | Content 2 | `Content 2 media type` |                       |
 
 ### Metadata
 
 | Key              | Description            |
 |------------------|------------------------|
 | `Metadata 1 key` | Metadata 1 description |
-| `Metadata 2 key` | Metadata 2 description |
+|                  | Metadata 2 description |
 
 ## Output
 
@@ -37,7 +37,7 @@ The description
 
 | # | Name      | Media Type             | Description           |
 |---|-----------|------------------------|-----------------------|
-| 0 | Content 1 | `Content 1 media type` | Content 1 description |
+| 0 |           | `Content 1 media type` | Content 1 description |
 | 1 | Content 2 | `Content 2 media type` | Content 2 description |
 
 ### Metadata
@@ -59,9 +59,8 @@ The description
 - Filter 1
     - Condition A
     - Condition B
-- Filter 2
+- unspecified
     - Condition C
-    - Condition D
 
 ## Errors
 

@@ -47,7 +47,7 @@ public class DocumentationGeneratorTest {
                                 .annotationsSummary("The output annotations summary")
                                 .build())
                         .filters("Filter 1", "Filter 2")
-                        .errors("Error 1", "Error 2")
+                        .errors("Error 1", null, "Error 2")
                         .notes("Note 1", "Note 2")
                         .details("The details")
                         .build())
@@ -63,6 +63,10 @@ public class DocumentationGeneratorTest {
         Map<String, Object> schema = OBJECT_MAPPER.readValue(Resource.read("/documentation-generator/paramSchema.json"),
                 new TypeReference<>() {});
 
+        List<String> conditionCandAnull = new ArrayList<>();
+        conditionCandAnull.add("Condition C");
+        conditionCandAnull.add(null);
+
         ActionDescriptor actionDescriptor = ActionDescriptor.builder()
                 .name("org.deltafi.core.action.test.TestAction")
                 .type(ActionType.TRANSFORM)
@@ -74,13 +78,13 @@ public class DocumentationGeneratorTest {
                                 .contentSpecs(List.of(
                                         ActionOptions.ContentSpec.builder()
                                                 .name("Content 1")
-                                                .mediaType("Content 1 media type")
+                                                .mediaType(null)
                                                 .description("Content 1 description")
                                                 .build(),
                                         ActionOptions.ContentSpec.builder()
                                                 .name("Content 2")
                                                 .mediaType("Content 2 media type")
-                                                .description("Content 2 description")
+                                                .description(null)
                                                 .build()))
                                 .metadataDescriptions(List.of(
                                         ActionOptions.KeyedDescription.builder()
@@ -88,14 +92,14 @@ public class DocumentationGeneratorTest {
                                                 .description("Metadata 1 description")
                                                 .build(),
                                         ActionOptions.KeyedDescription.builder()
-                                                .key("Metadata 2 key")
+                                                .key(null)
                                                 .description("Metadata 2 description")
                                                 .build()))
                                 .build())
                         .outputSpec(ActionOptions.OutputSpec.builder()
                                 .contentSpecs(List.of(
                                         ActionOptions.ContentSpec.builder()
-                                                .name("Content 1")
+                                                .name(null)
                                                 .mediaType("Content 1 media type")
                                                 .description("Content 1 description")
                                                 .build(),
@@ -129,8 +133,8 @@ public class DocumentationGeneratorTest {
                                         .conditions(List.of("Condition A", "Condition B"))
                                         .build(),
                                 ActionOptions.DescriptionWithConditions.builder()
-                                        .description("Filter 2")
-                                        .conditions(List.of("Condition C", "Condition D"))
+                                        .description(null)
+                                        .conditions(conditionCandAnull)
                                         .build()))
                         .errors(List.of(
                                 ActionOptions.DescriptionWithConditions.builder()
@@ -141,7 +145,7 @@ public class DocumentationGeneratorTest {
                                         .description("Error 2")
                                         .conditions(List.of("Condition C", "Condition D"))
                                         .build()))
-                        .notes("Note 1", "Note 2")
+                        .notes("Note 1", "Note 2", null)
                         .details("The details")
                         .build())
                 .build();
