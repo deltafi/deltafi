@@ -46,6 +46,8 @@ const SystemMetricsPage = () => import("@/pages/SystemMetricsPage.vue");
 const QueueMetricsPage = () => import("@/pages/QueueMetricsPage.vue");
 const SystemPropertiesPage = () => import("@/pages/SystemPropertiesPage.vue");
 const SystemSnapshotsPage = () => import("@/pages/SystemSnapshotsPage.vue");
+const ArtifactRegistryPage = () => import("@/pages/ArtifactRegistryPage.vue");
+const ArtifactRegistryDetailPage = () => import("@/pages/ArtifactRegistryDetailPage.vue");
 const LookupTablePage = () => import("@/pages/LookupTablePage.vue");
 const LookupTableResultPage = () => import("@/pages/LookupTableResultPage.vue");
 const TopicsPage = () => import("@/pages/TopicsPage.vue");
@@ -284,6 +286,22 @@ const routes: Array<RouteRecordRaw> = [
     component: LookupTableResultPage,
     meta: {
       permission: "LookupTableRead",
+    },
+  },
+  {
+    path: "/admin/artifact-registry",
+    name: "Artifact Registry",
+    component: ArtifactRegistryPage,
+    meta: {
+      permission: "ArtifactRegistryRead",
+    },
+  },
+  {
+    path: "/admin/artifact-registry/:owner/:artifactName",
+    name: "Artifact Registry Detail",
+    component: ArtifactRegistryDetailPage,
+    meta: {
+      permission: "ArtifactRegistryRead",
     },
   },
   {

@@ -35,6 +35,20 @@ export default function useApi(version: Number = 2) {
     return url;
   }
 
+  // Pull a human-readable message off a failed response and notify. Without this a
+  // rejected PUT/POST/DELETE fails silently, since callers only notify on success.
+  const notifyResponseError = async (res: Response) => {
+    const text = await res.text();
+    let message = res.statusText;
+    try {
+      message = JSON.parse(text).error || text || res.statusText;
+    } catch {
+      message = text || res.statusText;
+    }
+    notify.error("Error Received from API", message);
+    errors.value.push(message);
+  }
+
   const get = async (endpoint: String, params: URLSearchParams = new URLSearchParams(), parseJSON: boolean = true) => {
     const url = buildURL(endpoint, params);
     const req = new Request(url, { referrer: "" });
@@ -66,6 +80,8 @@ export default function useApi(version: Number = 2) {
 
   const postPut = async (verb: string, endpoint: string, body: any, parseJSON: boolean = true) => {
     const url = buildURL(endpoint);
+    loading.value = true;
+    errors.value = [];
     try {
       const res = await fetch(url, {
         method: verb,
@@ -75,8 +91,14 @@ export default function useApi(version: Number = 2) {
         },
         body: JSON.stringify(body),
       });
-      if (!res.ok) return Promise.reject(res);
-      response.value = (parseJSON) ? await res.json() : await res.blob()
+      if (!res.ok) {
+        await notifyResponseError(res);
+        return Promise.reject(res);
+      }
+      // A 204 No Content response has an empty body; parsing it as JSON throws.
+      if (res.status != 204) {
+        response.value = (parseJSON) ? await res.json() : await res.blob()
+      }
       loaded.value = true;
       return Promise.resolve(res);
     } catch (error: any) {
@@ -98,9 +120,14 @@ export default function useApi(version: Number = 2) {
 
   const remove = async (endpoint: String) => {
     const url = buildURL(endpoint);
+    loading.value = true;
+    errors.value = [];
     try {
       const res = await fetch(url, { method: 'DELETE' });
-      if (!res.ok) return Promise.reject(res);
+      if (!res.ok) {
+        await notifyResponseError(res);
+        return Promise.reject(res);
+      }
       if (res.status != 204) {
           response.value = await res.json();
       }

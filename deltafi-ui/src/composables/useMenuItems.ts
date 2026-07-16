@@ -290,7 +290,7 @@ export default function useMenuItems(): {
     {
       name: "Administration",
       icon: "fas fa-user-shield fa-fw",
-      visible: computed(() => hasSomePermissions("UserRead", "RoleRead", "LookupTableRead")),
+      visible: computed(() => hasSomePermissions("UserRead", "RoleRead", "LookupTableRead", "ArtifactRegistryRead")),
       children: [
         {
           name: "Audit Log",
@@ -315,6 +315,12 @@ export default function useMenuItems(): {
           icon: "fas fa-book-atlas fa-fw",
           path: "/admin/lookup-tables",
           visible: computed(() => hasPermission("LookupTableRead") && !!uiConfig.lookupTablesEnabled),
+        },
+        {
+          name: "Artifact Registry",
+          icon: "fas fa-box-archive fa-fw",
+          path: "/admin/artifact-registry",
+          visible: computed(() => hasPermission("ArtifactRegistryRead")),
         },
         {
           name: "External Links",
