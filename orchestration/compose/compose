@@ -487,11 +487,11 @@ ingress:
   tls:
     enabled: false
 dependencies:
-  grafana: deltafi/grafana:12.4.5-0
+  grafana: deltafi/grafana:12.4.5-1
   graphite: graphiteapp/graphite-statsd:1.1.10-5
   loki: grafana/loki:2.9.17
-  s3proxy: deltafi/s3proxy:3.2.0-0
-  nginx: deltafi/nginx:1.31.2-alpine3.23-0
+  s3proxy: deltafi/s3proxy:3.3.0-0
+  nginx: deltafi/nginx:1.31.3-alpine3.24-0
   promtail: grafana/promtail:3.5.8
   valkey: deltafi/valkey:9.0.4-0
   postgres: deltafi/timescaledb:2.19.3-pg16-3

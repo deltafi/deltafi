@@ -50,13 +50,13 @@ type DockerAuthConfig struct {
 type valuesData struct {
 	Tag                      string
 	Repo                     string `default:"deltafi"`
-	GrafanaContainer         string `default:"deltafi/grafana:12.4.5-0"`
-	VictoriaMetricsContainer string `default:"deltafi/victoria-metrics:v1.146.0-0"`
+	GrafanaContainer         string `default:"deltafi/grafana:12.4.5-1"`
+	VictoriaMetricsContainer string `default:"deltafi/victoria-metrics:v1.147.0-0"`
 	LogrotateContainer       string `default:"deltafi/logrotate:1.0.0-7"`
 	VectorContainer          string `default:"deltafi/vector:0.56.0-alpine-0"`
-	DozzleContainer          string `default:"deltafi/dozzle:v10.6.7-0"`
-	S3ProxyContainer         string `default:"deltafi/s3proxy:3.2.0-0"`
-	NginxContainer           string `default:"deltafi/nginx:1.31.2-alpine3.23-0"`
+	DozzleContainer          string `default:"deltafi/dozzle:v10.6.10-0"`
+	S3ProxyContainer         string `default:"deltafi/s3proxy:3.3.0-0"`
+	NginxContainer           string `default:"deltafi/nginx:1.31.3-alpine3.24-0"`
 	ValkeyContainer          string `default:"deltafi/valkey:9.0.4-0"`
 	PostgresContainer        string `default:"deltafi/timescaledb:2.19.3-pg16-12"`
 	PostgresLookupContainer  string `default:"deltafi/postgres:16.13-4"`

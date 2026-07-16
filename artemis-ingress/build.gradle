@@ -1,7 +1,6 @@
 plugins {
     id 'docker-java'
     id 'org.springframework.boot' version "${springBootVersion}"
-    id 'io.spring.dependency-management' version "${springDependencyManagement}"
 }
 
 description = 'DeltaFi Artemis-ActiveMQ Ingress'
@@ -24,8 +23,6 @@ dependencies {
     implementation project(':deltafi-ingress')
 
     implementation 'org.springframework.boot:spring-boot-starter-artemis'
-    implementation 'tools.jackson.core:jackson-core'
-    implementation 'tools.jackson.core:jackson-databind'
 
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testImplementation 'org.apache.activemq:artemis-jakarta-server'

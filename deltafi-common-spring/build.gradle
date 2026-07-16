@@ -15,7 +15,10 @@ dependencies {
 
     api(platform("com.netflix.graphql.dgs:graphql-dgs-platform-dependencies:${dgsVersion}"))
     api 'com.netflix.graphql.dgs:graphql-dgs-client'
-    api "com.netflix.graphql.dgs.codegen:graphql-dgs-codegen-shared-core:${dgsCodegenVersion}"
+    // Compile-only: GraphQLExecutor exposes GraphQLQueryRequest in its API, but the only runtime
+    // callers (action-kit, deltafi-core) get shared-core from the DGS codegen plugin. Keeping it off
+    // the runtime classpath here avoids leaking its transitive Jackson 2 dependency into consumers.
+    compileOnly "com.netflix.graphql.dgs.codegen:graphql-dgs-codegen-shared-core:${dgsCodegenVersion}"
 
     api(platform("org.springframework.boot:spring-boot-dependencies:${springBootVersion}"))
     api 'org.springframework.boot:spring-boot-autoconfigure'

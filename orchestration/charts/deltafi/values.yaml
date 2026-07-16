@@ -105,7 +105,7 @@ ingress:
       default: local-deltafi-org
 # S3Proxy config (S3-compatible storage using filesystem backend)
 s3proxy:
-  image: deltafi/s3proxy:3.2.0-0
+  image: deltafi/s3proxy:3.3.0-0
   resources:
     requests:
       memory: 256Mi
@@ -161,7 +161,7 @@ headlamp:
 grafana:
   image:
     repository: deltafi/grafana
-    tag: 12.4.5-0
+    tag: 12.4.5-1
   persistence:
     enabled: true
     existingClaim: deltafi-grafana
@@ -397,7 +397,7 @@ victoriametrics:
     fullnameOverride: deltafi-victoriametrics
     image:
       repository: deltafi/victoria-metrics
-      tag: v1.146.0-0
+      tag: v1.147.0-0
     retentionPeriod: "720d"
     extraArgs:
       envflag.enable: "true"

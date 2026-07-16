@@ -42,6 +42,8 @@ RUN apk -U --no-cache add \
   libcrypto3 \
   libssl3 \
   nghttp2-libs \
+  c-ares \
+  libcurl \
   && apk -U --no-cache upgrade
 
 COPY --chmod=755 --from=docker-src /usr/local/bin/docker /usr/local/bin/docker

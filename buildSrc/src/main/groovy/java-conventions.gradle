@@ -21,8 +21,14 @@ dependencies {
 configurations.all {
     resolutionStrategy {
         dependencySubstitution {
-            // CVE-2026-0636: force bouncycastle past the 1.81 pulled transitively by io.minio:minio
+            // CVE-2026-0636: force bouncycastle past the 1.81 pulled transitively by io.minio:minio.
+            // bcpkix is kept locked to the same BouncyCastle release as bcprov.
             substitute module('org.bouncycastle:bcprov-jdk18on') using module("org.bouncycastle:bcprov-jdk18on:${bouncyCastleVersion}") because 'CVE-2026-0636'
+            substitute module('org.bouncycastle:bcpkix-jdk18on') using module("org.bouncycastle:bcpkix-jdk18on:${bouncyCastleVersion}") because 'CVE-2026-0636'
+            // CVE-2026-8149: pin the FIPS/LTS bouncycastle pulled transitively by io.nats:jnats
+            substitute module('org.bouncycastle:bcprov-lts8on') using module("org.bouncycastle:bcprov-lts8on:${bouncyCastleLtsVersion}") because 'CVE-2026-8149'
+            // CVE-2026-54515: pin the Jackson 2.x databind pulled transitively by io.minio:minio and dgs-codegen
+            substitute module('com.fasterxml.jackson.core:jackson-databind') using module("com.fasterxml.jackson.core:jackson-databind:${jackson2Version}") because 'CVE-2026-54515'
         }
     }
 }

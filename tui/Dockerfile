@@ -40,7 +40,8 @@ RUN apk add -U --no-cache \
     tmux \
     vim \
     tree \
-    jq
+    jq \
+    && apk upgrade -U --no-cache
 
 # Copy VERSION file
 COPY VERSION /deltafi/VERSION
