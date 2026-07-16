@@ -58,7 +58,6 @@ func init() {
 		Handler: searchErroredDeltaFiles,
 		Tags:    []string{"operations"},
 	})
-
 }
 
 func listErrors(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {

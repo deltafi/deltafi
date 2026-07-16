@@ -147,7 +147,6 @@ func init() {
 		Handler: getStatusReport,
 		Tags:    []string{"admin"},
 	})
-
 }
 
 func getSystemProperties(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {

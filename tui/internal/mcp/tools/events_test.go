@@ -28,11 +28,11 @@ import (
 
 func parseEventsPath(t *testing.T, path string) url.Values {
 	t.Helper()
-	idx := strings.Index(path, "?")
-	if idx == -1 {
+	_, after, ok := strings.Cut(path, "?")
+	if !ok {
 		return url.Values{}
 	}
-	values, err := url.ParseQuery(path[idx+1:])
+	values, err := url.ParseQuery(after)
 	if err != nil {
 		t.Fatalf("invalid query string %q: %v", path, err)
 	}

@@ -20,6 +20,8 @@
 
 package tools
 
+import "maps"
+
 import "github.com/mark3labs/mcp-go/mcp"
 
 var jsonScalarSchema = map[string]any{
@@ -82,9 +84,7 @@ func timedDeletePolicyJSONSchema() map[string]any {
 func withStructuredObject(name, description string, schema map[string]any, required bool) mcp.ToolOption {
 	return func(tool *mcp.Tool) {
 		property := make(map[string]any, len(schema)+1)
-		for key, value := range schema {
-			property[key] = value
-		}
+		maps.Copy(property, schema)
 		property["description"] = description
 		tool.InputSchema.Properties[name] = property
 		if required {
