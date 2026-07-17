@@ -1,0 +1,23 @@
+{
+  "version": 3,
+  "cmakeMinimumRequired": { "major": 3, "minor": 20, "patch": 0 },
+  "configurePresets": [
+    { "name": "dev",     "binaryDir": "${sourceDir}/build",        "cacheVariables": { "BUILD_TESTING": "ON", "CMAKE_BUILD_TYPE": "Debug" } },
+    { "name": "release", "binaryDir": "${sourceDir}/build-release","cacheVariables": { "BUILD_TESTING": "ON", "CMAKE_BUILD_TYPE": "Release" } },
+    { "name": "asan",    "binaryDir": "${sourceDir}/build-asan",    "cacheVariables": { "BUILD_TESTING": "ON", "CMAKE_BUILD_TYPE": "Debug", "DELTAFI_SANITIZE": "address" } },
+    { "name": "ubsan",   "binaryDir": "${sourceDir}/build-ubsan",   "cacheVariables": { "BUILD_TESTING": "ON", "CMAKE_BUILD_TYPE": "Debug", "DELTAFI_SANITIZE": "undefined" } },
+    { "name": "tsan",    "binaryDir": "${sourceDir}/build-tsan",    "cacheVariables": { "BUILD_TESTING": "ON", "CMAKE_BUILD_TYPE": "Debug", "DELTAFI_SANITIZE": "thread" } }
+  ],
+  "buildPresets": [
+    { "name": "dev", "configurePreset": "dev" },
+    { "name": "asan", "configurePreset": "asan" },
+    { "name": "ubsan", "configurePreset": "ubsan" },
+    { "name": "tsan", "configurePreset": "tsan" }
+  ],
+  "testPresets": [
+    { "name": "dev",  "configurePreset": "dev",  "output": { "outputOnFailure": true } },
+    { "name": "asan", "configurePreset": "asan", "output": { "outputOnFailure": true } },
+    { "name": "ubsan","configurePreset": "ubsan","output": { "outputOnFailure": true } },
+    { "name": "tsan", "configurePreset": "tsan", "output": { "outputOnFailure": true } }
+  ]
+}

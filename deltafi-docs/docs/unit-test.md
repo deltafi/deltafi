@@ -259,8 +259,10 @@ The `deltafi/testing.hpp` header provides test helpers for unit testing C++ acti
 - `MockLookupClient` — configurable mock for lookup table queries
 - `MockArtifactClient` — configurable mock for artifact registry access
 - `new_test_context(did)` — creates a pre-configured `ActionContext` wired to the in-memory store
-- `run_transform`, `run_egress`, `run_ingress` — test runners that execute actions and return inspectable results
-- `require_transform`, `require_error`, `require_filter`, `require_egress`, `require_ingress` — result assertions
+- `run_transform`, `run_egress`, `run_ingress`, `run_join` — test runners that execute actions through the **same dispatch path as the worker** (input building, param deserialization, orphan-content GC, and the fault barrier) and return inspectable results
+- `require_transform`, `require_error`, `require_filter`, `require_egress`, `require_ingress`, `require_single_transform` — result-type assertions; `require_metadata`, `require_annotation`, `require_content`, `require_metric`, `require_message` — field-level assertions
+- `new_deltafile` / `new_timed_ingress_deltafile` — input builders; `TestContext::use_lookup` / `use_artifact` — wire mock clients so a runner-dispatched action can reach them
+- `InMemoryContentStore::fail_after_nth(n)` — make the Nth `save()` throw to exercise error paths; `size()` / `save_count()` introspect the store (e.g. to assert orphan content was GC'd)
 
 ### Test Setup
 

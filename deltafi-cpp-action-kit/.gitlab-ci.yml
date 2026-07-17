@@ -1,0 +1,166 @@
+# ABOUTME: CI for the header-only DeltaFi C++ action kit: build, test, sanitizers, format, tidy.
+# ABOUTME: Auto-included by the root .gitlab-ci.yml glob (local: '*/.gitlab-ci.yml').
+
+.deltafi-cpp-action-kit:
+  variables:
+    PROJECT_NAME: deltafi-cpp-action-kit
+
+.deltafi-cpp-action-kit-build-on-branch-change-and-increment:
+  rules:
+    - if: $CI_COMMIT_BRANCH == "dev" || $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+      changes:
+        paths:
+          - deltafi-cpp-action-kit/**/*
+    - if: $CI_COMMIT_BRANCH == "dev" || $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+      when: manual
+    - if: $CI_PROJECT_NAMESPACE != 'deltafi' && $CI_COMMIT_BRANCH
+      changes:
+        paths:
+          - deltafi-cpp-action-kit/**/*
+        compare_to: 'refs/heads/dev'
+    - if: $CI_COMMIT_BRANCH
+      changes:
+        paths:
+          - deltafi-cpp-action-kit/**/*
+        compare_to: 'refs/heads/$CI_DEFAULT_BRANCH'
+    - when: manual
+      allow_failure: true
+
+.deltafi-cpp-action-kit-build-on-branch-change:
+  rules:
+    - if: $CI_COMMIT_BRANCH == "dev" || $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+      when: manual
+      allow_failure: true
+    - if: $CI_PROJECT_NAMESPACE != 'deltafi' && $CI_COMMIT_BRANCH
+      changes:
+        paths:
+          - deltafi-cpp-action-kit/**/*
+        compare_to: 'refs/heads/dev'
+    - if: $CI_COMMIT_BRANCH
+      changes:
+        paths:
+          - deltafi-cpp-action-kit/**/*
+        compare_to: 'refs/heads/$CI_DEFAULT_BRANCH'
+    - when: manual
+      allow_failure: true
+
+"C++ Kit Build and Test":
+  stage: build
+  image: deltafi/deltafi-build:jdk21.0.11_10-golang1.26.5-alpine-1
+  tags:
+    - light
+  needs: []
+  extends:
+    - .deltafi-cpp-action-kit
+    - .deltafi-cpp-action-kit-build-on-branch-change-and-increment
+  before_script:
+    - apk add --no-cache openssl-dev
+  script:
+    - cd deltafi-cpp-action-kit
+    - cmake -B build -DBUILD_TESTING=ON -DDELTAFI_WERROR=ON
+    - cmake --build build -j
+    - ctest --test-dir build --output-on-failure
+
+"🐳 Publish C++ action kit (GitLab)":
+  extends:
+    - .deltafi-cpp-action-kit
+    - .deltafi-cpp-action-kit-build-on-branch-change-and-increment
+  stage: docker
+  image: ${BUILDX_BASE_IMAGE}
+  needs:
+    - "C++ Kit Build and Test"
+  services:
+    - docker:stable-dind
+  tags:
+    - light
+  variables:
+    REGISTRY: ${CI_REGISTRY}
+    REGISTRY_USERNAME: ${CI_REGISTRY_USER}
+    REGISTRY_PASSWORD: ${CI_JOB_TOKEN}
+    DOCKER_REPOSITORY: ${CI_REGISTRY_IMAGE}
+    BUILDX_BUILDER: deltafi-inator
+    PUSH: --push
+    VERSION: $CI_COMMIT_BRANCH
+  retry:
+    max: 2
+    when:
+      - script_failure
+  before_script:
+    - docker buildx create --name ${BUILDX_BUILDER} --use
+    - docker buildx inspect
+    - docker buildx ls
+    - docker login -u ${REGISTRY_USERNAME} -p ${REGISTRY_PASSWORD} ${REGISTRY}
+    - docker login -u ${CI_REGISTRY_USER} -p ${CI_JOB_TOKEN} ${CI_REGISTRY}
+  script:
+    - cd ${PROJECT_NAME}
+    - make docker REGISTRY=${DOCKER_REPOSITORY}
+
+"🐳 Publish C++ action kit (docker.io)":
+  extends:
+    - .deltafi-cpp-action-kit
+  rules:
+    - if: $CI_COMMIT_TAG && $CI_PROJECT_NAMESPACE == 'deltafi'
+    - if: $CI_COMMIT_TAG && $CI_PROJECT_NAMESPACE != 'deltafi'
+      when: manual
+  stage: docker
+  image: ${BUILDX_BASE_IMAGE}
+  needs:
+    - "C++ Kit Build and Test"
+  services:
+    - docker:stable-dind
+  tags:
+    - light
+  variables:
+    REGISTRY: docker.io
+    REGISTRY_USERNAME: ${DOCKERHUB_USERNAME}
+    REGISTRY_PASSWORD: ${DOCKERHUB_PASSWORD}
+    DOCKER_TAG: ${CI_COMMIT_TAG}
+    BUILDX_BUILDER: deltafi-inator
+    VERSION: $CI_COMMIT_BRANCH
+  retry:
+    max: 2
+    when:
+      - script_failure
+  before_script:
+    - docker buildx create --name ${BUILDX_BUILDER} --use
+    - docker buildx inspect
+    - docker buildx ls
+    - docker login -u ${REGISTRY_USERNAME} -p ${REGISTRY_PASSWORD} ${REGISTRY}
+    - docker login -u ${CI_REGISTRY_USER} -p ${CI_JOB_TOKEN} ${CI_REGISTRY}
+  script:
+    - cd ${PROJECT_NAME}
+    - make publish REGISTRY=deltafi
+
+"C++ Kit Sanitizers":
+  stage: test
+  image: gcc:16
+  tags:
+    - light
+  needs: []
+  extends:
+    - .deltafi-cpp-action-kit
+    - .deltafi-cpp-action-kit-build-on-branch-change
+  before_script:
+    - apt-get update && apt-get install -y --no-install-recommends cmake make libssl-dev
+  script:
+    - cd deltafi-cpp-action-kit
+    - cmake --preset asan && cmake --build --preset asan && ctest --preset asan
+    - cmake --preset tsan && cmake --build --preset tsan && ctest --preset tsan
+
+"C++ Kit Format and Tidy":
+  stage: test
+  image: silkeh/clang:21
+  tags:
+    - light
+  extends:
+    - .deltafi-cpp-action-kit
+    - .deltafi-cpp-action-kit-build-on-branch-change
+  needs: []
+  before_script:
+    - apt-get update && apt-get install -y --no-install-recommends cmake make git libssl-dev
+  script:
+    - cd deltafi-cpp-action-kit
+    - find include tests \( -name '*.hpp' -o -name '*.cpp' \) -print0
+        | xargs -0 clang-format --dry-run --Werror --style=file:.clang-format
+    - cmake -B build -DBUILD_TESTING=ON
+    - clang-tidy -p build --config-file=.clang-tidy tests/test_params.cpp tests/test_crypto.cpp tests/test_resp_client.cpp

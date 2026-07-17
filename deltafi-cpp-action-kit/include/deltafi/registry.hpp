@@ -4,7 +4,10 @@
 #pragma once
 
 #include <functional>
+#include <memory>
+#include <set>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "deltafi/action.hpp"
@@ -13,6 +16,125 @@
 #include "deltafi/worker.hpp"
 
 namespace deltafi {
+
+// Delete saved segments not present in the referenced set (orphan-content GC).
+inline void cleanup_orphans(ActionContext& actx, const std::vector<Segment>& referenced) {
+    // Best-effort GC invoked from OrphanGuard's destructor; it must never throw.
+    try {
+        if (actx.saved_segments.empty()) return;
+
+        std::set<std::string> ref_set;
+        for (const auto& seg : referenced) ref_set.insert(seg.uuid);
+
+        std::vector<Segment> orphans;
+        for (const auto& seg : actx.saved_segments) {
+            if (!ref_set.contains(seg.uuid)) orphans.push_back(seg);
+        }
+
+        if (!orphans.empty() && actx.content_service) {
+            actx.content_service->remove(orphans);
+        }
+    } catch (const std::exception& ex) {
+        // Logging must not throw out of a destructor either (spdlog's lazy
+        // logger init can allocate).
+        try {
+            spdlog::error("orphan cleanup failed: {}", ex.what());
+        } catch (...) {  // NOLINT(bugprone-empty-catch): logging must not throw from a destructor
+        }
+    } catch (...) {  // NOLINT(bugprone-empty-catch): best-effort GC must never throw
+    }
+}
+
+// RAII: runs cleanup_orphans on scope exit, including stack unwind on a thrown
+// action. `referenced` starts empty (a throw -> all saved segments are orphans)
+// and is set to the result's referenced segments just before normal completion.
+// NOLINTNEXTLINE(cppcoreguidelines-special-member-functions): in-place aggregate guard
+struct OrphanGuard {
+    ActionContext& actx;
+    std::vector<Segment> referenced;
+    ~OrphanGuard() { cleanup_orphans(actx, referenced); }
+};
+
+// Invoke an action with the appropriate signature, deserializing typed params from the event.
+template<typename T>
+TransformResultType invoke_transform(T& action, ActionContext& actx, QueueEvent& event,
+                                     TransformInput& input) {
+    if constexpr (HasParamsType<T>) {
+        auto params = event.action_params.get<typename T::Params>();
+        return action.transform(actx, params, input);
+    } else {
+        return action.transform(actx, input);
+    }
+}
+
+template<typename T>
+EgressResultType invoke_egress(T& action, ActionContext& actx, QueueEvent& event,
+                               EgressInput& input) {
+    if constexpr (HasParamsType<T>) {
+        auto params = event.action_params.get<typename T::Params>();
+        return action.egress(actx, params, input);
+    } else {
+        return action.egress(actx, input);
+    }
+}
+
+template<typename T>
+IngressResultType invoke_ingress(T& action, ActionContext& actx, QueueEvent& event) {
+    if constexpr (HasParamsType<T>) {
+        auto params = event.action_params.get<typename T::Params>();
+        return action.ingress(actx, params);
+    } else {
+        return action.ingress(actx);
+    }
+}
+
+// Build the type-erased executor for an action: input building, param deserialization, the
+// action call, orphan-content GC, and result-to-event mapping — the exact path the worker (and
+// the test runners) run. The join branch is compiled only for join-capable transforms.
+template<typename T>
+ActionExecutor make_transform_executor(std::shared_ptr<T> action) {
+    return [action = std::move(action)](ActionContext& actx, QueueEvent& event) -> ActionEvent {
+        auto start = actx.start_time;
+        OrphanGuard guard{.actx = actx, .referenced = {}};
+        if constexpr (JoinAction<T>) {
+            if (actx.join.has_value()) {
+                auto inputs = build_transform_inputs(actx, event);
+                auto merged = action->join(std::move(inputs));
+                bind_content_service(merged.content, actx.content_service);
+                auto result = invoke_transform(*action, actx, event, merged);
+                guard.referenced = collect_result_segments(result);
+                return result_to_event(result, start);
+            }
+        }
+        auto input = build_transform_input(actx, event);
+        auto result = invoke_transform(*action, actx, event, input);
+        guard.referenced = collect_result_segments(result);
+        return result_to_event(result, start);
+    };
+}
+
+template<typename T>
+ActionExecutor make_egress_executor(std::shared_ptr<T> action) {
+    return [action = std::move(action)](ActionContext& actx, QueueEvent& event) -> ActionEvent {
+        auto start = actx.start_time;
+        OrphanGuard guard{.actx = actx, .referenced = {}};
+        auto input = build_egress_input(actx, event);
+        auto result = invoke_egress(*action, actx, event, input);
+        guard.referenced = collect_result_segments(result);
+        return result_to_event(result, start);
+    };
+}
+
+template<typename T>
+ActionExecutor make_ingress_executor(std::shared_ptr<T> action) {
+    return [action = std::move(action)](ActionContext& actx, QueueEvent& event) -> ActionEvent {
+        auto start = actx.start_time;
+        OrphanGuard guard{.actx = actx, .referenced = {}};
+        auto result = invoke_ingress(*action, actx, event);
+        guard.referenced = collect_result_segments(result);
+        return result_to_event(result, start);
+    };
+}
 
 // Detect if an action type declares an action_options() method.
 template<typename T>
@@ -46,45 +168,12 @@ public:
     void register_action(const std::string& domain) {
         std::string name = qualified_name(domain, action_traits<T>::name);
         auto action = std::make_shared<T>();
+        ActionExecutor executor = make_transform_executor(action);
 
-        ActionExecutor executor;
-        if constexpr (JoinAction<T>) {
-            executor = [action, name](ActionContext& actx, QueueEvent& event) -> ActionEvent {
-                auto start = actx.start_time;
-                if (actx.join.has_value()) {
-                    auto inputs = build_transform_inputs(actx, event);
-                    auto merged = action->join(std::move(inputs));
-                    bind_content_service(merged.content, actx.content_service);
-                    auto result = invoke_transform(*action, actx, event, merged);
-                    auto ae = result_to_event(result, start);
-                    cleanup_orphans(actx, result);
-                    return ae;
-                }
-                auto input = build_transform_input(actx, event);
-                auto result = invoke_transform(*action, actx, event, input);
-                auto ae = result_to_event(result, start);
-                cleanup_orphans(actx, result);
-                return ae;
-            };
-        } else {
-            executor = [action](ActionContext& actx, QueueEvent& event) -> ActionEvent {
-                auto start = actx.start_time;
-                auto input = build_transform_input(actx, event);
-                auto result = invoke_transform(*action, actx, event, input);
-                auto ae = result_to_event(result, start);
-                cleanup_orphans(actx, result);
-                return ae;
-            };
-        }
-
-        actions_.push_back(RegisteredAction{
-            name, std::string(action_traits<T>::description),
-            action_type_transform, std::move(executor),
-            action_schema<T>(),
-            JoinAction<T>,
-            action_opts<T>(),
-            artifact_config<T>(action)
-        });
+        actions_.push_back(RegisteredAction{name, std::string(action_traits<T>::description),
+                                            action_type_transform, std::move(executor),
+                                            action_schema<T>(), JoinAction<T>, action_opts<T>(),
+                                            artifact_config<T>(action)});
     }
 
     // Register an EgressAction.
@@ -92,21 +181,12 @@ public:
     void register_action(const std::string& domain) {
         std::string name = qualified_name(domain, action_traits<T>::name);
         auto action = std::make_shared<T>();
+        ActionExecutor executor = make_egress_executor(action);
 
-        ActionExecutor executor = [action](ActionContext& actx, QueueEvent& event) -> ActionEvent {
-            auto start = actx.start_time;
-            auto input = build_egress_input(actx, event);
-            auto result = invoke_egress(*action, actx, event, input);
-            return result_to_event(result, start);
-        };
-
-        actions_.push_back(RegisteredAction{
-            name, std::string(action_traits<T>::description),
-            action_type_egress, std::move(executor),
-            action_schema<T>(), false,
-            action_opts<T>(),
-            artifact_config<T>(action)
-        });
+        actions_.push_back(RegisteredAction{name, std::string(action_traits<T>::description),
+                                            action_type_egress, std::move(executor),
+                                            action_schema<T>(), false, action_opts<T>(),
+                                            artifact_config<T>(action)});
     }
 
     // Register a TimedIngressAction.
@@ -114,20 +194,12 @@ public:
     void register_action(const std::string& domain) {
         std::string name = qualified_name(domain, action_traits<T>::name);
         auto action = std::make_shared<T>();
+        ActionExecutor executor = make_ingress_executor(action);
 
-        ActionExecutor executor = [action](ActionContext& actx, QueueEvent& event) -> ActionEvent {
-            auto start = actx.start_time;
-            auto result = invoke_ingress(*action, actx, event);
-            return result_to_event(result, start);
-        };
-
-        actions_.push_back(RegisteredAction{
-            name, std::string(action_traits<T>::description),
-            action_type_timed_ingress, std::move(executor),
-            action_schema<T>(), false,
-            action_opts<T>(),
-            artifact_config<T>(action)
-        });
+        actions_.push_back(RegisteredAction{name, std::string(action_traits<T>::description),
+                                            action_type_timed_ingress, std::move(executor),
+                                            action_schema<T>(), false, action_opts<T>(),
+                                            artifact_config<T>(action)});
     }
 
     const std::vector<RegisteredAction>& actions() const { return actions_; }
@@ -143,44 +215,6 @@ public:
 
 private:
     std::vector<RegisteredAction> actions_;
-
-    // Invoke a transform action with the appropriate signature.
-    template<typename T>
-    static TransformResultType invoke_transform(T& action, ActionContext& actx,
-                                                 QueueEvent& event,
-                                                 TransformInput& input) {
-        if constexpr (HasParamsType<T>) {
-            auto params = event.action_params.get<typename T::Params>();
-            return action.transform(actx, params, input);
-        } else {
-            return action.transform(actx, input);
-        }
-    }
-
-    // Invoke an egress action with the appropriate signature.
-    template<typename T>
-    static EgressResultType invoke_egress(T& action, ActionContext& actx,
-                                           QueueEvent& event,
-                                           EgressInput& input) {
-        if constexpr (HasParamsType<T>) {
-            auto params = event.action_params.get<typename T::Params>();
-            return action.egress(actx, params, input);
-        } else {
-            return action.egress(actx, input);
-        }
-    }
-
-    // Invoke an ingress action with the appropriate signature.
-    template<typename T>
-    static IngressResultType invoke_ingress(T& action, ActionContext& actx,
-                                             QueueEvent& event) {
-        if constexpr (HasParamsType<T>) {
-            auto params = event.action_params.get<typename T::Params>();
-            return action.ingress(actx, params);
-        } else {
-            return action.ingress(actx);
-        }
-    }
 
     template<typename T>
     static nlohmann::json action_schema() {
@@ -201,51 +235,19 @@ private:
     }
 
     template<typename T>
-    static std::function<void(ArtifactClient&)> artifact_config(
-        std::shared_ptr<T> action) {
+    static std::function<void(ArtifactClient&)> artifact_config(std::shared_ptr<T> action) {
         if constexpr (ArtifactAware<T>) {
-            return [action](ArtifactClient& client) {
-                action->configure_artifacts(client);
-            };
+            return [action](ArtifactClient& client) { action->configure_artifacts(client); };
         } else {
             (void)action;
             return nullptr;
         }
     }
 
-    static std::string qualified_name(const std::string& domain,
-                                       std::string_view name) {
+    static std::string qualified_name(const std::string& domain, std::string_view name) {
         if (domain.empty()) return std::string(name);
         return domain + "." + std::string(name);
     }
-
-    // Delete orphaned segments not referenced in the result.
-    static void cleanup_orphans(ActionContext& actx,
-                                 const TransformResultType& result) {
-        if (actx.saved_segments.empty()) return;
-
-        auto referenced = collect_result_segments(result);
-        std::set<std::string> ref_set;
-        for (const auto& seg : referenced) {
-            ref_set.insert(seg.uuid);
-        }
-
-        std::vector<Segment> orphans;
-        for (const auto& seg : actx.saved_segments) {
-            if (!ref_set.count(seg.uuid)) {
-                orphans.push_back(seg);
-            }
-        }
-
-        if (!orphans.empty() && actx.content_service) {
-            try {
-                actx.content_service->remove(orphans);
-            } catch (const std::exception& ex) {
-                spdlog::error("failed to cleanup {} orphan segments: {}",
-                              orphans.size(), ex.what());
-            }
-        }
-    }
 };
 
-} // namespace deltafi
+}  // namespace deltafi

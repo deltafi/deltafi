@@ -219,7 +219,7 @@ Actions with typed parameters receive an additional `Params&` argument.
 
 ### Return Types
 
-The `ingress` method must return an `IngressResultType`, which is a `std::variant` of `IngressResult` and `ErrorResult`.
+The `ingress` method must return an `IngressResultType`, which is a `std::variant` of `IngressResult`, `FilterResult`, and `ErrorResult`.
 
 ### Example
 

@@ -208,7 +208,7 @@ struct EgressInput {
 
 ### Return Types
 
-The `egress` method must return an `EgressResultType`, which is a `std::variant` of `EgressResult` and `ErrorResult`.
+The `egress` method must return an `EgressResultType`, which is a `std::variant` of `EgressResult`, `FilterResult`, and `ErrorResult`.
 
 ### Example
 

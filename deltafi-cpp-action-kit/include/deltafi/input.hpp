@@ -5,6 +5,7 @@
 
 #include <map>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "deltafi/types.hpp"
@@ -27,7 +28,7 @@ struct TransformInput {
     }
 
     ActionContent& content_at(int index) {
-        if (index < 0 || index >= static_cast<int>(content.size())) {
+        if (index < 0 || std::cmp_greater_equal(index, content.size())) {
             throw ExpectedContentError(index, static_cast<int>(content.size()));
         }
         return content[index];
@@ -47,7 +48,7 @@ struct TransformInput {
     }
 
     std::string get_metadata_or_default(const std::string& key,
-                                         const std::string& default_val) const {
+                                        const std::string& default_val) const {
         auto it = metadata.find(key);
         return (it != metadata.end()) ? it->second : default_val;
     }
@@ -68,7 +69,7 @@ struct EgressInput {
     }
 
     ActionContent& content_at(int index) {
-        if (index < 0 || index >= static_cast<int>(content.size())) {
+        if (index < 0 || std::cmp_greater_equal(index, content.size())) {
             throw ExpectedContentError(index, static_cast<int>(content.size()));
         }
         return content[index];
@@ -88,7 +89,7 @@ struct EgressInput {
     }
 
     std::string get_metadata_or_default(const std::string& key,
-                                         const std::string& default_val) const {
+                                        const std::string& default_val) const {
         auto it = metadata.find(key);
         return (it != metadata.end()) ? it->second : default_val;
     }
@@ -97,4 +98,4 @@ struct EgressInput {
 // Input data for a timed ingress action (no content or metadata).
 struct IngressInput {};
 
-} // namespace deltafi
+}  // namespace deltafi

@@ -19,6 +19,7 @@
 #include "deltafi/types.hpp"
 #include "deltafi/content.hpp"
 #include "deltafi/event.hpp"
+#include "deltafi/internal/backoff.hpp"
 #include "deltafi/heartbeat.hpp"
 #include "deltafi/input.hpp"
 #include "deltafi/queue.hpp"
@@ -105,10 +106,9 @@ inline std::string result_queue_name(const std::string& return_address) {
 using ActionExecutor = std::function<ActionEvent(ActionContext&, QueueEvent&)>;
 
 // Build an ActionContext from the queue event.
-inline ActionContext build_action_context(const QueueEvent& event,
-                                           ContentServiceBase* cs,
-                                           LookupClientBase* lc = nullptr,
-                                           ArtifactClientBase* ac = nullptr) {
+inline ActionContext build_action_context(const QueueEvent& event, ContentServiceBase* cs,
+                                          LookupClientBase* lc = nullptr,
+                                          ArtifactClientBase* ac = nullptr) {
     ActionContext actx;
     actx.did = event.action_context.did;
     actx.delta_file_name = event.action_context.delta_file_name;
@@ -130,8 +130,7 @@ inline ActionContext build_action_context(const QueueEvent& event,
 }
 
 // Build a TransformInput from the first DeltaFileMessage.
-inline TransformInput build_transform_input(ActionContext& actx,
-                                              const QueueEvent& event) {
+inline TransformInput build_transform_input(ActionContext& actx, const QueueEvent& event) {
     TransformInput input;
     if (!event.delta_file_messages.empty()) {
         const auto& msg = event.delta_file_messages[0];
@@ -143,8 +142,8 @@ inline TransformInput build_transform_input(ActionContext& actx,
 }
 
 // Build TransformInputs from all DeltaFileMessages (for join actions).
-inline std::vector<TransformInput> build_transform_inputs(
-    ActionContext& actx, const QueueEvent& event) {
+inline std::vector<TransformInput> build_transform_inputs(ActionContext& actx,
+                                                          const QueueEvent& event) {
     std::vector<TransformInput> inputs;
     inputs.reserve(event.delta_file_messages.size());
     for (const auto& msg : event.delta_file_messages) {
@@ -158,8 +157,7 @@ inline std::vector<TransformInput> build_transform_inputs(
 }
 
 // Build an EgressInput from the first DeltaFileMessage.
-inline EgressInput build_egress_input(ActionContext& actx,
-                                        const QueueEvent& event) {
+inline EgressInput build_egress_input(ActionContext& actx, const QueueEvent& event) {
     EgressInput input;
     if (!event.delta_file_messages.empty()) {
         const auto& msg = event.delta_file_messages[0];
@@ -170,38 +168,72 @@ inline EgressInput build_egress_input(ActionContext& actx,
     return input;
 }
 
+// Run an executor inside the fault barrier: any thrown disposition/exception becomes the matching
+// result event, so a failing action never escapes as an exception. Shared by the worker's dispatch
+// loop and the test runners so both exercise identical error handling.
+inline ActionEvent dispatch_with_barrier(const ActionExecutor& executor, ActionContext& actx,
+                                         QueueEvent& event) {
+    auto start_time = actx.start_time;
+    try {
+        return executor(actx, event);
+    } catch (const ErrorResultException& ex) {
+        return ex.to_result(actx).to_action_event(start_time);
+    } catch (const FilterResultException& ex) {
+        return ex.to_result(actx).to_action_event(start_time);
+    } catch (const std::exception& ex) {
+        spdlog::error("action error: {}", ex.what());
+        ErrorResult err(actx, ex.what());
+        err.set_context(describe_exception(ex));
+        return err.to_action_event(start_time);
+    } catch (...) {
+        spdlog::error("unknown action error");
+        ErrorResult err(actx, "unknown error");
+        return err.to_action_event(start_time);
+    }
+}
+
+// Wait for the pool's in-flight tasks until the deadline. Returns true if all
+// tasks finished, false if the deadline elapsed with work still running.
+inline bool wait_for_pool(BS::thread_pool<>& pool, std::chrono::steady_clock::time_point deadline) {
+    auto remaining = deadline - std::chrono::steady_clock::now();
+    if (remaining < std::chrono::steady_clock::duration::zero()) {
+        remaining = std::chrono::steady_clock::duration::zero();
+    }
+    return pool.wait_for(remaining);
+}
+
 // Manages polling and execution for a single registered action.
 class ActionWorker {
 public:
-    ActionWorker(const std::string& name,
-                 ActionExecutor executor,
-                 ActionEventQueue& queue,
-                 ContentServiceBase& content_service,
-                 InFlightTracker& tracker,
-                 const std::string& app_name,
-                 int worker_count,
+    ActionWorker(const std::string& name, ActionExecutor executor, ActionEventQueue& queue,
+                 ContentServiceBase& content_service, InFlightTracker& tracker,
+                 const std::string& app_name, int worker_count,
                  LookupClientBase* lookup_client = nullptr,
                  ArtifactClientBase* artifact_client = nullptr)
-        : name_(name), executor_(std::move(executor)),
-          queue_(queue), content_service_(content_service),
-          tracker_(tracker), app_name_(app_name),
-          pool_(worker_count), lookup_client_(lookup_client),
+        : name_(name),
+          executor_(std::move(executor)),
+          queue_(queue),
+          content_service_(content_service),
+          tracker_(tracker),
+          app_name_(app_name),
+          pool_(worker_count),
+          lookup_client_(lookup_client),
           artifact_client_(artifact_client) {}
 
     void start() {
         poller_conn_ = queue_.create_poller_connection();
-        poller_ = std::jthread([this](std::stop_token stop) {
-            poll(stop);
-        });
+        publish_conn_ = queue_.create_publish_connection();
+        poller_ = std::jthread([this](const std::stop_token& stop) { poll(stop); });
     }
 
-    void request_stop() {
+    void request_stop() { poller_.request_stop(); }
+
+    // Stop the poller and drain in-flight tasks until the deadline. Returns
+    // true if the pool emptied, false if the deadline elapsed (tasks abandoned).
+    bool drain(std::chrono::steady_clock::time_point deadline) {
         poller_.request_stop();
-    }
-
-    void join() {
         if (poller_.joinable()) poller_.join();
-        pool_.wait();
+        return wait_for_pool(pool_, deadline);
     }
 
 private:
@@ -211,35 +243,34 @@ private:
     ContentServiceBase& content_service_;
     InFlightTracker& tracker_;
     std::string app_name_;
-    BS::thread_pool pool_;
+    BS::thread_pool<> pool_;
     LookupClientBase* lookup_client_ = nullptr;
     ArtifactClientBase* artifact_client_ = nullptr;
     std::jthread poller_;
     std::unique_ptr<internal::RespConnection> poller_conn_;
+    std::unique_ptr<PublishConnection> publish_conn_;
 
-    void poll(std::stop_token stop) {
+    void poll(const std::stop_token& stop) {
+        internal::PollBackoff backoff;
         while (!stop.stop_requested()) {
             try {
                 auto raw = queue_.take(*poller_conn_, name_);
+                backoff.reset();  // healthy read (event or idle timeout) resets the backoff
                 if (raw.empty()) continue;
 
                 // Submit work to thread pool
-                pool_.detach_task([this, raw = std::move(raw)] {
-                    process(raw);
-                });
+                pool_.detach_task([this, raw = std::move(raw)] { process(raw); });
             } catch (const std::exception& ex) {
                 if (stop.stop_requested()) break;
-                spdlog::error("[{}] poll error, reconnecting: {}",
-                              name_, ex.what());
+                spdlog::error("[{}] poll error (retry in ~{}ms), reconnecting: {}", name_,
+                              backoff.current().count(), ex.what());
                 poller_conn_.reset();
                 try {
                     poller_conn_ = queue_.create_poller_connection();
                 } catch (const std::exception& reconnect_ex) {
-                    if (stop.stop_requested()) break;
-                    spdlog::error("[{}] reconnect failed: {}",
-                                  name_, reconnect_ex.what());
-                    std::this_thread::sleep_for(std::chrono::seconds(1));
+                    spdlog::error("[{}] reconnect failed: {}", name_, reconnect_ex.what());
                 }
+                if (!backoff.wait_after_error(stop)) break;
             }
         }
     }
@@ -249,28 +280,16 @@ private:
         try {
             event = nlohmann::json::parse(raw).get<QueueEvent>();
         } catch (const std::exception& ex) {
-            spdlog::error("[{}] failed to deserialize event: {}",
-                          name_, ex.what());
+            spdlog::error("[{}] failed to deserialize event: {}", name_, ex.what());
             return;
         }
 
-        auto start_time = std::chrono::system_clock::now();
-        auto actx = build_action_context(event, &content_service_, lookup_client_, artifact_client_);
+        auto actx =
+            build_action_context(event, &content_service_, lookup_client_, artifact_client_);
 
         tracker_.start(actx.did, actx.action_name, app_name_);
 
-        ActionEvent action_event;
-        try {
-            action_event = executor_(actx, event);
-        } catch (const std::exception& ex) {
-            spdlog::error("[{}] action error: {}", name_, ex.what());
-            ErrorResult err(actx, ex.what());
-            action_event = err.to_action_event(start_time);
-        } catch (...) {
-            spdlog::error("[{}] unknown action error", name_);
-            ErrorResult err(actx, "unknown error");
-            action_event = err.to_action_event(start_time);
-        }
+        ActionEvent action_event = dispatch_with_barrier(executor_, actx, event);
 
         tracker_.stop(actx.did, actx.action_name);
 
@@ -278,12 +297,11 @@ private:
         try {
             auto result_json = nlohmann::json(action_event).dump();
             auto qname = result_queue_name(event.return_address);
-            queue_.put(qname, result_json);
+            queue_.put(*publish_conn_, qname, result_json);
         } catch (const std::exception& ex) {
-            spdlog::error("[{}] failed to publish result: {}",
-                          name_, ex.what());
+            spdlog::error("[{}] failed to publish result: {}", name_, ex.what());
         }
     }
 };
 
-} // namespace deltafi
+}  // namespace deltafi

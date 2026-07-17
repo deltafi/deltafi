@@ -7,6 +7,7 @@
 #include <map>
 #include <mutex>
 #include <set>
+#include <sstream>
 #include <string>
 #include <thread>
 #include <vector>
@@ -29,16 +30,28 @@ struct ActionExecution {
     std::string start_time;
     std::string heartbeat_time;
     std::string app_name;
+    std::string thread_id;
+    std::chrono::system_clock::time_point started_at;  // for age gating; not serialized
 };
 
 inline void to_json(nlohmann::json& j, const ActionExecution& e) {
-    j = nlohmann::json{
-        {"did", e.did},
-        {"actionName", e.action_name},
-        {"startTime", e.start_time},
-        {"heartbeatTime", e.heartbeat_time},
-        {"appName", e.app_name}
-    };
+    j = nlohmann::json{{"did", e.did},
+                       {"actionName", e.action_name},
+                       {"startTime", e.start_time},
+                       {"heartbeatTime", e.heartbeat_time},
+                       {"appName", e.app_name}};
+}
+
+// Long-running-task hash key: clazz:action#thread:did. C++ has a single action
+// identity, so the action name fills both the clazz and action segments.
+inline std::string task_key(const ActionExecution& e) {
+    return e.action_name + ":" + e.action_name + "#" + e.thread_id + ":" + e.did;
+}
+
+// A task is "long-running" once it has been in flight for the threshold.
+inline bool is_long_running(const ActionExecution& exec,
+                            std::chrono::system_clock::time_point now) {
+    return (now - exec.started_at) >= long_running_task_threshold;
 }
 
 // Thread-safe tracker for currently executing actions.
@@ -46,20 +59,30 @@ class InFlightTracker {
 public:
     void start(const std::string& did, const std::string& action_name,
                const std::string& app_name) {
-        std::lock_guard lock(mu_);
-        auto now = format_time(std::chrono::system_clock::now());
-        tasks_[did + ":" + action_name] = ActionExecution{
-            did, action_name, now, now, app_name
-        };
+        std::scoped_lock lock(mu_);
+        auto now_tp = std::chrono::system_clock::now();
+        auto now = format_time(now_tp);
+        ActionExecution exec{.did = did,
+                             .action_name = action_name,
+                             .start_time = now,
+                             .heartbeat_time = now,
+                             .app_name = app_name,
+                             .thread_id = current_thread_id(),
+                             .started_at = now_tp};
+        tasks_[task_key(exec)] = exec;
     }
 
     void stop(const std::string& did, const std::string& action_name) {
-        std::lock_guard lock(mu_);
-        tasks_.erase(did + ":" + action_name);
+        std::scoped_lock lock(mu_);
+        // start()/stop() for one execution run on the same worker thread, so the
+        // thread id reconstructs the same key.
+        ActionExecution probe{
+            .did = did, .action_name = action_name, .thread_id = current_thread_id()};
+        tasks_.erase(task_key(probe));
     }
 
     std::vector<ActionExecution> snapshot() {
-        std::lock_guard lock(mu_);
+        std::scoped_lock lock(mu_);
         std::vector<ActionExecution> result;
         result.reserve(tasks_.size());
         auto now = format_time(std::chrono::system_clock::now());
@@ -72,6 +95,12 @@ public:
     }
 
 private:
+    static std::string current_thread_id() {
+        std::ostringstream ss;
+        ss << std::this_thread::get_id();
+        return ss.str();
+    }
+
     std::mutex mu_;
     std::map<std::string, ActionExecution> tasks_;
 };
@@ -79,22 +108,18 @@ private:
 // Heartbeat thread that periodically reports action liveness.
 class Heartbeat {
 public:
-    Heartbeat(ActionEventQueue& queue,
-              std::vector<std::string> action_names,
-              InFlightTracker& tracker,
-              const std::string& app_name)
-        : queue_(queue), action_names_(std::move(action_names)),
-          tracker_(tracker), app_name_(app_name) {}
+    Heartbeat(ActionEventQueue& queue, std::vector<std::string> action_names,
+              InFlightTracker& tracker, const std::string& app_name)
+        : queue_(queue),
+          action_names_(std::move(action_names)),
+          tracker_(tracker),
+          app_name_(app_name) {}
 
     void start() {
-        thread_ = std::jthread([this](std::stop_token stop) {
-            run(stop);
-        });
+        thread_ = std::jthread([this](const std::stop_token& stop) { run(stop); });
     }
 
-    void request_stop() {
-        thread_.request_stop();
-    }
+    void request_stop() { thread_.request_stop(); }
 
     void join() {
         if (thread_.joinable()) thread_.join();
@@ -108,10 +133,12 @@ private:
     std::jthread thread_;
     std::set<std::string> reported_keys_;
 
-    void run(std::stop_token stop) {
+    void run(const std::stop_token& stop) {
+        // Sleep in small increments (to respond to stop quickly) totalling one
+        // heartbeat_interval.
+        constexpr int steps = static_cast<int>(heartbeat_interval / std::chrono::milliseconds(100));
         while (!stop.stop_requested()) {
-            // Sleep in small increments to respond to stop quickly
-            for (int i = 0; i < 100 && !stop.stop_requested(); ++i) {
+            for (int i = 0; i < steps && !stop.stop_requested(); ++i) {
                 std::this_thread::sleep_for(std::chrono::milliseconds(100));
             }
             if (stop.stop_requested()) return;
@@ -131,39 +158,31 @@ private:
     }
 
     void report_long_running_tasks() {
-        auto now = std::chrono::system_clock::now();
         std::set<std::string> current_keys;
+        auto now = std::chrono::system_clock::now();
 
         for (const auto& exec : tracker_.snapshot()) {
-            // Parse the start time to check duration
-            // The start time is in ISO-8601 format; approximate by using
-            // the time elapsed since we started tracking
-            auto key = exec.did + ":" + exec.action_name;
-
-            // Simple heuristic: if we've seen this task for multiple heartbeat
-            // cycles, it's likely long-running. For precise timing we'd parse
-            // the ISO timestamp, but for the threshold check we track keys.
+            // Only report tasks that have been in flight past the threshold.
+            if (!is_long_running(exec, now)) continue;
+            auto key = task_key(exec);
             current_keys.insert(key);
 
-            // Always report current tasks (the heartbeat time updates each cycle)
             try {
                 nlohmann::json data = exec;
                 queue_.set_long_running_task(key, data.dump());
                 reported_keys_.insert(key);
             } catch (const std::exception& ex) {
-                spdlog::error("failed to report long-running task {}: {}",
-                              key, ex.what());
+                spdlog::error("failed to report long-running task {}: {}", key, ex.what());
             }
         }
 
         // Remove completed tasks that were previously reported
-        for (auto it = reported_keys_.begin(); it != reported_keys_.end(); ) {
-            if (!current_keys.count(*it)) {
+        for (auto it = reported_keys_.begin(); it != reported_keys_.end();) {
+            if (!current_keys.contains(*it)) {
                 try {
                     queue_.remove_long_running_task(*it);
                 } catch (const std::exception& ex) {
-                    spdlog::error("failed to remove long-running task {}: {}",
-                                  *it, ex.what());
+                    spdlog::error("failed to remove long-running task {}: {}", *it, ex.what());
                 }
                 it = reported_keys_.erase(it);
             } else {
@@ -173,4 +192,4 @@ private:
     }
 };
 
-} // namespace deltafi
+}  // namespace deltafi

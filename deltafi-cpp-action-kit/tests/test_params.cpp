@@ -13,19 +13,16 @@ struct SimpleParams {
     bool verbose = false;
     int max_retries = 3;
 
-    DELTAFI_PARAMS(SimpleParams,
-        REQUIRED(url, "Service URL"),
-        FIELD(verbose, "Enable verbose logging"),
-        FIELD(max_retries, "Maximum retry attempts"))
+    DELTAFI_PARAMS(SimpleParams, REQUIRED(url, "Service URL"),
+                   FIELD(verbose, "Enable verbose logging"),
+                   FIELD(max_retries, "Maximum retry attempts"))
 };
 
 struct NestedInner {
     bool enabled = true;
     int count = 0;
 
-    DELTAFI_PARAMS(NestedInner,
-        FIELD(enabled, "Is enabled"),
-        FIELD(count, "Item count"))
+    DELTAFI_PARAMS(NestedInner, FIELD(enabled, "Is enabled"), FIELD(count, "Item count"))
 };
 
 struct NestedParams {
@@ -34,11 +31,8 @@ struct NestedParams {
     std::vector<NestedInner> items;
     std::map<std::string, std::string> tags;
 
-    DELTAFI_PARAMS(NestedParams,
-        REQUIRED(name, "The name"),
-        FIELD(inner, "Optional inner struct"),
-        FIELD(items, "List of items"),
-        FIELD(tags, "Key-value tags"))
+    DELTAFI_PARAMS(NestedParams, REQUIRED(name, "The name"), FIELD(inner, "Optional inner struct"),
+                   FIELD(items, "List of items"), FIELD(tags, "Key-value tags"))
 };
 
 // --- Tests ---
@@ -97,11 +91,7 @@ TEST_CASE("schema generation for nested params") {
 }
 
 TEST_CASE("from_json with matching types") {
-    json j = {
-        {"url", "https://example.com"},
-        {"verbose", true},
-        {"maxRetries", 5}
-    };
+    json j = {{"url", "https://example.com"}, {"verbose", true}, {"maxRetries", 5}};
 
     auto p = j.get<SimpleParams>();
     CHECK(p.url == "https://example.com");
@@ -119,11 +109,7 @@ TEST_CASE("from_json with defaults") {
 }
 
 TEST_CASE("from_json with string coercion") {
-    json j = {
-        {"url", "https://example.com"},
-        {"verbose", "true"},
-        {"maxRetries", "7"}
-    };
+    json j = {{"url", "https://example.com"}, {"verbose", "true"}, {"maxRetries", "7"}};
 
     auto p = j.get<SimpleParams>();
     CHECK(p.verbose == true);
@@ -131,10 +117,7 @@ TEST_CASE("from_json with string coercion") {
 }
 
 TEST_CASE("from_json with float-to-int coercion") {
-    json j = {
-        {"url", "https://example.com"},
-        {"maxRetries", 5.0}
-    };
+    json j = {{"url", "https://example.com"}, {"maxRetries", 5.0}};
 
     auto p = j.get<SimpleParams>();
     CHECK(p.max_retries == 5);
@@ -158,17 +141,17 @@ TEST_CASE("to_json round-trip") {
 }
 
 TEST_CASE("nested struct from_json") {
-    json j = {
-        {"name", "test"},
-        {"inner", {{"enabled", false}, {"count", 42}}},
-        {"items", json::array({{{"enabled", true}, {"count", 1}}})},
-        {"tags", {{"env", "prod"}}}
-    };
+    json j = {{"name", "test"},
+              {"inner", {{"enabled", false}, {"count", 42}}},
+              {"items", json::array({{{"enabled", true}, {"count", 1}}})},
+              {"tags", {{"env", "prod"}}}};
 
     auto p = j.get<NestedParams>();
     CHECK(p.name == "test");
     REQUIRE(p.inner.has_value());
+    // NOLINTNEXTLINE(bugprone-unchecked-optional-access) — guarded by REQUIRE above.
     CHECK(p.inner->enabled == false);
+    // NOLINTNEXTLINE(bugprone-unchecked-optional-access) — guarded by REQUIRE above.
     CHECK(p.inner->count == 42);
     REQUIRE(p.items.size() == 1);
     CHECK(p.items[0].count == 1);

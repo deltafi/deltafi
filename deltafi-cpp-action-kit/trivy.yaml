@@ -1,0 +1,13 @@
+# ABOUTME: Trivy scan policy for the C++ action kit builder images (deltafi/cpp-action-kit:*-glibc|musl).
+# ABOUTME: These are build-only images (plugins ship on distroless), so gate on fixable CVEs only.
+
+# The builder base carries the full C++ toolchain: g++ pulls in binutils and linux-libc-dev (kernel
+# headers), and cmake/git pull in curl/expat/perl. On a Debian glibc base that surfaces ~1100 CVEs,
+# but every one is currently unfixed (no upstream patch is available) and the image is never
+# deployed. `ignore-unfixed` reports only actionable vulnerabilities; the toolchain CVEs cannot be
+# removed without removing the compiler, and git is required (plugins FetchContent git-hosted deps).
+scan:
+  scanners:
+    - vuln
+vulnerability:
+  ignore-unfixed: true

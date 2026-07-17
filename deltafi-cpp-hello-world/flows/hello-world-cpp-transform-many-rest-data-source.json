@@ -1,6 +1,0 @@
-{
-  "name": "hello-world-cpp-transform-many-rest-data-source",
-  "type": "REST_DATA_SOURCE",
-  "description": "REST data source for Hello World C++ transform many",
-  "topic": "hello-world-cpp-transform-many"
-}

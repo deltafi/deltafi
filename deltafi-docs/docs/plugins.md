@@ -435,11 +435,18 @@ myplugin/
 ├── main.cpp
 ├── actions/
 │   └── transform.hpp
+├── suppliers/           # optional lookup-table suppliers
+├── lookup-tables/       # optional shared data files served by suppliers
 ├── flows/
 │   └── my-transform.json
 └── integration/
     └── basic-test.json
 ```
+
+The [`deltafi-cpp-hello-world`](https://gitlab.com/deltafi/plugins/deltafi-cpp-hello-world) reference plugin exercises the full surface, including a **streaming**
+flow (`DeleteContent → LoremIpsum → Capitalize`) whose actions demonstrate bounded-memory
+writer-callback and load-reader streaming, a streaming egress that scans for a marker across read
+boundaries, and lookup suppliers backed by shared `lookup-tables/` data files.
 
 ### CMake
 
@@ -492,28 +499,57 @@ DELTAFI_PLUGIN(
 
 ### Dockerfile
 
-C++ plugins use a multi-stage Docker build with static linking:
+C++ plugins use a multi-stage Docker build with a `BUILD_FLAVOR` arg that selects the libc:
+
+- **`glibc` (default)** — a dynamically-linked binary, built on `debian:trixie-slim` (g++-14
+  provides `<format>`, which the kit's spdlog needs) and shipped on the matching
+  `gcr.io/distroless/cc-debian13:nonroot`. Preferred for its robust DNS/NSS, locale, and thread
+  stacks.
+- **`musl`** — a fully-static binary, built on `alpine:3.24` and shipped on
+  `gcr.io/distroless/static:nonroot`. Smallest image, but with musl's DNS/NSS, locale, and 128 KiB
+  thread-stack limits.
+
+Build and runtime must share a libc version, so each flavor pairs a builder base with a matching
+runtime base and the two are selected together by `BUILD_FLAVOR`:
 
 ```dockerfile
-FROM alpine:3.21 AS builder
-RUN apk add --no-cache cmake ninja g++ git
+ARG BUILD_FLAVOR=glibc
 
+FROM alpine:3.24 AS builder-musl
+RUN apk add --no-cache cmake make ninja linux-headers g++ git openssl openssl-dev openssl-libs-static
+ENV DELTAFI_CMAKE_LINK_FLAGS="-DCMAKE_EXE_LINKER_FLAGS=-static -DOPENSSL_USE_STATIC_LIBS=TRUE"
+
+FROM debian:trixie-slim AS builder-glibc
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        cmake ninja-build g++ git libssl-dev ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+ENV DELTAFI_CMAKE_LINK_FLAGS=""
+
+FROM builder-${BUILD_FLAVOR} AS builder
 WORKDIR /build
 COPY deltafi-cpp-action-kit/ ./deltafi-cpp-action-kit/
 COPY my-plugin/ ./my-plugin/
-
 WORKDIR /build/my-plugin
 ARG VERSION=0.0.0-dev
 RUN cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=Release \
-    -DDELTAFI_ACTION_KIT_PATH=../deltafi-cpp-action-kit \
-    -DVERSION=${VERSION} \
-    -DCMAKE_EXE_LINKER_FLAGS="-static"
+    -DDELTAFI_ACTION_KIT_PATH=/build/deltafi-cpp-action-kit \
+    -DVERSION=${VERSION} ${DELTAFI_CMAKE_LINK_FLAGS}
 RUN cmake --build build
 
-FROM gcr.io/distroless/static:nonroot
+FROM gcr.io/distroless/static:nonroot AS runtime-musl
+FROM gcr.io/distroless/cc-debian13:nonroot AS runtime-glibc
+
+FROM runtime-${BUILD_FLAVOR}
 COPY --from=builder /build/my-plugin/build/my-plugin /app/deltafi-plugin
 COPY --from=builder /build/my-plugin/flows /app/flows
 ENTRYPOINT ["/app/deltafi-plugin"]
+```
+
+Select a flavor through the Makefile's `BUILD_FLAVOR` flag (default `glibc`):
+
+```bash
+make docker                    # glibc (default)
+make docker BUILD_FLAVOR=musl  # static musl
 ```
 
 ### Makefile

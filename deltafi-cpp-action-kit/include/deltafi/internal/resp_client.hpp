@@ -4,6 +4,7 @@
 #pragma once
 
 #include <algorithm>
+#include <array>
 #include <chrono>
 #include <cstdint>
 #include <functional>
@@ -25,13 +26,12 @@ struct RespError {
     std::string message;
 };
 
-using RespReply = std::variant<
-    std::string,                    // Simple string or bulk string
-    int64_t,                        // Integer
-    RespError,                      // Error
-    std::vector<std::string>,       // Array of bulk strings
-    std::monostate                  // Nil
->;
+using RespReply = std::variant<std::string,               // Simple string or bulk string
+                               int64_t,                   // Integer
+                               RespError,                 // Error
+                               std::vector<std::string>,  // Array of bulk strings
+                               std::monostate             // Nil
+                               >;
 
 // Encode a RESP2 command as a bulk string array: *N\r\n$len\r\narg\r\n...
 inline std::string resp_encode(const std::vector<std::string>& args) {
@@ -65,7 +65,8 @@ inline std::pair<std::string, uint16_t> parse_host_port(const std::string& addr)
             uint16_t port = 6379;
             try {
                 port = static_cast<uint16_t>(std::stoi(port_str));
-            } catch (...) {}
+            } catch (...) {  // NOLINT(bugprone-empty-catch): use default port
+            }
             return {host, port};
         }
     }
@@ -81,14 +82,18 @@ public:
     RespReply read_reply() {
         char type = read_byte();
         switch (type) {
-            case '+': return read_simple_string();
-            case '-': return RespError{read_line()};
-            case ':': return read_integer();
-            case '$': return read_bulk_string();
-            case '*': return read_array();
+            case '+':
+                return read_simple_string();
+            case '-':
+                return RespError{read_line()};
+            case ':':
+                return read_integer();
+            case '$':
+                return read_bulk_string();
+            case '*':
+                return read_array();
             default:
-                throw std::runtime_error(
-                    std::string("unexpected RESP type: ") + type);
+                throw std::runtime_error(std::string("unexpected RESP type: ") + type);
         }
     }
 
@@ -99,13 +104,13 @@ private:
 
     void ensure_data(size_t need) {
         while (pos_ + need > buf_.size()) {
-            char tmp[4096];
+            std::array<char, 4096> tmp{};
             asio::error_code ec;
             auto n = sock_.read_some(asio::buffer(tmp), ec);
             if (ec) {
                 throw std::runtime_error("RESP read error: " + ec.message());
             }
-            buf_.append(tmp, n);
+            buf_.append(tmp.data(), n);
         }
     }
 
@@ -121,7 +126,7 @@ private:
             char c = buf_[pos_++];
             if (c == '\r') {
                 ensure_data(1);
-                pos_++; // skip \n
+                pos_++;  // skip \n
                 break;
             }
             line += c;
@@ -130,9 +135,7 @@ private:
         return line;
     }
 
-    std::string read_simple_string() {
-        return read_line();
-    }
+    std::string read_simple_string() { return read_line(); }
 
     int64_t read_integer() {
         auto line = read_line();
@@ -145,7 +148,7 @@ private:
         if (len < 0) {
             return std::monostate{};
         }
-        ensure_data(static_cast<size_t>(len) + 2); // data + \r\n
+        ensure_data(static_cast<size_t>(len) + 2);  // data + \r\n
         std::string data = buf_.substr(pos_, static_cast<size_t>(len));
         pos_ += static_cast<size_t>(len) + 2;
         compact();
@@ -187,24 +190,28 @@ private:
 // Each instance is single-threaded; callers create one per thread.
 class RespConnection {
 public:
-    RespConnection(const std::string& host, uint16_t port,
-                   const std::string& password = "")
-        : host_(host), port_(port), password_(password),
-          socket_(io_ctx_) {
+    RespConnection(const std::string& host, uint16_t port, const std::string& password = "")
+        : host_(host), port_(port), password_(password), socket_(io_ctx_) {
         connect();
     }
 
     ~RespConnection() {
-        try { close(); } catch (...) {}
+        try {
+            close();
+        } catch (...) {  // NOLINT(bugprone-empty-catch): destructor must not throw
+        }
     }
 
     RespConnection(const RespConnection&) = delete;
     RespConnection& operator=(const RespConnection&) = delete;
+    RespConnection(RespConnection&&) = delete;
+    RespConnection& operator=(RespConnection&&) = delete;
 
     // Send a command and return the reply that has already been parsed.
     RespReply send_command(const std::vector<std::string>& args) {
         auto encoded = resp_encode(args);
         asio::write(socket_, asio::buffer(encoded));
+        // NOLINTNEXTLINE(bugprone-unchecked-optional-access) — reader_ is a constructor invariant.
         return reader_->read_reply();
     }
 
@@ -223,16 +230,16 @@ public:
             if (auto* s = std::get_if<std::string>(&reply)) {
                 return *s == "PONG";
             }
-        } catch (...) {}
+        } catch (...) {  // NOLINT(bugprone-empty-catch): treat any failure as ping failure
+        }
         return false;
     }
 
     // BZPOPMIN: blocking pop from sorted set with timeout in seconds.
     // Returns (member, score) or nullopt on timeout/nil.
-    std::optional<std::pair<std::string, std::string>>
-    bzpopmin(const std::string& key, int timeout_secs) {
-        auto reply = send_command(
-            {"BZPOPMIN", key, std::to_string(timeout_secs)});
+    std::optional<std::pair<std::string, std::string>> bzpopmin(const std::string& key,
+                                                                int timeout_secs) {
+        auto reply = send_command({"BZPOPMIN", key, std::to_string(timeout_secs)});
         if (std::holds_alternative<std::monostate>(reply)) {
             return std::nullopt;
         }
@@ -246,8 +253,8 @@ public:
     }
 
     // BZPOPMIN from multiple sorted sets. Returns the member or nullopt.
-    std::optional<std::pair<std::string, std::string>>
-    bzpopmin(const std::vector<std::string>& keys, int timeout_secs) {
+    std::optional<std::pair<std::string, std::string>> bzpopmin(
+        const std::vector<std::string>& keys, int timeout_secs) {
         std::vector<std::string> args = {"BZPOPMIN"};
         args.insert(args.end(), keys.begin(), keys.end());
         args.push_back(std::to_string(timeout_secs));
@@ -264,19 +271,16 @@ public:
     }
 
     // ZADD: add member with score to sorted set.
-    void zadd(const std::string& key, double score,
-              const std::string& member) {
-        auto reply = send_command(
-            {"ZADD", key, std::to_string(static_cast<int64_t>(score)),
-             member});
+    void zadd(const std::string& key, double score, const std::string& member) {
+        auto reply =
+            send_command({"ZADD", key, std::to_string(static_cast<int64_t>(score)), member});
         if (auto* e = std::get_if<RespError>(&reply)) {
             throw std::runtime_error("ZADD error: " + e->message);
         }
     }
 
     // HSET: set hash field.
-    void hset(const std::string& key, const std::string& field,
-              const std::string& value) {
+    void hset(const std::string& key, const std::string& field, const std::string& value) {
         auto reply = send_command({"HSET", key, field, value});
         if (auto* e = std::get_if<RespError>(&reply)) {
             throw std::runtime_error("HSET error: " + e->message);
@@ -294,12 +298,13 @@ public:
     // SUBSCRIBE: enter subscription mode and call handler for each message.
     // Blocks until stop_requested returns true or connection fails.
     void subscribe(const std::string& channel,
-                   std::function<void(const std::string&)> handler,
-                   std::function<bool()> stop_requested) {
+                   const std::function<void(const std::string&)>& handler,
+                   const std::function<bool()>& stop_requested) {
         send_command({"SUBSCRIBE", channel});
         // After SUBSCRIBE, server sends subscription confirmation then messages
         while (!stop_requested()) {
             try {
+                // NOLINTNEXTLINE(bugprone-unchecked-optional-access) — reader_ invariant.
                 auto reply = reader_->read_reply();
                 if (auto* arr = std::get_if<std::vector<std::string>>(&reply)) {
                     if (arr->size() >= 3 && (*arr)[0] == "message") {
@@ -317,8 +322,9 @@ public:
 
     void close() {
         asio::error_code ec;
+        // NOLINTNEXTLINE(bugprone-unused-return-value): teardown; error is intentionally ignored
         socket_.shutdown(asio::ip::tcp::socket::shutdown_both, ec);
-        socket_.close(ec);
+        socket_.close(ec);  // NOLINT(bugprone-unused-return-value): teardown; error ignored
     }
 
 private:
@@ -343,9 +349,9 @@ private:
 
 // Create a RespConnection from a URL string with optional password.
 // Retries with exponential backoff (250ms → 5s cap) on failure.
-inline std::unique_ptr<RespConnection>
-connect_with_retry(const std::string& url, const std::string& password,
-                   int max_attempts = 10) {
+inline std::unique_ptr<RespConnection> connect_with_retry(const std::string& url,
+                                                          const std::string& password,
+                                                          int max_attempts = 10) {
     auto [host, port] = parse_host_port(url);
 
     int delay_ms = 250;
@@ -354,14 +360,12 @@ connect_with_retry(const std::string& url, const std::string& password,
             return std::make_unique<RespConnection>(host, port, password);
         } catch (const std::exception& ex) {
             if (attempt == max_attempts) {
-                throw std::runtime_error(
-                    "failed to connect to " + url + " after " +
-                    std::to_string(max_attempts) + " attempts: " + ex.what());
+                throw std::runtime_error("failed to connect to " + url + " after " +
+                                         std::to_string(max_attempts) + " attempts: " + ex.what());
             }
-            spdlog::warn("Redis connect attempt {}/{} failed: {}",
-                         attempt, max_attempts, ex.what());
-            std::this_thread::sleep_for(
-                std::chrono::milliseconds(delay_ms));
+            spdlog::warn("Redis connect attempt {}/{} failed: {}", attempt, max_attempts,
+                         ex.what());
+            std::this_thread::sleep_for(std::chrono::milliseconds(delay_ms));
             delay_ms = std::min(delay_ms * 2, 5000);
         }
     }
@@ -369,4 +373,4 @@ connect_with_retry(const std::string& url, const std::string& password,
     throw std::runtime_error("failed to connect to " + url);
 }
 
-} // namespace deltafi::internal
+}  // namespace deltafi::internal

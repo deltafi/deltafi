@@ -7,8 +7,7 @@
 using namespace deltafi::internal;
 
 TEST_CASE("SHA256 of empty string", "[crypto]") {
-    CHECK(sha256_hex("") ==
-          "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855");
+    CHECK(sha256_hex("") == "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855");
 }
 
 TEST_CASE("SHA256 of Hello World", "[crypto]") {
@@ -51,7 +50,7 @@ TEST_CASE("to_hex basic conversion", "[crypto]") {
 }
 
 TEST_CASE("to_hex empty", "[crypto]") {
-    CHECK(to_hex({}) == "");
+    CHECK(to_hex({}).empty());
 }
 
 TEST_CASE("to_hex leading zeros", "[crypto]") {

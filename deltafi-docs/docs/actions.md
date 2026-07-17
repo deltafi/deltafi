@@ -265,8 +265,12 @@ df.AddContent(copied)
 Or in C++ save content to a Result:
 
 ```cpp
-// Save directly via the result (stores to MinIO and adds content)
+// Save directly via the result (stores to S3 and adds content)
 result.save_content(data_string, "output.txt", "text/plain");
+
+// Stream large content into a writer callback (never buffers the whole object in memory):
+result.save_content_from_writer(
+    [](std::ostream& out) { write_records(out); }, "output.csv", "text/csv");
 
 // Manipulate existing content without saving to disk:
 auto copied = existing_content.copy();
@@ -275,6 +279,10 @@ auto partial = another_content.subcontent(0, 50);
 copied.append(partial);
 result.add_content(copied);
 ```
+
+`load_reader` (above) and `save_content_from_writer` stream content in bounded-memory chunks, so
+large objects never fully materialize in memory — the store uses a multipart upload above its part
+size.
 
 ### Results
 

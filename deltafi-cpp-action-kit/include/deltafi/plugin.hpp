@@ -4,8 +4,10 @@
 #pragma once
 
 #include <algorithm>
+#include <array>
 #include <chrono>
 #include <csignal>
+#include <cstdio>
 #include <filesystem>
 #include <fstream>
 #include <map>
@@ -31,6 +33,23 @@ namespace deltafi {
 
 inline constexpr const char* health_probe_file = "/tmp/running";
 
+// RAII marker file for container readiness/liveness probes. Created on
+// construction, removed on destruction (any exit path, including exceptions).
+struct HealthProbe {
+    std::filesystem::path path;
+    explicit HealthProbe(std::filesystem::path p) : path(std::move(p)) {
+        std::ofstream(path) << "running";
+    }
+    ~HealthProbe() {
+        std::error_code ec;
+        std::filesystem::remove(path, ec);
+    }
+    HealthProbe(const HealthProbe&) = delete;
+    HealthProbe& operator=(const HealthProbe&) = delete;
+    HealthProbe(HealthProbe&&) = delete;
+    HealthProbe& operator=(HealthProbe&&) = delete;
+};
+
 // Plugin configuration from environment variables with optional overrides.
 struct PluginConfig {
     std::string core_url;
@@ -41,9 +60,11 @@ struct PluginConfig {
     std::string minio_secret_key;
     std::string minio_bucket;
     bool minio_use_ssl = false;
+    std::size_t minio_part_size = 0;  // S3 multipart part size in bytes; 0 = kit default
     std::string image;
     std::string image_pull_secret;
     PluginCoordinates coordinates;
+    std::vector<PluginCoordinates> dependencies;
     std::string display_name;
     std::string description;
     std::string domain;
@@ -51,22 +72,24 @@ struct PluginConfig {
 
 // Global signal flag for graceful shutdown.
 namespace detail {
-    inline volatile std::sig_atomic_t shutdown_requested = 0;
-    inline void signal_handler(int) { shutdown_requested = 1; }
-
-    // Artifact watch registrations used by Plugin::run().
-    using ArtifactWatchRegistrar = std::function<void(ArtifactClient&)>;
-    inline std::vector<ArtifactWatchRegistrar>& pending_artifact_watches() {
-        static std::vector<ArtifactWatchRegistrar> v;
-        return v;
-    }
+inline volatile std::sig_atomic_t shutdown_requested = 0;
+inline void signal_handler([[maybe_unused]] int signum) {
+    shutdown_requested = 1;
 }
+
+// Artifact watch registrations used by Plugin::run().
+using ArtifactWatchRegistrar = std::function<void(ArtifactClient&)>;
+inline std::vector<ArtifactWatchRegistrar>& pending_artifact_watches() {
+    static std::vector<ArtifactWatchRegistrar> v;
+    return v;
+}
+}  // namespace detail
 
 using ArtifactFetchHandler = std::function<void(const FetchedArtifact*, const std::string&)>;
 
 // Register a plugin-scoped artifact watch with auto-fetch on version change.
 inline bool watch_artifact(std::string name, ArtifactFetchHandler handler) {
-    detail::pending_artifact_watches().push_back(
+    detail::pending_artifact_watches().emplace_back(
         [n = std::move(name), h = std::move(handler)](ArtifactClient& client) {
             client.on_update_fetch(n, h);
         });
@@ -76,17 +99,15 @@ inline bool watch_artifact(std::string name, ArtifactFetchHandler handler) {
 // Register a plugin-scoped artifact watch with auto-fetch and a default to publish if missing.
 inline bool watch_artifact(std::string name, ArtifactDefault default_artifact,
                            ArtifactFetchHandler handler) {
-    detail::pending_artifact_watches().push_back(
-        [n = std::move(name), d = std::move(default_artifact),
-         h = std::move(handler)](ArtifactClient& client) {
-            client.on_update_fetch_with_default(n, d, h);
-        });
+    detail::pending_artifact_watches().emplace_back(
+        [n = std::move(name), d = std::move(default_artifact), h = std::move(handler)](
+            ArtifactClient& client) { client.on_update_fetch_with_default(n, d, h); });
     return true;
 }
 
 // Register a shared artifact watch with auto-fetch on version change.
 inline bool watch_shared_artifact(std::string name, ArtifactFetchHandler handler) {
-    detail::pending_artifact_watches().push_back(
+    detail::pending_artifact_watches().emplace_back(
         [n = std::move(name), h = std::move(handler)](ArtifactClient& client) {
             client.on_shared_update_fetch(n, h);
         });
@@ -112,8 +133,15 @@ public:
             config_.minio_secret_key = env_or_default("MINIO_SECRETKEY", "password");
         if (config_.minio_bucket.empty())
             config_.minio_bucket = env_or_default("STORAGE_BUCKET_NAME", "storage");
-        if (config_.image.empty())
-            config_.image = env_or_default("IMAGE", "");
+        if (env_or_default("MINIO_USE_SSL", "") == "true") config_.minio_use_ssl = true;
+        if (config_.minio_part_size == 0) {
+            auto ps = parse_byte_size(env_or_default("S3_PART_SIZE", ""));
+            // Enforce the S3 multipart minimum so a too-small part size can't break large uploads.
+            if (ps > 0)
+                config_.minio_part_size =
+                    ps < internal::S3Client::min_part_size ? internal::S3Client::min_part_size : ps;
+        }
+        if (config_.image.empty()) config_.image = env_or_default("IMAGE", "");
         if (config_.image_pull_secret.empty())
             config_.image_pull_secret = env_or_default("IMAGE_PULL_SECRET", "");
         if (config_.coordinates.group_id.empty())
@@ -130,6 +158,13 @@ public:
 
     void set_worker_count(const std::string& action_name, int count) {
         worker_counts_[action_name] = count;
+    }
+
+    // Declare a plugin dependency (group / artifact / version) for registration.
+    void add_dependency(const std::string& group_id, const std::string& artifact_id,
+                        const std::string& version) {
+        config_.dependencies.push_back(PluginCoordinates{
+            .group_id = group_id, .artifact_id = artifact_id, .version = version});
     }
 
     // Register a lookup table supplier.
@@ -187,15 +222,14 @@ public:
         try {
             // Connect to Redis/Valkey
             spdlog::info("Connecting to Redis at {}...", config_.valkey_url);
-            auto queue = std::make_unique<ActionEventQueue>(
-                config_.valkey_url, config_.valkey_password);
+            auto queue =
+                std::make_unique<ActionEventQueue>(config_.valkey_url, config_.valkey_password);
 
             // Create content service
             spdlog::info("Connecting to MinIO at {}...", config_.minio_url);
             auto content_service = std::make_unique<ContentService>(
-                config_.minio_url, config_.minio_access_key,
-                config_.minio_secret_key, config_.minio_bucket,
-                config_.minio_use_ssl);
+                config_.minio_url, config_.minio_access_key, config_.minio_secret_key,
+                config_.minio_bucket, config_.minio_use_ssl, config_.minio_part_size);
             spdlog::info("Connected to MinIO");
 
             // Create lookup client
@@ -204,8 +238,7 @@ public:
             // Start supplier runner before registration (core may query immediately)
             std::unique_ptr<LookupTableSupplierRunner> supplier_runner;
             if (!suppliers_.empty()) {
-                supplier_runner = std::make_unique<LookupTableSupplierRunner>(
-                    *queue, suppliers_);
+                supplier_runner = std::make_unique<LookupTableSupplierRunner>(*queue, suppliers_);
                 supplier_runner->start();
                 spdlog::info("Started lookup table supplier runner for {} table(s)",
                              suppliers_.size());
@@ -214,10 +247,8 @@ public:
             // Build and post registration
             auto reg = build_registration();
             spdlog::info("Registering plugin {}:{}:{} with {} actions, {} flows, {} variables...",
-                         config_.coordinates.group_id,
-                         config_.coordinates.artifact_id,
-                         config_.coordinates.version,
-                         reg.actions.size(), reg.flow_plans.size(),
+                         config_.coordinates.group_id, config_.coordinates.artifact_id,
+                         config_.coordinates.version, reg.actions.size(), reg.flow_plans.size(),
                          reg.variables.size());
             post_registration(config_.core_url, reg);
 
@@ -227,10 +258,10 @@ public:
             }
 
             // Create artifact client
-            auto artifact_owner = config_.coordinates.group_id + "." +
-                                  config_.coordinates.artifact_id;
-            auto artifact_client = std::make_unique<ArtifactClient>(
-                config_.core_url, artifact_owner);
+            auto artifact_owner =
+                config_.coordinates.group_id + "." + config_.coordinates.artifact_id;
+            auto artifact_client =
+                std::make_unique<ArtifactClient>(config_.core_url, artifact_owner);
 
             // Call ConfigureArtifacts on any actions that support it
             registry_.configure_artifacts(*artifact_client);
@@ -248,9 +279,9 @@ public:
             // Resolve app name
             std::string app_name = env_or_default("APP_NAME", "");
             if (app_name.empty()) {
-                char hostname[256];
-                if (gethostname(hostname, sizeof(hostname)) == 0) {
-                    app_name = hostname;
+                std::array<char, 256> hostname{};
+                if (gethostname(hostname.data(), hostname.size()) == 0) {
+                    app_name = hostname.data();
                 }
             }
 
@@ -267,12 +298,10 @@ public:
             for (const auto& ra : registry_.actions()) {
                 int count = worker_count(ra.name);
                 auto worker = std::make_unique<ActionWorker>(
-                    ra.name, ra.executor, *queue, *content_service,
-                    *tracker, app_name, count,
+                    ra.name, ra.executor, *queue, *content_service, *tracker, app_name, count,
                     lookup_client.get(), artifact_client.get());
                 worker->start();
-                spdlog::info("Started {} worker(s) for {} ({})",
-                             count, ra.name, ra.action_type);
+                spdlog::info("Started {} worker(s) for {} ({})", count, ra.name, ra.action_type);
                 workers.push_back(std::move(worker));
             }
 
@@ -281,11 +310,8 @@ public:
             heartbeat.start();
             spdlog::info("Heartbeat started");
 
-            // Create health probe
-            {
-                std::ofstream probe(health_probe_file);
-                probe << "running";
-            }
+            // Health probe (RAII: removed on any exit path, including exceptions)
+            HealthProbe probe(health_probe_file);
 
             spdlog::info("Plugin running, waiting for work...");
 
@@ -302,13 +328,12 @@ public:
             if (supplier_runner) supplier_runner->request_stop();
             artifact_client->request_stop();
 
-            // Wait with timeout
-            auto deadline = std::chrono::steady_clock::now() +
-                            std::chrono::seconds(30);
+            // Drain in-flight work against a hard deadline shared across all
+            // workers, abandoning any stragglers still running past it.
+            auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds(30);
             for (auto& w : workers) {
-                auto remaining = deadline - std::chrono::steady_clock::now();
-                if (remaining > std::chrono::seconds(0)) {
-                    w->join();
+                if (!w->drain(deadline)) {
+                    spdlog::warn("drain deadline elapsed; abandoning in-flight action tasks");
                 }
             }
             heartbeat.join();
@@ -316,9 +341,6 @@ public:
             artifact_client->join();
 
             spdlog::info("All workers drained");
-
-            // Remove health probe
-            std::filesystem::remove(health_probe_file);
 
             queue->close();
             return 0;
@@ -347,20 +369,25 @@ private:
 
         // Check per-action env var: ACTIONS_ACTIONTHREADS_{NAME}
         std::string env_name = action_name;
-        std::replace(env_name.begin(), env_name.end(), '.', '_');
-        std::replace(env_name.begin(), env_name.end(), '-', '_');
-        std::transform(env_name.begin(), env_name.end(), env_name.begin(),
-                        ::toupper);
+        std::ranges::replace(env_name, '.', '_');
+        std::ranges::replace(env_name, '-', '_');
+        std::ranges::transform(env_name, env_name.begin(), ::toupper);
         std::string per_action_env = "ACTIONS_ACTIONTHREADS_" + env_name;
         auto val = env_or_default(per_action_env, "");
         if (!val.empty()) {
-            try { return std::stoi(val); } catch (...) {}
+            try {
+                return std::stoi(val);
+            } catch (...) {  // NOLINT(bugprone-empty-catch): fall through on parse failure
+            }
         }
 
         // Check global env var
         val = env_or_default("ACTION_THREADS", "");
         if (!val.empty()) {
-            try { return std::stoi(val); } catch (...) {}
+            try {
+                return std::stoi(val);
+            } catch (...) {  // NOLINT(bugprone-empty-catch): fall through on parse failure
+            }
         }
 
         return 1;
@@ -374,14 +401,16 @@ private:
         reg.display_name = config_.display_name;
         reg.description = config_.description;
         reg.action_kit_version = deltafi::action_kit_version;
-        reg.dependencies = {};
+        reg.dependencies = config_.dependencies;
         reg.variables = variables_;
 
         for (const auto& ra : registry_.actions()) {
-            reg.actions.push_back(ActionDescriptor{
-                ra.name, ra.description, ra.action_type,
-                ra.supports_join, ra.schema, ra.options
-            });
+            reg.actions.push_back(ActionDescriptor{.name = ra.name,
+                                                   .description = ra.description,
+                                                   .type = ra.action_type,
+                                                   .supports_join = ra.supports_join,
+                                                   .schema = ra.schema,
+                                                   .options = ra.options});
         }
 
         for (const auto& fp : flows_) {
@@ -414,51 +443,54 @@ inline std::vector<SupplierRegistrar>& pending_suppliers() {
     return v;
 }
 
-} // namespace detail
+}  // namespace detail
 
-} // namespace deltafi
+}  // namespace deltafi
 
 // Token-paste helpers for unique variable names.
 #define DELTAFI_CONCAT_(a, b) a##b
 #define DELTAFI_CONCAT(a, b) DELTAFI_CONCAT_(a, b)
 
 // Register a plugin-scoped artifact watch. Args match deltafi::watch_artifact() overloads.
-#define DELTAFI_WATCH_ARTIFACT(...)                                          \
-    namespace {                                                              \
-        static const bool DELTAFI_CONCAT(_deltafi_watch_, __COUNTER__) =    \
-            deltafi::watch_artifact(__VA_ARGS__);                            \
+#define DELTAFI_WATCH_ARTIFACT(...)                                                       \
+    namespace {                                                                           \
+    static const bool DELTAFI_CONCAT(_deltafi_watch_,                                     \
+                                     __COUNTER__) = deltafi::watch_artifact(__VA_ARGS__); \
     }
 
 // Register a shared artifact watch. Args match deltafi::watch_shared_artifact().
-#define DELTAFI_WATCH_SHARED_ARTIFACT(...)                                   \
-    namespace {                                                              \
-        static const bool DELTAFI_CONCAT(_deltafi_swatch_, __COUNTER__) =   \
-            deltafi::watch_shared_artifact(__VA_ARGS__);                     \
+#define DELTAFI_WATCH_SHARED_ARTIFACT(...)                                                       \
+    namespace {                                                                                  \
+    static const bool DELTAFI_CONCAT(_deltafi_swatch_,                                           \
+                                     __COUNTER__) = deltafi::watch_shared_artifact(__VA_ARGS__); \
     }
 
 // Self-register an action type with name and description.
 // Place after the class definition in each action header.
-#define DELTAFI_ACTION(ActionClass, action_name_, action_desc_)              \
-    template<> struct deltafi::action_traits<ActionClass> {                   \
-        static constexpr auto name = action_name_;                           \
-        static constexpr auto description = action_desc_;                    \
-    };                                                                       \
-    namespace {                                                              \
-        static const bool _deltafi_reg_##ActionClass = (                     \
-            deltafi::detail::pending_actions().push_back(                    \
-                [](deltafi::Registry& r, const std::string& domain) {       \
-                    r.register_action<ActionClass>(domain);                  \
-                }), true);                                                   \
+#define DELTAFI_ACTION(ActionClass, action_name_, action_desc_)    \
+    template<>                                                     \
+    struct deltafi::action_traits<ActionClass> {                   \
+        static constexpr auto name = action_name_;                 \
+        static constexpr auto description = action_desc_;          \
+    };                                                             \
+    namespace {                                                    \
+    static const bool _deltafi_reg_##ActionClass =                 \
+        (deltafi::detail::pending_actions().emplace_back(          \
+             [](deltafi::Registry& r, const std::string& domain) { \
+                 r.register_action<ActionClass>(domain);           \
+             }),                                                   \
+         true);                                                    \
     }
 
 // Self-register a lookup table supplier. Place after the class definition in each supplier header.
-#define DELTAFI_SUPPLIER(SupplierClass)                                      \
-    namespace {                                                              \
-        static const bool _deltafi_reg_##SupplierClass = (                   \
-            deltafi::detail::pending_suppliers().push_back(                  \
-                []() -> std::shared_ptr<deltafi::LookupTableSupplierBase> {  \
-                    return std::make_shared<SupplierClass>();                \
-                }), true);                                                   \
+#define DELTAFI_SUPPLIER(SupplierClass)                                  \
+    namespace {                                                          \
+    static const bool _deltafi_reg_##SupplierClass =                     \
+        (deltafi::detail::pending_suppliers().emplace_back(              \
+             []() -> std::shared_ptr<deltafi::LookupTableSupplierBase> { \
+                 return std::make_shared<SupplierClass>();               \
+             }),                                                         \
+         true);                                                          \
     }
 
 // Default plugin version when not set by the build system (-DVERSION=...).
@@ -468,21 +500,31 @@ inline std::vector<SupplierRegistrar>& pending_suppliers() {
 
 // Macro to generate main() for a DeltaFi C++ plugin.
 // Actions and suppliers are auto-registered via DELTAFI_ACTION and DELTAFI_SUPPLIER macros.
-#define DELTAFI_PLUGIN(group, artifact, desc, _domain_)                     \
-    int main() {                                                            \
-        deltafi::PluginConfig config;                                       \
-        config.coordinates = {group, artifact, VERSION};                    \
-        config.description = desc;                                          \
-        config.domain = _domain_;                                           \
-        deltafi::Plugin plugin(std::move(config));                          \
-        for (auto& reg : deltafi::detail::pending_actions()) {              \
-            reg(plugin.registry(), _domain_);                               \
-        }                                                                   \
-        for (auto& reg : deltafi::detail::pending_suppliers()) {            \
-            plugin.register_supplier(reg());                                \
-        }                                                                   \
-        plugin.load_flows("flows");                                         \
-        plugin.load_variables("flows");                                     \
-        plugin.load_integration_tests("integration");                       \
-        return plugin.run();                                                \
+#define DELTAFI_PLUGIN(group, artifact, desc, _domain_)                   \
+    int main() {                                                          \
+        try {                                                             \
+            deltafi::PluginConfig config;                                 \
+            config.coordinates = {group, artifact, VERSION};              \
+            config.description = desc;                                    \
+            config.domain = _domain_;                                     \
+            deltafi::Plugin plugin(std::move(config));                    \
+            for (auto& reg : deltafi::detail::pending_actions()) {        \
+                reg(plugin.registry(), _domain_);                         \
+            }                                                             \
+            for (auto& reg : deltafi::detail::pending_suppliers()) {      \
+                plugin.register_supplier(reg());                          \
+            }                                                             \
+            plugin.load_flows("flows");                                   \
+            plugin.load_variables("flows");                               \
+            plugin.load_integration_tests("integration");                 \
+            return plugin.run();                                          \
+        } catch (const std::exception& ex) {                              \
+            std::fputs("plugin startup failed: ", stderr);                \
+            std::fputs(ex.what(), stderr);                                \
+            std::fputs("\n", stderr);                                     \
+            return 1;                                                     \
+        } catch (...) {                                                   \
+            std::fputs("plugin startup failed: unknown error\n", stderr); \
+            return 1;                                                     \
+        }                                                                 \
     }

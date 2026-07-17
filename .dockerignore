@@ -4,3 +4,4 @@
 !deltafi-core-actions/build/docs
 !deltafi-core-actions/build/docs/**
 **/.go/
+deltafi-cpp*/build*/

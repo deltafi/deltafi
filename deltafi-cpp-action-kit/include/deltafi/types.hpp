@@ -3,13 +3,17 @@
 
 #pragma once
 
+#include <algorithm>
 #include <chrono>
+#include <cctype>
+#include <cstddef>
 #include <cstdint>
 #include <cstdlib>
 #include <functional>
 #include <memory>
 #include <mutex>
 #include <optional>
+#include <map>
 #include <string>
 #include <vector>
 
@@ -31,10 +35,7 @@ struct PluginCoordinates {
 
 inline void to_json(nlohmann::json& j, const PluginCoordinates& c) {
     j = nlohmann::json{
-        {"groupId", c.group_id},
-        {"artifactId", c.artifact_id},
-        {"version", c.version}
-    };
+        {"groupId", c.group_id}, {"artifactId", c.artifact_id}, {"version", c.version}};
 }
 
 inline void from_json(const nlohmann::json& j, PluginCoordinates& c) {
@@ -58,12 +59,7 @@ struct Segment {
 };
 
 inline void to_json(nlohmann::json& j, const Segment& s) {
-    j = nlohmann::json{
-        {"uuid", s.uuid},
-        {"offset", s.offset},
-        {"size", s.size},
-        {"did", s.did}
-    };
+    j = nlohmann::json{{"uuid", s.uuid}, {"offset", s.offset}, {"size", s.size}, {"did", s.did}};
 }
 
 inline void from_json(const nlohmann::json& j, Segment& s) {
@@ -99,7 +95,8 @@ struct ActionContent {
     }
 
     ActionContent copy() const {
-        return ActionContent{name, media_type, segments, tags};
+        return ActionContent{
+            .name = name, .media_type = media_type, .segments = segments, .tags = tags};
     }
 
     void set_name(const std::string& n) { name = n; }
@@ -108,16 +105,16 @@ struct ActionContent {
 
     bool remove_tag(const std::string& tag) {
         for (auto it = tags.begin(); it != tags.end(); ++it) {
-            if (*it == tag) { tags.erase(it); return true; }
+            if (*it == tag) {
+                tags.erase(it);
+                return true;
+            }
         }
         return false;
     }
 
     bool has_tag(const std::string& tag) const {
-        for (const auto& t : tags) {
-            if (t == tag) return true;
-        }
-        return false;
+        return std::ranges::any_of(tags, [&](const auto& t) { return t == tag; });
     }
 
     // Zero-copy segment slicing for subcontent.
@@ -125,9 +122,8 @@ struct ActionContent {
         return subcontent_named(offset, sz, name, media_type);
     }
 
-    ActionContent subcontent_named(int64_t off, int64_t sz,
-                                    const std::string& n,
-                                    const std::string& mt) const {
+    ActionContent subcontent_named(int64_t off, int64_t sz, const std::string& n,
+                                   const std::string& mt) const {
         std::vector<Segment> segs;
         int64_t remaining = sz;
         int64_t pos = 0;
@@ -135,36 +131,34 @@ struct ActionContent {
         for (const auto& seg : segments) {
             if (remaining <= 0) break;
             int64_t seg_end = pos + seg.size;
-            if (seg_end <= off) { pos = seg_end; continue; }
+            if (seg_end <= off) {
+                pos = seg_end;
+                continue;
+            }
 
             int64_t skip = (off > pos) ? (off - pos) : 0;
             int64_t available = seg.size - skip;
             int64_t take = std::min(available, remaining);
 
-            segs.push_back(Segment{seg.uuid, seg.offset + skip, take, seg.did});
+            segs.push_back(Segment{
+                .uuid = seg.uuid, .offset = seg.offset + skip, .size = take, .did = seg.did});
             remaining -= take;
             pos = seg_end;
         }
-        return ActionContent{n, mt, std::move(segs), {}};
+        return ActionContent{.name = n, .media_type = mt, .segments = std::move(segs)};
     }
 
     void append(const ActionContent& other) {
-        segments.insert(segments.end(),
-                        other.segments.begin(), other.segments.end());
+        segments.insert(segments.end(), other.segments.begin(), other.segments.end());
     }
 
     void prepend(const ActionContent& other) {
-        segments.insert(segments.begin(),
-                        other.segments.begin(), other.segments.end());
+        segments.insert(segments.begin(), other.segments.begin(), other.segments.end());
     }
 };
 
 inline void to_json(nlohmann::json& j, const ActionContent& c) {
-    j = nlohmann::json{
-        {"name", c.name},
-        {"mediaType", c.media_type},
-        {"segments", c.segments}
-    };
+    j = nlohmann::json{{"name", c.name}, {"mediaType", c.media_type}, {"segments", c.segments}};
     if (!c.tags.empty()) {
         j["tags"] = c.tags;
     }
@@ -195,12 +189,16 @@ inline void from_json(const nlohmann::json& j, JoinConfiguration& c) {
 }
 
 inline void to_json(nlohmann::json& j, const JoinConfiguration& c) {
-    j = nlohmann::json{
-        {"maxAge", c.max_age},
-        {"minNum", c.min_num},
-        {"maxNum", c.max_num},
-        {"metadataKey", c.metadata_key}
-    };
+    j = nlohmann::json{{"maxAge", c.max_age},
+                       {"minNum", c.min_num},
+                       {"maxNum", c.max_num},
+                       {"metadataKey", c.metadata_key}};
+}
+
+// Merge src into dst, later values overwriting existing keys (later-wins).
+inline void merge_last_wins(std::map<std::string, std::string>& dst,
+                            const std::map<std::string, std::string>& src) {
+    for (const auto& [k, v] : src) dst[k] = v;
 }
 
 // Per-invocation execution context passed to every action.
@@ -227,9 +225,7 @@ struct ActionContext {
     // Create a child context with a new UUID for multi-child splitting.
     ActionContext child_context() const;
 
-    void track_segment(const Segment& seg) {
-        saved_segments.push_back(seg);
-    }
+    void track_segment(const Segment& seg) { saved_segments.push_back(seg); }
 };
 
 // Plugin variable for flow parameterization.
@@ -244,12 +240,10 @@ struct Variable {
 };
 
 inline void to_json(nlohmann::json& j, const Variable& v) {
-    j = nlohmann::json{
-        {"name", v.name},
-        {"description", v.description},
-        {"dataType", v.data_type},
-        {"required", v.required}
-    };
+    j = nlohmann::json{{"name", v.name},
+                       {"description", v.description},
+                       {"dataType", v.data_type},
+                       {"required", v.required}};
     if (!v.default_value.is_null()) j["defaultValue"] = v.default_value;
     if (!v.value.is_null()) j["value"] = v.value;
     if (v.masked) j["masked"] = v.masked;
@@ -287,12 +281,12 @@ inline void to_json(nlohmann::json& j, const FlowPlan& fp) {
 class SafeStringMap {
 public:
     void store(std::map<std::string, std::string> data) {
-        std::lock_guard lock(mu_);
+        std::scoped_lock lock(mu_);
         data_ = std::move(data);
     }
 
-    void for_each(std::function<void(const std::string&, const std::string&)> fn) const {
-        std::lock_guard lock(mu_);
+    void for_each(const std::function<void(const std::string&, const std::string&)>& fn) const {
+        std::scoped_lock lock(mu_);
         for (const auto& [k, v] : data_) {
             fn(k, v);
         }
@@ -304,11 +298,28 @@ private:
 };
 
 // Read environment variable with fallback default.
-inline std::string env_or_default(const std::string& key,
-                                   const std::string& fallback) {
+inline std::string env_or_default(const std::string& key, const std::string& fallback) {
     const char* val = std::getenv(key.c_str());
     if (val && val[0] != '\0') return val;
     return fallback;
 }
 
-} // namespace deltafi
+// Parse a byte size like "5242880", "5MB", "5M", or "512KB" into bytes. Returns 0 on empty/invalid.
+inline std::size_t parse_byte_size(const std::string& s) {
+    try {
+        std::size_t idx = 0;
+        auto val = static_cast<std::size_t>(std::stoull(s, &idx));
+        std::string unit;
+        for (char c : s.substr(idx)) {
+            if (!std::isspace(static_cast<unsigned char>(c)))
+                unit += static_cast<char>(std::toupper(static_cast<unsigned char>(c)));
+        }
+        if (unit == "K" || unit == "KB" || unit == "KIB") return val * 1024;
+        if (unit == "M" || unit == "MB" || unit == "MIB") return val * 1024 * 1024;
+        return val;  // bytes (no unit, or "B")
+    } catch (...) {
+        return 0;
+    }
+}
+
+}  // namespace deltafi

@@ -527,6 +527,33 @@ auto config = nlohmann::json::parse(fetched.data);
 auto shared = context.artifact_client->get_shared_artifact("geo-regions.csv", "active");
 ```
 
+By default `get_artifact` (and `stream_artifact`) resolve with `PLUGIN_FIRST` scope — the plugin's
+own namespace first, then the shared namespace. Pass a `deltafi::ArtifactScope` to change this
+(`PLUGIN_FIRST`, `PLUGIN_ONLY`, or `SHARED_ONLY`):
+
+```cpp
+auto fetched = context.artifact_client->get_artifact(
+    "routing-rules.json", "active", deltafi::ArtifactScope::PLUGIN_ONLY);
+// fetched.manifest.is_default() is true if the artifact was seeded as a plugin default
+```
+
+The client caches downloads and keeps them current through the Valkey version-change subscription;
+a background poll-drift check (every 5 minutes) re-lists watched artifacts and re-fetches any whose
+version changed but whose notification was missed.
+
+For large artifacts, stream the body instead of buffering it whole. `stream_artifact` returns the
+manifest as soon as the response headers arrive, plus an `std::istream` that reads incrementally
+(bounded memory). Streamed fetches are not cached.
+
+```cpp
+auto stream = context.artifact_client->stream_artifact("model.bin", "active");
+std::string version = stream.manifest.version;
+load_model(*stream.reader);  // std::unique_ptr<std::istream>
+
+// Shared namespace variant
+auto shared = context.artifact_client->stream_shared_artifact("dataset.bin", "active");
+```
+
 #### Reacting to Version Changes
 
 Actions that implement the `ArtifactAware` concept can register callbacks at startup:
@@ -573,6 +600,17 @@ auto resp = context.artifact_client->publish_artifact("output-rules.json", data,
 
 // Publish to shared namespace
 resp = context.artifact_client->publish_shared_artifact("shared-data.csv", data, "text/csv");
+```
+
+To publish a large artifact without buffering it in memory, stream it from an `std::istream`. The
+payload is sent to core as multipart form-data produced on demand:
+
+```cpp
+std::ifstream in("big-model.bin", std::ios::binary);
+auto resp = context.artifact_client->publish_from_reader("model.bin", in, "application/octet-stream");
+
+// Publish to shared namespace
+resp = context.artifact_client->publish_shared_from_reader("shared-model.bin", in, "application/octet-stream");
 ```
 
 #### Publishing Artifacts (Go)

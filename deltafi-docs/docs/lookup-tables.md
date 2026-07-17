@@ -250,3 +250,26 @@ try {
 ```
 
 To return all (unsorted) rows with all result columns, pass `nullptr` as the options.
+
+Query results are cached; concurrent lookups for the same key coalesce into a single backend call
+(single-flight), and expired entries are evicted on a background timer. `results.ttl_seconds` (when
+present) is the number of seconds until the table's next scheduled refresh.
+
+The same client also provides admin operations (matching the Java kit):
+
+```cpp
+auto tables = context.lookup_client->get_lookup_tables();
+
+deltafi::LookupTableDefinition def;
+def.name = "colors";
+def.columns = {"name", "hex"};
+def.key_columns = {"name"};
+context.lookup_client->create_lookup_table(def);
+
+std::vector<std::map<std::string, std::string>> rows = {{{"name", "red"}, {"hex", "#f00"}}};
+context.lookup_client->upsert_rows("colors", rows);      // batched at 10,000 rows/request
+context.lookup_client->remove_rows("colors", {{{"name", "red"}}});
+context.lookup_client->set_backing_service_active("colors", true);
+```
+
+Each admin call returns a `LookupAdminResult` (`success`, `info`, `errors`).

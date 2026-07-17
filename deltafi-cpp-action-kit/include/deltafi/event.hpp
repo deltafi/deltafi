@@ -27,14 +27,10 @@ struct TransformEvent {
 };
 
 inline void to_json(nlohmann::json& j, const TransformEvent& e) {
-    j = nlohmann::json{
-        {"did", e.did},
-        {"content", e.content}
-    };
+    j = nlohmann::json{{"did", e.did}, {"content", e.content}};
     if (!e.name.empty()) j["name"] = e.name;
     if (!e.metadata.empty()) j["metadata"] = e.metadata;
-    if (!e.delete_metadata_keys.empty())
-        j["deleteMetadataKeys"] = e.delete_metadata_keys;
+    if (!e.delete_metadata_keys.empty()) j["deleteMetadataKeys"] = e.delete_metadata_keys;
     if (!e.annotations.empty()) j["annotations"] = e.annotations;
     if (!e.messages.empty()) j["messages"] = e.messages;
 }
@@ -55,11 +51,13 @@ inline void to_json(nlohmann::json& j, const ErrorEvent& e) {
 // Filter decision.
 struct FilterEvent {
     std::string message;
+    std::string context;
     std::map<std::string, std::string> annotations;
 };
 
 inline void to_json(nlohmann::json& j, const FilterEvent& e) {
     j = nlohmann::json{{"message", e.message}};
+    if (!e.context.empty()) j["context"] = e.context;
     if (!e.annotations.empty()) j["annotations"] = e.annotations;
 }
 
@@ -74,10 +72,7 @@ struct IngressEventItem {
 
 inline void to_json(nlohmann::json& j, const IngressEventItem& e) {
     j = nlohmann::json{
-        {"did", e.did},
-        {"deltaFileName", e.delta_file_name},
-        {"content", e.content}
-    };
+        {"did", e.did}, {"deltaFileName", e.delta_file_name}, {"content", e.content}};
     if (!e.metadata.empty()) j["metadata"] = e.metadata;
     if (!e.annotations.empty()) j["annotations"] = e.annotations;
 }
@@ -129,15 +124,10 @@ struct ActionEvent {
 };
 
 inline void to_json(nlohmann::json& j, const ActionEvent& e) {
-    j = nlohmann::json{
-        {"did", e.did},
-        {"flowName", e.flow_name},
-        {"flowId", e.flow_id},
-        {"actionName", e.action_name},
-        {"start", e.start},
-        {"stop", e.stop},
-        {"type", e.type}
-    };
+    j = nlohmann::json{{"did", e.did},        {"flowName", e.flow_name},
+                       {"flowId", e.flow_id}, {"actionName", e.action_name},
+                       {"start", e.start},    {"stop", e.stop},
+                       {"type", e.type}};
     if (!e.transform.empty()) j["transform"] = e.transform;
     if (e.error) j["error"] = *e.error;
     if (e.filter) j["filter"] = *e.filter;
@@ -148,9 +138,10 @@ inline void to_json(nlohmann::json& j, const ActionEvent& e) {
 
 // Create an ActionEvent with common fields filled in.
 inline ActionEvent new_base_event(const ActionContext& actx,
-                                   const std::chrono::system_clock::time_point& start,
-                                   const std::string& event_type,
-                                   const std::vector<LogMessage>& messages) {
+                                  const std::chrono::system_clock::time_point& start,
+                                  const std::string& event_type,
+                                  const std::vector<LogMessage>& messages,
+                                  const std::vector<Metric>& metrics = {}) {
     ActionEvent event;
     event.did = actx.did;
     event.flow_name = actx.flow_name;
@@ -160,7 +151,8 @@ inline ActionEvent new_base_event(const ActionContext& actx,
     event.stop = format_time(std::chrono::system_clock::now());
     event.type = event_type;
     event.messages = messages;
+    event.metrics = metrics;
     return event;
 }
 
-} // namespace deltafi
+}  // namespace deltafi

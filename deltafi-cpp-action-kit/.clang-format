@@ -1,0 +1,17 @@
+# ABOUTME: clang-format style for the DeltaFi C++ action kit, tuned to the existing headers.
+# ABOUTME: Goal is minimal churn against current code, not an external house style.
+---
+Language: Cpp
+BasedOnStyle: Google
+IndentWidth: 4
+TabWidth: 4
+UseTab: Never
+ColumnLimit: 100
+AccessModifierOffset: -4
+NamespaceIndentation: None
+PointerAlignment: Left
+DerivePointerAlignment: false
+AllowShortFunctionsOnASingleLine: Inline
+AllowShortIfStatementsOnASingleLine: WithoutElse
+SortIncludes: false
+SpaceAfterTemplateKeyword: false

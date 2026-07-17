@@ -1,0 +1,3 @@
+# ABOUTME: Grype scan policy for the C++ action kit builder images (deltafi/cpp-action-kit:*).
+# ABOUTME: Build-only images; report only fixable CVEs (see trivy.yaml for the full rationale).
+only-fixed: true

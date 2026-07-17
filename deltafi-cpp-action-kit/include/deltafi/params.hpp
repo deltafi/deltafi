@@ -33,8 +33,7 @@ public:
         }
         const char* val = std::getenv(name_.c_str());
         if (!val) {
-            throw std::runtime_error(
-                "environment variable '" + name_ + "' is not set");
+            throw std::runtime_error("environment variable '" + name_ + "' is not set");
         }
         return val;
     }
@@ -53,24 +52,17 @@ public:
         if (!s.empty()) {
             static const std::regex pattern("^[A-Z][A-Z0-9_]*$");
             if (!std::regex_match(s, pattern)) {
-                throw std::runtime_error(
-                    "invalid environment variable name '" + s +
-                    "': must be UPPER_SNAKE_CASE");
+                throw std::runtime_error("invalid environment variable name '" + s +
+                                         "': must be UPPER_SNAKE_CASE");
             }
         }
         e.name_ = std::move(s);
     }
 
-    friend void to_json(nlohmann::json& j, const EnvVar& e) {
-        j = e.name_;
-    }
+    friend void to_json(nlohmann::json& j, const EnvVar& e) { j = e.name_; }
 
     static nlohmann::json schema() {
-        return {
-            {"type", "string"},
-            {"pattern", "^[A-Z][A-Z0-9_]*$"},
-            {"x-deltafi-type", "EnvVar"}
-        };
+        return {{"type", "string"}, {"pattern", "^[A-Z][A-Z0-9_]*$"}, {"x-deltafi-type", "EnvVar"}};
     }
 
 private:
@@ -110,22 +102,27 @@ public:
         size_t i = 0;
         while (i < s.size() && s[i] >= '0' && s[i] <= '9') ++i;
         if (i == 0) {
-            throw std::runtime_error(
-                "invalid data size '" + s + "': must start with a number");
+            throw std::runtime_error("invalid data size '" + s + "': must start with a number");
         }
         int64_t n = std::stoll(s.substr(0, i));
         std::string unit;
         for (size_t j = i; j < s.size(); ++j) {
             unit += static_cast<char>(std::toupper(s[j]));
         }
-        int64_t multiplier;
-        if (unit == "B") multiplier = byte_unit;
-        else if (unit == "KB") multiplier = kilobyte;
-        else if (unit == "MB") multiplier = megabyte;
-        else if (unit == "GB") multiplier = gigabyte;
-        else if (unit == "TB") multiplier = terabyte;
-        else throw std::runtime_error(
-            "invalid data size unit '" + unit + "': must be B, KB, MB, GB, or TB");
+        int64_t multiplier = 0;
+        if (unit == "B")
+            multiplier = byte_unit;
+        else if (unit == "KB")
+            multiplier = kilobyte;
+        else if (unit == "MB")
+            multiplier = megabyte;
+        else if (unit == "GB")
+            multiplier = gigabyte;
+        else if (unit == "TB")
+            multiplier = terabyte;
+        else
+            throw std::runtime_error("invalid data size unit '" + unit +
+                                     "': must be B, KB, MB, GB, or TB");
         return DataSize(n * multiplier);
     }
 
@@ -133,23 +130,19 @@ public:
         d = DataSize::parse(j.get<std::string>());
     }
 
-    friend void to_json(nlohmann::json& j, const DataSize& d) {
-        j = d.to_string();
-    }
+    friend void to_json(nlohmann::json& j, const DataSize& d) { j = d.to_string(); }
 
     static nlohmann::json schema() {
-        return {
-            {"type", "string"},
-            {"pattern", "^[0-9]+(B|KB|MB|GB|TB)$"},
-            {"x-deltafi-type", "DataSize"}
-        };
+        return {{"type", "string"},
+                {"pattern", "^[0-9]+(B|KB|MB|GB|TB)$"},
+                {"x-deltafi-type", "DataSize"}};
     }
 
 private:
     int64_t bytes_ = 0;
 };
 
-} // namespace deltafi
+}  // namespace deltafi
 
 namespace deltafi::params {
 
@@ -175,25 +168,28 @@ concept HasSchema = requires {
 };
 
 // Type traits for container detection.
-template<typename T> struct is_vector : std::false_type {};
-template<typename T> struct is_vector<std::vector<T>> : std::true_type {};
+template<typename T>
+struct is_vector : std::false_type {};
+template<typename T>
+struct is_vector<std::vector<T>> : std::true_type {};
 
-template<typename T> struct is_string_map : std::false_type {};
-template<typename T> struct is_string_map<std::map<std::string, T>> : std::true_type {};
+template<typename T>
+struct is_string_map : std::false_type {};
+template<typename T>
+struct is_string_map<std::map<std::string, T>> : std::true_type {};
 
-template<typename T> struct is_optional : std::false_type {};
-template<typename T> struct is_optional<std::optional<T>> : std::true_type {};
+template<typename T>
+struct is_optional : std::false_type {};
+template<typename T>
+struct is_optional<std::optional<T>> : std::true_type {};
 
 // Whether a type's default value should be emitted in the JSON schema.
 // True for simple scalar types, false for containers, optionals, and nested structs.
 template<typename T>
 constexpr bool should_emit_default() {
     using Base = std::remove_cv_t<T>;
-    if constexpr (is_vector<Base>::value) return false;
-    else if constexpr (is_string_map<Base>::value) return false;
-    else if constexpr (is_optional<Base>::value) return false;
-    else if constexpr (HasSchema<Base>) return false;
-    else return true;
+    return !(is_vector<Base>::value || is_string_map<Base>::value || is_optional<Base>::value ||
+             HasSchema<Base>);
 }
 
 // Generate JSON Schema type descriptor for a C++ type.
@@ -212,8 +208,6 @@ nlohmann::json type_schema() {
         return s;
     } else if constexpr (HasSchema<Base>) {
         return Base::schema();
-    } else if constexpr (std::is_same_v<Base, std::string>) {
-        return {{"type", "string"}};
     } else if constexpr (std::is_same_v<Base, bool>) {
         return {{"type", "boolean"}};
     } else if constexpr (std::is_integral_v<Base>) {
@@ -221,6 +215,7 @@ nlohmann::json type_schema() {
     } else if constexpr (std::is_floating_point_v<Base>) {
         return {{"type", "number"}};
     } else {
+        // std::string and any unmapped type default to a JSON string.
         return {{"type", "string"}};
     }
 }
@@ -233,7 +228,7 @@ T coerce_get(const nlohmann::json& j) {
 
     if constexpr (is_optional<Base>::value) {
         if (j.is_null()) return std::nullopt;
-        using V = typename Base::value_type;
+        using V = Base::value_type;
         return coerce_get<V>(j);
     } else if constexpr (std::is_same_v<Base, bool>) {
         if (j.is_string()) {
@@ -243,14 +238,22 @@ T coerce_get(const nlohmann::json& j) {
         }
     } else if constexpr (std::is_integral_v<Base> && !std::is_same_v<Base, bool>) {
         if (j.is_string()) {
-            try { return static_cast<T>(std::stoll(j.get<std::string>())); } catch (...) {}
+            try {
+                return static_cast<T>(std::stoll(j.get<std::string>()));
+            } catch (...) {  // NOLINT(bugprone-empty-catch): non-numeric string falls through to
+                             // get<T>()
+            }
         }
         if (j.is_number_float()) {
             return static_cast<T>(j.get<double>());
         }
     } else if constexpr (std::is_floating_point_v<Base>) {
         if (j.is_string()) {
-            try { return static_cast<T>(std::stod(j.get<std::string>())); } catch (...) {}
+            try {
+                return static_cast<T>(std::stod(j.get<std::string>()));
+            } catch (...) {  // NOLINT(bugprone-empty-catch): non-numeric string falls through to
+                             // get<T>()
+            }
         }
     }
 
@@ -262,7 +265,7 @@ template<typename T>
 void read_field(const nlohmann::json& j, const std::string& key, T& out) {
     if (!j.contains(key) || j[key].is_null()) return;
     if constexpr (is_optional<std::remove_cv_t<T>>::value) {
-        using V = typename std::remove_cv_t<T>::value_type;
+        using V = std::remove_cv_t<T>::value_type;
         out = coerce_get<V>(j[key]);
     } else {
         out = coerce_get<T>(j[key]);
@@ -382,57 +385,46 @@ auto required_field(T C::* ptr, const char* name, const char* desc) {
 }
 
 template<typename T, typename C>
-auto enum_field(T C::* ptr, const char* name, const char* desc,
-                std::vector<T> allowed) {
+auto enum_field(T C::* ptr, const char* name, const char* desc, std::vector<T> allowed) {
     return EnumFieldDescriptor<T, C>{ptr, name, desc, std::move(allowed)};
 }
 
 template<typename T, typename C>
-auto range_field(T C::* ptr, const char* name, const char* desc,
-                 T min_val, T max_val) {
+auto range_field(T C::* ptr, const char* name, const char* desc, T min_val, T max_val) {
     return RangeFieldDescriptor<T, C>{ptr, name, desc, min_val, max_val};
 }
 
-} // namespace deltafi::params
+}  // namespace deltafi::params
 
 // Generate schema(), from_json(), and to_json() for a parameter struct.
 // Each field in __VA_ARGS__ must be a FIELD, REQUIRED, ENUM, or RANGE invocation.
-#define DELTAFI_PARAMS(TypeName, ...)                                            \
-    using _DeltafiSelf_ = TypeName;                                             \
-    static nlohmann::json schema() {                                             \
-        nlohmann::json _s = {{"type", "object"},                                 \
-                             {"additionalProperties", false}};                   \
-        nlohmann::json _props = nlohmann::json::object();                        \
-        nlohmann::json _req = nlohmann::json::array();                           \
-        auto _fields = std::make_tuple(__VA_ARGS__);                             \
-        std::apply([&](auto&... f) {                                             \
-            (f.add_to_schema(_props, _req), ...);                                \
-        }, _fields);                                                             \
-        _s["properties"] = _props;                                               \
-        if (!_req.empty()) _s["required"] = _req;                                \
-        return _s;                                                               \
-    }                                                                            \
-    friend void from_json(const nlohmann::json& _j, TypeName& _p) {             \
-        auto _fields = std::make_tuple(__VA_ARGS__);                             \
-        std::apply([&](auto&... f) {                                             \
-            (f.read_from(_j, _p), ...);                                          \
-        }, _fields);                                                             \
-    }                                                                            \
-    friend void to_json(nlohmann::json& _j, const TypeName& _p) {               \
-        _j = nlohmann::json::object();                                           \
-        auto _fields = std::make_tuple(__VA_ARGS__);                             \
-        std::apply([&](auto&... f) {                                             \
-            (f.write_to(_j, _p), ...);                                           \
-        }, _fields);                                                             \
+#define DELTAFI_PARAMS(TypeName, ...)                                                   \
+    using _DeltafiSelf_ = TypeName;                                                     \
+    static nlohmann::json schema() {                                                    \
+        nlohmann::json _s = {{"type", "object"}, {"additionalProperties", false}};      \
+        nlohmann::json _props = nlohmann::json::object();                               \
+        nlohmann::json _req = nlohmann::json::array();                                  \
+        auto _fields = std::make_tuple(__VA_ARGS__);                                    \
+        std::apply([&](auto&... f) { (f.add_to_schema(_props, _req), ...); }, _fields); \
+        _s["properties"] = _props;                                                      \
+        if (!_req.empty()) _s["required"] = _req;                                       \
+        return _s;                                                                      \
+    }                                                                                   \
+    friend void from_json(const nlohmann::json& _j, TypeName& _p) {                     \
+        auto _fields = std::make_tuple(__VA_ARGS__);                                    \
+        std::apply([&](auto&... f) { (f.read_from(_j, _p), ...); }, _fields);           \
+    }                                                                                   \
+    friend void to_json(nlohmann::json& _j, const TypeName& _p) {                       \
+        _j = nlohmann::json::object();                                                  \
+        auto _fields = std::make_tuple(__VA_ARGS__);                                    \
+        std::apply([&](auto&... f) { (f.write_to(_j, _p), ...); }, _fields);            \
     }
 
 // Optional field. Default value is inferred from the member initializer.
-#define FIELD(_f, desc) \
-    deltafi::params::field(&_DeltafiSelf_::_f, #_f, desc)
+#define FIELD(_f, desc) deltafi::params::field(&_DeltafiSelf_::_f, #_f, desc)
 
 // Required field (added to schema "required" array).
-#define REQUIRED(_f, desc) \
-    deltafi::params::required_field(&_DeltafiSelf_::_f, #_f, desc)
+#define REQUIRED(_f, desc) deltafi::params::required_field(&_DeltafiSelf_::_f, #_f, desc)
 
 // Enum-constrained field. Default from member initializer.
 #define ENUM(_f, desc, ...) \

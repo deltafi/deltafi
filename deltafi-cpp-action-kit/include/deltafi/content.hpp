@@ -4,10 +4,12 @@
 #pragma once
 
 #include <cstdint>
+#include <functional>
 #include <istream>
 #include <memory>
-#include <sstream>
+#include <ostream>
 #include <string>
+#include <string_view>
 #include <vector>
 
 #include "deltafi/types.hpp"
@@ -21,12 +23,18 @@ inline std::string generate_uuid() {
     std::uniform_int_distribution<uint32_t> dist(0, 15);
     std::uniform_int_distribution<uint32_t> dist2(8, 11);
 
-    const char hex[] = "0123456789abcdef";
+    static constexpr std::string_view hex = "0123456789abcdef";
     std::string uuid(36, '-');
     for (int i = 0; i < 36; ++i) {
         if (i == 8 || i == 13 || i == 18 || i == 23) continue;
-        if (i == 14) { uuid[i] = '4'; continue; }
-        if (i == 19) { uuid[i] = hex[dist2(gen)]; continue; }
+        if (i == 14) {
+            uuid[i] = '4';
+            continue;
+        }
+        if (i == 19) {
+            uuid[i] = hex[dist2(gen)];
+            continue;
+        }
         uuid[i] = hex[dist(gen)];
     }
     return uuid;
@@ -36,71 +44,76 @@ inline std::string generate_uuid() {
 class ContentServiceBase {
 public:
     virtual ~ContentServiceBase() = default;
-    virtual Segment save(const std::string& did,
-                         const std::vector<uint8_t>& data) = 0;
-    virtual Segment save_from_reader(const std::string& did,
-                                      std::istream& reader, int64_t size) = 0;
-    virtual std::vector<uint8_t> load(
-        const std::vector<Segment>& segments) = 0;
-    virtual std::unique_ptr<std::istream> load_reader(
-        const std::vector<Segment>& segments) = 0;
+    ContentServiceBase() = default;
+    ContentServiceBase(const ContentServiceBase&) = delete;
+    ContentServiceBase& operator=(const ContentServiceBase&) = delete;
+    ContentServiceBase(ContentServiceBase&&) = delete;
+    ContentServiceBase& operator=(ContentServiceBase&&) = delete;
+    virtual Segment save(const std::string& did, const std::vector<uint8_t>& data) = 0;
+    virtual Segment save_from_reader(const std::string& did, std::istream& reader,
+                                     int64_t size) = 0;
+    virtual Segment save_from_writer(const std::string& did,
+                                     const std::function<void(std::ostream&)>& write_fn) = 0;
+    virtual std::vector<uint8_t> load(const std::vector<Segment>& segments) = 0;
+    virtual std::unique_ptr<std::istream> load_reader(const std::vector<Segment>& segments) = 0;
     virtual void remove(const std::vector<Segment>& segments) = 0;
 };
 
-// MinIO/S3 content storage implementation.
+// S3-compatible content storage implementation.
 class ContentService : public ContentServiceBase {
 public:
-    ContentService(const std::string& endpoint,
-                   const std::string& access_key,
-                   const std::string& secret_key,
-                   const std::string& bucket,
-                   bool use_ssl = false)
-        : client_(endpoint, access_key, secret_key, bucket, use_ssl) {}
+    // part_size overrides the S3 multipart part size when > 0 (bytes); 0 keeps the client default.
+    ContentService(const std::string& endpoint, const std::string& access_key,
+                   const std::string& secret_key, const std::string& bucket, bool use_ssl = false,
+                   std::size_t part_size = 0)
+        : client_(endpoint, access_key, secret_key, bucket, use_ssl) {
+        if (part_size > 0) client_.set_part_size(part_size);
+    }
 
-    Segment save(const std::string& did,
-                 const std::vector<uint8_t>& data) override {
+    Segment save(const std::string& did, const std::vector<uint8_t>& data) override {
         auto uuid = generate_uuid();
         auto s3seg = client_.save(did, data, uuid);
-        return Segment{s3seg.uuid, s3seg.offset, s3seg.size, s3seg.did};
+        return Segment{
+            .uuid = s3seg.uuid, .offset = s3seg.offset, .size = s3seg.size, .did = s3seg.did};
     }
 
-    Segment save_from_reader(const std::string& did,
-                              std::istream& reader, int64_t size) override {
+    Segment save_from_reader(const std::string& did, std::istream& reader, int64_t size) override {
         auto uuid = generate_uuid();
         auto s3seg = client_.save_from_reader(did, reader, size, uuid);
-        return Segment{s3seg.uuid, s3seg.offset, s3seg.size, s3seg.did};
+        return Segment{
+            .uuid = s3seg.uuid, .offset = s3seg.offset, .size = s3seg.size, .did = s3seg.did};
     }
 
-    std::vector<uint8_t> load(
-        const std::vector<Segment>& segments) override {
-        std::vector<internal::S3Segment> s3segs;
-        s3segs.reserve(segments.size());
-        for (const auto& seg : segments) {
-            s3segs.push_back({seg.uuid, seg.offset, seg.size, seg.did});
-        }
-        return client_.load(s3segs);
+    Segment save_from_writer(const std::string& did,
+                             const std::function<void(std::ostream&)>& write_fn) override {
+        auto uuid = generate_uuid();
+        auto s3seg = client_.save_from_writer(did, write_fn, uuid);
+        return Segment{
+            .uuid = s3seg.uuid, .offset = s3seg.offset, .size = s3seg.size, .did = s3seg.did};
     }
 
-    std::unique_ptr<std::istream> load_reader(
-        const std::vector<Segment>& segments) override {
-        auto data = load(segments);
-        auto ss = std::make_unique<std::stringstream>();
-        ss->write(reinterpret_cast<const char*>(data.data()),
-                  static_cast<std::streamsize>(data.size()));
-        ss->seekg(0);
-        return ss;
+    std::vector<uint8_t> load(const std::vector<Segment>& segments) override {
+        return client_.load(to_s3(segments));
     }
 
-    void remove(const std::vector<Segment>& segments) override {
-        std::vector<internal::S3Segment> s3segs;
-        s3segs.reserve(segments.size());
-        for (const auto& seg : segments) {
-            s3segs.push_back({seg.uuid, seg.offset, seg.size, seg.did});
-        }
-        client_.remove(s3segs);
+    // Stream content incrementally with bounded memory (pulls from the socket).
+    std::unique_ptr<std::istream> load_reader(const std::vector<Segment>& segments) override {
+        return client_.load_reader(to_s3(segments));
     }
+
+    void remove(const std::vector<Segment>& segments) override { client_.remove(to_s3(segments)); }
 
 private:
+    static std::vector<internal::S3Segment> to_s3(const std::vector<Segment>& segments) {
+        std::vector<internal::S3Segment> s3segs;
+        s3segs.reserve(segments.size());
+        for (const auto& seg : segments) {
+            s3segs.push_back(
+                {.uuid = seg.uuid, .offset = seg.offset, .size = seg.size, .did = seg.did});
+        }
+        return s3segs;
+    }
+
     internal::S3Client client_;
 };
 
@@ -125,65 +138,69 @@ inline std::unique_ptr<std::istream> ActionContent::load_reader() const {
 }
 
 // Set the content service pointer on all content items.
-inline void bind_content_service(std::vector<ActionContent>& content,
-                                  ContentServiceBase* cs) {
+inline void bind_content_service(std::vector<ActionContent>& content, ContentServiceBase* cs) {
     for (auto& c : content) c.content_service_ = cs;
 }
 
 // Load all content bytes via the context's content service.
-inline std::vector<uint8_t> load_bytes(const ActionContent& content,
-                                        ContentServiceBase& cs) {
+inline std::vector<uint8_t> load_bytes(const ActionContent& content, ContentServiceBase& cs) {
     return cs.load(content.segments);
 }
 
 // Load content as a string via the context's content service.
-inline std::string load_string(const ActionContent& content,
-                                ContentServiceBase& cs) {
+inline std::string load_string(const ActionContent& content, ContentServiceBase& cs) {
     auto data = cs.load(content.segments);
     return std::string(data.begin(), data.end());
 }
 
 // Save data and return an ActionContent with a single segment.
 // The segment is tracked on the ActionContext for orphan cleanup.
-inline ActionContent save_content(ContentServiceBase& cs,
-                                   ActionContext& actx,
-                                   const std::vector<uint8_t>& data,
-                                   const std::string& name,
-                                   const std::string& media_type) {
+inline ActionContent save_content(ContentServiceBase& cs, ActionContext& actx,
+                                  const std::vector<uint8_t>& data, const std::string& name,
+                                  const std::string& media_type) {
     auto seg = cs.save(actx.did, data);
     actx.track_segment(seg);
-    ActionContent c{name, media_type, {seg}, {}};
+    ActionContent c{.name = name, .media_type = media_type, .segments = {seg}, .tags = {}};
     c.content_service_ = &cs;
     return c;
 }
 
 // Save a string as content.
-inline ActionContent save_content_string(ContentServiceBase& cs,
-                                          ActionContext& actx,
-                                          const std::string& s,
-                                          const std::string& name,
-                                          const std::string& media_type) {
+inline ActionContent save_content_string(ContentServiceBase& cs, ActionContext& actx,
+                                         const std::string& s, const std::string& name,
+                                         const std::string& media_type) {
     std::vector<uint8_t> data(s.begin(), s.end());
     return save_content(cs, actx, data, name, media_type);
 }
 
 // Save content from an input stream. Use -1 for size if unknown.
-inline ActionContent save_content_from_reader(ContentServiceBase& cs,
-                                               ActionContext& actx,
-                                               std::istream& reader,
-                                               int64_t size,
-                                               const std::string& name,
-                                               const std::string& media_type) {
+inline ActionContent save_content_from_reader(ContentServiceBase& cs, ActionContext& actx,
+                                              std::istream& reader, int64_t size,
+                                              const std::string& name,
+                                              const std::string& media_type) {
     auto seg = cs.save_from_reader(actx.did, reader, size);
     actx.track_segment(seg);
-    ActionContent c{name, media_type, {seg}, {}};
+    ActionContent c{.name = name, .media_type = media_type, .segments = {seg}, .tags = {}};
+    c.content_service_ = &cs;
+    return c;
+}
+
+// Save content the action streams into a writer callback (an ostream sink), piped to
+// the uploader with bounded memory.
+inline ActionContent save_content_from_writer(ContentServiceBase& cs, ActionContext& actx,
+                                              const std::function<void(std::ostream&)>& write_fn,
+                                              const std::string& name,
+                                              const std::string& media_type) {
+    auto seg = cs.save_from_writer(actx.did, write_fn);
+    actx.track_segment(seg);
+    ActionContent c{.name = name, .media_type = media_type, .segments = {seg}, .tags = {}};
     c.content_service_ = &cs;
     return c;
 }
 
 // Load content as a streaming reader.
 inline std::unique_ptr<std::istream> load_reader(const ActionContent& content,
-                                                  ContentServiceBase& cs) {
+                                                 ContentServiceBase& cs) {
     return cs.load_reader(content.segments);
 }
 
@@ -207,4 +224,4 @@ inline ActionContext ActionContext::child_context() const {
     return child;
 }
 
-} // namespace deltafi
+}  // namespace deltafi

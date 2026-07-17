@@ -29,21 +29,21 @@ concept HasParamsType = requires {
 
 // Transform action without parameters: transform(context, input)
 template<typename T>
-concept TransformActionNoParams = !HasParamsType<T> &&
-    requires(T t, ActionContext& ctx, TransformInput& input) {
-    { t.transform(ctx, input) } -> std::same_as<TransformResultType>;
-    { action_traits<T>::name } -> std::convertible_to<std::string_view>;
-    { action_traits<T>::description } -> std::convertible_to<std::string_view>;
-};
+concept TransformActionNoParams =
+    !HasParamsType<T> && requires(T t, ActionContext& ctx, TransformInput& input) {
+        { t.transform(ctx, input) } -> std::same_as<TransformResultType>;
+        { action_traits<T>::name } -> std::convertible_to<std::string_view>;
+        { action_traits<T>::description } -> std::convertible_to<std::string_view>;
+    };
 
 // Transform action with parameters: transform(context, params, input)
 template<typename T>
-concept TransformActionWithParams = HasParamsType<T> &&
-    requires(T t, ActionContext& ctx, typename T::Params& p, TransformInput& input) {
-    { t.transform(ctx, p, input) } -> std::same_as<TransformResultType>;
-    { action_traits<T>::name } -> std::convertible_to<std::string_view>;
-    { action_traits<T>::description } -> std::convertible_to<std::string_view>;
-};
+concept TransformActionWithParams =
+    HasParamsType<T> && requires(T t, ActionContext& ctx, T::Params& p, TransformInput& input) {
+        { t.transform(ctx, p, input) } -> std::same_as<TransformResultType>;
+        { action_traits<T>::name } -> std::convertible_to<std::string_view>;
+        { action_traits<T>::description } -> std::convertible_to<std::string_view>;
+    };
 
 // A TransformAction processes content and produces transformed output.
 template<typename T>
@@ -51,21 +51,21 @@ concept TransformAction = TransformActionNoParams<T> || TransformActionWithParam
 
 // Egress action without parameters: egress(context, input)
 template<typename T>
-concept EgressActionNoParams = !HasParamsType<T> &&
-    requires(T t, ActionContext& ctx, EgressInput& input) {
-    { t.egress(ctx, input) } -> std::same_as<EgressResultType>;
-    { action_traits<T>::name } -> std::convertible_to<std::string_view>;
-    { action_traits<T>::description } -> std::convertible_to<std::string_view>;
-};
+concept EgressActionNoParams =
+    !HasParamsType<T> && requires(T t, ActionContext& ctx, EgressInput& input) {
+        { t.egress(ctx, input) } -> std::same_as<EgressResultType>;
+        { action_traits<T>::name } -> std::convertible_to<std::string_view>;
+        { action_traits<T>::description } -> std::convertible_to<std::string_view>;
+    };
 
 // Egress action with parameters: egress(context, params, input)
 template<typename T>
-concept EgressActionWithParams = HasParamsType<T> &&
-    requires(T t, ActionContext& ctx, typename T::Params& p, EgressInput& input) {
-    { t.egress(ctx, p, input) } -> std::same_as<EgressResultType>;
-    { action_traits<T>::name } -> std::convertible_to<std::string_view>;
-    { action_traits<T>::description } -> std::convertible_to<std::string_view>;
-};
+concept EgressActionWithParams =
+    HasParamsType<T> && requires(T t, ActionContext& ctx, T::Params& p, EgressInput& input) {
+        { t.egress(ctx, p, input) } -> std::same_as<EgressResultType>;
+        { action_traits<T>::name } -> std::convertible_to<std::string_view>;
+        { action_traits<T>::description } -> std::convertible_to<std::string_view>;
+    };
 
 // An EgressAction sends content to an external destination.
 template<typename T>
@@ -73,8 +73,7 @@ concept EgressAction = EgressActionNoParams<T> || EgressActionWithParams<T>;
 
 // Timed ingress action without parameters: ingress(context)
 template<typename T>
-concept TimedIngressActionNoParams = !HasParamsType<T> &&
-    requires(T t, ActionContext& ctx) {
+concept TimedIngressActionNoParams = !HasParamsType<T> && requires(T t, ActionContext& ctx) {
     { t.ingress(ctx) } -> std::same_as<IngressResultType>;
     { action_traits<T>::name } -> std::convertible_to<std::string_view>;
     { action_traits<T>::description } -> std::convertible_to<std::string_view>;
@@ -82,12 +81,12 @@ concept TimedIngressActionNoParams = !HasParamsType<T> &&
 
 // Timed ingress action with parameters: ingress(context, params)
 template<typename T>
-concept TimedIngressActionWithParams = HasParamsType<T> &&
-    requires(T t, ActionContext& ctx, typename T::Params& p) {
-    { t.ingress(ctx, p) } -> std::same_as<IngressResultType>;
-    { action_traits<T>::name } -> std::convertible_to<std::string_view>;
-    { action_traits<T>::description } -> std::convertible_to<std::string_view>;
-};
+concept TimedIngressActionWithParams =
+    HasParamsType<T> && requires(T t, ActionContext& ctx, T::Params& p) {
+        { t.ingress(ctx, p) } -> std::same_as<IngressResultType>;
+        { action_traits<T>::name } -> std::convertible_to<std::string_view>;
+        { action_traits<T>::description } -> std::convertible_to<std::string_view>;
+    };
 
 // A TimedIngressAction creates new DeltaFiles on a schedule.
 template<typename T>
@@ -104,15 +103,11 @@ inline TransformInput default_join(std::vector<TransformInput> inputs) {
     std::vector<ActionContent> all_content;
     std::map<std::string, std::string> all_metadata;
     for (auto& input : inputs) {
-        all_content.insert(all_content.end(),
-                           std::make_move_iterator(input.content.begin()),
+        all_content.insert(all_content.end(), std::make_move_iterator(input.content.begin()),
                            std::make_move_iterator(input.content.end()));
-        all_metadata.insert(input.metadata.begin(), input.metadata.end());
+        merge_last_wins(all_metadata, input.metadata);
     }
-    return TransformInput{
-        std::move(all_content),
-        std::move(all_metadata)
-    };
+    return TransformInput{.content = std::move(all_content), .metadata = std::move(all_metadata)};
 }
 
-} // namespace deltafi
+}  // namespace deltafi

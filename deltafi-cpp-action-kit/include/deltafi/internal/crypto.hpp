@@ -32,8 +32,7 @@ inline std::vector<uint8_t> sha256_raw(const std::string& data) {
 }
 
 // HMAC-SHA256 per RFC 2104. Returns raw bytes.
-inline std::vector<uint8_t> hmac_sha256(const std::vector<uint8_t>& key,
-                                         const std::string& data) {
+inline std::vector<uint8_t> hmac_sha256(const std::vector<uint8_t>& key, const std::string& data) {
     constexpr size_t block_size = 64;
 
     // If key is longer than block size, hash it
@@ -64,22 +63,19 @@ inline std::vector<uint8_t> hmac_sha256(const std::vector<uint8_t>& key,
     std::vector<uint8_t> inner_input(i_key_pad.begin(), i_key_pad.end());
     inner_input.insert(inner_input.end(), data.begin(), data.end());
     std::vector<uint8_t> inner_hash(picosha2::k_digest_size);
-    picosha2::hash256(inner_input.begin(), inner_input.end(),
-                      inner_hash.begin(), inner_hash.end());
+    picosha2::hash256(inner_input.begin(), inner_input.end(), inner_hash.begin(), inner_hash.end());
 
     // Outer hash: SHA256(o_key_pad || inner_hash)
     std::vector<uint8_t> outer_input(o_key_pad.begin(), o_key_pad.end());
     outer_input.insert(outer_input.end(), inner_hash.begin(), inner_hash.end());
     std::vector<uint8_t> result(picosha2::k_digest_size);
-    picosha2::hash256(outer_input.begin(), outer_input.end(),
-                      result.begin(), result.end());
+    picosha2::hash256(outer_input.begin(), outer_input.end(), result.begin(), result.end());
 
     return result;
 }
 
 // HMAC-SHA256 with a string key. Returns raw bytes.
-inline std::vector<uint8_t> hmac_sha256(const std::string& key,
-                                         const std::string& data) {
+inline std::vector<uint8_t> hmac_sha256(const std::string& key, const std::string& data) {
     std::vector<uint8_t> key_bytes(key.begin(), key.end());
     return hmac_sha256(key_bytes, data);
 }
@@ -88,22 +84,19 @@ inline std::vector<uint8_t> hmac_sha256(const std::string& key,
 inline std::string to_hex(const std::vector<uint8_t>& bytes) {
     std::ostringstream ss;
     for (auto b : bytes) {
-        ss << std::hex << std::setfill('0') << std::setw(2)
-           << static_cast<int>(b);
+        ss << std::hex << std::setfill('0') << std::setw(2) << static_cast<int>(b);
     }
     return ss.str();
 }
 
 // HMAC-SHA256 returning lowercase hex string.
-inline std::string hmac_sha256_hex(const std::string& key,
-                                    const std::string& data) {
+inline std::string hmac_sha256_hex(const std::string& key, const std::string& data) {
     return to_hex(hmac_sha256(key, data));
 }
 
 // HMAC-SHA256 with raw key, returning lowercase hex string.
-inline std::string hmac_sha256_hex(const std::vector<uint8_t>& key,
-                                    const std::string& data) {
+inline std::string hmac_sha256_hex(const std::vector<uint8_t>& key, const std::string& data) {
     return to_hex(hmac_sha256(key, data));
 }
 
-} // namespace deltafi::internal
+}  // namespace deltafi::internal

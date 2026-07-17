@@ -20,7 +20,7 @@ deltafi-cpp-action-kit/             # Header-only library
     event.hpp                       # ActionEvent wire format (JSON published to result queue)
     heartbeat.hpp                   # Heartbeat jthread and long-running task reporting
     input.hpp                       # TransformInput, EgressInput, IngressInput
-    log.hpp                         # LogMessage and LogSeverity constants
+    log.hpp                         # LogMessage and LogSeverity constants (TRACE/INFO/WARNING/ERROR)
     lookup.hpp                      # LookupClient, LookupTableSupplierBase, supplier runner
     options.hpp                     # ActionOptions, InputSpec, OutputSpec, ContentSpec
     params.hpp                      # DELTAFI_PARAMS macro, EnvVar, DataSize
@@ -220,6 +220,46 @@ sequenceDiagram
 
 ---
 
+## Transport, Security & Configuration
+
+The plugin reads its connection settings from environment variables (set by the DeltaFi
+orchestrator). All have defaults suitable for an in-cluster deployment:
+
+| Variable | Default | Purpose |
+|----------|---------|---------|
+| `CORE_URL` | `http://deltafi-core-service` | Core REST/registration endpoint (HTTP client) |
+| `VALKEY_URL` / `VALKEY_PASSWORD` | `deltafi-valkey-master:6379` | Action queue (Valkey/Redis) |
+| `MINIO_URL` / `MINIO_ACCESSKEY` / `MINIO_SECRETKEY` / `STORAGE_BUCKET_NAME` | `deltafi-minio:9000` … | Content storage (S3) |
+| `MINIO_USE_SSL` | `false` | Force HTTPS for the S3 endpoint (on top of scheme inference) |
+| `CERT_PATH` / `KEY_PATH` / `CA_CHAIN_PATH` | `/certs/tls.crt` / `/certs/tls.key` / `/certs/ca.crt` | Mutual-TLS client cert, key, and CA chain |
+
+**Mutual TLS.** On startup the kit auto-detects the cert files above. When both the client
+cert and key exist, the HTTP clients (core registration, artifact registry, lookup queries, and
+the S3 content client) present the client certificate and verify the server against the CA chain
+— matching the Go and Java action kits, and additionally supporting an external S3 fronted by a
+private CA / mTLS. When neither exists, the clients run plaintext. Supplying only one of cert/key
+is a misconfiguration and fails fast at startup. The S3 endpoint uses HTTPS when its URL scheme
+is `https` or `MINIO_USE_SSL=true`. (Valkey is plaintext, as in the other kits.)
+
+**Shutdown.** On SIGTERM/SIGINT the plugin requests stop on every thread and drains in-flight
+work against a **hard 30-second deadline** shared across all workers — stragglers past the
+deadline are abandoned rather than blocking shutdown. The `/tmp/running` readiness marker is
+removed by an RAII guard on every exit path, including exceptions.
+
+**Result publishing.** Each `ActionWorker` publishes results over its **own** Valkey connection,
+so result publishing does not serialize through a single process-wide lock.
+
+**Poll-loop backoff (resilience).** The queue poll loops — the action intake loop and the
+lookup-supplier intake loop — distinguish a *healthy* read (an event, or an idle timeout with no
+work) from a *read error* (Valkey unreachable). On a read error they apply **capped exponential
+backoff with jitter** before the next attempt: base 100 ms doubling to a 5 s cap, each delay
+jittered into `[delay/2, delay]` (so many action threads do not reconnect in lockstep), reset to
+base after any healthy read, and the wait is cancellable by shutdown. Without this, a downed
+Valkey turns every poll loop into a CPU-pegging retry storm. Shared with the Java/Go/Python kits;
+see `internal/backoff.hpp`.
+
+---
+
 ## Action Execution Sequence Diagram
 
 ```mermaid
@@ -250,8 +290,9 @@ sequenceDiagram
         Worker->>Action: transform/egress/ingress(ctx, input)
     end
 
-    Action-->>Worker: Result variant (or exception caught → ErrorResult)
+    Action-->>Worker: Result variant (or a thrown ErrorResultException/FilterResultException → matching result; any other uncaught exception → ErrorResult)
     Worker->>Worker: Convert Result → ActionEvent JSON
+    Worker->>Worker: Orphan-GC unreferenced saved content (all action types; runs even on a thrown action)
 
     Worker->>Redis: ZADD dgs[-returnAddress] timestamp eventJSON
 
@@ -260,6 +301,27 @@ sequenceDiagram
         Worker->>MinIO: Delete orphan segments
     end
 ```
+
+---
+
+## Result Helpers
+
+All result types share a common set of helpers (via `ResultBase`):
+
+- **Logging**: `log_trace` / `log_info` / `log_warning` / `log_error` — both string and streaming
+  (`result.log_info() << ...`) overloads. Severities serialize as `TRACE`/`INFO`/`WARNING`/`ERROR`.
+- **Metrics**: `add_metric(deltafi::Metric{name, value, tags})` attaches a custom metric to the result.
+- **Metadata/annotations**: `add_metadata` / `add_annotation` (single key/value) and the bulk map
+  overloads (later values overwrite earlier keys).
+
+Actions may **return** a result variant, or **throw** a disposition the worker converts:
+
+- `throw deltafi::ErrorResultException(cause, context).add_annotation(k, v).add_metric(m);`
+- `throw deltafi::FilterResultException(message, context);`
+
+`EgressResultType` and `IngressResultType` both include `FilterResult`, so egress and timed-ingress
+actions can filter as well as error. Content saved during an execution but not referenced by the
+returned result is garbage-collected automatically, including when the action throws.
 
 ---
 
@@ -446,14 +508,32 @@ opts.offset = 0;
 opts.limit = 100;
 
 auto results = context.lookup_client->lookup("my-table", &opts);
-// results.total_count, results.rows (vector<map<string,string>>), results.created, results.modified
+// results.total_count, results.rows (vector<map<string,string>>), results.created, results.modified,
+// results.ttl_seconds (optional: seconds until the table's next scheduled refresh)
 ```
+
+Admin operations (create and populate tables) are available on the same client, matching the Java kit:
+
+```cpp
+auto tables = context.lookup_client->get_lookup_tables();       // vector<LookupTable>
+context.lookup_client->create_lookup_table(definition);         // -> LookupAdminResult
+context.lookup_client->upsert_rows("my-table", rows);           // rows: vector<map<string,string>>
+context.lookup_client->remove_rows("my-table", key_rows);
+context.lookup_client->set_backing_service_active("my-table", true);
+```
+
+`upsert_rows`/`remove_rows` batch large row sets (10,000 rows per request) and aggregate the per-batch
+`LookupAdminResult` (`success`, `info`, `errors`). Admin calls issue GraphQL mutations to `/api/v2/graphql`.
 
 ### Caching
 
 - Success TTL: 30s default, configurable via `TABLE_LOOKUP_CACHE_TTL` env var
 - Failure TTL: 1s default, configurable via `TABLE_LOOKUP_FAILURE_CACHE_TTL`
 - Cache key: SHA-256 of table name + serialized options
+- **Single-flight:** concurrent misses for the same key coalesce into one query — the first caller
+  leads and the rest await its result, so a burst of identical lookups makes a single backend call
+- **Background eviction:** a timer thread (60s) drops expired entries, so keys that are never looked
+  up again do not accumulate (expiry is still also enforced lazily on access)
 
 ### LookupTableSupplier
 
@@ -500,10 +580,28 @@ auto resp = client.publish_artifact("model.bin", data, "application/octet-stream
 // Get (fully downloads into memory, cached)
 auto fetched = client.get_artifact("model.bin", "active");
 // fetched.data, fetched.manifest.version, fetched.manifest.sha256, ...
+// fetched.manifest.is_default() — true if the artifact was seeded as a plugin default
+
+// Scope resolution: by default get_artifact/stream_artifact use PLUGIN_FIRST (try the plugin
+// namespace, then fall back to shared). Pass a scope to override:
+auto pinned = client.get_artifact("model.bin", "active", deltafi::ArtifactScope::PLUGIN_ONLY);
+
+// Stream (bounded memory, not cached) — the manifest is available as soon as the
+// response headers arrive; the body is read incrementally from the returned istream.
+auto stream = client.stream_artifact("model.bin", "active");
+std::string version = stream.manifest.version;
+process(*stream.reader);  // std::unique_ptr<std::istream>
+
+// Publish from a reader — the payload is streamed to core as multipart form-data,
+// so a large artifact never materializes in memory.
+std::ifstream in("big-model.bin", std::ios::binary);
+client.publish_from_reader("model.bin", in, "application/octet-stream", &opts);
 
 // Shared namespace variants
 client.publish_shared_artifact(...)
+client.publish_shared_from_reader(...)
 client.get_shared_artifact(...)
+client.stream_shared_artifact(...)
 ```
 
 ### Caching
@@ -511,6 +609,11 @@ client.get_shared_artifact(...)
 - Success TTL: 10s default, configurable via `ARTIFACT_CACHE_TTL` env var
 - Failure TTL: 1s default, configurable via `ARTIFACT_FAILURE_CACHE_TTL`
 - Cache is automatically invalidated when the same client publishes an artifact
+- **Poll-drift safety net:** a background thread (300s) re-lists watched artifacts
+  (`GET /api/v2/artifacts/{owner}`) and, for any whose alias now points at a different version
+  than the one cached, invalidates and re-fires callbacks — catching version-change notifications
+  the pub/sub listener missed. Entries pinned to a concrete version are skipped (versions are
+  immutable).
 
 ### Version Change Callbacks
 
@@ -518,6 +621,11 @@ The artifact listener subscribes to the `deltafi:artifact:version-changed` Valke
 
 1. The cache is invalidated for that artifact
 2. Registered callbacks matching the event's owner, artifact name, and alias are invoked
+
+The listener reconnects with jittered exponential backoff (100ms → 5s, reset after a connection
+that stays up) if the subscription drops, so a downed Valkey does not cause a tight reconnect spin.
+A default artifact registered via `on_update_fetch_with_default` is seeded on first miss; a
+concurrent seed by another instance (HTTP 409) is tolerated — the existing artifact is used.
 
 Callback registration methods:
 
@@ -753,21 +861,50 @@ The `ActionContext` is pre-populated with test values (DID, flow name, action na
 
 ### Action Runners
 
+The runners drive the **same production dispatch path** the worker uses — building the input from a
+queue event, deserializing typed params from `action_params`, running orphan-content GC, and applying
+the fault barrier (a thrown `ErrorResult`/`FilterResult`/exception becomes the matching event). So a
+test exercises the real executor, not a direct method call.
+
 ```cpp
 auto event = deltafi::testing::run_transform(action, tc.action_context, input);
-auto event = deltafi::testing::run_transform(action, tc.action_context, params, input);
+auto event = deltafi::testing::run_transform(action, tc.action_context, params, input);  // params round-trip through action_params
+auto event = deltafi::testing::run_join(action, tc.action_context, inputs);              // merge -> transform (set tc.action_context.join)
 auto event = deltafi::testing::run_egress(action, tc.action_context, input);
 auto event = deltafi::testing::run_ingress(action, tc.action_context);
+```
+
+### Fault Injection
+
+`InMemoryContentStore::fail_after_nth(n)` makes the Nth `save()` (and every save after it) throw, so
+an action's error path is reachable from a unit test. `size()`/`save_count()` introspect the store
+(e.g. to assert orphan content was GC'd after an error).
+
+### Input Builders & Mock Wiring
+
+```cpp
+auto input = deltafi::testing::new_deltafile(tc, "payload", "in.txt", "text/plain", {{"k", "v"}});
+deltafi::testing::new_timed_ingress_deltafile(tc, memo);  // set the memo a timed-ingress action reads
+tc.use_lookup(mock_lookup);      // wire mock clients onto the context the runners pass through
+tc.use_artifact(mock_artifact);
 ```
 
 ### Result Assertions
 
 ```cpp
 auto& transforms = deltafi::testing::require_transform(event);  // asserts type=TRANSFORM
+auto& te = deltafi::testing::require_single_transform(event);   // asserts exactly one transform event
 auto& error = deltafi::testing::require_error(event, "bad input"); // asserts type=ERROR with matching cause
 auto& filter = deltafi::testing::require_filter(event, "too small"); // asserts type=FILTER
 deltafi::testing::require_egress(event);                         // asserts type=EGRESS
 auto& ingress = deltafi::testing::require_ingress(event);        // asserts type=INGRESS
+
+// Field-level assertions on a transform event / the action event:
+deltafi::testing::require_metadata(te, "key", "value");
+deltafi::testing::require_annotation(te, "key", "value");
+auto& content = deltafi::testing::require_content(te, "out.txt");
+auto& metric = deltafi::testing::require_metric(event, "records");
+auto& msg = deltafi::testing::require_message(event, "processed");  // substring match
 ```
 
 ### ResultEvent
@@ -808,21 +945,32 @@ Each child produces a separate `TransformEvent` in the `ActionEvent.transform` a
 auto& content = result.save_content(data_string, "output.json", "application/json");
 auto& content = result.save_content(data_bytes, "output.bin", "application/octet-stream");
 
+// Via result — stream into a writer callback (never buffers the whole object)
+auto& content = result.save_content_from_writer(
+    [](std::ostream& out) { write_records(out); }, "output.csv", "text/csv");
+
 // Via free functions (saves and tracks segment on context)
 auto content = deltafi::save_content(cs, actx, data_bytes, "output.json", "application/json");
 auto content = deltafi::save_content_string(cs, actx, str, "output.json", "application/json");
 auto content = deltafi::save_content_from_reader(cs, actx, reader, size, "output.bin", "application/octet-stream");
+auto content = deltafi::save_content_from_writer(cs, actx, write_fn, "output.bin", "application/octet-stream");
 ```
 
-All save operations track segments on the ActionContext for orphan cleanup.
+All save operations track segments on the ActionContext for orphan cleanup. `save_content_from_reader`
+and `save_content_from_writer` stream to storage in bounded-memory parts (multipart upload above the
+part size), so large content never fully materializes in memory.
 
 ### Load
 
 ```cpp
 auto bytes = content.load_bytes();               // vector<uint8_t>
 auto str = content.load_string();                 // string
-auto reader = content.load_reader();              // unique_ptr<istream>
+auto reader = content.load_reader();              // unique_ptr<istream>, streamed incrementally
 ```
+
+`load_reader` returns a genuinely incremental stream backed by a bounded producer/consumer buffer:
+the object is fetched from storage in chunks as the reader is consumed, so peak memory stays bounded
+regardless of the object's size.
 
 ### Manipulate (no I/O)
 
@@ -879,6 +1027,7 @@ Main Thread
 | `MINIO_URL` | `deltafi-minio:9000` | MinIO endpoint (scheme prefix stripped) |
 | `MINIO_ACCESSKEY` | `deltafi` | MinIO access key |
 | `MINIO_SECRETKEY` | `password` | MinIO secret key |
+| `MINIO_USE_SSL` | `false` | Force HTTPS for the S3 endpoint (on top of scheme inference) |
 | `STORAGE_BUCKET_NAME` | `storage` | S3 bucket name |
 | `IMAGE` | `""` | Container image URI |
 | `IMAGE_PULL_SECRET` | `""` | K8s image pull secret |

@@ -1,0 +1,27 @@
+# ABOUTME: clang-tidy check set for the DeltaFi C++ action kit.
+# ABOUTME: Bug/perf/modernize/readability, minus a small set of opinionated style checks.
+---
+Checks: >
+  -*,
+  bugprone-*,
+  performance-*,
+  modernize-*,
+  readability-*,
+  cppcoreguidelines-prefer-member-initializer,
+  cppcoreguidelines-pro-type-member-init,
+  cppcoreguidelines-init-variables,
+  cppcoreguidelines-missing-std-forward,
+  cppcoreguidelines-pro-type-vararg,
+  cppcoreguidelines-special-member-functions,
+  -readability-magic-numbers,
+  -readability-identifier-length,
+  -readability-braces-around-statements,
+  -readability-function-cognitive-complexity,
+  -readability-implicit-bool-conversion,
+  -bugprone-easily-swappable-parameters,
+  -modernize-use-trailing-return-type,
+  -modernize-use-nodiscard,
+  -modernize-pass-by-value,
+  -modernize-return-braced-init-list
+HeaderFilterRegex: '.*/include/deltafi/.*'
+WarningsAsErrors: ''
