@@ -84,7 +84,6 @@
       { "text": "Architecture", "link": "/advanced/architecture" },
       { "text": "Queue Architecture", "link": "/advanced/queue-architecture" },
       { "text": "Automatic Resume", "link": "/advanced/auto_resume" },
-      { "text": "Advanced Routing", "link": "/advanced/advanced_routing" },
       { "text": "Data Retention", "link": "/advanced/data_retention" },
       { "text": "DeltaFile Annotations", "link": "/advanced/deltafile_annotations" },
       { "text": "Egress Sink", "link": "/advanced/egress-sink" },
