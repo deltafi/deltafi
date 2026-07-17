@@ -41,6 +41,9 @@ COPY . .
 # `go list`. In local mode the caller supplies ACTIONKIT_VERSION (the Makefile
 # derives it from the local kit's `git describe`) because the replace
 # directive points at a path with no module version available via `go list`.
+# The Makefile supplies plugin identity via the PLUGIN_* build args; builds
+# that skip the Makefile leave them empty and the plugin falls back to reading
+# plugin.yaml at runtime (copied into the runtime image below).
 ARG TARGETOS
 ARG TARGETARCH
 ARG VERSION=0.0.0-dev
@@ -75,6 +78,7 @@ ENV TABLE_LOOKUP_FAILURE_CACHE_TTL=1s
 RUN apk --no-cache add ca-certificates
 WORKDIR /app
 COPY --from=builder /build/{{.PluginName}} deltafi-plugin
+COPY --from=builder /build/plugin.yaml ./plugin.yaml
 COPY --from=builder /build/flows ./flows
 COPY --from=builder /build/integration ./integration
 RUN chmod +x deltafi-plugin

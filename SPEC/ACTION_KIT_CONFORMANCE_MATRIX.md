@@ -52,6 +52,13 @@ missing required feature/mandate · **MINOR** cosmetic/idiomatic/doc.
 | Fault barrier (action never crashes worker) (§2, §11.3) | ✅ | ✅ | ✅ | ✅ |
 | Graceful 30s drain on SIGTERM/SIGINT (§1.10, §16) | ⚠️ ~5s then force | ✅ 30s | ⚠️ deadline soft; `join()` unbounded | ❌ no handler/drain |
 | `/tmp/running` readiness marker (§1.9) | ✅ | ✅ | ✅ | ⚠️ created, never removed |
+| Distroless-friendly HTTP health probe — `httpGet` endpoint reflecting real state; dumb liveness (no external deps), dependency-aware readiness (§1.1) | ❌ | ❌ | ❌ | ❌ |
+
+> **Health probe (§1.1) — unimplemented in every kit.** All four still signal readiness only via
+> the `cat /tmp/running` exec probe, which forces `cat` into every image and blocks distroless
+> plugin containers. No kit exposes an HTTP health endpoint. This is a target-design gap, not a
+> per-kit lapse — none is dinged in the scorecard for it, but it must land in all four to ship
+> distroless images.
 
 ### Queue Protocol & Serialization (§8)
 

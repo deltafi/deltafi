@@ -39,6 +39,19 @@ PLUGIN_ARTIFACT_ID := $(shell awk '/^artifactId:/  {sub(/^artifactId:[ \t]*/,"")
 PLUGIN_DOMAIN      := $(shell awk '/^domain:/      {sub(/^domain:[ \t]*/,"");      gsub(/^"|"$$/,""); print; exit}' plugin.yaml 2>/dev/null)
 PLUGIN_DESCRIPTION := $(shell awk '/^description:/ {sub(/^description:[ \t]*/,""); gsub(/^"|"$$/,""); print; exit}' plugin.yaml 2>/dev/null)
 
+GOPATH ?= $(CURDIR)/.go
+export GOPATH
+
+# When running inside a web terminal container, Docker volume mounts must use
+# host paths. HOST_REPOS_DIR maps /deltafi/repos to the host equivalent.
+ifdef HOST_REPOS_DIR
+  HOST_BUILD_DIR := $(subst /deltafi/repos,$(HOST_REPOS_DIR),$(BUILD_DIR))
+  HOST_GOPATH := $(HOST_BUILD_DIR)/.go
+else
+  HOST_BUILD_DIR := $(BUILD_DIR)
+  HOST_GOPATH := $(GOPATH)
+endif
+
 # Auto-detect if go is installed
 HAS_GO := $(shell command -v go 2> /dev/null)
 USE_DOCKER ?= $(if $(HAS_GO),false,true)
@@ -59,9 +72,6 @@ endif
 HAS_DOCKER := $(shell command -v docker 2> /dev/null)
 MIN_GO_VERSION := 1.26
 GO_VERSION_CHECK := $(if $(HAS_GO),$(shell go version 2>/dev/null | grep -q "go$(MIN_GO_VERSION)" && echo 1 || echo 0),0)
-
-GOPATH ?= $(CURDIR)/.go
-export GOPATH
 
 GOBINPATH = $(GOPATH)/bin
 
@@ -104,8 +114,8 @@ endif
 # (always linux, used for downloading and building developer tools).
 DOCKER_RUN_COMMON := --rm \
               --user $(DOCKER_USER) \
-              -v $(BUILD_DIR):$(DOCKER_SOURCE) \
-              -v $(GOPATH):$(DOCKER_GOPATH) \
+              -v $(HOST_BUILD_DIR):$(DOCKER_SOURCE) \
+              -v $(HOST_GOPATH):$(DOCKER_GOPATH) \
               $(DOCKER_EXTRA_VOLUMES) \
               $(DOCKER_GOWORK_ENV) \
               -e GOPATH=$(DOCKER_GOPATH) \
@@ -223,7 +233,7 @@ help:
 	@echo "  clean            - Remove build artifacts"
 	@echo "  very-clean       - Remove build artifacts and cached modules"
 	@echo "  test             - Run tests"
-	@echo "  acceptance-test  - Run all tests with the race detector"
+	@echo "  acceptance-test  - Run tests with the race detector"
 	@echo "  lint             - Run linter and vet"
 	@echo "  fmt              - Format code"
 	@echo "  tidy             - Format code and tidy modules"
@@ -253,7 +263,7 @@ test: tidy
 	@echo "Running all tests"
 	@$(GOTEST) -v ./...
 
-acceptance-test: tidy
+acceptance-test: check-env
 	@echo "Running all tests with the race detector"
 	@$(GOTEST_RACE_RUN)
 
@@ -272,6 +282,7 @@ lint: deps
 	@$(GOLINT) run
 
 fmt: check-env
+	@echo $(GOFMT) ./...
 	@$(GOFMT) ./...
 
 tidy: check-env fmt
@@ -296,11 +307,12 @@ buildx-builder:
 
 docker-build: check-env
 	@echo "Building Docker image $(DOCKER_REPO):latest"
-	docker build $(DOCKER_BUILD_CONTEXTS) $(DOCKER_BUILD_ARGS) -t $(DOCKER_REPO):latest $(BUILD_DIR)
+	@echo docker build $(DOCKER_BUILD_CONTEXTS) $(DOCKER_BUILD_ARGS) -t $(DOCKER_REPO):latest $(HOST_BUILD_DIR)
+	docker build $(DOCKER_BUILD_CONTEXTS) $(DOCKER_BUILD_ARGS) -t $(DOCKER_REPO):latest $(HOST_BUILD_DIR)
 
 publish: check-env buildx-builder
 	@echo "Publishing docker image for $(DOCKER_REPO):$(VERSION)"
-	@docker buildx build --builder $(BUILDX_BUILDER) --no-cache $(ADDITIONAL_DOCKER_ARGS) $(DOCKER_BUILD_CONTEXTS) $(DOCKER_BUILD_ARGS) --provenance=$(SBOM) --sbom=$(SBOM) --push --platform linux/amd64,linux/arm64 --tag $(DOCKER_REPO):$(VERSION) $(BUILD_DIR)
+	@docker buildx build --builder $(BUILDX_BUILDER) --no-cache $(ADDITIONAL_DOCKER_ARGS) $(DOCKER_BUILD_CONTEXTS) $(DOCKER_BUILD_ARGS) --provenance=$(SBOM) --sbom=$(SBOM) --push --platform linux/amd64,linux/arm64 --tag $(DOCKER_REPO):$(VERSION) $(HOST_BUILD_DIR)
 
 docker-tag: docker-build
 	@echo "Tagging $(DOCKER_REPO):$(VERSION)"

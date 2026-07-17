@@ -65,6 +65,65 @@ A kit must be **self-healing**: a failure executing one event must never crash t
 Every outcome — success, business error, filter, or unexpected exception/panic — maps to a
 result event (§3, §11).
 
+### 1.1 Health probe (distroless-friendly)
+
+> **Status: TARGET DESIGN — not yet implemented in any kit.** All kits currently signal
+> readiness with the file marker `/tmp/running`, probed via `exec: ["cat", "/tmp/running"]`
+> (k8s) / `test: cat /tmp/running` (compose). This subsection defines the direction that
+> replaces it. See the conformance matrix (Lifecycle row) for per-kit status.
+
+**Problem.** The `cat /tmp/running` exec probe forces a shell/coreutils binary into every
+plugin image purely to read a sentinel file. That is the single thing blocking **distroless**
+plugin images: a distroless container has no `cat`, so the probe can never pass.
+
+**Requirement.** Each kit exposes a minimal **HTTP health endpoint** on a fixed health port,
+and orchestration uses a native `httpGet` probe. The kubelet performs the GET itself, so
+**nothing needs to exist inside the container** — distroless works unchanged. This also
+supersedes the file marker: a `503` carries real meaning that a file's existence cannot.
+
+The handler must reflect **real internal state**, not merely "a thread is listening" — an
+endpoint that returns a hardcoded `200` is no better than the file marker it replaces. For a
+queue-pull plugin, real state means: registration complete, worker groups started, heartbeat
+fresh, and the Valkey queue connection live.
+
+**Split the checks by probe type** — this is the sharp edge:
+
+- **Startup** — `200` once the kit has registered, started its worker groups, and begun
+  heartbeating (the signal the `/tmp/running` marker gives today). Everything else waits on it.
+- **Liveness** — **dumb on purpose**: check only that *this process* is responsive (event loop
+  not wedged / not deadlocked). It **MUST NOT** check external dependencies (Valkey, MinIO,
+  core). A liveness handler that pings Valkey turns a 30-second Valkey blip into a `503` on
+  every plugin at once, and the kubelet restarts the **entire fleet** simultaneously — a
+  self-inflicted outage. Keep external deps out of liveness.
+- **Readiness** — reflects real state: heartbeat fresh **and** queue connection live; `503`
+  when degraded. Readiness `503` removes the pod from service and marks it not-ready but does
+  **not** restart it, so it recovers on its own when the dependency returns. This is where the
+  "`503` when things go south" behavior belongs.
+
+**Why not `tcpSocket`.** A `tcpSocket` probe only reports *connect succeeded / refused* — there
+are no status codes, so it cannot express "up but degraded" except by tearing the listener
+down, which abuses socket lifecycle as a boolean. The moment graded health is wanted, the
+mechanism is HTTP.
+
+**Why not exec the plugin's own binary.** `exec: ["/plugin", "healthcheck"]` avoids `cat` and
+suits a static Go binary, but for Java/Python it spins a JVM/interpreter on every probe
+interval — expensive and non-uniform across kits. Reject it.
+
+**Compose parity (open).** Docker's `HEALTHCHECK` cannot do an `httpGet` natively without a
+client binary in the image (`curl`/`wget`), which reintroduces exactly the dependency we are
+removing. So compose either keeps the file marker for its healthcheck or diverges from k8s.
+Decide whether the two orchestrators share the mechanism before implementing.
+
+**Open questions to settle before implementation:**
+1. Which probes to wire — replace only startup, or add the dumb-liveness / dependency-aware
+   readiness pair while here (the `httpGet` design makes the latter cheap).
+2. Health port — a fixed port across all plugins (so the chart can hardcode it) vs configurable
+   via `values.yaml`; must not collide with a port a plugin author might bind.
+3. For a pure queue puller there is **no inbound Service**, so readiness gates no traffic — its
+   only value is if core/UI consumes pod readiness to report plugin health. If nothing reads
+   it, ship startup + dumb liveness and skip readiness.
+4. Whether `/tmp/running` stays as an interim mechanism during migration or is removed outright.
+
 ---
 
 ## 2. Worker / Concurrency Model
@@ -624,7 +683,8 @@ Plus arbitrary secret env vars referenced by `EnvVar` parameters (§6), resolved
 `BZPOPMIN` (one per action worker/poller) plus housekeeping (heartbeat, lookup supplier runner,
 artifact listener). Size it as Σ(per-action worker counts) + overhead.
 
-**Health probe**: create `/tmp/running` when ready; remove on shutdown.
+**Health probe**: create `/tmp/running` when ready; remove on shutdown. **Target design**
+replaces this with a distroless-friendly HTTP health endpoint (`httpGet` probe) — see §1.1.
 
 **TLS**: if a cert/key pair is present, use mutual TLS to core; if absent, fall back to plaintext.
 Cert and key must both exist or neither.
