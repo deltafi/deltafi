@@ -125,7 +125,9 @@ const generateData = () => {
             ],
             metadata: {
               Mockdata: "mockMeta",
-              Mock: "MetaMock2"
+              Mock: "MetaMock2",
+              long_unbroken_metadata: "ImalittleteapotshortandstoutHereismyhandleHereismyspoutWhenIgetallsteamedupIhearmeshoutTipmeoverandpourmeoutApparentlyIamalittleteapotistooshorttoshowwhatineeddittoshowitwiththefixinplace",
+              long_wrapping_metadata: "This is a long space separated metadata value that should wrap onto multiple lines cleanly without forcing the column any wider than it already is"
             },
             deleteMetadataKeys: []
           }

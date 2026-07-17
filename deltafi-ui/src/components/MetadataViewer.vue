@@ -122,6 +122,8 @@ defineExpose({
   pre {
     margin: 0;
     padding: 0;
+    white-space: pre-wrap;
+    word-break: break-word;
   }
 }
 </style>
